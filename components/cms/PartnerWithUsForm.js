@@ -119,6 +119,23 @@ export default function PartnerWithUsForm () {
     return `₦${num.toLocaleString()}`
   }
 
+  const isValidEmail = s => {
+    const v = String(s || '').trim()
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)
+  }
+
+  const isValidUrlPathOrEmail = s => {
+    const v = String(s || '').trim()
+    if (!v) return false
+    if (/^https?:\/\//i.test(v)) return true
+    if (v.startsWith('/')) return true
+    if (/^mailto:/i.test(v)) return true
+    if (isValidEmail(v)) return true
+    return false
+  }
+
+  const MAX_VENDOR_SECTIONS = 10
+
   const isEmptyEditorContent = s => {
     const html = String(s || '')
     if (!html.trim()) return true
@@ -131,6 +148,20 @@ export default function PartnerWithUsForm () {
       .trim()
     return stripped.length === 0
   }
+
+  const htmlToPlain = s => {
+    return String(s || '')
+      .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+      .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/&quot;/g, '"')
+      .replace(/&#34;/g, '"')
+      .replace(/[“”]/g, '"')
+      .replace(/&amp;/g, '&')
+      .replace(/\s+/g, ' ')
+      .trim()
+  }
+
 
   const fetchMinEventPrice = async eventId => {
     try {
@@ -204,6 +235,17 @@ export default function PartnerWithUsForm () {
         const data = response?.data || {}
 
         if (data) {
+          const vendorList = []
+          for (let i = 1; i <= MAX_VENDOR_SECTIONS; i++) {
+            const imgKey = `vendorSectionImage${i}`
+            const txtKey = `vendorSectionText${i}`
+            const imgVal = data[imgKey]
+            const txtVal = data[txtKey]
+            if ((typeof imgVal === 'string' && imgVal.trim()) || (typeof txtVal === 'string' && txtVal.trim())) {
+              vendorList.push({ image: imgVal || '', text: txtVal || '' })
+            }
+          }
+
           setFormData({
             bannerSectionTitle: data.bannerSectionTitle || '',
             bannerSectionTitle2: data.bannerSectionTitle2 || '',
@@ -250,7 +292,7 @@ export default function PartnerWithUsForm () {
             vendorSectionTitle1: data.vendorSectionTitle1 || '',
             vendorSectionTitle2: data.vendorSectionTitle2 || '',
             vendorSectionDescription: data.vendorSectionDescription || '',
-            vendorSectionImages: data.vendorSectionImages || [],
+            vendorSectionImages: vendorList.length ? vendorList : (data.vendorSectionImages || []),
             BecomeVendorTitle1: data.BecomeVendorTitle1 || '',
             BecomeVendorTitle2: data.BecomeVendorTitle2 || '',
             BecomeVendorDescription: data.BecomeVendorDescription || '',
@@ -290,16 +332,12 @@ export default function PartnerWithUsForm () {
             previews.BecomeVendorImage = IMAGE_BASE_URL + data.BecomeVendorImage
 
           // Set vendor image previews
-          if (
-            data.vendorSectionImages &&
-            Array.isArray(data.vendorSectionImages)
-          ) {
-            data.vendorSectionImages.forEach((vendor, index) => {
-              if (vendor.image) {
-                previews[`vendorImage${index}`] = IMAGE_BASE_URL + vendor.image
-              }
-            })
-          }
+          const vList = vendorList.length ? vendorList : (Array.isArray(data.vendorSectionImages) ? data.vendorSectionImages : [])
+          vList.forEach((vendor, index) => {
+            if (vendor.image) {
+              previews[`vendorImage${index}`] = IMAGE_BASE_URL + vendor.image
+            }
+          })
 
           setImagePreviews(previews)
         }
@@ -336,6 +374,49 @@ export default function PartnerWithUsForm () {
     }
     loadLists()
   }, [])
+
+  useEffect(() => {
+    const shouldInfer =
+      !!formData.promoSectionTitle &&
+      !String(formData.promoSectionEventId || '').trim() &&
+      !String(formData.promoSectionActivityId || '').trim()
+    if (!shouldInfer) return
+    const plain = htmlToPlain(formData.promoSectionTitle)
+    const normalize = s => String(s || '').trim().toLowerCase().replace(/\s+/g, ' ')
+    const quotedMatch = plain.match(/"([^"]+)"/)
+    const quotedNorm = quotedMatch ? normalize(quotedMatch[1]) : ''
+    const eventsNorm = (events || []).map(ev => ({ id: ev._id || ev.id || '', name: ev.eventName || ev.name || '' }))
+    const actsNorm = (activities || []).map(a => ({ id: a._id || a.id || '', name: a.activityName || a.name || '' }))
+    let sel = null
+    if (quotedNorm) {
+      const evHit = eventsNorm.find(e => normalize(e.name) === quotedNorm)
+      const acHit = actsNorm.find(a => normalize(a.name) === quotedNorm)
+      sel = evHit ? { type: 'event', id: evHit.id } : acHit ? { type: 'activity', id: acHit.id } : null
+    }
+    if (!sel) {
+      const plainNorm = normalize(plain)
+      const evContains = eventsNorm.find(e => plainNorm.includes(normalize(e.name)))
+      const acContains = actsNorm.find(a => plainNorm.includes(normalize(a.name)))
+      sel = evContains ? { type: 'event', id: evContains.id } : acContains ? { type: 'activity', id: acContains.id } : null
+    }
+    if (sel?.type === 'event' && sel.id) {
+      handleChange('promoSectionType', 'event')
+      handleChange('promoSectionEventId', sel.id)
+      const link = buildDettyFusionUrl('event', sel.id)
+      if (link) handleChange('promoSectionCTALink', link)
+    } else if (sel?.type === 'activity' && sel.id) {
+      handleChange('promoSectionType', 'activity')
+      handleChange('promoSectionActivityId', sel.id)
+      const link = buildDettyFusionUrl('activity', sel.id)
+      if (link) handleChange('promoSectionCTALink', link)
+    }
+  }, [
+    formData.promoSectionTitle,
+    formData.promoSectionEventId,
+    formData.promoSectionActivityId,
+    events,
+    activities
+  ])
 
   // Cleanup blob URLs on unmount
   useEffect(() => {
@@ -470,8 +551,8 @@ export default function PartnerWithUsForm () {
     ]
     urlFields.forEach(field => {
       const value = String(formData[field] || '').trim()
-      if (value && !/^https?:\/\//i.test(value) && !value.startsWith('/')) {
-        e[field] = 'Enter a valid URL or path'
+      if (value && !isValidUrlPathOrEmail(value)) {
+        e[field] = 'Enter a valid URL, path, or email'
       }
     })
 
@@ -2393,13 +2474,25 @@ export default function PartnerWithUsForm () {
                 <button
                   type='button'
                   onClick={() => {
-                    const updated = [
-                      ...(formData.vendorSectionImages || []),
-                      { image: '', text: '' }
-                    ]
+                    const list = formData.vendorSectionImages || []
+                    if (list.length >= MAX_VENDOR_SECTIONS) {
+                      setToast({
+                        open: true,
+                        title: 'Limit reached',
+                        description: 'You can add up to 10 vendors',
+                        variant: 'error'
+                      })
+                      return
+                    }
+                    const updated = [...list, { image: '', text: '' }]
                     handleChange('vendorSectionImages', updated)
                   }}
-                  className='w-full py-3 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-gray-400 hover:text-gray-800 font-medium transition'
+                  disabled={(formData.vendorSectionImages || []).length >= MAX_VENDOR_SECTIONS}
+                  className={`w-full py-3 border-2 border-dashed rounded-lg font-medium transition ${
+                    (formData.vendorSectionImages || []).length >= MAX_VENDOR_SECTIONS
+                      ? 'border-gray-200 text-gray-400 cursor-not-allowed'
+                      : 'border-gray-300 text-gray-600 hover:border-gray-400 hover:text-gray-800'
+                  }`}
                 >
                   + Add More Vendor
                 </button>

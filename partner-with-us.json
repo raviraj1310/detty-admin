@@ -1,0 +1,109 @@
+{
+  "info": {
+    "name": "Become Partner API Collection",
+    "_postman_id": "a6c19e8a-45e1-4a9e-9d22-bc88c7891aa1",
+    "description": "Postman collection for Become Partner create/update API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Create or Update Become Partner",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            { "key": "slug", "value": "become-partner", "type": "text" },
+
+            { "key": "bannerSectionTitle1", "value": "Title 1", "type": "text" },
+            { "key": "bannerSectionTitle2", "value": "Title 2", "type": "text" },
+            { "key": "bannerSectionDetail", "value": "Banner detail text...", "type": "text" },
+            { "key": "bannerCTAText", "value": "Join Now", "type": "text" },
+            { "key": "bannerCTALink", "value": "https://example.com", "type": "text" },
+
+            { "key": "promoSectionTitle", "value": "Promo Title", "type": "text" },
+            { "key": "promoSectionCTAText", "value": "Click", "type": "text" },
+            { "key": "promoSectionCTALink", "value": "https://promo.com", "type": "text" },
+
+            { "key": "stepTitle1", "value": "Step 1", "type": "text" },
+            { "key": "stepDescription1", "value": "Description 1", "type": "text" },
+            { "key": "stepTitle2", "value": "Step 2", "type": "text" },
+            { "key": "stepDescription2", "value": "Description 2", "type": "text" },
+            { "key": "stepTitle3", "value": "Step 3", "type": "text" },
+            { "key": "stepDescription3", "value": "Description 3", "type": "text" },
+            { "key": "stepTitle4", "value": "Step 4", "type": "text" },
+            { "key": "stepDescription4", "value": "Description 4", "type": "text" },
+
+            { "key": "whyPartnerSectionTitle1", "value": "Why Title 1", "type": "text" },
+            { "key": "whyPartnerSectionTitle2", "value": "Why Title 2", "type": "text" },
+            { "key": "whyPartnerSectionDescription", "value": "Why description...", "type": "text" },
+
+            { "key": "whyPartnerSectionCartTitle1", "value": "Cart 1", "type": "text" },
+            { "key": "whyPartnerSectionCardDescription1", "value": "Card Desc 1", "type": "text" },
+            { "key": "whyPartnerSectionCartTitle2", "value": "Cart 2", "type": "text" },
+            { "key": "whyPartnerSectionCardDescription2", "value": "Card Desc 2", "type": "text" },
+            { "key": "whyPartnerSectionCartTitle3", "value": "Cart 3", "type": "text" },
+            { "key": "whyPartnerSectionCardDescription3", "value": "Card Desc 3", "type": "text" },
+
+            { "key": "vendorSectionTitle1", "value": "Vendor Title 1", "type": "text" },
+            { "key": "vendorSectionTitle2", "value": "Vendor Title 2", "type": "text" },
+            { "key": "vendorSectionDescription", "value": "Vendor description...", "type": "text" },
+
+            { "key": "vendorSectionText1", "value": "Vendor text 1", "type": "text" },
+            { "key": "vendorSectionText2", "value": "Vendor text 2", "type": "text" },
+            { "key": "vendorSectionText3", "value": "Vendor text 3", "type": "text" },
+            { "key": "vendorSectionText4", "value": "Vendor text 4", "type": "text" },
+            { "key": "vendorSectionText5", "value": "Vendor text 5", "type": "text" },
+            { "key": "vendorSectionText6", "value": "Vendor text 6", "type": "text" },
+            { "key": "vendorSectionText7", "value": "Vendor text 7", "type": "text" },
+            { "key": "vendorSectionText8", "value": "Vendor text 8", "type": "text" },
+            { "key": "vendorSectionText9", "value": "Vendor text 9", "type": "text" },
+            { "key": "vendorSectionText10", "value": "Vendor text 10", "type": "text" },
+
+            { "key": "BecomeVendorTitle1", "value": "Become Title 1", "type": "text" },
+            { "key": "BecomeVendorTitle2", "value": "Become Title 2", "type": "text" },
+            { "key": "BecomeVendorDescription", "value": "Become vendor description...", "type": "text" },
+            { "key": "BecomeVendorCTAText", "value": "Join Now", "type": "text" },
+            { "key": "BecomeVendorCTALink", "value": "https://join.com", "type": "text" },
+
+            { "key": "bannerSectionImage1", "type": "file", "src": "" },
+            { "key": "bannerSectionImage2", "type": "file", "src": "" },
+            { "key": "bannerSectionImage3", "type": "file", "src": "" },
+            { "key": "bannerSectionImage4", "type": "file", "src": "" },
+
+            { "key": "promoSectionImage", "type": "file", "src": "" },
+
+            { "key": "stepImage1", "type": "file", "src": "" },
+            { "key": "stepImage2", "type": "file", "src": "" },
+            { "key": "stepImage3", "type": "file", "src": "" },
+            { "key": "stepImage4", "type": "file", "src": "" },
+
+            { "key": "whyPartnerSectionImage", "type": "file", "src": "" },
+
+            { "key": "vendorSectionImage1", "type": "file", "src": "" },
+            { "key": "vendorSectionImage2", "type": "file", "src": "" },
+            { "key": "vendorSectionImage3", "type": "file", "src": "" },
+            { "key": "vendorSectionImage4", "type": "file", "src": "" },
+            { "key": "vendorSectionImage5", "type": "file", "src": "" },
+            { "key": "vendorSectionImage6", "type": "file", "src": "" },
+            { "key": "vendorSectionImage7", "type": "file", "src": "" },
+            { "key": "vendorSectionImage8", "type": "file", "src": "" },
+            { "key": "vendorSectionImage9", "type": "file", "src": "" },
+            { "key": "vendorSectionImage10", "type": "file", "src": "" },
+
+            { "key": "BecomeVendorImage", "type": "file", "src": "" }
+          ]
+        },
+        "url": {
+          "raw": "http://localhost:5000/api/v1/become-partner",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5000",
+          "path": ["api", "v1", "become-partner"]
+        }
+      },
+      "response": []
+    }
+  ]
+}
