@@ -8,6 +8,8 @@ import {
 } from '@/services/cms/partner.service'
 import Toast from '@/components/ui/Toast'
 
+const IMAGE_BASE_URL = process.env.NEXT_PUBLIC_SIM_IMAGE_BASE_ORIGIN
+
 export default function PartnerWithUsForm () {
   const fileRefs = useRef({})
   const [loading, setLoading] = useState(true)
@@ -73,6 +75,7 @@ export default function PartnerWithUsForm () {
   const [errors, setErrors] = useState({})
   const [saving, setSaving] = useState(false)
   const [imageFiles, setImageFiles] = useState({}) // Store actual file objects
+  const [imagePreviews, setImagePreviews] = useState({}) // Store image preview URLs
   const [toast, setToast] = useState({
     open: false,
     title: '',
@@ -140,6 +143,50 @@ export default function PartnerWithUsForm () {
             BecomeVendorCTALink: data.BecomeVendorCTALink || '',
             BecomeVendorImage: data.BecomeVendorImage || ''
           })
+
+          // Set image previews for existing images
+          const previews = {}
+          if (data.bannerSectionImage1)
+            previews.bannerSectionImage1 =
+              IMAGE_BASE_URL + data.bannerSectionImage1
+          if (data.bannerSectionImage2)
+            previews.bannerSectionImage2 =
+              IMAGE_BASE_URL + data.bannerSectionImage2
+          if (data.bannerSectionImage3)
+            previews.bannerSectionImage3 =
+              IMAGE_BASE_URL + data.bannerSectionImage3
+          if (data.bannerSectionImage4)
+            previews.bannerSectionImage4 =
+              IMAGE_BASE_URL + data.bannerSectionImage4
+          if (data.promoSectionImage)
+            previews.promoSectionImage = IMAGE_BASE_URL + data.promoSectionImage
+          if (data.stepImage1)
+            previews.stepImage1 = IMAGE_BASE_URL + data.stepImage1
+          if (data.stepImage2)
+            previews.stepImage2 = IMAGE_BASE_URL + data.stepImage2
+          if (data.stepImage3)
+            previews.stepImage3 = IMAGE_BASE_URL + data.stepImage3
+          if (data.stepImage4)
+            previews.stepImage4 = IMAGE_BASE_URL + data.stepImage4
+          if (data.whyPartnerSectionImage)
+            previews.whyPartnerSectionImage =
+              IMAGE_BASE_URL + data.whyPartnerSectionImage
+          if (data.BecomeVendorImage)
+            previews.BecomeVendorImage = IMAGE_BASE_URL + data.BecomeVendorImage
+
+          // Set vendor image previews
+          if (
+            data.vendorSectionImages &&
+            Array.isArray(data.vendorSectionImages)
+          ) {
+            data.vendorSectionImages.forEach((vendor, index) => {
+              if (vendor.image) {
+                previews[`vendorImage${index}`] = IMAGE_BASE_URL + vendor.image
+              }
+            })
+          }
+
+          setImagePreviews(previews)
         }
       } catch (error) {
         console.error('Error fetching partner with us data:', error)
@@ -150,6 +197,17 @@ export default function PartnerWithUsForm () {
 
     fetchData()
   }, [])
+
+  // Cleanup blob URLs on unmount
+  useEffect(() => {
+    return () => {
+      Object.values(imagePreviews).forEach(url => {
+        if (url && url.startsWith('blob:')) {
+          URL.revokeObjectURL(url)
+        }
+      })
+    }
+  }, [imagePreviews])
 
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }))
@@ -191,6 +249,17 @@ export default function PartnerWithUsForm () {
       if (!error) {
         handleChange(field, file.name)
         setImageFiles(prev => ({ ...prev, [field]: file }))
+
+        // Create preview URL for the selected file
+        const previewUrl = URL.createObjectURL(file)
+        setImagePreviews(prev => {
+          // Revoke old preview URL if it exists and is a blob URL
+          if (prev[field] && prev[field].startsWith('blob:')) {
+            URL.revokeObjectURL(prev[field])
+          }
+          return { ...prev, [field]: previewUrl }
+        })
+
         console.log('Valid image selected:', file.name)
       } else {
         event.target.value = ''
@@ -489,11 +558,24 @@ export default function PartnerWithUsForm () {
       Array.isArray(formData.vendorSectionImages) &&
       formData.vendorSectionImages.length > 0
     ) {
+      // Append vendor image files
+      formData.vendorSectionImages.forEach((vendor, index) => {
+        if (imageFiles[`vendorImage${index}`]) {
+          formDataPayload.append(
+            `vendorImage${index}`,
+            imageFiles[`vendorImage${index}`]
+          )
+        }
+      })
+
+      // Append vendor data as JSON
       formDataPayload.append(
         'vendorSectionImages',
         JSON.stringify(
-          formData.vendorSectionImages.map(img => ({
-            image: String(img.image || '').trim(),
+          formData.vendorSectionImages.map((img, index) => ({
+            image: imageFiles[`vendorImage${index}`]
+              ? ''
+              : String(img.image || '').trim(),
             text: String(img.text || '').trim()
           }))
         )
@@ -632,8 +714,17 @@ export default function PartnerWithUsForm () {
                     onChange={e =>
                       handleChange('bannerSectionTitle', e.target.value)
                     }
-                    className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none text-gray-900'
+                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none text-gray-900 ${
+                      errors.bannerSectionTitle
+                        ? 'border-red-500'
+                        : 'border-gray-300'
+                    }`}
                   />
+                  {errors.bannerSectionTitle && (
+                    <p className='text-red-500 text-sm mt-1'>
+                      {errors.bannerSectionTitle}
+                    </p>
+                  )}
                 </div>
                 <div>
                   <label className='block text-sm font-medium text-gray-700 mb-2'>
@@ -645,8 +736,17 @@ export default function PartnerWithUsForm () {
                     onChange={e =>
                       handleChange('bannerSectionTitle2', e.target.value)
                     }
-                    className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none text-gray-900'
+                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none text-gray-900 ${
+                      errors.bannerSectionTitle2
+                        ? 'border-red-500'
+                        : 'border-gray-300'
+                    }`}
                   />
+                  {errors.bannerSectionTitle2 && (
+                    <p className='text-red-500 text-sm mt-1'>
+                      {errors.bannerSectionTitle2}
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -655,12 +755,25 @@ export default function PartnerWithUsForm () {
                 <label className='block text-sm font-medium text-gray-700 mb-2'>
                   Description<span className='text-red-500'>*</span>
                 </label>
-                <TiptapEditor
-                  content={formData.bannerSectionDetail}
-                  onChange={html => handleChange('bannerSectionDetail', html)}
-                  placeholder='Enter banner description...'
-                  minHeight='80px'
-                />
+                <div
+                  className={`${
+                    errors.bannerSectionDetail
+                      ? 'border-2 border-red-500 rounded-lg'
+                      : ''
+                  }`}
+                >
+                  <TiptapEditor
+                    content={formData.bannerSectionDetail}
+                    onChange={html => handleChange('bannerSectionDetail', html)}
+                    placeholder='Enter banner description...'
+                    minHeight='80px'
+                  />
+                </div>
+                {errors.bannerSectionDetail && (
+                  <p className='text-red-500 text-sm mt-1'>
+                    {errors.bannerSectionDetail}
+                  </p>
+                )}
               </div>
 
               {/* CTA Text, CTA Link, Upload Banner Image 1 in one row */}
@@ -754,6 +867,15 @@ export default function PartnerWithUsForm () {
                   <p className='text-gray-500 text-xs mt-1'>
                     Max size: 2MB. Allowed: JPG, JPEG, PNG, WEBP, AVIF
                   </p>
+                  {imagePreviews.bannerSectionImage1 && (
+                    <div className='mt-3'>
+                      <img
+                        src={imagePreviews.bannerSectionImage1}
+                        alt='Banner Image 1 Preview'
+                        className='w-full h-40 object-cover rounded-lg border border-gray-300'
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -804,6 +926,15 @@ export default function PartnerWithUsForm () {
                   <p className='text-gray-500 text-xs mt-1'>
                     Max size: 2MB. Allowed: JPG, JPEG, PNG, WEBP, AVIF
                   </p>
+                  {imagePreviews.bannerSectionImage2 && (
+                    <div className='mt-3'>
+                      <img
+                        src={imagePreviews.bannerSectionImage2}
+                        alt='Banner Image 2 Preview'
+                        className='w-full h-40 object-cover rounded-lg border border-gray-300'
+                      />
+                    </div>
+                  )}
                 </div>
                 <div>
                   <label className='block text-sm font-medium text-gray-700 mb-2'>
@@ -850,6 +981,15 @@ export default function PartnerWithUsForm () {
                   <p className='text-gray-500 text-xs mt-1'>
                     Max size: 2MB. Allowed: JPG, JPEG, PNG, WEBP, AVIF
                   </p>
+                  {imagePreviews.bannerSectionImage3 && (
+                    <div className='mt-3'>
+                      <img
+                        src={imagePreviews.bannerSectionImage3}
+                        alt='Banner Image 3 Preview'
+                        className='w-full h-40 object-cover rounded-lg border border-gray-300'
+                      />
+                    </div>
+                  )}
                 </div>
                 <div>
                   <label className='block text-sm font-medium text-gray-700 mb-2'>
@@ -896,6 +1036,15 @@ export default function PartnerWithUsForm () {
                   <p className='text-gray-500 text-xs mt-1'>
                     Max size: 2MB. Allowed: JPG, JPEG, PNG, WEBP, AVIF
                   </p>
+                  {imagePreviews.bannerSectionImage4 && (
+                    <div className='mt-3'>
+                      <img
+                        src={imagePreviews.bannerSectionImage4}
+                        alt='Banner Image 4 Preview'
+                        className='w-full h-40 object-cover rounded-lg border border-gray-300'
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -911,12 +1060,25 @@ export default function PartnerWithUsForm () {
                 <label className='block text-sm font-medium text-gray-700 mb-2'>
                   Title<span className='text-red-500'>*</span>
                 </label>
-                <TiptapEditor
-                  content={formData.promoSectionTitle}
-                  onChange={html => handleChange('promoSectionTitle', html)}
-                  placeholder='Enter promo title...'
-                  minHeight='60px'
-                />
+                <div
+                  className={`${
+                    errors.promoSectionTitle
+                      ? 'border-2 border-red-500 rounded-lg'
+                      : ''
+                  }`}
+                >
+                  <TiptapEditor
+                    content={formData.promoSectionTitle}
+                    onChange={html => handleChange('promoSectionTitle', html)}
+                    placeholder='Enter promo title...'
+                    minHeight='60px'
+                  />
+                </div>
+                {errors.promoSectionTitle && (
+                  <p className='text-red-500 text-sm mt-1'>
+                    {errors.promoSectionTitle}
+                  </p>
+                )}
               </div>
 
               {/* Upload Image, CTA Text, CTA Link in one row */}
@@ -964,6 +1126,15 @@ export default function PartnerWithUsForm () {
                   <p className='text-gray-500 text-xs mt-1'>
                     Max size: 2MB. Allowed: JPG, JPEG, PNG, WEBP, AVIF
                   </p>
+                  {imagePreviews.promoSectionImage && (
+                    <div className='mt-3'>
+                      <img
+                        src={imagePreviews.promoSectionImage}
+                        alt='Promo Section Image Preview'
+                        className='w-full h-40 object-cover rounded-lg border border-gray-300'
+                      />
+                    </div>
+                  )}
                 </div>
                 <div>
                   <label className='block text-sm font-medium text-gray-700 mb-2'>
@@ -975,8 +1146,17 @@ export default function PartnerWithUsForm () {
                     onChange={e =>
                       handleChange('promoSectionCTAText', e.target.value)
                     }
-                    className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none text-gray-900'
+                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none text-gray-900 ${
+                      errors.promoSectionCTAText
+                        ? 'border-red-500'
+                        : 'border-gray-300'
+                    }`}
                   />
+                  {errors.promoSectionCTAText && (
+                    <p className='text-red-500 text-sm mt-1'>
+                      {errors.promoSectionCTAText}
+                    </p>
+                  )}
                 </div>
                 <div>
                   <label className='block text-sm font-medium text-gray-700 mb-2'>
@@ -988,8 +1168,17 @@ export default function PartnerWithUsForm () {
                     onChange={e =>
                       handleChange('promoSectionCTALink', e.target.value)
                     }
-                    className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none text-gray-900'
+                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none text-gray-900 ${
+                      errors.promoSectionCTALink
+                        ? 'border-red-500'
+                        : 'border-gray-300'
+                    }`}
                   />
+                  {errors.promoSectionCTALink && (
+                    <p className='text-red-500 text-sm mt-1'>
+                      {errors.promoSectionCTALink}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
@@ -1010,8 +1199,15 @@ export default function PartnerWithUsForm () {
                     type='text'
                     value={formData.stepTitle1}
                     onChange={e => handleChange('stepTitle1', e.target.value)}
-                    className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none text-gray-900'
+                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none text-gray-900 ${
+                      errors.stepTitle1 ? 'border-red-500' : 'border-gray-300'
+                    }`}
                   />
+                  {errors.stepTitle1 && (
+                    <p className='text-red-500 text-sm mt-1'>
+                      {errors.stepTitle1}
+                    </p>
+                  )}
                 </div>
                 <div>
                   <label className='block text-sm font-medium text-gray-700 mb-2'>
@@ -1023,8 +1219,17 @@ export default function PartnerWithUsForm () {
                     onChange={e =>
                       handleChange('stepDescription1', e.target.value)
                     }
-                    className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none text-gray-900'
+                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none text-gray-900 ${
+                      errors.stepDescription1
+                        ? 'border-red-500'
+                        : 'border-gray-300'
+                    }`}
                   />
+                  {errors.stepDescription1 && (
+                    <p className='text-red-500 text-sm mt-1'>
+                      {errors.stepDescription1}
+                    </p>
+                  )}
                 </div>
                 <div>
                   <label className='block text-sm font-medium text-gray-700 mb-2'>
@@ -1064,6 +1269,15 @@ export default function PartnerWithUsForm () {
                   <p className='text-gray-500 text-xs mt-1'>
                     Max size: 2MB. Allowed: JPG, JPEG, PNG, WEBP, AVIF
                   </p>
+                  {imagePreviews.stepImage1 && (
+                    <div className='mt-3'>
+                      <img
+                        src={imagePreviews.stepImage1}
+                        alt='Step 1 Image Preview'
+                        className='w-full h-40 object-cover rounded-lg border border-gray-300'
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -1077,8 +1291,15 @@ export default function PartnerWithUsForm () {
                     type='text'
                     value={formData.stepTitle2}
                     onChange={e => handleChange('stepTitle2', e.target.value)}
-                    className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none text-gray-900'
+                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none text-gray-900 ${
+                      errors.stepTitle2 ? 'border-red-500' : 'border-gray-300'
+                    }`}
                   />
+                  {errors.stepTitle2 && (
+                    <p className='text-red-500 text-sm mt-1'>
+                      {errors.stepTitle2}
+                    </p>
+                  )}
                 </div>
                 <div>
                   <label className='block text-sm font-medium text-gray-700 mb-2'>
@@ -1090,8 +1311,17 @@ export default function PartnerWithUsForm () {
                     onChange={e =>
                       handleChange('stepDescription2', e.target.value)
                     }
-                    className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none text-gray-900'
+                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none text-gray-900 ${
+                      errors.stepDescription2
+                        ? 'border-red-500'
+                        : 'border-gray-300'
+                    }`}
                   />
+                  {errors.stepDescription2 && (
+                    <p className='text-red-500 text-sm mt-1'>
+                      {errors.stepDescription2}
+                    </p>
+                  )}
                 </div>
                 <div>
                   <label className='block text-sm font-medium text-gray-700 mb-2'>
@@ -1131,6 +1361,15 @@ export default function PartnerWithUsForm () {
                   <p className='text-gray-500 text-xs mt-1'>
                     Max size: 2MB. Allowed: JPG, JPEG, PNG, WEBP, AVIF
                   </p>
+                  {imagePreviews.stepImage2 && (
+                    <div className='mt-3'>
+                      <img
+                        src={imagePreviews.stepImage2}
+                        alt='Step 2 Image Preview'
+                        className='w-full h-40 object-cover rounded-lg border border-gray-300'
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -1144,8 +1383,15 @@ export default function PartnerWithUsForm () {
                     type='text'
                     value={formData.stepTitle3}
                     onChange={e => handleChange('stepTitle3', e.target.value)}
-                    className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none text-gray-900'
+                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none text-gray-900 ${
+                      errors.stepTitle3 ? 'border-red-500' : 'border-gray-300'
+                    }`}
                   />
+                  {errors.stepTitle3 && (
+                    <p className='text-red-500 text-sm mt-1'>
+                      {errors.stepTitle3}
+                    </p>
+                  )}
                 </div>
                 <div>
                   <label className='block text-sm font-medium text-gray-700 mb-2'>
@@ -1157,8 +1403,17 @@ export default function PartnerWithUsForm () {
                     onChange={e =>
                       handleChange('stepDescription3', e.target.value)
                     }
-                    className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none text-gray-900'
+                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none text-gray-900 ${
+                      errors.stepDescription3
+                        ? 'border-red-500'
+                        : 'border-gray-300'
+                    }`}
                   />
+                  {errors.stepDescription3 && (
+                    <p className='text-red-500 text-sm mt-1'>
+                      {errors.stepDescription3}
+                    </p>
+                  )}
                 </div>
                 <div>
                   <label className='block text-sm font-medium text-gray-700 mb-2'>
@@ -1198,6 +1453,15 @@ export default function PartnerWithUsForm () {
                   <p className='text-gray-500 text-xs mt-1'>
                     Max size: 2MB. Allowed: JPG, JPEG, PNG, WEBP, AVIF
                   </p>
+                  {imagePreviews.stepImage3 && (
+                    <div className='mt-3'>
+                      <img
+                        src={imagePreviews.stepImage3}
+                        alt='Step 3 Image Preview'
+                        className='w-full h-40 object-cover rounded-lg border border-gray-300'
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -1211,8 +1475,15 @@ export default function PartnerWithUsForm () {
                     type='text'
                     value={formData.stepTitle4}
                     onChange={e => handleChange('stepTitle4', e.target.value)}
-                    className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none text-gray-900'
+                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none text-gray-900 ${
+                      errors.stepTitle4 ? 'border-red-500' : 'border-gray-300'
+                    }`}
                   />
+                  {errors.stepTitle4 && (
+                    <p className='text-red-500 text-sm mt-1'>
+                      {errors.stepTitle4}
+                    </p>
+                  )}
                 </div>
                 <div>
                   <label className='block text-sm font-medium text-gray-700 mb-2'>
@@ -1224,8 +1495,17 @@ export default function PartnerWithUsForm () {
                     onChange={e =>
                       handleChange('stepDescription4', e.target.value)
                     }
-                    className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none text-gray-900'
+                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none text-gray-900 ${
+                      errors.stepDescription4
+                        ? 'border-red-500'
+                        : 'border-gray-300'
+                    }`}
                   />
+                  {errors.stepDescription4 && (
+                    <p className='text-red-500 text-sm mt-1'>
+                      {errors.stepDescription4}
+                    </p>
+                  )}
                 </div>
                 <div>
                   <label className='block text-sm font-medium text-gray-700 mb-2'>
@@ -1265,6 +1545,15 @@ export default function PartnerWithUsForm () {
                   <p className='text-gray-500 text-xs mt-1'>
                     Max size: 2MB. Allowed: JPG, JPEG, PNG, WEBP, AVIF
                   </p>
+                  {imagePreviews.stepImage4 && (
+                    <div className='mt-3'>
+                      <img
+                        src={imagePreviews.stepImage4}
+                        alt='Step 4 Image Preview'
+                        className='w-full h-40 object-cover rounded-lg border border-gray-300'
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -1287,8 +1576,17 @@ export default function PartnerWithUsForm () {
                     onChange={e =>
                       handleChange('whyPartnerSectionTitle1', e.target.value)
                     }
-                    className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none text-gray-900'
+                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none text-gray-900 ${
+                      errors.whyPartnerSectionTitle1
+                        ? 'border-red-500'
+                        : 'border-gray-300'
+                    }`}
                   />
+                  {errors.whyPartnerSectionTitle1 && (
+                    <p className='text-red-500 text-sm mt-1'>
+                      {errors.whyPartnerSectionTitle1}
+                    </p>
+                  )}
                 </div>
                 <div>
                   <label className='block text-sm font-medium text-gray-700 mb-2'>
@@ -1300,8 +1598,17 @@ export default function PartnerWithUsForm () {
                     onChange={e =>
                       handleChange('whyPartnerSectionTitle2', e.target.value)
                     }
-                    className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none text-gray-900'
+                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none text-gray-900 ${
+                      errors.whyPartnerSectionTitle2
+                        ? 'border-red-500'
+                        : 'border-gray-300'
+                    }`}
                   />
+                  {errors.whyPartnerSectionTitle2 && (
+                    <p className='text-red-500 text-sm mt-1'>
+                      {errors.whyPartnerSectionTitle2}
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -1310,14 +1617,27 @@ export default function PartnerWithUsForm () {
                 <label className='block text-sm font-medium text-gray-700 mb-2'>
                   Description<span className='text-red-500'>*</span>
                 </label>
-                <TiptapEditor
-                  content={formData.whyPartnerSectionDescription}
-                  onChange={html =>
-                    handleChange('whyPartnerSectionDescription', html)
-                  }
-                  placeholder='Enter description...'
-                  minHeight='80px'
-                />
+                <div
+                  className={`${
+                    errors.whyPartnerSectionDescription
+                      ? 'border-2 border-red-500 rounded-lg'
+                      : ''
+                  }`}
+                >
+                  <TiptapEditor
+                    content={formData.whyPartnerSectionDescription}
+                    onChange={html =>
+                      handleChange('whyPartnerSectionDescription', html)
+                    }
+                    placeholder='Enter description...'
+                    minHeight='80px'
+                  />
+                </div>
+                {errors.whyPartnerSectionDescription && (
+                  <p className='text-red-500 text-sm mt-1'>
+                    {errors.whyPartnerSectionDescription}
+                  </p>
+                )}
               </div>
 
               {/* Upload Image */}
@@ -1366,6 +1686,15 @@ export default function PartnerWithUsForm () {
                 <p className='text-gray-500 text-xs mt-1'>
                   Max size: 2MB. Allowed: JPG, JPEG, PNG, WEBP, AVIF
                 </p>
+                {imagePreviews.whyPartnerSectionImage && (
+                  <div className='mt-3'>
+                    <img
+                      src={imagePreviews.whyPartnerSectionImage}
+                      alt='Why Partner Section Image Preview'
+                      className='w-full h-40 object-cover rounded-lg border border-gray-300'
+                    />
+                  </div>
+                )}
               </div>
 
               {/* Card 1 */}
@@ -1383,8 +1712,17 @@ export default function PartnerWithUsForm () {
                         e.target.value
                       )
                     }
-                    className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none text-gray-900'
+                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none text-gray-900 ${
+                      errors.whyPartnerSectionCartTitle1
+                        ? 'border-red-500'
+                        : 'border-gray-300'
+                    }`}
                   />
+                  {errors.whyPartnerSectionCartTitle1 && (
+                    <p className='text-red-500 text-sm mt-1'>
+                      {errors.whyPartnerSectionCartTitle1}
+                    </p>
+                  )}
                 </div>
                 <div>
                   <label className='block text-sm font-medium text-gray-700 mb-2'>
@@ -1399,8 +1737,17 @@ export default function PartnerWithUsForm () {
                         e.target.value
                       )
                     }
-                    className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none text-gray-900'
+                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none text-gray-900 ${
+                      errors.whyPartnerSectionCardDescription1
+                        ? 'border-red-500'
+                        : 'border-gray-300'
+                    }`}
                   />
+                  {errors.whyPartnerSectionCardDescription1 && (
+                    <p className='text-red-500 text-sm mt-1'>
+                      {errors.whyPartnerSectionCardDescription1}
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -1419,8 +1766,17 @@ export default function PartnerWithUsForm () {
                         e.target.value
                       )
                     }
-                    className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none text-gray-900'
+                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none text-gray-900 ${
+                      errors.whyPartnerSectionCartTitle2
+                        ? 'border-red-500'
+                        : 'border-gray-300'
+                    }`}
                   />
+                  {errors.whyPartnerSectionCartTitle2 && (
+                    <p className='text-red-500 text-sm mt-1'>
+                      {errors.whyPartnerSectionCartTitle2}
+                    </p>
+                  )}
                 </div>
                 <div>
                   <label className='block text-sm font-medium text-gray-700 mb-2'>
@@ -1435,8 +1791,17 @@ export default function PartnerWithUsForm () {
                         e.target.value
                       )
                     }
-                    className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none text-gray-900'
+                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none text-gray-900 ${
+                      errors.whyPartnerSectionCardDescription2
+                        ? 'border-red-500'
+                        : 'border-gray-300'
+                    }`}
                   />
+                  {errors.whyPartnerSectionCardDescription2 && (
+                    <p className='text-red-500 text-sm mt-1'>
+                      {errors.whyPartnerSectionCardDescription2}
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -1455,8 +1820,17 @@ export default function PartnerWithUsForm () {
                         e.target.value
                       )
                     }
-                    className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none text-gray-900'
+                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none text-gray-900 ${
+                      errors.whyPartnerSectionCartTitle3
+                        ? 'border-red-500'
+                        : 'border-gray-300'
+                    }`}
                   />
+                  {errors.whyPartnerSectionCartTitle3 && (
+                    <p className='text-red-500 text-sm mt-1'>
+                      {errors.whyPartnerSectionCartTitle3}
+                    </p>
+                  )}
                 </div>
                 <div>
                   <label className='block text-sm font-medium text-gray-700 mb-2'>
@@ -1471,8 +1845,17 @@ export default function PartnerWithUsForm () {
                         e.target.value
                       )
                     }
-                    className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none text-gray-900'
+                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none text-gray-900 ${
+                      errors.whyPartnerSectionCardDescription3
+                        ? 'border-red-500'
+                        : 'border-gray-300'
+                    }`}
                   />
+                  {errors.whyPartnerSectionCardDescription3 && (
+                    <p className='text-red-500 text-sm mt-1'>
+                      {errors.whyPartnerSectionCardDescription3}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
@@ -1495,8 +1878,17 @@ export default function PartnerWithUsForm () {
                     onChange={e =>
                       handleChange('vendorSectionTitle1', e.target.value)
                     }
-                    className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none text-gray-900'
+                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none text-gray-900 ${
+                      errors.vendorSectionTitle1
+                        ? 'border-red-500'
+                        : 'border-gray-300'
+                    }`}
                   />
+                  {errors.vendorSectionTitle1 && (
+                    <p className='text-red-500 text-sm mt-1'>
+                      {errors.vendorSectionTitle1}
+                    </p>
+                  )}
                 </div>
                 <div>
                   <label className='block text-sm font-medium text-gray-700 mb-2'>
@@ -1508,8 +1900,17 @@ export default function PartnerWithUsForm () {
                     onChange={e =>
                       handleChange('vendorSectionTitle2', e.target.value)
                     }
-                    className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none text-gray-900'
+                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none text-gray-900 ${
+                      errors.vendorSectionTitle2
+                        ? 'border-red-500'
+                        : 'border-gray-300'
+                    }`}
                   />
+                  {errors.vendorSectionTitle2 && (
+                    <p className='text-red-500 text-sm mt-1'>
+                      {errors.vendorSectionTitle2}
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -1518,74 +1919,178 @@ export default function PartnerWithUsForm () {
                 <label className='block text-sm font-medium text-gray-700 mb-2'>
                   Description<span className='text-red-500'>*</span>
                 </label>
-                <TiptapEditor
-                  content={formData.vendorSectionDescription}
-                  onChange={html =>
-                    handleChange('vendorSectionDescription', html)
-                  }
-                  placeholder='Enter description...'
-                  minHeight='80px'
-                />
+                <div
+                  className={`${
+                    errors.vendorSectionDescription
+                      ? 'border-2 border-red-500 rounded-lg'
+                      : ''
+                  }`}
+                >
+                  <TiptapEditor
+                    content={formData.vendorSectionDescription}
+                    onChange={html =>
+                      handleChange('vendorSectionDescription', html)
+                    }
+                    placeholder='Enter description...'
+                    minHeight='80px'
+                  />
+                </div>
+                {errors.vendorSectionDescription && (
+                  <p className='text-red-500 text-sm mt-1'>
+                    {errors.vendorSectionDescription}
+                  </p>
+                )}
               </div>
 
-              {/* Vendor Images - Display existing images */}
-              {formData.vendorSectionImages &&
-                formData.vendorSectionImages.length > 0 && (
-                  <div className='mb-4'>
-                    <label className='block text-sm font-medium text-gray-700 mb-2'>
-                      Vendor Images
-                    </label>
-                    {formData.vendorSectionImages.map((vendor, index) => (
-                      <div
-                        key={vendor._id || index}
-                        className='mb-4 p-4 border border-gray-200 rounded-lg'
-                      >
-                        <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-                          <div>
-                            <label className='block text-sm font-medium text-gray-700 mb-2'>
-                              Image URL
-                            </label>
-                            <input
-                              type='text'
-                              value={vendor.image || ''}
-                              onChange={e => {
-                                const updated = [
-                                  ...formData.vendorSectionImages
-                                ]
-                                updated[index] = {
-                                  ...updated[index],
-                                  image: e.target.value
-                                }
-                                handleChange('vendorSectionImages', updated)
-                              }}
-                              className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none text-gray-900'
-                            />
+              {/* Vendor Images */}
+              <div className='mb-4'>
+                <label className='block text-sm font-medium text-gray-700 mb-4'>
+                  Vendor Categories
+                </label>
+                {formData.vendorSectionImages &&
+                  formData.vendorSectionImages.length > 0 &&
+                  formData.vendorSectionImages.map((vendor, index) => (
+                    <div
+                      key={vendor._id || index}
+                      className='mb-4 p-4 border border-gray-200 rounded-lg bg-gray-50'
+                    >
+                      <div className='flex justify-between items-center mb-3'>
+                        <h4 className='text-sm font-semibold text-gray-800'>
+                          Vendor {index + 1}
+                        </h4>
+                        <button
+                          type='button'
+                          onClick={() => {
+                            const updated = formData.vendorSectionImages.filter(
+                              (_, i) => i !== index
+                            )
+                            handleChange('vendorSectionImages', updated)
+                          }}
+                          className='text-red-600 hover:text-red-800 text-sm font-medium'
+                        >
+                          Remove
+                        </button>
+                      </div>
+                      <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+                        <div>
+                          <label className='block text-sm font-medium text-gray-700 mb-2'>
+                            Vendor Title<span className='text-red-500'>*</span>
+                          </label>
+                          <input
+                            type='text'
+                            value={vendor.text || ''}
+                            onChange={e => {
+                              const updated = [...formData.vendorSectionImages]
+                              updated[index] = {
+                                ...updated[index],
+                                text: e.target.value
+                              }
+                              handleChange('vendorSectionImages', updated)
+                            }}
+                            className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none text-gray-900'
+                            placeholder='e.g., Food Vendors'
+                          />
+                        </div>
+                        <div>
+                          <label className='block text-sm font-medium text-gray-700 mb-2'>
+                            Upload Image<span className='text-red-500'>*</span>
+                          </label>
+                          <div className='flex h-12 items-stretch overflow-hidden rounded-xl border border-[#E5E6EF]'>
+                            <div
+                              className='flex-1 bg-[#F8F9FC] px-4 text-sm text-slate-700 flex items-center justify-between cursor-pointer'
+                              onClick={() =>
+                                fileRefs.current[`vendorImage${index}`]?.click()
+                              }
+                            >
+                              <span
+                                className='truncate'
+                                title={vendor.image || ''}
+                              >
+                                {vendor.image || 'Image.jpg'}
+                              </span>
+                            </div>
+                            <button
+                              type='button'
+                              onClick={() =>
+                                fileRefs.current[`vendorImage${index}`]?.click()
+                              }
+                              className='px-6 text-sm font-medium text-[#2D3658] bg-white transition hover:bg-[#F6F7FD]'
+                            >
+                              Browse
+                            </button>
                           </div>
-                          <div>
-                            <label className='block text-sm font-medium text-gray-700 mb-2'>
-                              Text
-                            </label>
-                            <input
-                              type='text'
-                              value={vendor.text || ''}
-                              onChange={e => {
-                                const updated = [
-                                  ...formData.vendorSectionImages
-                                ]
-                                updated[index] = {
-                                  ...updated[index],
-                                  text: e.target.value
+                          <input
+                            ref={el => {
+                              fileRefs.current[`vendorImage${index}`] = el
+                            }}
+                            type='file'
+                            accept='.jpg,.jpeg,.png,.webp,.avif'
+                            className='hidden'
+                            onChange={e => {
+                              const file = e.target.files[0]
+                              if (file) {
+                                const error = validateImage(file)
+                                if (!error) {
+                                  const updated = [
+                                    ...formData.vendorSectionImages
+                                  ]
+                                  updated[index] = {
+                                    ...updated[index],
+                                    image: file.name
+                                  }
+                                  handleChange('vendorSectionImages', updated)
+                                  setImageFiles(prev => ({
+                                    ...prev,
+                                    [`vendorImage${index}`]: file
+                                  }))
+                                  const previewUrl = URL.createObjectURL(file)
+                                  setImagePreviews(prev => ({
+                                    ...prev,
+                                    [`vendorImage${index}`]: previewUrl
+                                  }))
+                                } else {
+                                  alert(error)
+                                  e.target.value = ''
                                 }
-                                handleChange('vendorSectionImages', updated)
-                              }}
-                              className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none text-gray-900'
-                            />
-                          </div>
+                              }
+                            }}
+                          />
+                          <p className='text-gray-500 text-xs mt-1'>
+                            Max size: 2MB. Allowed: JPG, JPEG, PNG, WEBP, AVIF
+                          </p>
+                          {(imagePreviews[`vendorImage${index}`] ||
+                            vendor.image) && (
+                            <div className='mt-3'>
+                              <img
+                                src={
+                                  imagePreviews[`vendorImage${index}`] ||
+                                  (vendor.image
+                                    ? IMAGE_BASE_URL + vendor.image
+                                    : '')
+                                }
+                                alt={`Vendor ${index + 1} Preview`}
+                                className='w-full h-40 object-cover rounded-lg border border-gray-300'
+                              />
+                            </div>
+                          )}
                         </div>
                       </div>
-                    ))}
-                  </div>
-                )}
+                    </div>
+                  ))}
+                <button
+                  type='button'
+                  onClick={() => {
+                    const updated = [
+                      ...(formData.vendorSectionImages || []),
+                      { image: '', text: '' }
+                    ]
+                    handleChange('vendorSectionImages', updated)
+                  }}
+                  className='w-full py-3 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-gray-400 hover:text-gray-800 font-medium transition'
+                >
+                  + Add More Vendor
+                </button>
+              </div>
             </div>
 
             {/* Become a Vendor Section */}
@@ -1606,8 +2111,17 @@ export default function PartnerWithUsForm () {
                     onChange={e =>
                       handleChange('BecomeVendorTitle1', e.target.value)
                     }
-                    className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none text-gray-900'
+                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none text-gray-900 ${
+                      errors.BecomeVendorTitle1
+                        ? 'border-red-500'
+                        : 'border-gray-300'
+                    }`}
                   />
+                  {errors.BecomeVendorTitle1 && (
+                    <p className='text-red-500 text-sm mt-1'>
+                      {errors.BecomeVendorTitle1}
+                    </p>
+                  )}
                 </div>
                 <div>
                   <label className='block text-sm font-medium text-gray-700 mb-2'>
@@ -1619,8 +2133,17 @@ export default function PartnerWithUsForm () {
                     onChange={e =>
                       handleChange('BecomeVendorTitle2', e.target.value)
                     }
-                    className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none text-gray-900'
+                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none text-gray-900 ${
+                      errors.BecomeVendorTitle2
+                        ? 'border-red-500'
+                        : 'border-gray-300'
+                    }`}
                   />
+                  {errors.BecomeVendorTitle2 && (
+                    <p className='text-red-500 text-sm mt-1'>
+                      {errors.BecomeVendorTitle2}
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -1629,14 +2152,27 @@ export default function PartnerWithUsForm () {
                 <label className='block text-sm font-medium text-gray-700 mb-2'>
                   Description<span className='text-red-500'>*</span>
                 </label>
-                <TiptapEditor
-                  content={formData.BecomeVendorDescription}
-                  onChange={html =>
-                    handleChange('BecomeVendorDescription', html)
-                  }
-                  placeholder='Enter description...'
-                  minHeight='80px'
-                />
+                <div
+                  className={`${
+                    errors.BecomeVendorDescription
+                      ? 'border-2 border-red-500 rounded-lg'
+                      : ''
+                  }`}
+                >
+                  <TiptapEditor
+                    content={formData.BecomeVendorDescription}
+                    onChange={html =>
+                      handleChange('BecomeVendorDescription', html)
+                    }
+                    placeholder='Enter description...'
+                    minHeight='80px'
+                  />
+                </div>
+                {errors.BecomeVendorDescription && (
+                  <p className='text-red-500 text-sm mt-1'>
+                    {errors.BecomeVendorDescription}
+                  </p>
+                )}
               </div>
 
               {/* Upload Image, CTA Text, CTA Link in one row */}
@@ -1684,6 +2220,15 @@ export default function PartnerWithUsForm () {
                   <p className='text-gray-500 text-xs mt-1'>
                     Max size: 2MB. Allowed: JPG, JPEG, PNG, WEBP, AVIF
                   </p>
+                  {imagePreviews.BecomeVendorImage && (
+                    <div className='mt-3'>
+                      <img
+                        src={imagePreviews.BecomeVendorImage}
+                        alt='Become Vendor Image Preview'
+                        className='w-full h-40 object-cover rounded-lg border border-gray-300'
+                      />
+                    </div>
+                  )}
                 </div>
                 <div>
                   <label className='block text-sm font-medium text-gray-700 mb-2'>
@@ -1695,8 +2240,17 @@ export default function PartnerWithUsForm () {
                     onChange={e =>
                       handleChange('BecomeVendorCTAText', e.target.value)
                     }
-                    className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none text-gray-900'
+                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none text-gray-900 ${
+                      errors.BecomeVendorCTAText
+                        ? 'border-red-500'
+                        : 'border-gray-300'
+                    }`}
                   />
+                  {errors.BecomeVendorCTAText && (
+                    <p className='text-red-500 text-sm mt-1'>
+                      {errors.BecomeVendorCTAText}
+                    </p>
+                  )}
                 </div>
                 <div>
                   <label className='block text-sm font-medium text-gray-700 mb-2'>
@@ -1708,8 +2262,17 @@ export default function PartnerWithUsForm () {
                     onChange={e =>
                       handleChange('BecomeVendorCTALink', e.target.value)
                     }
-                    className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none text-gray-900'
+                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none text-gray-900 ${
+                      errors.BecomeVendorCTALink
+                        ? 'border-red-500'
+                        : 'border-gray-300'
+                    }`}
                   />
+                  {errors.BecomeVendorCTALink && (
+                    <p className='text-red-500 text-sm mt-1'>
+                      {errors.BecomeVendorCTALink}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
