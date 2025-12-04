@@ -3,7 +3,7 @@ name: Build and deploy Next.js app to Azure Web App - dettyfusion-admin
 on:
   push:
     branches:
-      - master
+      - main
   workflow_dispatch:
 
 jobs:
@@ -79,3 +79,4 @@ jobs:
         slot-name: 'Production'
         publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_B07B68DFDD954589B6728609797B1064 }}
         package: app.zip
+
