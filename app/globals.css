@@ -1,0 +1,53 @@
+@import "tailwindcss";
+@import "../components/editor/tiptap-editor.css";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+  --font-sans: var(--font-inter), 'Inter', sans-serif;
+ 
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+    --text-primary: #f3f4f6; /* gray-100 */
+    --text-secondary: #9ca3af; /* gray-400 */
+    --icon-color: #9ca3af; /* gray-400 */
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-inter), 'Inter', sans-serif;
+}
+
+/* Ensure text is visible in both light and dark modes */
+.text-primary {
+  color: var(--text-primary);
+}
+
+.text-secondary {
+  color: var(--text-secondary);
+}
+
+/* Icon styles */
+.icon {
+  color: var(--icon-color);
+  fill: currentColor;
+}
+
+/* Override Lucide icon colors */
+.lucide {
+  color: var(--icon-color);
+  stroke: currentColor;
+}
