@@ -71,11 +71,10 @@ jobs:
           name: nextapp
           path: .
 
-    - name: Deploy to Azure Web App
-      uses: azure/webapps-deploy@v3
-      with:
-        app-name: 'dettyfusion-admin'
-        slot-name: 'Production'
-        publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_B07B68DFDD954589B6728609797B1064 }}
-        package: app.zip
-
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: 'dettyfusion-admin'
+          slot-name: 'Production'
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_B07B68DFDD954589B6728609797B1064 }}
+          package: app.zip
