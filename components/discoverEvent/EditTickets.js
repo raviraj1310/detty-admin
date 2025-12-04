@@ -98,8 +98,7 @@ export default function EditTickets () {
         ? formData.perTicketPrice.replace(/[^0-9.]/g, '')
         : String(formData.perTicketPrice || '')
     const priceNum = Number(price)
-    if (!price || isNaN(priceNum) || priceNum <= 0)
-      errs.perTicketPrice = 'Enter valid price'
+
     const countNum = Number(String(formData.ticketCount).replace(/[^0-9]/g, ''))
     if (!countNum || isNaN(countNum) || countNum <= 0)
       errs.ticketCount = 'Enter valid ticket count'
@@ -238,12 +237,12 @@ export default function EditTickets () {
   }, [eventId, apiFilters])
 
   useEffect(() => {
-    const handleClickOutside = (event) => {
+    const handleClickOutside = event => {
       if (menuOpenId !== null) {
         const target = event.target
         const isMenuButton = target.closest('button[data-menu-button]')
         const isMenuContent = target.closest('[data-menu-content]')
-        
+
         if (!isMenuButton && !isMenuContent) {
           setMenuOpenId(null)
         }
@@ -576,7 +575,7 @@ export default function EditTickets () {
           </div>
 
           <div className='overflow-visible rounded-2xl border border-[#E5E8F5]'>
-            <div className='grid grid-cols-12 gap-4 bg-[#F7F9FD] px-6 py-4'>
+            <div className='grid grid-cols-12 gap-3 bg-[#F7F9FD] px-6 py-4'>
               <div className='col-span-2'>
                 <TableHeaderCell>Added On</TableHeaderCell>
               </div>
@@ -590,9 +589,12 @@ export default function EditTickets () {
                 <TableHeaderCell>Group Size</TableHeaderCell>
               </div>
               <div className='col-span-1'>
+                <TableHeaderCell>Per Ticket Price</TableHeaderCell>
+              </div>
+              <div className='col-span-1'>
                 <TableHeaderCell>Ticket Count</TableHeaderCell>
               </div>
-              <div className='col-span-2'>
+              <div className='col-span-1'>
                 <TableHeaderCell>Tickets Left</TableHeaderCell>
               </div>
               <div className='col-span-2 flex justify-end'>
@@ -637,7 +639,7 @@ export default function EditTickets () {
                   return (
                     <div
                       key={t._id || idx}
-                      className='grid grid-cols-12 gap-4 px-6 py-5 hover:bg-[#F9FAFD]'
+                      className='grid grid-cols-12 gap-3 px-6 py-5 hover:bg-[#F9FAFD]'
                     >
                       <div className='col-span-2 self-center text-sm text-[#5E6582]'>
                         {addedOn}
@@ -649,12 +651,15 @@ export default function EditTickets () {
                         {ticketTypeLabel}
                       </div>
                       <div className='col-span-1 self-center text-sm text-[#5E6582]'>
-                        {t.groupSize ?? ''}
+                        {t.groupSize ?? '0'}
+                      </div>
+                      <div className='col-span-1 self-center text-sm text-[#5E6582]'>
+                        {t.perTicketPrice ?? '-'}
                       </div>
                       <div className='col-span-1 self-center text-sm text-[#5E6582]'>
                         {t.ticketCount ?? '-'}
                       </div>
-                      <div className='col-span-2 self-center text-sm font-medium text-slate-900'>
+                      <div className='col-span-1 self-center text-sm font-medium text-slate-900'>
                         {typeof t.ticketLeft === 'number' ? t.ticketLeft : '-'}
                       </div>
                       <div className='col-span-2 flex items-center justify-end gap-2'>
@@ -678,7 +683,10 @@ export default function EditTickets () {
                             <MoreVertical className='h-4 w-4' />
                           </button>
                           {menuOpenId === (t._id || idx) && (
-                            <div data-menu-content className='absolute right-0 mt-2 w-36 rounded-xl border border-[#E5E8F6] bg-white shadow-[0_14px_30px_-20px_rgba(15,23,42,0.25)] z-20'>
+                            <div
+                              data-menu-content
+                              className='absolute right-0 mt-2 w-36 rounded-xl border border-[#E5E8F6] bg-white shadow-[0_14px_30px_-20px_rgba(15,23,42,0.25)] z-20'
+                            >
                               <button
                                 onClick={() => startEdit(t._id)}
                                 className='flex w-full items-center gap-2 px-3 py-2 text-sm text-[#2D3658] hover:bg-[#F6F7FD]'
