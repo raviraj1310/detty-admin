@@ -52,4 +52,5 @@ jobs:
           app-name: 'dettyfusion-admin'
           slot-name: 'Production'
           package: .
+
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_CF9F37950E3A44929C290405EF90A92D }}
