@@ -10,6 +10,8 @@
 !.yarn/releases
 !.yarn/versions
 
+.github/workflows/
+
 # testing
 /coverage
 
@@ -31,8 +33,8 @@ yarn-error.log*
 .pnpm-debug.log*
 
 # env files (can opt-in for committing if needed)
-.env*
-.env
+# .env*
+# .env
 # .env.production
 
 # vercel
