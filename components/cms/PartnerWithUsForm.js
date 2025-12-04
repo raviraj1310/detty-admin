@@ -685,7 +685,7 @@ export default function PartnerWithUsForm () {
             {/* Header with Save Button */}
             <div className='flex justify-between items-center mb-4 border-b p-2 border-gray-300'>
               <h2 className='text-xl font-semibold text-gray-900'>
-                Partner With Us Detailss
+                Partner With Us Details
               </h2>
               <button
                 onClick={handleSave}
