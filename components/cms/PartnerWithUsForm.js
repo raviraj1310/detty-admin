@@ -108,9 +108,15 @@ export default function PartnerWithUsForm () {
 
   const buildDettyFusionUrl = (type, id) => {
     const base = 'https://dettyfusion.accessbankplc.com'
-    const cleanId = String(id || '').trim()
-    if (!cleanId) return ''
-    return type === 'activity' ? `${base}/tour/${cleanId}` : `${base}/event/${cleanId}`
+    let s = id
+    if (s && typeof s === 'object') s = (s.eventId && (s.eventId._id || s.eventId)) || s.eventId || s.$oid || s._id || s.id || ''
+    s = String(s || '').trim().replace(/[`'"]/g, '').replace(/[()]/g, '')
+    const hex24 = s.match(/[a-f0-9]{24}/i)
+    const hex32 = s.match(/[a-f0-9]{32}/i)
+    const finalId = hex24 ? hex24[0] : hex32 ? hex32[0] : s
+    if (!finalId) return ''
+    const enc = encodeURIComponent(finalId)
+    return type === 'activity' ? `${base}/tour/${enc}` : `${base}/event/${enc}`
   }
 
   const formatCurrency = n => {
@@ -163,29 +169,45 @@ export default function PartnerWithUsForm () {
   }
 
 
-  const fetchMinEventPrice = async eventId => {
+  const fetchMinEventTicketInfo = async eventId => {
     try {
       const res = await getAllTickets({ eventId })
       const list = Array.isArray(res?.data) ? res.data : Array.isArray(res) ? res : []
-      const prices = list
-        .map(t => Number(String(t?.perTicketPrice ?? '').replace(/[^0-9.]/g, '')))
-        .filter(v => !isNaN(v) && v > 0)
-      return prices.length ? Math.min(...prices) : null
+      let minPrice = null
+      let ticketId = ''
+      for (const t of list) {
+        const priceNum = Number(String(t?.perTicketPrice ?? '').replace(/[^0-9.]/g, ''))
+        if (!isNaN(priceNum) && priceNum > 0) {
+          if (minPrice == null || priceNum < minPrice) {
+            minPrice = priceNum
+            ticketId = String(t?._id || t?.id || '')
+          }
+        }
+      }
+      return { price: minPrice, ticketId }
     } catch {
-      return null
+      return { price: null, ticketId: '' }
     }
   }
 
-  const fetchMinActivityPrice = async activityId => {
+  const fetchMinActivityTicketInfo = async activityId => {
     try {
       const res = await getAllActivityTickets({ activityId })
       const list = Array.isArray(res?.data) ? res.data : Array.isArray(res) ? res : []
-      const prices = list
-        .map(t => Number(String(t?.perTicketPrice ?? '').replace(/[^0-9.]/g, '')))
-        .filter(v => !isNaN(v) && v > 0)
-      return prices.length ? Math.min(...prices) : null
+      let minPrice = null
+      let ticketId = ''
+      for (const t of list) {
+        const priceNum = Number(String(t?.perTicketPrice ?? '').replace(/[^0-9.]/g, ''))
+        if (!isNaN(priceNum) && priceNum > 0) {
+          if (minPrice == null || priceNum < minPrice) {
+            minPrice = priceNum
+            ticketId = String(t?._id || t?.id || '')
+          }
+        }
+      }
+      return { price: minPrice, ticketId }
     } catch {
-      return null
+      return { price: null, ticketId: '' }
     }
   }
 
@@ -376,40 +398,45 @@ export default function PartnerWithUsForm () {
   }, [])
 
   useEffect(() => {
-    const shouldInfer =
-      !!formData.promoSectionTitle &&
-      !String(formData.promoSectionEventId || '').trim() &&
-      !String(formData.promoSectionActivityId || '').trim()
-    if (!shouldInfer) return
-    const plain = htmlToPlain(formData.promoSectionTitle)
-    const normalize = s => String(s || '').trim().toLowerCase().replace(/\s+/g, ' ')
-    const quotedMatch = plain.match(/"([^"]+)"/)
-    const quotedNorm = quotedMatch ? normalize(quotedMatch[1]) : ''
-    const eventsNorm = (events || []).map(ev => ({ id: ev._id || ev.id || '', name: ev.eventName || ev.name || '' }))
-    const actsNorm = (activities || []).map(a => ({ id: a._id || a.id || '', name: a.activityName || a.name || '' }))
-    let sel = null
-    if (quotedNorm) {
-      const evHit = eventsNorm.find(e => normalize(e.name) === quotedNorm)
-      const acHit = actsNorm.find(a => normalize(a.name) === quotedNorm)
-      sel = evHit ? { type: 'event', id: evHit.id } : acHit ? { type: 'activity', id: acHit.id } : null
+    const run = async () => {
+      const shouldInfer =
+        !!formData.promoSectionTitle &&
+        !String(formData.promoSectionEventId || '').trim() &&
+        !String(formData.promoSectionActivityId || '').trim()
+      if (!shouldInfer) return
+      const plain = htmlToPlain(formData.promoSectionTitle)
+      const normalize = s => String(s || '').trim().toLowerCase().replace(/\s+/g, ' ')
+      const quotedMatch = plain.match(/"([^"]+)"/)
+      const quotedNorm = quotedMatch ? normalize(quotedMatch[1]) : ''
+      const eventsNorm = (events || []).map(ev => ({ id: (ev.eventId && (ev.eventId._id || ev.eventId)) || ev.eventId || ev._id || ev.id || '', name: ev.eventName || ev.name || '' }))
+      const actsNorm = (activities || []).map(a => ({ id: (a.eventId && (a.eventId._id || a.eventId)) || a.eventId || a._id || a.id || '', name: a.activityName || a.name || '' }))
+      let sel = null
+      if (quotedNorm) {
+        const evHit = eventsNorm.find(e => normalize(e.name) === quotedNorm)
+        const acHit = actsNorm.find(a => normalize(a.name) === quotedNorm)
+        sel = evHit ? { type: 'event', id: evHit.id } : acHit ? { type: 'activity', id: acHit.id } : null
+      }
+      if (!sel) {
+        const plainNorm = normalize(plain)
+        const evContains = eventsNorm.find(e => plainNorm.includes(normalize(e.name)))
+        const acContains = actsNorm.find(a => plainNorm.includes(normalize(a.name)))
+        sel = evContains ? { type: 'event', id: evContains.id } : acContains ? { type: 'activity', id: acContains.id } : null
+      }
+      if (sel?.type === 'event' && sel.id) {
+        handleChange('promoSectionType', 'event')
+        handleChange('promoSectionEventId', sel.id)
+        const { ticketId } = await fetchMinEventTicketInfo(sel.id)
+        const link = buildDettyFusionUrl('event', ticketId || sel.id)
+        if (link) handleChange('promoSectionCTALink', link)
+      } else if (sel?.type === 'activity' && sel.id) {
+        handleChange('promoSectionType', 'activity')
+        handleChange('promoSectionActivityId', sel.id)
+        const { ticketId } = await fetchMinActivityTicketInfo(sel.id)
+        const link = buildDettyFusionUrl('activity', ticketId || sel.id)
+        if (link) handleChange('promoSectionCTALink', link)
+      }
     }
-    if (!sel) {
-      const plainNorm = normalize(plain)
-      const evContains = eventsNorm.find(e => plainNorm.includes(normalize(e.name)))
-      const acContains = actsNorm.find(a => plainNorm.includes(normalize(a.name)))
-      sel = evContains ? { type: 'event', id: evContains.id } : acContains ? { type: 'activity', id: acContains.id } : null
-    }
-    if (sel?.type === 'event' && sel.id) {
-      handleChange('promoSectionType', 'event')
-      handleChange('promoSectionEventId', sel.id)
-      const link = buildDettyFusionUrl('event', sel.id)
-      if (link) handleChange('promoSectionCTALink', link)
-    } else if (sel?.type === 'activity' && sel.id) {
-      handleChange('promoSectionType', 'activity')
-      handleChange('promoSectionActivityId', sel.id)
-      const link = buildDettyFusionUrl('activity', sel.id)
-      if (link) handleChange('promoSectionCTALink', link)
-    }
+    run()
   }, [
     formData.promoSectionTitle,
     formData.promoSectionEventId,
@@ -1343,11 +1370,11 @@ export default function PartnerWithUsForm () {
                       onChange={async e => {
                         const id = e.target.value
                         handleChange('promoSectionEventId', id)
-                        const found = (events || []).find(ev => String(ev._id || ev.id || '') === String(id)) || null
+                        const found = (events || []).find(ev => String((ev.eventId && (ev.eventId._id || ev.eventId)) || ev.eventId || ev._id || ev.id || '') === String(id)) || null
                         const name = found ? (found.eventName || found.name || '') : ''
                         const img = found ? sanitizeImageUrl(found.image) : ''
-                        const minPrice = id ? await fetchMinEventPrice(id) : null
-                        const priceStr = minPrice != null ? formatCurrency(minPrice) : ''
+                        const info = id ? await fetchMinEventTicketInfo(id) : { price: null, ticketId: '' }
+                        const priceStr = info.price != null ? formatCurrency(info.price) : ''
                         const raw = String(formData.promoSectionTitle || '')
                         const hasTokens = /\{NAME\}|\{PRICE\}/.test(raw)
                         if (isEmptyEditorContent(raw) && name) {
@@ -1364,7 +1391,7 @@ export default function PartnerWithUsForm () {
                           setImageFiles(prev => ({ ...prev, promoSectionImage: undefined }))
                           setImagePreviews(prev => ({ ...prev, promoSectionImage: img }))
                         }
-                        const link = buildDettyFusionUrl('event', id)
+                        const link = buildDettyFusionUrl('event', info.ticketId || id)
                         if (link) handleChange('promoSectionCTALink', link)
                       }}
                       className={`w-full px-4 py-2 border rounded-lg focus:outline-none text-gray-900 ${
@@ -1373,7 +1400,7 @@ export default function PartnerWithUsForm () {
                     >
                       <option value=''>Select an event</option>
                       {events.map(ev => {
-                        const id = ev._id || ev.id || ''
+                        const id = (ev.eventId && (ev.eventId._id || ev.eventId)) || ev.eventId || ev._id || ev.id || ''
                         const name = ev.eventName || ev.name || 'Unnamed Event'
                         return (
                           <option key={id} value={id}>
@@ -1398,11 +1425,11 @@ export default function PartnerWithUsForm () {
                       onChange={async e => {
                         const id = e.target.value
                         handleChange('promoSectionActivityId', id)
-                        const found = (activities || []).find(a => String(a._id || a.id || '') === String(id)) || null
+                        const found = (activities || []).find(a => String((a.eventId && (a.eventId._id || a.eventId)) || a.eventId || a._id || a.id || '') === String(id)) || null
                         const name = found ? (found.activityName || found.name || '') : ''
                         const img = found ? sanitizeImageUrl(found.image) : ''
-                        const minPrice = id ? await fetchMinActivityPrice(id) : null
-                        const priceStr = minPrice != null ? formatCurrency(minPrice) : ''
+                        const info = id ? await fetchMinActivityTicketInfo(id) : { price: null, ticketId: '' }
+                        const priceStr = info.price != null ? formatCurrency(info.price) : ''
                         const raw = String(formData.promoSectionTitle || '')
                         const hasTokens = /\{NAME\}|\{PRICE\}/.test(raw)
                         if (isEmptyEditorContent(raw) && name) {
@@ -1419,7 +1446,7 @@ export default function PartnerWithUsForm () {
                           setImageFiles(prev => ({ ...prev, promoSectionImage: undefined }))
                           setImagePreviews(prev => ({ ...prev, promoSectionImage: img }))
                         }
-                        const link = buildDettyFusionUrl('activity', id)
+                        const link = buildDettyFusionUrl('activity', info.ticketId || id)
                         if (link) handleChange('promoSectionCTALink', link)
                       }}
                       className={`w-full px-4 py-2 border rounded-lg focus:outline-none text-gray-900 ${
@@ -1428,7 +1455,7 @@ export default function PartnerWithUsForm () {
                     >
                       <option value=''>Select an activity</option>
                       {activities.map(act => {
-                        const id = act._id || act.id || ''
+                        const id = (act.eventId && (act.eventId._id || act.eventId)) || act.eventId || act._id || act.id || ''
                         const name = act.activityName || act.name || 'Unnamed Activity'
                         return (
                           <option key={id} value={id}>

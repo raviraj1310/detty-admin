@@ -59,6 +59,18 @@ const toIdString = v => {
   return String(v)
 }
 
+const toImageUrl = p => {
+  const s = String(p || '').trim()
+  if (!s) return null
+  if (/^https?:\/\//i.test(s)) return s
+  const originEnv = process.env.NEXT_PUBLIC_SIM_IMAGE_BASE_ORIGIN
+  const base = originEnv && originEnv.trim()
+    ? originEnv.trim()
+    : ( 'https://accessdettyfusion.com')
+  const path = s.startsWith('/') ? s : `/${s}`
+  return `${base}${path}`
+}
+
 function statusClass (v) {
   const s = String(v || '').toLowerCase()
   if (s === 'paid' || s === 'completed')
@@ -73,8 +85,8 @@ const filterTabs = [
   { id: 'event', label: 'Event', active: false },
   { id: 'activities', label: 'Places to Visit', active: true },
   { id: 'merchandise', label: 'Merchandise', active: false },
-  { id: 'e-sim', label: 'E-Sim', active: false }
-  // { id: 'accommodation', label: 'Accommodation', active: false },
+  { id: 'e-sim', label: 'E-Sim', active: false },
+  { id: 'accommodation', label: 'Accommodation', active: false },
   // { id: 'diy', label: 'DIY', active: false },
 ]
 
@@ -136,8 +148,7 @@ export default function Activities () {
           : []
         const mapped = data.map((b, idx) => {
           const activityObj = b?.activityId || b?.activity || {}
-          const img =
-            activityObj?.image || b?.activityImage || '/images/no-image.webp'
+          const img = toImageUrl(activityObj?.image || b?.activityImage)
           const type =
             activityObj?.activityType?.activityTypeName ||
             b?.activity?.activityType?.activityTypeName ||
@@ -511,18 +522,20 @@ export default function Activities () {
                       <td className='px-3 py-3 whitespace-nowrap'>
                         <div className='flex items-center'>
                           <div className='flex-shrink-0 h-10 w-10'>
-                            <img
-                              className='h-10 w-10 rounded-lg object-cover'
-                              src={activity.activityImage}
-                              alt={activity.activityName}
-                              onError={e => {
-                                e.target.style.display = 'none'
-                                e.target.nextSibling.style.display = 'flex'
-                              }}
-                            />
+                            {activity.activityImage ? (
+                              <img
+                                className='h-10 w-10 rounded-lg object-cover'
+                                src={activity.activityImage}
+                                alt={activity.activityName}
+                                onError={e => {
+                                  e.target.style.display = 'none'
+                                  e.target.nextSibling.style.display = 'flex'
+                                }}
+                              />
+                            ) : null}
                             <div
                               className='h-10 w-10 rounded-lg bg-gradient-to-br from-blue-400 to-green-500 flex items-center justify-center'
-                              style={{ display: 'none' }}
+                              style={{ display: activity.activityImage ? 'none' : 'flex' }}
                             >
                               <svg
                                 className='w-5 h-5 text-white'

@@ -146,6 +146,13 @@ export default function OrderViewPage () {
     totalAmount > 0 ? totalAmount : Math.max(0, calculatedTotal)
   const status = order.status || 'Pending'
 
+   const Info = ({ label, value }) => (
+    <div className="flex justify-between">
+      <span className="text-[#5E6582]">{label}</span>
+      <span className="font-semibold text-[#1A1F3F] text-right">{value}</span>
+    </div>
+  );
+
   return (
     <div className='min-h-screen bg-gray-50 py-8 px-4'>
       <div className='max-w-4xl mx-auto'>
@@ -183,17 +190,6 @@ export default function OrderViewPage () {
           <div className='p-6'>
             {/* Product/Order Info Section */}
             <div className='flex items-start gap-4 mb-6'>
-              {items.length > 0 && items[0]?.productId?.image && (
-                <div className='relative w-24 h-24 rounded-xl overflow-hidden border border-[#E5E6EF] bg-white flex-shrink-0'>
-                  <Image
-                    src={toImageSrc(items[0].productId.image)}
-                    alt={items[0].productId.title || 'Product'}
-                    fill
-                    className='object-cover'
-                    unoptimized
-                  />
-                </div>
-              )}
               <div className='flex-1'>
                 <div className='text-xl font-bold text-slate-900 mb-1'>
                   Merchandise Order
@@ -276,51 +272,68 @@ export default function OrderViewPage () {
             </div>
 
             {/* Individual Item Details */}
-            <div className='space-y-4'>
-              {items.map((item, index) => {
-                const productName = item.productId?.title || 'Product'
-                return (
-                  <div
-                    key={item._id || index}
-                    className='rounded-xl bg-[#F8F9FC] p-5 border border-[#E5E6EF]'
-                  >
-                    <div className='text-sm font-semibold text-slate-900 mb-4'>
-                      Item {index + 1}
-                    </div>
-                    <div className='grid grid-cols-2 gap-4 text-sm'>
-                      <div className='text-[#5E6582]'>Name</div>
-                      <div className='text-right font-semibold text-slate-900'>
-                        {userName}
-                      </div>
-                      <div className='text-[#5E6582]'>Email Address</div>
-                      <div className='text-right font-semibold text-slate-900'>
-                        {email}
-                      </div>
-                      <div className='text-[#5E6582]'>Phone Number</div>
-                      <div className='text-right font-semibold text-slate-900'>
-                        {phone}
-                      </div>
-                      <div className='text-[#5E6582]'>Purchased on</div>
-                      <div className='text-right font-semibold text-slate-900'>
-                        {createdAt}
-                      </div>
-                      <div className='text-[#5E6582]'>Item Name</div>
-                      <div className='text-right font-semibold text-slate-900'>
-                        {productName}
-                      </div>
-                      <div className='text-[#5E6582]'>Quantity</div>
-                      <div className='text-right font-semibold text-slate-900'>
-                        {item.quantity || 1}
-                      </div>
-                      <div className='text-[#5E6582]'>Price</div>
-                      <div className='text-right font-semibold text-slate-900'>
-                        {toCurrency(item.price || item.productId?.price || 0)}
-                      </div>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
+            <div className="space-y-6">
+  {items.map((item, index) => {
+    const productName = item.productId?.title || "Product";
+    return (
+      <div
+        key={item._id || index}
+        className="rounded-2xl border border-[#E5E6EF] bg-white p-6 shadow-sm hover:shadow-md transition-shadow"
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-base font-semibold text-[#1A1F3F]">
+            Item {index + 1}
+          </h3>
+          <span className="text-sm font-medium text-[#FF4C2F] bg-[#FFF4F2] px-3 py-1 rounded-full">
+            {toCurrency(item.price || item.productId?.price || 0)}
+          </span>
+        </div>
+
+        {/* Product + Info Layout */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Image Section */}
+          <div className="flex justify-center">
+            {item?.productId?.image && (
+              <div className="relative w-32 h-32 rounded-xl overflow-hidden border border-[#E5E6EF] bg-white">
+                <Image
+                  src={toImageSrc(item.productId.image)}
+                  alt={productName}
+                  fill
+                  className="object-cover"
+                  unoptimized
+                />
+              </div>
+            )}
+          </div>
+
+          {/* User Info */}
+          <div className="space-y-2 text-sm">
+            <Info label="Name" value={userName} />
+            <Info label="Email Address" value={email} />
+            <Info label="Phone Number" value={phone} />
+            <Info label="Purchased on" value={createdAt} />
+          </div>
+
+          {/* Product Info */}
+          <div className="space-y-2 text-sm">
+            <Info label="Item Name" value={productName} />
+            <Info label="Quantity" value={item.quantity || 1} />
+            <Info
+              label="Total Price"
+              value={toCurrency(
+                (item.price || item.productId?.price || 0) * (item.quantity || 1)
+              )}
+            />
+          </div>
+        </div>
+      </div>
+    );
+  })}
+</div>
+
+
+
           </div>
 
           {/* Footer Border */}

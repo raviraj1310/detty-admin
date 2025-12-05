@@ -93,11 +93,7 @@ export default function OrderReceiptPage () {
                   <div className="text-xs text-[#8B93AF]">{email} • {phone}</div>
                 </div>
               </div>
-              <div className="flex items-center justify-end">
-                <div className="w-20 h-20 rounded-lg overflow-hidden border border-[#E5E6EF] bg-white flex items-center justify-center">
-                  <img src="/images/qrcode/qr-placeholder.webp" alt="QR" className="w-full h-full object-cover" />
-                </div>
-              </div>
+              
             </div>
 
             <div className="rounded-xl border border-[#E5E6EF] bg-white">

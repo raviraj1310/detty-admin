@@ -35,6 +35,18 @@ const toIdString = v => {
   return String(v)
 }
 
+const toImageUrl = p => {
+  const s = String(p || '').trim()
+  if (!s) return null
+  if (/^https?:\/\//i.test(s)) return s
+  const originEnv = process.env.NEXT_PUBLIC_SIM_IMAGE_BASE_ORIGIN
+  const base = originEnv && originEnv.trim()
+    ? originEnv.trim()
+    : ( 'https://accessdettyfusion.com')
+  const path = s.startsWith('/') ? s : `/${s}`
+  return `${base}${path}`
+}
+
 function ActionDropdown({ row, downloadingId, openCustomer, downloadReceipt }) {
     const [isOpen, setIsOpen] = useState(false);
     const [buttonPosition, setButtonPosition] = useState({ top: 0, right: 0 });
@@ -82,7 +94,7 @@ function ActionDropdown({ row, downloadingId, openCustomer, downloadReceipt }) {
                         }}
                     >
                         <div className='py-1'>
-                            <a href={`/merchandise/order/receipt/${row.orderId || row.id}`} className='flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100'>
+                            <a href={`/merchandise/order-view/${row.orderId || row.id}`} className='flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100'>
                                 <span className='mr-3 text-gray-500'>
                                     <svg className='w-4 h-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'><path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M15 12a3 3 0 11-6 0 3 3 0 016 0z' /><path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z' /></svg>
                                 </span>
@@ -119,7 +131,7 @@ const filterTabs = [
     { id: 'activities', label: 'Places to Visit', active: false },
     { id: 'merchandise', label: 'Merchandise', active: true },
     { id: 'e-sim', label: 'Internet Connectivity', active: false },
-    // { id: 'accommodation', label: 'Accommodation', active: false },
+    { id: 'accommodation', label: 'Accommodation', active: false },
     // { id: 'diy', label: 'DIY', active: false },
 ];
 
@@ -184,7 +196,7 @@ export default function MerchandisePage() {
                 const title = it?.productId?.title || '-'
                 const unitPrice = it?.price ?? it?.productId?.price
                 const category = it?.productId?.category || it?.productId?.categoryId?.title || '-'
-                const imageUrl = it?.productId?.imageUrl || it?.productId?.image || ''
+                const imageUrl = toImageUrl(it?.productId?.imageUrl || it?.productId?.image)
                 rows.push({
                     id: `${orderId || 'order'}-${idx}`,
                     orderId: orderId || '',
@@ -402,20 +414,25 @@ export default function MerchandisePage() {
                                     <td className="px-3 py-3 whitespace-nowrap">
                                         <div className="flex items-center">
                                             <div className="flex-shrink-0 h-10 w-10">
-                                                <img 
-                                                    className="h-10 w-10 rounded-lg object-cover" 
-                                                    src={merchandise.merchandiseImage} 
-                                                    alt={merchandise.merchandiseName}
-                                                    onError={(e) => {
-                                                        e.target.style.display = 'none';
-                                                        e.target.nextSibling.style.display = 'flex';
-                                                    }}
-                                                />
-                                                <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center" style={{display: 'none'}}>
-                                                    <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                                                        <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" />
-                                                    </svg>
-                                                </div>
+                                                {merchandise.merchandiseImage ? (
+                                                    <img 
+                                                        className="h-10 w-10 rounded-lg object-cover" 
+                                                        src={merchandise.merchandiseImage}
+                                                        alt={merchandise.merchandiseName}
+                                                        onError={(e) => {
+                                                            e.target.style.display = 'none';
+                                                            const fallback = e.target.nextSibling;
+                                                            if (fallback) fallback.style.display = 'flex';
+                                                        }}
+                                                    />
+                                                ) : null}
+                                                {!merchandise.merchandiseImage && (
+                                                    <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center">
+                                                        <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                                            <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" />
+                                                        </svg>
+                                                    </div>
+                                                )}
                                             </div>
                                             <div className="ml-3">
                                                 <div className="text-sm font-medium text-gray-900 leading-tight">{merchandise.merchandiseName}</div>

@@ -44,3 +44,13 @@ export const getOrderDetail = async orderId => {
     console.log(error)
   }
 }
+
+
+export const getAllAccommodationOrders = async () => {
+  try {
+    const res = await api.get('/stay/get-stay-bookings')
+    return res.data
+  } catch (error) {
+    console.log(error)
+  }
+}
