@@ -82,6 +82,23 @@ export default function PromoBannerMaster() {
   const [cropOpen, setCropOpen] = useState(false)
   const [cropFile, setCropFile] = useState(null)
 
+  const openCropWithExisting = async () => {
+    try {
+      if (imageFile instanceof File) {
+        setCropFile(imageFile)
+        setCropOpen(true)
+        return
+      }
+      const src = imageUrl || (formData.uploadImage ? toImageSrc(formData.uploadImage) : '')
+      if (!src) return
+      const r = await fetch(src)
+      const b = await r.blob()
+      const f = new File([b], (formData.uploadImage || 'promo-image').replace(/[^a-zA-Z0-9_.-]/g, '_'), { type: b.type || 'image/jpeg' })
+      setCropFile(f)
+      setCropOpen(true)
+    } catch {}
+  }
+
   const handleInputChange = (field, value) => {
     setFormData(prev => ({
       ...prev,
@@ -388,6 +405,13 @@ export default function PromoBannerMaster() {
                 >
                   Browse
                 </button>
+                <button
+                  type="button"
+                  onClick={openCropWithExisting}
+                  className="px-6 text-sm font-medium text-[#2D3658] bg-white transition hover:bg-[#F6F7FD] border-l border-[#E5E6EF]"
+                >
+                  Crop
+                </button>
               </div>
               <input
                 ref={fileInputRef}
@@ -407,8 +431,20 @@ export default function PromoBannerMaster() {
                 }}
               />
               {(imageUrl || formData.uploadImage) && (
-                <div className="mt-2">
-                  <img src={imageUrl || toImageSrc(formData.uploadImage)} alt="Promo image preview" className="w-32 h-20 object-cover rounded border border-[#E5E6EF]" />
+                <div className="mt-2 relative inline-block">
+                  <img
+                    src={imageUrl || toImageSrc(formData.uploadImage)}
+                    alt="Promo image preview"
+                    className="w-32 h-20 object-cover rounded border border-[#E5E6EF] cursor-pointer"
+                    onClick={openCropWithExisting}
+                  />
+                  <button
+                    type="button"
+                    onClick={openCropWithExisting}
+                    className="absolute top-1 right-1 rounded-md bg-white/90 px-2 py-1 text-xs font-medium text-[#2D3658] border border-[#E5E6EF] shadow-sm hover:bg-white"
+                  >
+                    Crop
+                  </button>
                 </div>
               )}
               {imageFile && (

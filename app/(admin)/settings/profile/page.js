@@ -18,8 +18,8 @@ export default function ProfilePage () {
   const isActive = href => pathname === href
   const go = href => { router.push(href) }
   const [profile, setProfile] = useState({
-    name: 'Oromuno Okiemute Grace',
-    email: 'loveokiemute@gmail.com'
+    name: '',
+    email: ''
   })
   const [formData, setFormData] = useState({
     name: profile.name,

@@ -79,28 +79,29 @@ const mapAccommodationRows = (arr = []) => {
 }
 
 function ActionDropdown ({ accommodationId, row, openCustomer }) {
+  const router = useRouter()
   const [isOpen, setIsOpen] = useState(false)
   const [buttonPosition, setButtonPosition] = useState({ top: 0, right: 0 })
 
   const actions = [
-    // {
-    //   label: 'View Order',
-    //   icon: (
-    //     <svg
-    //       className='w-4 h-4'
-    //       fill='none'
-    //       stroke='currentColor'
-    //       viewBox='0 0 24 24'
-    //     >
-    //       <path
-    //         strokeLinecap='round'
-    //         strokeLinejoin='round'
-    //         strokeWidth={2}
-    //         d='M3 7h18M3 12h18M3 17h18'
-    //       />
-    //     </svg>
-    //   )
-    // },
+    {
+      label: 'View Order',
+      icon: (
+        <svg
+          className='w-4 h-4'
+          fill='none'
+          stroke='currentColor'
+          viewBox='0 0 24 24'
+        >
+          <path
+            strokeLinecap='round'
+            strokeLinejoin='round'
+            strokeWidth={2}
+            d='M3 7h18M3 12h18M3 17h18'
+          />
+        </svg>
+      )
+    },
     {
       label: 'Customer Detail',
       icon: (
@@ -175,9 +176,10 @@ function ActionDropdown ({ accommodationId, row, openCustomer }) {
                   if (action.label === 'Customer Detail' && openCustomer) {
                     openCustomer(row)
                   } else if (action.label === 'View Order') {
-                    console.log(
-                      `View Order for accommodation ${accommodationId}`
-                    )
+                    const idStr = String(accommodationId || '').trim()
+                    if (idStr) {
+                      router.push(`/accommodation/order-view/${encodeURIComponent(idStr)}`)
+                    }
                   } else {
                     console.log(
                       `${action.label} for accommodation ${accommodationId}`

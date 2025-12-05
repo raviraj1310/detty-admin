@@ -87,8 +87,22 @@ export default function EditTickets () {
     }
   }, [params?.id])
 
+  const formatPriceInput = value => {
+    const s = String(value || '')
+    const cleaned = s.replace(/[^0-9.]/g, '')
+    const parts = cleaned.split('.')
+    const intPart = parts[0] || ''
+    const decimalPart = parts.length > 1 ? parts.slice(1).join('').replace(/[^0-9]/g, '') : undefined
+    if (intPart === '') {
+      return decimalPart !== undefined ? `.${decimalPart}` : ''
+    }
+    const formattedInt = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+    return decimalPart !== undefined ? `${formattedInt}.${decimalPart}` : formattedInt
+  }
+
   const handleChange = (field, value) => {
-    setFormData(prev => ({ ...prev, [field]: value }))
+    const v = field === 'perTicketPrice' ? formatPriceInput(value) : value
+    setFormData(prev => ({ ...prev, [field]: v }))
   }
 
   const validate = () => {
@@ -116,6 +130,18 @@ export default function EditTickets () {
     const s = String(v || '').replace(/[^0-9.]/g, '')
     const n = Number(s)
     return Number.isFinite(n) ? n : 0
+  }
+
+  const toIdString = v => {
+    if (!v) return ''
+    if (typeof v === 'string') return v
+    if (typeof v === 'object') {
+      if (v.$oid) return String(v.$oid)
+      if (v.$id) return String(v.$id)
+      if (v.oid) return String(v.oid)
+      if (v._id) return toIdString(v._id)
+    }
+    return String(v)
   }
 
   const toPayload = () => ({
@@ -222,8 +248,8 @@ export default function EditTickets () {
         groupSize: t.groupSize ? String(t.groupSize) : '',
         perTicketPrice:
           typeof t.perTicketPrice === 'number'
-            ? String(t.perTicketPrice)
-            : String(t.perTicketPrice || ''),
+            ? formatPriceInput(String(t.perTicketPrice))
+            : formatPriceInput(String(t.perTicketPrice || '')),
         ticketCount:
           typeof t.ticketCount === 'number'
             ? String(t.ticketCount)
@@ -236,7 +262,7 @@ export default function EditTickets () {
         status: typeof t.status === 'boolean' ? t.status : Boolean(t.status)
       })
       setErrors({})
-      setEditingTicketId(String(t.activityId || t._id || id))
+      setEditingTicketId(toIdString(t._id || t.id || id))
     } catch (e) {
       setToastContent({
         title: 'Error',

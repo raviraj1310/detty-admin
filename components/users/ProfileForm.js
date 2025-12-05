@@ -6,25 +6,25 @@ import { getLoginUser } from '@/services/auth/login.service';
 export default function ProfileForm() {
     const [formData, setFormData] = useState({
         // Personal Information
-        firstName: 'Oromuno',
-        lastName: 'Okiemute',
-        countryOfCitizenship: 'Nigeria',
-        emailAddress: 'Loveoklemiude@gmail.com',
-        phoneNumber: '+234 703 1362 591',
-        countryOfResidence: 'Nigeria',
+        firstName: '',
+        lastName: '',
+        countryOfCitizenship: '',
+        emailAddress: '',
+        phoneNumber: '',
+        countryOfResidence: '',
         
         // Address
-        homeAddress: 'No13 Adekunle Yaba',
-        postalCode: '101101',
-        addressCountryOfCitizenship: 'Nigeria',
+        homeAddress: '',
+        postalCode: '',
+        addressCountryOfCitizenship: '',
         
         // Other Details
-        otherFirstName: 'Oromuno',
-        otherLastName: 'Okiemute',
-        otherCountryOfCitizenship: 'Nigeria',
-        otherEmailAddress: 'Loveoklemiude@gmail.com',
-        otherPhoneNumber: '+234 703 1362 591',
-        otherCountryOfResidence: 'Nigeria'
+        otherFirstName: '',
+        otherLastName: '',
+        otherCountryOfCitizenship: '',
+        otherEmailAddress: '',
+        otherPhoneNumber: '',
+        otherCountryOfResidence: ''
     });
     const [avatar, setAvatar] = useState('/images/user_dashboard/user_photo.webp');
 

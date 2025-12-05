@@ -76,10 +76,30 @@ export default function EditTickets () {
   const [confirmDeleteId, setConfirmDeleteId] = useState(null)
   const [deleting, setDeleting] = useState(false)
 
+  const formatPriceInput = value => {
+    const s = String(value || '')
+    const cleaned = s.replace(/[^0-9.]/g, '')
+    const parts = cleaned.split('.')
+    const intPart = parts[0] || ''
+    const decimalPart = parts.length > 1 ? parts.slice(1).join('').replace(/[^0-9]/g, '') : undefined
+    if (intPart === '') {
+      return decimalPart !== undefined ? `.${decimalPart}` : ''
+    }
+    if (intPart.length <= 3) {
+      return decimalPart !== undefined ? `${intPart}.${decimalPart}` : intPart
+    }
+    const last3 = intPart.slice(-3)
+    const rest = intPart.slice(0, -3)
+    const restWithCommas = rest.replace(/\B(?=(\d{2})+(?!\d))/g, ',')
+    const formattedInt = `${restWithCommas},${last3}`
+    return decimalPart !== undefined ? `${formattedInt}.${decimalPart}` : formattedInt
+  }
+
   const handleInputChange = (field, value) => {
+    const v = field === 'perTicketPrice' ? formatPriceInput(value) : value
     setFormData(prev => ({
       ...prev,
-      [field]: value
+      [field]: v
     }))
   }
 
@@ -169,7 +189,7 @@ export default function EditTickets () {
             : 'Regular Ticket',
         subText: t.subText || '',
         groupSize: t.groupSize ? String(t.groupSize) : '',
-        perTicketPrice: t.perTicketPrice ? String(t.perTicketPrice) : '',
+        perTicketPrice: t.perTicketPrice ? formatPriceInput(String(t.perTicketPrice)) : '',
         ticketCount: t.ticketCount ? String(t.ticketCount) : '',
         ticketDetails: t.ticketDetail || ''
       })
