@@ -344,7 +344,7 @@ export default function DiscoverEvents () {
         </div>
       </div>
 
-      <div className='grid grid-cols-1 md:grid-cols-4 gap-6 mb-8'>
+      <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8'>
         {metricCards.map(card => {
           const cardValue =
             card.id === 'total'
@@ -359,19 +359,19 @@ export default function DiscoverEvents () {
           return (
             <div
               key={card.id}
-              className={`${card.bg} rounded-2xl p-6 text-white relative overflow-hidden`}
+              className={`${card.bg} rounded-2xl p-5 text-white relative overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300`}
             >
-              <div className="flex items-center justify-between">
-                <div className="bg-white p-4 rounded-2xl flex-shrink-0">
+              <div className="flex items-start justify-between gap-3">
+                <div className="bg-white/95 p-3.5 rounded-xl flex-shrink-0 shadow-sm">
                   <img 
                     src={card.iconSrc} 
                     alt={card.title} 
-                    className="w-8 h-8"
+                    className="w-9 h-9"
                   />
                 </div>
-                <div className="text-right">
-                  <p className="text-white/90 text-sm font-medium mb-2">{card.title}</p>
-                  <p className="text-4xl font-bold text-white">{String(cardValue)}</p>
+                <div className="text-right flex-1 min-w-0">
+                  <p className="text-white/95 text-xs font-medium mb-1.5 leading-tight">{card.title}</p>
+                  <p className="text-3xl lg:text-4xl font-bold text-white tracking-tight">{String(cardValue)}</p>
                 </div>
               </div>
             </div>
@@ -432,36 +432,37 @@ export default function DiscoverEvents () {
           </div>
         </div>
 
-        <div className='overflow-visible rounded-2xl border border-[#E5E8F5]'>
-          <div className='grid grid-cols-12 gap-4 bg-[#F7F9FD] px-6 py-4'>
-            <div className='col-span-2'>
-              <TableHeaderCell onClick={() => handleSort('eventDate')} active={sortBy==='eventDate'} direction={sortDir}>Event Date</TableHeaderCell>
+        <div className='overflow-x-auto rounded-2xl border border-[#E5E8F5]'>
+          <div className='min-w-[1200px]'>
+            <div className='grid grid-cols-12 gap-4 bg-[#F7F9FD] px-6 py-4'>
+              <div className='col-span-2'>
+                <TableHeaderCell onClick={() => handleSort('eventDate')} active={sortBy==='eventDate'} direction={sortDir}>Event Date</TableHeaderCell>
+              </div>
+              <div className='col-span-3'>
+                <TableHeaderCell onClick={() => handleSort('eventName')} active={sortBy==='eventName'} direction={sortDir}>Event Name</TableHeaderCell>
+              </div>
+              <div className='col-span-1'>
+                <TableHeaderCell onClick={() => handleSort('hostedBy')} active={sortBy==='hostedBy'} direction={sortDir}>Hosted By</TableHeaderCell>
+              </div>
+              <div className='col-span-1'>
+                <TableHeaderCell onClick={() => handleSort('type')} active={sortBy==='type'} direction={sortDir}>Type</TableHeaderCell>
+              </div>
+              <div className='col-span-2'>
+                <TableHeaderCell onClick={() => handleSort('location')} active={sortBy==='location'} direction={sortDir}>Location</TableHeaderCell>
+              </div>
+              <div className='col-span-1'>
+                <TableHeaderCell onClick={() => handleSort('ticketsBooked')} active={sortBy==='ticketsBooked'} direction={sortDir}>Tickets Booked</TableHeaderCell>
+              </div>
+              <div className='col-span-1 flex justify-end'>
+                <TableHeaderCell align='right' onClick={() => handleSort('status')} active={sortBy==='status'} direction={sortDir}>Status</TableHeaderCell>
+              </div>
+              <div className='col-span-1 flex justify-end'>
+                <TableHeaderCell align='right'>Action</TableHeaderCell>
+              </div>
+              <div></div>
             </div>
-            <div className='col-span-3'>
-              <TableHeaderCell onClick={() => handleSort('eventName')} active={sortBy==='eventName'} direction={sortDir}>Event Name</TableHeaderCell>
-            </div>
-            <div className='col-span-1'>
-              <TableHeaderCell onClick={() => handleSort('hostedBy')} active={sortBy==='hostedBy'} direction={sortDir}>Hosted By</TableHeaderCell>
-            </div>
-            <div className='col-span-1'>
-              <TableHeaderCell onClick={() => handleSort('type')} active={sortBy==='type'} direction={sortDir}>Type</TableHeaderCell>
-            </div>
-            <div className='col-span-2'>
-              <TableHeaderCell onClick={() => handleSort('location')} active={sortBy==='location'} direction={sortDir}>Location</TableHeaderCell>
-            </div>
-            <div className='col-span-1'>
-              <TableHeaderCell onClick={() => handleSort('ticketsBooked')} active={sortBy==='ticketsBooked'} direction={sortDir}>Tickets Booked</TableHeaderCell>
-            </div>
-            <div className='col-span-1 flex justify-end'>
-              <TableHeaderCell align='right' onClick={() => handleSort('status')} active={sortBy==='status'} direction={sortDir}>Status</TableHeaderCell>
-            </div>
-            <div className='col-span-1 flex justify-end'>
-              <TableHeaderCell align='right'>Action</TableHeaderCell>
-            </div>
-            <div></div>
-          </div>
 
-          <div className='divide-y divide-[#EEF1FA] bg-white'>
+            <div className='divide-y divide-[#EEF1FA] bg-white'>
             {filteredRows.map(event => (
               <div
                 key={event.rowKey}
@@ -557,6 +558,7 @@ export default function DiscoverEvents () {
                 </div>
               </div>
             ))}
+            </div>
           </div>
         </div>
       </div>

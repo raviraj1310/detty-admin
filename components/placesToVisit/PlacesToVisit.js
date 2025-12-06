@@ -312,7 +312,7 @@ export default function PlacesToVisit () {
         </div>
       </div>
 
-      <div className='grid grid-cols-1 md:grid-cols-4 gap-6 mb-8'>
+      <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8'>
         {metricCards.map(card => {
           const value =
             card.id === 'total'
@@ -325,21 +325,21 @@ export default function PlacesToVisit () {
           return (
             <div
               key={card.id}
-              className={`${card.bg} rounded-2xl p-6 text-white relative overflow-hidden`}
+              className={`${card.bg} rounded-2xl p-5 text-white relative overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300`}
             >
-              <div className='flex items-center justify-between'>
-                <div className='bg-white p-4 rounded-2xl flex-shrink-0'>
+              <div className='flex items-start justify-between gap-3'>
+                <div className='bg-white/95 p-3.5 rounded-xl flex-shrink-0 shadow-sm'>
                   <img
                     src={card.iconSrc}
                     alt={card.title}
-                    className='w-8 h-8'
+                    className='w-9 h-9'
                   />
                 </div>
-                <div className='text-right'>
-                  <p className='text-white/90 text-sm font-medium mb-2'>
+                <div className='text-right flex-1 min-w-0'>
+                  <p className='text-white/95 text-xs font-medium mb-1.5 leading-tight'>
                     {card.title}
                   </p>
-                  <p className='text-4xl font-bold text-white'>
+                  <p className='text-3xl lg:text-4xl font-bold text-white tracking-tight'>
                     {String(value)}
                   </p>
                 </div>
@@ -404,8 +404,9 @@ export default function PlacesToVisit () {
           </div>
         </div>
 
-        <div className='overflow-visible rounded-2xl border border-[#E5E8F5]'>
-          <div className='grid grid-cols-[1.5fr_2.5fr_1fr_1.5fr_1.2fr_1fr_60px] gap-3 bg-[#F7F9FD] px-6 py-4'>
+        <div className='overflow-x-auto rounded-2xl border border-[#E5E8F5]'>
+          <div className='min-w-[1100px]'>
+            <div className='grid grid-cols-[1.5fr_2.5fr_1fr_1.5fr_1.2fr_1fr_60px] gap-3 bg-[#F7F9FD] px-6 py-4'>
             <div>
               <TableHeaderCell onClick={() => toggleSort('addedOn')}>Added On</TableHeaderCell>
             </div>
@@ -424,10 +425,10 @@ export default function PlacesToVisit () {
             <div>
               <TableHeaderCell onClick={() => toggleSort('status')}>Status</TableHeaderCell>
             </div>
-            <div></div>
-          </div>
+              <div></div>
+            </div>
 
-          <div className='divide-y divide-[#EEF1FA] bg-white'>
+            <div className='divide-y divide-[#EEF1FA] bg-white'>
             {loading && (
               <div className='px-6 py-5 text-sm text-[#5E6582]'>Loading...</div>
             )}
@@ -562,6 +563,7 @@ export default function PlacesToVisit () {
                 No activities found
               </div>
             )}
+            </div>
           </div>
         </div>
       </div>

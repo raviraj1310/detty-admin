@@ -253,10 +253,10 @@ export default function LandingPageForm() {
                 Upload Image<span className="text-red-500">*</span>
               </label>
               <div
-                className="flex h-12 items-stretch overflow-hidden rounded-xl border border-[#E5E6EF]"
+                className="flex h-12 items-stretch rounded-xl border border-[#E5E6EF]"
                 onClick={() => heroFileRef.current?.click()}
               >
-                <div className="flex-1 bg-[#F8F9FC] px-4 text-sm text-slate-700 flex items-center justify-between cursor-pointer">
+                <div className="flex-1 bg-[#F8F9FC] px-4 text-sm text-slate-700 flex items-center justify-between cursor-pointer overflow-hidden">
                   <span className="truncate" title={formData.image}>
                     {formData.image || "Image.jpg"}
                   </span>
@@ -264,7 +264,7 @@ export default function LandingPageForm() {
                 <button
                   type="button"
                   onClick={() => heroFileRef.current?.click()}
-                  className="px-6 text-sm font-medium text-[#2D3658] bg-white transition hover:bg-[#F6F7FD]"
+                  className="px-6 text-sm font-medium text-[#2D3658] bg-white transition hover:bg-[#F6F7FD] whitespace-nowrap"
                 >
                   Browse
                 </button>
