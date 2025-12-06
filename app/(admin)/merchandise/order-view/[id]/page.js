@@ -132,26 +132,112 @@ export default function OrderViewPage () {
   const orderIdDisplay = order.orderId || order._id || '-'
   const createdAt = formatDate(order.createdAt)
   const discount = Number(order.discount || 0)
+  const serviceFee = Number(
+    order.serviceFee ||
+      order.platformFee ||
+      order.processingFee ||
+      order.fees ||
+      0
+  )
+  const shippingCharges = Number(
+    order.shippingFee ||
+      order.shippingCharge ||
+      order.shippingCharges ||
+      order.shippingCost ||
+      order.deliveryFee ||
+      0
+  )
   const subtotal = items.reduce((sum, item) => {
     const itemPrice = Number(item.price || item.productId?.price || 0)
     const quantity = Number(item.quantity || 1)
     const itemTotal = itemPrice * quantity
     return sum + itemTotal
   }, 0)
-  // Calculate final total: subtotal minus discount (discount is always positive, so we subtract it)
-  const calculatedTotal = subtotal - discount
-  // Use totalAmount from API if it's a valid positive number, otherwise use calculated total
-  const totalAmount = Number(order.totalAmount || 0)
+  const calculatedTotal = subtotal + serviceFee + shippingCharges - discount
+  const totalAmount = Number(order.totalAmount || order.total || 0)
   const finalTotal =
     totalAmount > 0 ? totalAmount : Math.max(0, calculatedTotal)
   const status = order.status || 'Pending'
 
-   const Info = ({ label, value }) => (
-    <div className="flex justify-between">
-      <span className="text-[#5E6582]">{label}</span>
-      <span className="font-semibold text-[#1A1F3F] text-right">{value}</span>
+  const normalizeAddress = a => {
+    if (typeof a === 'string') {
+      const s = a.trim()
+      const lines = s
+        .split(/\r?\n/)
+        .map(x => x.trim())
+        .filter(Boolean)
+      const line1 = lines[0] || s
+      const line2 = lines[1] || ''
+      return {
+        name: '',
+        line1,
+        line2,
+        city: '',
+        state: '',
+        postal: '',
+        country: '',
+        phone: '',
+        email: ''
+      }
+    }
+    const obj = typeof a === 'object' && a ? a : {}
+    const name = [
+      obj.firstName || obj.firstname || obj.given_name,
+      obj.lastName || obj.lastname || obj.family_name
+    ]
+      .filter(Boolean)
+      .join(' ')
+    const line1 =
+      obj.addressLine1 ||
+      obj.line1 ||
+      obj.street ||
+      obj.street1 ||
+      obj.address1 ||
+      obj.address ||
+      ''
+    const line2 =
+      obj.addressLine2 || obj.line2 || obj.street2 || obj.address2 || ''
+    const city = obj.city || obj.town || ''
+    const state = obj.state || obj.region || ''
+    const postal = obj.postalCode || obj.postcode || obj.zip || ''
+    const country = obj.country || obj.countryCode || ''
+    const phone = obj.phone || obj.phoneNumber || ''
+    const emailAddr = obj.email || ''
+    return {
+      name,
+      line1,
+      line2,
+      city,
+      state,
+      postal,
+      country,
+      phone,
+      email: emailAddr
+    }
+  }
+
+  const shippingRaw =
+    order.shippingAddress ||
+    order.shipping ||
+    order.deliveryAddress ||
+    order.address ||
+    order.shipping_address ||
+    null
+  const billingRaw =
+    order.billingAddress ||
+    order.billing ||
+    order.billing_address ||
+    order.address ||
+    null
+  const shipping = normalizeAddress(shippingRaw)
+  const billing = normalizeAddress(billingRaw)
+
+  const Info = ({ label, value }) => (
+    <div className='flex justify-start'>
+      <span className='text-[#5E6582]'>{label} </span>
+      <span className=' text-[#1A1F3F] text-right'> &nbsp;- {value}</span>
     </div>
-  );
+  )
 
   return (
     <div className='min-h-screen bg-gray-50 py-8 px-4'>
@@ -214,51 +300,45 @@ export default function OrderViewPage () {
               </div>
             </div>
 
-            {/* Tickets/Items Summary */}
-            <div className='rounded-xl border border-[#E5E6EF] bg-white mb-6'>
+            {/* Items Summary (placed below product list) */}
+            <div className='rounded-xl border border-[#E5E6EF] bg-white mt-6 mb-2'>
               <div className='p-4 border-b border-[#EEF1FA]'>
                 <div className='text-sm font-semibold text-slate-900'>
                   Items
                 </div>
               </div>
               <div className='p-4'>
-                <div className='space-y-3'>
-                  {items.map((item, index) => {
-                    const productName = item.productId?.title || 'Product'
-                    const quantity = Number(item.quantity || 1)
-                    const price = Number(
-                      item.price || item.productId?.price || 0
-                    )
-                    const itemTotal = quantity * price
-                    return (
-                      <div
-                        key={item._id || index}
-                        className='flex items-center justify-between text-sm'
-                      >
-                        <span className='text-[#5E6582]'>
-                          {quantity} × {productName}
-                        </span>
-                        <span className='font-semibold text-slate-900'>
-                          {toCurrency(price)}
-                        </span>
-                      </div>
-                    )
-                  })}
-                </div>
                 {items.length > 0 && (
-                  <div className='mt-3 pt-3 border-t border-[#EEF1FA] flex items-center justify-between text-sm'>
+                  <div className='mt-3 pt-3 border-t mb-2 border-[#EEF1FA] flex items-center justify-between text-sm'>
                     <span className='text-[#5E6582]'>Subtotal</span>
                     <span className='font-semibold text-slate-900'>
                       {toCurrency(subtotal)}
                     </span>
                   </div>
                 )}
-                {discount > 0 && (
-                  <div className='flex items-center justify-between text-sm text-red-600'>
-                    <span>Discount</span>
-                    <span>-{toCurrency(discount)}</span>
+                {serviceFee > 0 && (
+                  <div className='flex items-center mb-2 justify-between text-sm'>
+                    <span className='text-[#5E6582]'>
+                      Service Fee - 8.5% (VAT + processing)
+                    </span>
+                    <span className='font-semibold text-slate-900'>
+                      {toCurrency(serviceFee)}
+                    </span>
                   </div>
                 )}
+
+                <div className='flex items-center mb-2 justify-between text-sm'>
+                  <span className='text-[#5E6582]'>Shipping Charges</span>
+                  <span className='font-semibold text-slate-900'>
+                    {toCurrency(shippingCharges)}
+                  </span>
+                </div>
+
+                <div className='flex items-center justify-between text-sm text-red-600'>
+                  <span>Discount</span>
+                  <span>-{toCurrency(discount)}</span>
+                </div>
+
                 <div className='mt-3 pt-3 border-t-2 border-[#EEF1FA] flex items-center justify-between'>
                   <span className='text-sm font-semibold text-slate-900'>
                     Total
@@ -271,69 +351,111 @@ export default function OrderViewPage () {
               </div>
             </div>
 
-            {/* Individual Item Details */}
-            <div className="space-y-6">
-  {items.map((item, index) => {
-    const productName = item.productId?.title || "Product";
-    return (
-      <div
-        key={item._id || index}
-        className="rounded-2xl border border-[#E5E6EF] bg-white p-6 shadow-sm hover:shadow-md transition-shadow"
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-base font-semibold text-[#1A1F3F]">
-            Item {index + 1}
-          </h3>
-          <span className="text-sm font-medium text-[#FF4C2F] bg-[#FFF4F2] px-3 py-1 rounded-full">
-            {toCurrency(item.price || item.productId?.price || 0)}
-          </span>
-        </div>
-
-        {/* Product + Info Layout */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Image Section */}
-          <div className="flex justify-center">
-            {item?.productId?.image && (
-              <div className="relative w-32 h-32 rounded-xl overflow-hidden border border-[#E5E6EF] bg-white">
-                <Image
-                  src={toImageSrc(item.productId.image)}
-                  alt={productName}
-                  fill
-                  className="object-cover"
-                  unoptimized
-                />
+            <div className='rounded-xl border border-[#E5E6EF] bg-white mb-6'>
+              <div className='p-4 border-b border-[#EEF1FA]'>
+                <div className='text-sm font-semibold text-slate-900'>
+                  Addresses
+                </div>
               </div>
-            )}
-          </div>
+              <div className='p-4 grid grid-cols-1 md:grid-cols-2 gap-6'>
+                <div className='rounded-xl border border-[#E5E6EF] bg-[#F8F9FC] p-4'>
+                  <div className='text-sm font-semibold text-slate-900 mb-3'>
+                    Shipping Address
+                  </div>
+                  <div className='space-y-2 text-sm'>
+                    {/* <Info label='Name' value={shipping.name || userName} />
+                    <Info label='Email' value={shipping.email || email} />
+                    <Info label='Phone' value={shipping.phone || phone} /> */}
+                    <Info
+                      value={
+                        shipping.line1 +
+                        (shipping.line2 ? ' ' + shipping.line2 : '-')
+                      }
+                    />
+                    {shipping.city ||
+                    shipping.state ||
+                    shipping.postal ||
+                    shipping.country ? (
+                      <>
+                        <Info label='City' value={shipping.city || '-'} />
+                        <Info label='State' value={shipping.state || '-'} />
+                        <Info
+                          label='Postal Code'
+                          value={shipping.postal || '-'}
+                        />
+                        <Info label='Country' value={shipping.country || '-'} />
+                      </>
+                    ) : null}
+                  </div>
+                </div>
+                <div className='rounded-xl border border-[#E5E6EF] bg-[#F8F9FC] p-4'>
+                  <div className='text-sm font-semibold text-slate-900 mb-3'>
+                    Billing Address
+                  </div>
 
-          {/* User Info */}
-          <div className="space-y-2 text-sm">
-            <Info label="Name" value={userName} />
-            <Info label="Email Address" value={email} />
-            <Info label="Phone Number" value={phone} />
-            <Info label="Purchased on" value={createdAt} />
-          </div>
+                  <Info
+                    value={
+                      billing.line1 +
+                      (billing.line2 ? ' ' + billing.line2 : ' ')
+                    }
+                  />
+                </div>
+              </div>
+            </div>
 
-          {/* Product Info */}
-          <div className="space-y-2 text-sm">
-            <Info label="Item Name" value={productName} />
-            <Info label="Quantity" value={item.quantity || 1} />
-            <Info
-              label="Total Price"
-              value={toCurrency(
-                (item.price || item.productId?.price || 0) * (item.quantity || 1)
-              )}
-            />
-          </div>
-        </div>
-      </div>
-    );
-  })}
-</div>
+            {/* Individual Item Details */}
+            <div className='space-y-6'>
+              {items.map((item, index) => {
+                const productName = item.productId?.title || 'Product'
+                return (
+                  <div
+                    key={item._id || index}
+                    className='rounded-xl border border-[#E5E6EF] bg-white p-4 shadow-sm'
+                  >
+                    {/* Header */}
+                    <div className='flex items-center justify-between mb-4'>
+                      <h3 className='text-base font-semibold text-[#1A1F3F]'>
+                        Item {index + 1}
+                      </h3>
+                      <span className='text-sm font-medium text-[#FF4C2F] bg-[#FFF4F2] px-2 py-0.5 rounded-full'>
+                        {toCurrency(item.price || item.productId?.price || 0)}
+                      </span>
+                    </div>
 
+                    {/* Product + Info Layout */}
+                    <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+                      {/* Image Section */}
+                      <div className='flex justify-center items-center'>
+                        {item?.productId?.image && (
+                          <div className='relative w-24 h-24 rounded-lg overflow-hidden border border-[#E5E6EF] bg-white'>
+                            <Image
+                              src={toImageSrc(item.productId.image)}
+                              alt={productName}
+                              fill
+                              className='object-cover'
+                              unoptimized
+                            />
+                          </div>
+                        )}
+                      </div>
 
-
+                      {/* Product Info */}
+                      <div className='space-y-1.5 text-sm'>
+                        <Info label='Item Name' value={productName} />
+                        <Info label='Quantity ' value={item.quantity || 1} />
+                        <Info
+                          label='Total Price'
+                          value={toCurrency(
+                            (item.price || item.productId?.price || 0) *
+                              (item.quantity || 1)
+                          )}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
           </div>
 
           {/* Footer Border */}

@@ -53,7 +53,7 @@ const menuSections = [
         icon: 'lucide-wallet',
         href: '/email-subscription'
       },
-      { label: 'Contact Us', icon: 'lucide-wallet', href: '/contact' }
+      { label: 'Contact us Enquiries', icon: 'lucide-wallet', href: '/contact' }
       // { label: 'Ride Services', icon: '/images/backend/side_menu/side_menu (9).svg', href: '/users/ride-services' },
     ]
   },

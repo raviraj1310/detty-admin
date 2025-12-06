@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Toast from '@/components/ui/Toast'
 import { Search, Download, X, Loader2 } from 'lucide-react'
+import CustomerDetailsModal from '@/components/common/CustomerDetailsModal'
 import { IoFilterSharp } from 'react-icons/io5'
 import {
   getOrderByProductId,
@@ -41,6 +42,7 @@ export default function ProductOrders () {
   const [customerModalOpen, setCustomerModalOpen] = useState(false)
   const [selectedOrder, setSelectedOrder] = useState(null)
   const [orderDetailLoading, setOrderDetailLoading] = useState(false)
+  const [selectedSummary, setSelectedSummary] = useState(null)
 
   useEffect(() => {
     const handler = e => {
@@ -234,10 +236,13 @@ export default function ProductOrders () {
     if (!orderId) return
     try {
       setOrderDetailLoading(true)
-      setCustomerModalOpen(true)
+      const summary =
+        (orders || []).find(o => String(o.id) === String(orderId)) || null
+      setSelectedSummary(summary)
       const res = await getOrderDetail(orderId)
       const orderData = res?.data || res || null
       setSelectedOrder(orderData)
+      setCustomerModalOpen(true)
     } catch (e) {
       console.error('Failed to fetch order details:', e)
       setError('Failed to load customer details')
@@ -585,133 +590,18 @@ export default function ProductOrders () {
         </div>
       </div>
 
-      {/* Customer Details Modal */}
-      {customerModalOpen && (
-        <div className='fixed inset-0 z-50 flex items-center justify-center'>
-          <div
-            className='absolute inset-0 bg-black/40'
-            onClick={() => {
-              if (!orderDetailLoading) {
-                setCustomerModalOpen(false)
-                setSelectedOrder(null)
-              }
-            }}
-          />
-          <div className='relative z-50 w-full max-w-md rounded-2xl border border-[#E5E8F6] bg-white p-6 shadow-[0_24px_60px_-40px_rgba(15,23,42,0.55)]'>
-            {/* Modal Header */}
-            <div className='flex items-center justify-between mb-6'>
-              <h2 className='text-2xl font-bold text-slate-900'>
-                Customer Details
-              </h2>
-              <button
-                onClick={() => {
-                  if (!orderDetailLoading) {
-                    setCustomerModalOpen(false)
-                    setSelectedOrder(null)
-                  }
-                }}
-                disabled={orderDetailLoading}
-                className='rounded-full p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-50'
-              >
-                <X className='h-5 w-5' />
-              </button>
-            </div>
-
-            {orderDetailLoading ? (
-              <div className='flex items-center justify-center py-12'>
-                <Loader2 className='h-6 w-6 animate-spin text-[#5E6582]' />
-              </div>
-            ) : selectedOrder ? (
-              <div className='space-y-4'>
-                {/* Customer Information */}
-                <div className='rounded-xl bg-[#F8F9FC] p-4 border border-[#E5E6EF]'>
-                  <div className='space-y-3'>
-                    <div className='flex justify-between items-center'>
-                      <span className='text-sm text-[#8B93AF]'>Full Name</span>
-                      <span className='text-sm font-medium text-slate-900'>
-                        {selectedOrder.userName || '-'}
-                      </span>
-                    </div>
-                    <div className='flex justify-between items-center'>
-                      <span className='text-sm text-[#8B93AF]'>
-                        Email Address
-                      </span>
-                      <span className='text-sm font-medium text-slate-900'>
-                        {selectedOrder.email || '-'}
-                      </span>
-                    </div>
-                    <div className='flex justify-between items-center'>
-                      <span className='text-sm text-[#8B93AF]'>Phone</span>
-                      <span className='text-sm font-medium text-slate-900'>
-                        {selectedOrder.phoneNumber || '-'}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Order Details */}
-                <div className='rounded-xl bg-[#FFF4E6] p-4 border border-[#FFE5CC]'>
-                  <div className='space-y-3'>
-                    <div className='flex justify-between items-center'>
-                      <span className='text-sm font-medium text-slate-900'>
-                        Order ID
-                      </span>
-                      <span className='text-sm font-medium text-slate-900'>
-                        {selectedOrder.orderId || selectedOrder._id || '-'}
-                      </span>
-                    </div>
-                    <div className='flex justify-between items-center'>
-                      <span className='text-sm font-medium text-slate-900'>
-                        Items
-                      </span>
-                      <span className='text-sm font-medium text-slate-900'>
-                        x{' '}
-                        {Array.isArray(selectedOrder.items)
-                          ? selectedOrder.items.reduce(
-                              (sum, item) => sum + Number(item.quantity || 1),
-                              0
-                            )
-                          : 0}{' '}
-                        {Array.isArray(selectedOrder.items) &&
-                        selectedOrder.items.length === 1
-                          ? 'Item'
-                          : 'Items'}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Total */}
-                <div className='flex justify-between items-center pt-4 border-t border-[#EEF1FA]'>
-                  <span className='text-base font-bold text-slate-900'>
-                    Total
-                  </span>
-                  <span className='text-base font-bold text-slate-900'>
-                    {toCurrency(
-                      selectedOrder.totalAmount > 0
-                        ? selectedOrder.totalAmount
-                        : Array.isArray(selectedOrder.items)
-                        ? selectedOrder.items.reduce((sum, item) => {
-                            const price =
-                              Number(item.price) ||
-                              Number(item.productId?.price) ||
-                              0
-                            const qty = Number(item.quantity || 1)
-                            return sum + price * qty
-                          }, 0) - Number(selectedOrder.discount || 0)
-                        : 0
-                    )}
-                  </span>
-                </div>
-              </div>
-            ) : (
-              <div className='text-center py-12 text-sm text-red-600'>
-                Failed to load customer details
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+      <CustomerDetailsModal
+        open={Boolean(customerModalOpen)}
+        onOpenChange={v => {
+          if (!v) {
+            setCustomerModalOpen(false)
+            setSelectedOrder(null)
+            setSelectedSummary(null)
+          }
+        }}
+        order={selectedOrder}
+        selected={selectedSummary}
+      />
     </div>
   )
 }

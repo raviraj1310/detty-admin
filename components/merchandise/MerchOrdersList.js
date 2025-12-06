@@ -16,6 +16,7 @@ import {
   downloadOrderReceipt
 } from '@/services/merchandise/order.service'
 import Modal from '@/components/ui/Modal'
+import CustomerDetailsModal from '@/components/common/CustomerDetailsModal'
 const toCurrency = n => {
   try {
     return new Intl.NumberFormat('en-NG', {
@@ -578,7 +579,7 @@ export default function MerchOrdersList () {
       )}
 
       {customerOpen && selectedOrder && (
-        <Modal
+        <CustomerDetailsModal
           open={customerOpen}
           onOpenChange={v => {
             if (!v) {
@@ -586,86 +587,13 @@ export default function MerchOrdersList () {
               setSelectedOrder(null)
             }
           }}
-          title={'Customer Details'}
-        >
-          {(() => {
-            const raw =
-              ordersRaw.find(
-                r => String(r?._id || r?.orderId) === String(selectedOrder.id)
-              ) || {}
-            const buyerName = raw?.userName || '-'
-            const email = raw?.email || '-'
-            const phone = raw?.phoneNumber || '-'
-            const created = raw?.createdAt
-            const items = Array.isArray(raw?.items) ? raw.items : []
-            const total = Number(raw?.totalAmount || 0)
-            return (
-              <div className='space-y-6'>
-                <div className='rounded-xl bg-[#F8F9FC] p-4'>
-                  <div className='grid grid-cols-2 gap-4 text-sm'>
-                    <div className='text-[#5E6582]'>Full Name</div>
-                    <div className='text-right font-semibold text-slate-900'>
-                      {buyerName}
-                    </div>
-                    <div className='text-[#5E6582]'>Email Address</div>
-                    <div className='text-right font-semibold text-slate-900'>
-                      {email}
-                    </div>
-                    <div className='text-[#5E6582]'>Phone</div>
-                    <div className='text-right font-semibold text-slate-900'>
-                      {phone}
-                    </div>
-                  </div>
-                </div>
-                <div className='rounded-xl bg-[#F8F9FC] p-4'>
-                  <div className='grid grid-cols-2 gap-4 text-sm'>
-                    <div className='text-[#5E6582]'>Order ID</div>
-                    <div className='text-right font-semibold text-slate-900'>
-                      {raw?._id || raw?.orderId || '-'}
-                    </div>
-                    <div className='text-[#5E6582]'>Ordered On</div>
-                    <div className='text-right font-semibold text-slate-900'>
-                      {formatDate(created) || '-'}
-                    </div>
-                  </div>
-                </div>
-                <div className='rounded-xl border border-[#E5E8F6] bg-white p-4'>
-                  <div className='text-sm font-semibold text-slate-900 mb-3'>
-                    Items
-                  </div>
-                  <div className='space-y-2'>
-                    {items.length > 0 ? (
-                      items.map((it, i) => (
-                        <div
-                          key={i}
-                          className='flex items-center justify-between text-sm'
-                        >
-                          <span>
-                            {Number(it?.quantity || 0)} x{' '}
-                            {it?.productId?.title || '-'}
-                          </span>
-                          <span>
-                            {toCurrency(it?.price ?? it?.productId?.price)}
-                          </span>
-                        </div>
-                      ))
-                    ) : (
-                      <div className='text-sm text-[#5E6582]'>No items</div>
-                    )}
-                  </div>
-                  <div className='py-3 flex items-center justify-between'>
-                    <span className='text-sm font-semibold text-slate-900'>
-                      Total
-                    </span>
-                    <span className='text-base font-bold text-slate-900'>
-                      {toCurrency(total)}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            )
-          })()}
-        </Modal>
+          order={
+            ordersRaw.find(
+              r => String(r?._id || r?.orderId) === String(selectedOrder.id)
+            ) || null
+          }
+          selected={selectedOrder}
+        />
       )}
     </div>
   )

@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { Download, User, Loader2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { TbCaretUpDownFilled } from 'react-icons/tb'
+import CustomerDetailsModal from '@/components/common/CustomerDetailsModal'
 import {
   getAllOrders,
   downloadOrderReceipt
@@ -624,149 +625,14 @@ export default function MerchandisePage () {
         </div>
       </div>
 
-      {/* Order Details Popup */}
-      {showOrderDetails && selectedOrder && (
-        <div className='fixed inset-0 bg-black/40 bg-opacity-30 flex items-center justify-center z-50'>
-          <div className='bg-white rounded-xl shadow-2xl w-[420px] max-w-md mx-4 border border-gray-100'>
-            {/* Header */}
-            <div className='flex items-center justify-between px-6 py-4 border-b border-gray-100'>
-              <h3 className='text-lg font-semibold text-gray-900'>
-                Customer Details
-              </h3>
-              <button
-                onClick={() => setShowOrderDetails(false)}
-                className='text-gray-400 hover:text-gray-600 transition-colors p-1 hover:bg-gray-100 rounded-full'
-              >
-                <svg
-                  className='w-5 h-5'
-                  fill='none'
-                  stroke='currentColor'
-                  viewBox='0 0 24 24'
-                >
-                  <path
-                    strokeLinecap='round'
-                    strokeLinejoin='round'
-                    strokeWidth={2}
-                    d='M6 18L18 6M6 6l12 12'
-                  />
-                </svg>
-              </button>
-            </div>
-
-            {/* Content */}
-            <div className='px-6 py-5'>
-              {/* Order Summary */}
-              {(() => {
-                const order = selectedOrderRaw || {}
-                const orderId = toIdString(
-                  order?.orderId ||
-                    order?._id ||
-                    selectedOrder?.orderId ||
-                    selectedOrder?.id
-                )
-                const items = Array.isArray(order?.items) ? order.items : []
-                const lines = items.map(it => {
-                  const qty = Number(it?.quantity || 0)
-                  const unit = Number(it?.price ?? it?.productId?.price ?? 0)
-                  const name = it?.productId?.title || '-'
-                  return `${toCurrency(unit)} x ${qty} ${name}`
-                })
-                const subtotalNum = items.reduce((sum, it) => {
-                  const qty = Number(it?.quantity || 0)
-                  const unit = Number(it?.price ?? it?.productId?.price ?? 0)
-                  return sum + qty * unit
-                }, 0)
-                const discountNum = Number(order?.discount || 0)
-                const serviceFeeNum = Number(order?.serviceFee || 0)
-                const totalNum = Number(
-                  order?.totalAmount ||
-                    subtotalNum - discountNum + serviceFeeNum
-                )
-                return (
-                  <>
-                    <div className='mb-5'>
-                      <h4 className='text-base font-semibold text-gray-900 mb-3'>
-                        Order ID {orderId || '-'}
-                      </h4>
-                      <div className='flex justify-between items-center bg-gray-50 p-3 rounded-lg'>
-                        <span className='text-sm text-gray-700'>
-                          {lines.length > 0
-                            ? lines.join(', ')
-                            : selectedOrder?.quantity || '-'}
-                        </span>
-                        <span className='font-semibold text-gray-900'>
-                          {toCurrency(totalNum)}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Billing Details */}
-                    <div className='mb-5'>
-                      <h4 className='text-base font-semibold text-gray-900 mb-4'>
-                        Billing Details
-                      </h4>
-                      <div className='space-y-3'>
-                        <div className='flex justify-between items-center py-1'>
-                          <span className='text-sm text-gray-600'>
-                            Customer Name
-                          </span>
-                          <span className='text-sm font-medium text-gray-900'>
-                            {order?.userId?.name || order?.userName || '-'}
-                          </span>
-                        </div>
-                        <div className='flex justify-between items-center py-1'>
-                          <span className='text-sm text-gray-600'>
-                            Buyer&apos;s Email Address
-                          </span>
-                          <span className='text-sm font-medium text-gray-900'>
-                            {order?.userId?.email || order?.email || '-'}
-                          </span>
-                        </div>
-                        <div className='flex justify-between items-center py-1'>
-                          <span className='text-sm text-gray-600'>
-                            Service Fees
-                          </span>
-                          <span className='text-sm font-medium text-gray-900'>
-                            {toCurrency(serviceFeeNum)}
-                          </span>
-                        </div>
-                        <div className='flex justify-between items-center py-1'>
-                          <span className='text-sm text-gray-600'>
-                            Discount Applied
-                          </span>
-                          <span className='text-sm font-medium text-gray-900'>
-                            {toCurrency(discountNum)}
-                          </span>
-                        </div>
-                        <div className='flex justify-between items-center py-1'>
-                          <span className='text-sm text-gray-600'>
-                            Subtotal
-                          </span>
-                          <span className='text-sm font-medium text-gray-900'>
-                            {toCurrency(subtotalNum)}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Total */}
-                    <div className='border-t border-gray-200 pt-4'>
-                      <div className='flex justify-between items-center'>
-                        <span className='text-lg font-semibold text-gray-900'>
-                          Total
-                        </span>
-                        <span className='text-xl font-bold text-orange-500'>
-                          {toCurrency(totalNum)}
-                        </span>
-                      </div>
-                    </div>
-                  </>
-                )
-              })()}
-            </div>
-          </div>
-        </div>
-      )}
+      <CustomerDetailsModal
+        open={Boolean(showOrderDetails && selectedOrder)}
+        onOpenChange={v => {
+          if (!v) setShowOrderDetails(false)
+        }}
+        order={selectedOrderRaw}
+        selected={selectedOrder}
+      />
     </div>
   )
 }

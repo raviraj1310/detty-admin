@@ -219,7 +219,7 @@ export default function ContactUsList () {
       <div className='rounded-[30px] border border-[#E1E6F7] bg-white p-6 shadow-[0_24px_60px_-40px_rgba(15,23,42,0.55)]'>
         <div className='mb-6 flex flex-wrap items-center justify-between gap-4'>
           <h2 className='text-lg font-semibold text-slate-900'>
-            Messages List
+            Contact us Enquiries
           </h2>
           <div className='flex flex-wrap items-center gap-3'>
             <div className='relative flex items-center'>
