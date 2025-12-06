@@ -270,7 +270,7 @@ export default function MerchandisePage () {
         statusUC === 'PAID'
           ? 'PAID'
           : statusUC === 'PENDING'
-          ? 'Pending'
+          ? 'PENDING'
           : statusRaw
           ? statusRaw.charAt(0).toUpperCase() + statusRaw.slice(1).toLowerCase()
           : 'Pending'

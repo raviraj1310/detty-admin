@@ -162,7 +162,7 @@ export default function EditEvent ({ eventId }) {
     fd.append('location', formData.location)
     fd.append('eventStartDate', formData.eventStartDate)
     const openingHours =
-      `${formData.eventStartDate} ${formData.eventStartTime} - ${formData.eventEndDate} ${formData.eventEndTime}`.trim()
+      `${formData.eventStartTime} - ${formData.eventEndTime}`.trim()
     fd.append('openingHours', openingHours)
     if (imageFile) fd.append('image', imageFile)
     if (imageFile) {
@@ -215,6 +215,27 @@ export default function EditEvent ({ eventId }) {
           if (isNaN(dt.getTime())) return ''
           return dt.toISOString().slice(0, 10)
         }
+        const parseOpeningHours = s => {
+          let str = String(s || '')
+          str = str.replace(/[`'"\(\)]/g, '').trim()
+          if (!str) return { start: '', end: '' }
+          const timeMatches = str.match(/\b(\d{1,2}:\d{2})\b/g)
+          if (timeMatches && timeMatches.length >= 2) {
+            return { start: timeMatches[0], end: timeMatches[1] }
+          }
+          const parts = str.split(/\s*-\s*/)
+          if (parts.length === 2) {
+            const left = parts[0].trim()
+            const right = parts[1].trim()
+            const m1 = left.match(/(\d{4}-\d{2}-\d{2})[T\s](\d{1,2}:\d{2})/)
+            const m2 = right.match(/(\d{4}-\d{2}-\d{2})[T\s](\d{1,2}:\d{2})/)
+            const startTime = m1 ? m1[2] : ''
+            const endTime = m2 ? m2[2] : ''
+            return { start: startTime, end: endTime }
+          }
+          return { start: '', end: '' }
+        }
+        const oh = parseOpeningHours(d.openingHours)
         setSelectedEventTypeId(
           toIdString(typeId) ||
             toIdString(typesList[0]?._id || typesList[0]?.id || '')
@@ -224,9 +245,9 @@ export default function EditEvent ({ eventId }) {
           location: String(d.location || ''),
           mapLocation: String(d.mapLocation || ''),
           eventStartDate: toDateInput(d.eventStartDate),
-          eventStartTime: String(d.eventStartTime || ''),
+          eventStartTime: String(d.eventStartTime || oh.start || ''),
           eventEndDate: toDateInput(d.eventEndDate),
-          eventEndTime: String(d.eventEndTime || ''),
+          eventEndTime: String(d.eventEndTime || oh.end || ''),
           eventType: String(d.eventType?.name || 'Concert'),
           uploadImage: '',
           aboutEvent: String(d.about || ''),
