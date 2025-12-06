@@ -3,38 +3,7 @@
 import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 
-const bookingData = [
-  {
-    id: 1,
-    addedOn: 'Sat, 15 June 2025, 10:00 AM',
-    bundleName: 'Sapphire Plus Bundle',
-    ticketsBooked: '3 x Plus Astronauts (₦2,000)',
-    additionalInfo: '2 x Late Plus Astronaut (₦15,000)',
-    amount: '₦18,000',
-    status: 'Done',
-    paymentStatus: 'Completed'
-  },
-  {
-    id: 2,
-    addedOn: 'Sat, 12 June 2025, 10:00 AM',
-    bundleName: 'Emerald Energy Bundle',
-    ticketsBooked: '3 x Plus Astronauts (₦2,000)',
-    additionalInfo: '2 x Late Plus Astronaut (₦15,000)',
-    amount: '₦18,000',
-    status: 'Upcoming',
-    paymentStatus: 'Completed'
-  },
-  {
-    id: 3,
-    addedOn: 'Sat, 12 June 2025, 10:00 AM',
-    bundleName: 'Sapphire Plus Bundle',
-    ticketsBooked: '3 x Plus Astronauts (₦2,000)',
-    additionalInfo: '2 x Late Plus Astronaut (₦15,000)',
-    amount: '₦18,000',
-    status: 'Done',
-    paymentStatus: 'Completed'
-  }
-]
+const bookingData = []
 
 function ActionDropdown ({ bookingId }) {
   const [isOpen, setIsOpen] = useState(false)
@@ -113,7 +82,7 @@ const filterTabs = [
   { id: 'activities', label: 'Places to Visit', active: false },
   { id: 'merchandise', label: 'Merchandise', active: false },
   { id: 'e-sim', label: 'Internet Connectivity', active: false },
-  { id: 'accommodation', label: 'Accommodation', active: false },
+  { id: 'accommodation', label: 'Accommodation', active: false }
   // { id: 'diy', label: 'DIY', active: false },
 ]
 
@@ -158,9 +127,7 @@ export default function Bookings () {
 return (
   <div className='p-4 h-full flex flex-col bg-white'>
     <div className='mb-4'>
-      <h1 className='text-xl font-bold text-gray-900 mb-1'>
-        Bookings 
-      </h1>
+      <h1 className='text-xl font-bold text-gray-900 mb-1'>Bookings</h1>
       <nav className='text-sm text-gray-500'>
         <span>Dashboard</span> / <span>Users</span>
       </nav>
