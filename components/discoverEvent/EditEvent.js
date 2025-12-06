@@ -114,7 +114,6 @@ export default function EditEvent ({ eventId }) {
     if (!formData.mapLocation || !mapRegex.test(formData.mapLocation))
       errs.mapLocation = 'Enter coordinates as lat, long'
     if (!formData.eventStartDate) errs.eventStartDate = 'Select start date'
-    if (!formData.eventEndDate) errs.eventEndDate = 'Select end date'
     if (!formData.eventStartTime) errs.eventStartTime = 'Select start time'
     if (!formData.eventEndTime) errs.eventEndTime = 'Select end time'
     if (formData.eventStartDate && formData.eventEndDate) {
@@ -156,11 +155,14 @@ export default function EditEvent ({ eventId }) {
     fd.append('twitterLink', tw)
     fd.append('about', formData.aboutEvent.trim())
     fd.append('eventTypeId', toIdString(selectedEventTypeId))
-    fd.append('eventEndDate', formData.eventEndDate)
+    const effectiveEndDate = (
+      formData.eventEndDate || formData.eventStartDate
+    ).trim()
+    fd.append('eventEndDate', effectiveEndDate)
     fd.append('mapLocation', formData.mapLocation)
     fd.append('websiteLink', ws)
     fd.append('location', formData.location)
-    fd.append('eventStartDate', formData.eventStartDate)
+    fd.append('eventStartDate', formData.eventStartDate.trim())
     const openingHours =
       `${formData.eventStartTime} - ${formData.eventEndTime}`.trim()
     fd.append('openingHours', openingHours)

@@ -158,16 +158,12 @@ export default function AddActivity () {
     if (!imageFile) newErrors.uploadImage = 'Please select an image file'
     if (!formData.activityStartDate.trim())
       newErrors.activityStartDate = 'Required'
-    if (!formData.activityEndDate.trim()) newErrors.activityEndDate = 'Required'
     if (formData.activityStartDate && formData.activityEndDate) {
       const start = new Date(formData.activityStartDate)
       const end = new Date(formData.activityEndDate)
       if (start > end) {
         newErrors.activityEndDate = 'End date must be after start date'
       }
-    }
-    if (calculatedDuration <= 0) {
-      newErrors.activityEndDate = 'Please select valid start and end dates'
     }
     setErrors(newErrors)
     if (Object.keys(newErrors).length > 0) return
@@ -189,9 +185,12 @@ export default function AddActivity () {
     fd.append('openingHours', formData.openingHours.trim())
     fd.append('activityName', formData.activityName.trim())
     fd.append('image', imageFile)
+    const effectiveEndDate = (
+      formData.activityEndDate || formData.activityStartDate
+    ).trim()
     fd.append('activityStartDate', formData.activityStartDate.trim())
-    fd.append('activityEndDate', formData.activityEndDate.trim())
-    fd.append('dateRangeDuration', String(calculatedDuration))
+    fd.append('activityEndDate', effectiveEndDate)
+    fd.append('dateRangeDuration', String(calculatedDuration || 1))
 
     try {
       setSubmitting(true)
@@ -276,27 +275,26 @@ export default function AddActivity () {
 
   // Calculate duration in days based on start and end dates (inclusive)
   const calculateDuration = (startDate, endDate) => {
-    if (!startDate || !endDate) return 0
+    if (!startDate) return 0
     const start = new Date(startDate)
+    if (!endDate) return 1
     const end = new Date(endDate)
-    if (isNaN(start.getTime()) || isNaN(end.getTime())) return 0
+    if (isNaN(start.getTime())) return 0
+    if (isNaN(end.getTime())) return 1
+    if (end < start) return 1
     const diffTime = Math.abs(end - start)
     const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1
-    return diffDays
+    return Math.max(1, diffDays)
   }
 
   const [calculatedDuration, setCalculatedDuration] = useState(0)
 
   useEffect(() => {
-    if (formData.activityStartDate && formData.activityEndDate) {
-      const days = calculateDuration(
-        formData.activityStartDate,
-        formData.activityEndDate
-      )
-      setCalculatedDuration(days)
-    } else {
-      setCalculatedDuration(0)
-    }
+    const days = calculateDuration(
+      formData.activityStartDate,
+      formData.activityEndDate
+    )
+    setCalculatedDuration(days)
   }, [formData.activityStartDate, formData.activityEndDate])
 
   const handleEditTickets = () => {

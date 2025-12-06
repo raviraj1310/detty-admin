@@ -81,18 +81,8 @@ export default function AddEvents () {
     if (!formData.mapLocation || !mapRegex.test(formData.mapLocation))
       errs.mapLocation = 'Enter coordinates as lat, long'
     if (!formData.eventStartDate) errs.eventStartDate = 'Select start date'
-    if (!formData.eventEndDate) errs.eventEndDate = 'Select end date'
     if (!formData.eventStartTime) errs.eventStartTime = 'Select start time'
     if (!formData.eventEndTime) errs.eventEndTime = 'Select end time'
-    if (formData.eventStartDate && formData.eventEndDate) {
-      const s = new Date(
-        `${formData.eventStartDate}T${formData.eventStartTime || '00:00'}`
-      )
-      const e = new Date(
-        `${formData.eventEndDate}T${formData.eventEndTime || '00:00'}`
-      )
-      if (s > e) errs.eventEndDate = 'End date must be after start date'
-    }
     if (!selectedEventTypeId) errs.eventType = 'Select event type'
     if (!formData.aboutEvent || formData.aboutEvent.trim().length < 10)
       errs.aboutEvent = 'Enter a meaningful description'
@@ -123,13 +113,14 @@ export default function AddEvents () {
     fd.append('twitterLink', tw)
     fd.append('about', formData.aboutEvent.trim())
     fd.append('eventTypeId', selectedEventTypeId)
-    fd.append('eventEndDate', formData.eventEndDate)
+    const effectiveEndDate = formData.eventEndDate || formData.eventStartDate
+    fd.append('eventEndDate', effectiveEndDate)
     fd.append('mapLocation', formData.mapLocation)
     fd.append('websiteLink', ws)
     fd.append('location', formData.location)
     fd.append('eventStartDate', formData.eventStartDate)
     const openingHours =
-      `${formData.eventStartDate} ${formData.eventStartTime} - ${formData.eventEndDate} ${formData.eventEndTime}`.trim()
+      `${formData.eventStartDate} ${formData.eventStartTime} - ${effectiveEndDate} ${formData.eventEndTime}`.trim()
     fd.append('openingHours', openingHours)
     fd.append('image', imageFile)
     fd.append('imageWidth', String(imageMeta.width || 0))
