@@ -106,11 +106,11 @@ function ActionDropdown ({ row, downloadingId, openCustomer, downloadReceipt }) 
       {isOpen && (
         <>
           <div
-            className='fixed inset-0 z-40'
+            className='fixed inset-0 z-[99998]'
             onClick={() => setIsOpen(false)}
           />
           <div
-            className='fixed w-52 bg-white rounded-lg shadow-2xl border border-gray-200 z-50 py-2'
+            className='fixed w-52 bg-white rounded-lg shadow-2xl border border-gray-200 z-[99999] py-2'
             style={{
               top: `${buttonPosition.top}px`,
               right: `${buttonPosition.right}px`
@@ -264,8 +264,17 @@ export default function MerchandisePage () {
       const created = o?.createdAt
       const items = Array.isArray(o?.items) ? o.items : []
       const total = Number(o?.totalAmount || 0)
-      const status = String(o?.status || '').trim() || 'Pending'
-      const activity = /completed/i.test(status) ? 'Done' : 'Ongoing'
+      const statusRaw = String(o?.status || '').trim()
+      const statusUC = statusRaw.toUpperCase()
+      const payment =
+        statusUC === 'PAID'
+          ? 'PAID'
+          : statusUC === 'PENDING'
+          ? 'Pending'
+          : statusRaw
+          ? statusRaw.charAt(0).toUpperCase() + statusRaw.slice(1).toLowerCase()
+          : 'Pending'
+      const activity = statusUC === 'PAID' ? 'Done' : 'Ongoing'
       items.forEach((it, idx) => {
         const qty = Number(it?.quantity || 0)
         const title = it?.productId?.title || '-'
@@ -287,7 +296,7 @@ export default function MerchandisePage () {
             : `${toCurrency(unitPrice)}`,
           totalAmount: toCurrency(total),
           activityStatus: activity,
-          paymentStatus: /completed/i.test(status) ? 'Completed' : 'Pending'
+          paymentStatus: payment
         })
       })
     })
@@ -330,10 +339,14 @@ export default function MerchandisePage () {
 
   const getPaymentStatusColor = status => {
     switch (status) {
-      case 'Completed':
+      case 'PAID':
         return 'bg-green-100 text-green-800'
-      case 'Incomplete':
+      case 'Pending':
         return 'bg-yellow-100 text-yellow-800'
+      case 'Refunded':
+        return 'bg-purple-100 text-purple-800'
+      case 'Cancelled':
+        return 'bg-red-100 text-red-800'
       default:
         return 'bg-gray-100 text-gray-800'
     }
@@ -395,9 +408,9 @@ export default function MerchandisePage () {
           <span>Dashboard</span> / <span>Users</span>
         </nav>
       </div>
-      <div className='bg-gray-200 p-5 rounded-xl'>
+      <div className='bg-gray-200 p-5 rounded-xl overflow-visible'>
         {/* Main Content */}
-        <div className='bg-white rounded-lg shadow-sm border border-gray-200'>
+        <div className='bg-white rounded-lg shadow-sm border border-gray-200 overflow-visible'>
           {/* Header with Search and Filters */}
           <div className='p-4 border-b border-gray-200'>
             <div className='flex justify-between items-center mb-3'>
@@ -485,7 +498,7 @@ export default function MerchandisePage () {
           </div>
 
           {/* Table */}
-          <div className='overflow-x-auto'>
+          <div className='overflow-x-auto overflow-y-visible relative z-0'>
             <table className='w-full'>
               <thead className='bg-gray-50 sticky top-0'>
                 <tr>
@@ -519,12 +532,7 @@ export default function MerchandisePage () {
                       <TbCaretUpDownFilled className='w-3 h-3 text-gray-400 ml-1' />
                     </div>
                   </th>
-                  <th className='px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-                    <div className='flex items-center'>
-                      <span>Activity Status</span>
-                      <TbCaretUpDownFilled className='w-3 h-3 text-gray-400 ml-1' />
-                    </div>
-                  </th>
+
                   <th className='px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
                     <div className='flex items-center'>
                       <span>Payment Status</span>
@@ -590,15 +598,7 @@ export default function MerchandisePage () {
                         {merchandise.totalAmount}
                       </span>
                     </td>
-                    <td className='px-3 py-3 whitespace-nowrap'>
-                      <span
-                        className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${getActivityStatusColor(
-                          merchandise.activityStatus
-                        )}`}
-                      >
-                        • {merchandise.activityStatus}
-                      </span>
-                    </td>
+
                     <td className='px-3 py-3 whitespace-nowrap'>
                       <span
                         className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${getPaymentStatusColor(
