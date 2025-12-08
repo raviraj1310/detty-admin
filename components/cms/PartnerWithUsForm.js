@@ -109,8 +109,18 @@ export default function PartnerWithUsForm () {
   const buildDettyFusionUrl = (type, id) => {
     const base = 'https://dettyfusion.accessbankplc.com'
     let s = id
-    if (s && typeof s === 'object') s = (s.eventId && (s.eventId._id || s.eventId)) || s.eventId || s.$oid || s._id || s.id || ''
-    s = String(s || '').trim().replace(/[`'"]/g, '').replace(/[()]/g, '')
+    if (s && typeof s === 'object')
+      s =
+        (s.eventId && (s.eventId._id || s.eventId)) ||
+        s.eventId ||
+        s.$oid ||
+        s._id ||
+        s.id ||
+        ''
+    s = String(s || '')
+      .trim()
+      .replace(/[`'"]/g, '')
+      .replace(/[()]/g, '')
     const hex24 = s.match(/[a-f0-9]{24}/i)
     const hex32 = s.match(/[a-f0-9]{32}/i)
     const finalId = hex24 ? hex24[0] : hex32 ? hex32[0] : s
@@ -120,7 +130,10 @@ export default function PartnerWithUsForm () {
   }
 
   const formatCurrency = n => {
-    const num = typeof n === 'number' ? n : Number(String(n || '').replace(/[^0-9.]/g, ''))
+    const num =
+      typeof n === 'number'
+        ? n
+        : Number(String(n || '').replace(/[^0-9.]/g, ''))
     if (!num || isNaN(num)) return ''
     return `₦${num.toLocaleString()}`
   }
@@ -168,15 +181,20 @@ export default function PartnerWithUsForm () {
       .trim()
   }
 
-
   const fetchMinEventTicketInfo = async eventId => {
     try {
       const res = await getAllTickets({ eventId })
-      const list = Array.isArray(res?.data) ? res.data : Array.isArray(res) ? res : []
+      const list = Array.isArray(res?.data)
+        ? res.data
+        : Array.isArray(res)
+        ? res
+        : []
       let minPrice = null
       let ticketId = ''
       for (const t of list) {
-        const priceNum = Number(String(t?.perTicketPrice ?? '').replace(/[^0-9.]/g, ''))
+        const priceNum = Number(
+          String(t?.perTicketPrice ?? '').replace(/[^0-9.]/g, '')
+        )
         if (!isNaN(priceNum) && priceNum > 0) {
           if (minPrice == null || priceNum < minPrice) {
             minPrice = priceNum
@@ -193,11 +211,17 @@ export default function PartnerWithUsForm () {
   const fetchMinActivityTicketInfo = async activityId => {
     try {
       const res = await getAllActivityTickets({ activityId })
-      const list = Array.isArray(res?.data) ? res.data : Array.isArray(res) ? res : []
+      const list = Array.isArray(res?.data)
+        ? res.data
+        : Array.isArray(res)
+        ? res
+        : []
       let minPrice = null
       let ticketId = ''
       for (const t of list) {
-        const priceNum = Number(String(t?.perTicketPrice ?? '').replace(/[^0-9.]/g, ''))
+        const priceNum = Number(
+          String(t?.perTicketPrice ?? '').replace(/[^0-9.]/g, '')
+        )
         if (!isNaN(priceNum) && priceNum > 0) {
           if (minPrice == null || priceNum < minPrice) {
             minPrice = priceNum
@@ -258,13 +282,48 @@ export default function PartnerWithUsForm () {
 
         if (data) {
           const vendorList = []
-          for (let i = 1; i <= MAX_VENDOR_SECTIONS; i++) {
-            const imgKey = `vendorSectionImage${i}`
-            const txtKey = `vendorSectionText${i}`
-            const imgVal = data[imgKey]
-            const txtVal = data[txtKey]
-            if ((typeof imgVal === 'string' && imgVal.trim()) || (typeof txtVal === 'string' && txtVal.trim())) {
-              vendorList.push({ image: imgVal || '', text: txtVal || '' })
+          if (
+            Array.isArray(data.vendorSectionImages) &&
+            data.vendorSectionImages.length > 0
+          ) {
+            for (
+              let i = 0;
+              i < data.vendorSectionImages.length && i < MAX_VENDOR_SECTIONS;
+              i++
+            ) {
+              const pos = i + 1
+              const imgKey = `vendorSectionImage${pos}`
+              const txtKey = `vendorSectionText${pos}`
+              const fromArray = data.vendorSectionImages[i] || {}
+              const imgVal =
+                typeof data[imgKey] === 'string' && data[imgKey].trim()
+                  ? data[imgKey]
+                  : typeof fromArray.image === 'string' &&
+                    fromArray.image.trim()
+                  ? fromArray.image
+                  : ''
+              const txtVal =
+                typeof fromArray.text === 'string' && fromArray.text.trim()
+                  ? fromArray.text
+                  : typeof data[txtKey] === 'string' && data[txtKey].trim()
+                  ? data[txtKey]
+                  : ''
+              if (imgVal || txtVal) {
+                vendorList.push({ image: imgVal, text: txtVal })
+              }
+            }
+          } else {
+            for (let i = 1; i <= MAX_VENDOR_SECTIONS; i++) {
+              const imgKey = `vendorSectionImage${i}`
+              const txtKey = `vendorSectionText${i}`
+              const imgVal = data[imgKey]
+              const txtVal = data[txtKey]
+              if (
+                (typeof imgVal === 'string' && imgVal.trim()) ||
+                (typeof txtVal === 'string' && txtVal.trim())
+              ) {
+                vendorList.push({ image: imgVal || '', text: txtVal || '' })
+              }
             }
           }
 
@@ -314,7 +373,7 @@ export default function PartnerWithUsForm () {
             vendorSectionTitle1: data.vendorSectionTitle1 || '',
             vendorSectionTitle2: data.vendorSectionTitle2 || '',
             vendorSectionDescription: data.vendorSectionDescription || '',
-            vendorSectionImages: vendorList.length ? vendorList : (data.vendorSectionImages || []),
+            vendorSectionImages: vendorList,
             BecomeVendorTitle1: data.BecomeVendorTitle1 || '',
             BecomeVendorTitle2: data.BecomeVendorTitle2 || '',
             BecomeVendorDescription: data.BecomeVendorDescription || '',
@@ -354,8 +413,7 @@ export default function PartnerWithUsForm () {
             previews.BecomeVendorImage = IMAGE_BASE_URL + data.BecomeVendorImage
 
           // Set vendor image previews
-          const vList = vendorList.length ? vendorList : (Array.isArray(data.vendorSectionImages) ? data.vendorSectionImages : [])
-          vList.forEach((vendor, index) => {
+          vendorList.forEach((vendor, index) => {
             if (vendor.image) {
               previews[`vendorImage${index}`] = IMAGE_BASE_URL + vendor.image
             }
@@ -405,22 +463,54 @@ export default function PartnerWithUsForm () {
         !String(formData.promoSectionActivityId || '').trim()
       if (!shouldInfer) return
       const plain = htmlToPlain(formData.promoSectionTitle)
-      const normalize = s => String(s || '').trim().toLowerCase().replace(/\s+/g, ' ')
+      const normalize = s =>
+        String(s || '')
+          .trim()
+          .toLowerCase()
+          .replace(/\s+/g, ' ')
       const quotedMatch = plain.match(/"([^"]+)"/)
       const quotedNorm = quotedMatch ? normalize(quotedMatch[1]) : ''
-      const eventsNorm = (events || []).map(ev => ({ id: (ev.eventId && (ev.eventId._id || ev.eventId)) || ev.eventId || ev._id || ev.id || '', name: ev.eventName || ev.name || '' }))
-      const actsNorm = (activities || []).map(a => ({ id: (a.eventId && (a.eventId._id || a.eventId)) || a.eventId || a._id || a.id || '', name: a.activityName || a.name || '' }))
+      const eventsNorm = (events || []).map(ev => ({
+        id:
+          (ev.eventId && (ev.eventId._id || ev.eventId)) ||
+          ev.eventId ||
+          ev._id ||
+          ev.id ||
+          '',
+        name: ev.eventName || ev.name || ''
+      }))
+      const actsNorm = (activities || []).map(a => ({
+        id:
+          (a.eventId && (a.eventId._id || a.eventId)) ||
+          a.eventId ||
+          a._id ||
+          a.id ||
+          '',
+        name: a.activityName || a.name || ''
+      }))
       let sel = null
       if (quotedNorm) {
         const evHit = eventsNorm.find(e => normalize(e.name) === quotedNorm)
         const acHit = actsNorm.find(a => normalize(a.name) === quotedNorm)
-        sel = evHit ? { type: 'event', id: evHit.id } : acHit ? { type: 'activity', id: acHit.id } : null
+        sel = evHit
+          ? { type: 'event', id: evHit.id }
+          : acHit
+          ? { type: 'activity', id: acHit.id }
+          : null
       }
       if (!sel) {
         const plainNorm = normalize(plain)
-        const evContains = eventsNorm.find(e => plainNorm.includes(normalize(e.name)))
-        const acContains = actsNorm.find(a => plainNorm.includes(normalize(a.name)))
-        sel = evContains ? { type: 'event', id: evContains.id } : acContains ? { type: 'activity', id: acContains.id } : null
+        const evContains = eventsNorm.find(e =>
+          plainNorm.includes(normalize(e.name))
+        )
+        const acContains = actsNorm.find(a =>
+          plainNorm.includes(normalize(a.name))
+        )
+        sel = evContains
+          ? { type: 'event', id: evContains.id }
+          : acContains
+          ? { type: 'activity', id: acContains.id }
+          : null
       }
       if (sel?.type === 'event' && sel.id) {
         handleChange('promoSectionType', 'event')
@@ -561,11 +651,17 @@ export default function PartnerWithUsForm () {
 
     // Validate event/activity selection based on type
     if (formData.promoSectionType === 'event') {
-      if (!formData.promoSectionEventId || !formData.promoSectionEventId.trim()) {
+      if (
+        !formData.promoSectionEventId ||
+        !formData.promoSectionEventId.trim()
+      ) {
         e.promoSectionEventId = 'Please select an event'
       }
     } else if (formData.promoSectionType === 'activity') {
-      if (!formData.promoSectionActivityId || !formData.promoSectionActivityId.trim()) {
+      if (
+        !formData.promoSectionActivityId ||
+        !formData.promoSectionActivityId.trim()
+      ) {
         e.promoSectionActivityId = 'Please select an activity'
       }
     }
@@ -828,17 +924,17 @@ export default function PartnerWithUsForm () {
       Array.isArray(formData.vendorSectionImages) &&
       formData.vendorSectionImages.length > 0
     ) {
-      // Append vendor image files
+      // Append vendor images using 1-based keys: vendorSectionImage1..10
       formData.vendorSectionImages.forEach((vendor, index) => {
-        if (imageFiles[`vendorImage${index}`]) {
-          formDataPayload.append(
-            `vendorImage${index}`,
-            imageFiles[`vendorImage${index}`]
-          )
+        const pos = index + 1
+        const fileKey = `vendorImage${index}`
+        const apiKey = `vendorSectionImage${pos}`
+        if (imageFiles[fileKey]) {
+          formDataPayload.append(apiKey, imageFiles[fileKey])
         }
       })
 
-      // Append vendor data as JSON
+      // Append vendor data as JSON (image filename/text) for non-file cases
       formDataPayload.append(
         'vendorSectionImages',
         JSON.stringify(
@@ -1325,154 +1421,221 @@ export default function PartnerWithUsForm () {
                 <h3 className='font-medium'>Promo Section</h3>
               </div>
 
- <div className='grid grid-cols-1 md:grid-cols-3 gap-4 mb-4'>
-              <div>
-                <label className='block text-sm font-medium text-gray-700 mb-2'>
-                  Select Type
-                </label>
-                <div className='flex items-center gap-6'>
-                  <label className='inline-flex items-center gap-2 cursor-pointer'>
-                    <input
-                      type='radio'
-                      name='promoSectionType'
-                      value='event'
-                      checked={formData.promoSectionType === 'event'}
-                      onChange={() => {
-                        handleChange('promoSectionType', 'event')
-                        handleChange('promoSectionActivityId', '')
-                      }}
-                    />
-                    <span className='text-sm text-gray-800'>Event</span>
+              <div className='grid grid-cols-1 md:grid-cols-3 gap-4 mb-4'>
+                <div>
+                  <label className='block text-sm font-medium text-gray-700 mb-2'>
+                    Select Type
                   </label>
-                  <label className='inline-flex items-center gap-2 cursor-pointer'>
-                    <input
-                      type='radio'
-                      name='promoSectionType'
-                      value='activity'
-                      checked={formData.promoSectionType === 'activity'}
-                      onChange={() => {
-                        handleChange('promoSectionType', 'activity')
-                        handleChange('promoSectionEventId', '')
-                      }}
-                    />
-                    <span className='text-sm text-gray-800'>Activity</span>
-                  </label>
+                  <div className='flex items-center gap-6'>
+                    <label className='inline-flex items-center gap-2 cursor-pointer'>
+                      <input
+                        type='radio'
+                        name='promoSectionType'
+                        value='event'
+                        checked={formData.promoSectionType === 'event'}
+                        onChange={() => {
+                          handleChange('promoSectionType', 'event')
+                          handleChange('promoSectionActivityId', '')
+                        }}
+                      />
+                      <span className='text-sm text-gray-800'>Event</span>
+                    </label>
+                    <label className='inline-flex items-center gap-2 cursor-pointer'>
+                      <input
+                        type='radio'
+                        name='promoSectionType'
+                        value='activity'
+                        checked={formData.promoSectionType === 'activity'}
+                        onChange={() => {
+                          handleChange('promoSectionType', 'activity')
+                          handleChange('promoSectionEventId', '')
+                        }}
+                      />
+                      <span className='text-sm text-gray-800'>Activity</span>
+                    </label>
+                  </div>
+                </div>
+                <div className='md:col-span-2'>
+                  {formData.promoSectionType === 'event' ? (
+                    <div>
+                      <label className='block text-sm font-medium text-gray-700 mb-2'>
+                        Event
+                      </label>
+                      <select
+                        value={formData.promoSectionEventId}
+                        onChange={async e => {
+                          const id = e.target.value
+                          handleChange('promoSectionEventId', id)
+                          const found =
+                            (events || []).find(
+                              ev =>
+                                String(
+                                  (ev.eventId &&
+                                    (ev.eventId._id || ev.eventId)) ||
+                                    ev.eventId ||
+                                    ev._id ||
+                                    ev.id ||
+                                    ''
+                                ) === String(id)
+                            ) || null
+                          const name = found
+                            ? found.eventName || found.name || ''
+                            : ''
+                          const img = found ? sanitizeImageUrl(found.image) : ''
+                          const info = id
+                            ? await fetchMinEventTicketInfo(id)
+                            : { price: null, ticketId: '' }
+                          const priceStr =
+                            info.price != null ? formatCurrency(info.price) : ''
+                          const raw = String(formData.promoSectionTitle || '')
+                          const hasTokens = /\{NAME\}|\{PRICE\}/.test(raw)
+                          if (isEmptyEditorContent(raw) && name) {
+                            const next = `"${name}"`
+                            handleChange('promoSectionTitle', next)
+                          } else {
+                            const next = hasTokens
+                              ? resolvePromoTitle(raw, name, priceStr)
+                              : updateTitleWithNameAndPrice(raw, name, priceStr)
+                            if (next !== raw)
+                              handleChange('promoSectionTitle', next)
+                          }
+                          if (img) {
+                            handleChange('promoSectionImage', found.image || '')
+                            setImageFiles(prev => ({
+                              ...prev,
+                              promoSectionImage: undefined
+                            }))
+                            setImagePreviews(prev => ({
+                              ...prev,
+                              promoSectionImage: img
+                            }))
+                          }
+                          const link = buildDettyFusionUrl(
+                            'event',
+                            info.ticketId || id
+                          )
+                          if (link) handleChange('promoSectionCTALink', link)
+                        }}
+                        className={`w-full px-4 py-2 border rounded-lg focus:outline-none text-gray-900 ${
+                          errors.promoSectionEventId
+                            ? 'border-red-500'
+                            : 'border-gray-300'
+                        }`}
+                      >
+                        <option value=''>Select an event</option>
+                        {events.map(ev => {
+                          const id =
+                            (ev.eventId && (ev.eventId._id || ev.eventId)) ||
+                            ev.eventId ||
+                            ev._id ||
+                            ev.id ||
+                            ''
+                          const name =
+                            ev.eventName || ev.name || 'Unnamed Event'
+                          return (
+                            <option key={id} value={id}>
+                              {name}
+                            </option>
+                          )
+                        })}
+                      </select>
+                      {errors.promoSectionEventId && (
+                        <p className='text-red-500 text-sm mt-1'>
+                          {errors.promoSectionEventId}
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    <div>
+                      <label className='block text-sm font-medium text-gray-700 mb-2'>
+                        Activity
+                      </label>
+                      <select
+                        value={formData.promoSectionActivityId}
+                        onChange={async e => {
+                          const id = e.target.value
+                          handleChange('promoSectionActivityId', id)
+                          const found =
+                            (activities || []).find(
+                              a =>
+                                String(
+                                  (a.eventId && (a.eventId._id || a.eventId)) ||
+                                    a.eventId ||
+                                    a._id ||
+                                    a.id ||
+                                    ''
+                                ) === String(id)
+                            ) || null
+                          const name = found
+                            ? found.activityName || found.name || ''
+                            : ''
+                          const img = found ? sanitizeImageUrl(found.image) : ''
+                          const info = id
+                            ? await fetchMinActivityTicketInfo(id)
+                            : { price: null, ticketId: '' }
+                          const priceStr =
+                            info.price != null ? formatCurrency(info.price) : ''
+                          const raw = String(formData.promoSectionTitle || '')
+                          const hasTokens = /\{NAME\}|\{PRICE\}/.test(raw)
+                          if (isEmptyEditorContent(raw) && name) {
+                            const next = `"${name}"`
+                            handleChange('promoSectionTitle', next)
+                          } else {
+                            const next = hasTokens
+                              ? resolvePromoTitle(raw, name, priceStr)
+                              : updateTitleWithNameAndPrice(raw, name, priceStr)
+                            if (next !== raw)
+                              handleChange('promoSectionTitle', next)
+                          }
+                          if (img) {
+                            handleChange('promoSectionImage', found.image || '')
+                            setImageFiles(prev => ({
+                              ...prev,
+                              promoSectionImage: undefined
+                            }))
+                            setImagePreviews(prev => ({
+                              ...prev,
+                              promoSectionImage: img
+                            }))
+                          }
+                          const link = buildDettyFusionUrl(
+                            'activity',
+                            info.ticketId || id
+                          )
+                          if (link) handleChange('promoSectionCTALink', link)
+                        }}
+                        className={`w-full px-4 py-2 border rounded-lg focus:outline-none text-gray-900 ${
+                          errors.promoSectionActivityId
+                            ? 'border-red-500'
+                            : 'border-gray-300'
+                        }`}
+                      >
+                        <option value=''>Select an activity</option>
+                        {activities.map(act => {
+                          const id =
+                            (act.eventId && (act.eventId._id || act.eventId)) ||
+                            act.eventId ||
+                            act._id ||
+                            act.id ||
+                            ''
+                          const name =
+                            act.activityName || act.name || 'Unnamed Activity'
+                          return (
+                            <option key={id} value={id}>
+                              {name}
+                            </option>
+                          )
+                        })}
+                      </select>
+                      {errors.promoSectionActivityId && (
+                        <p className='text-red-500 text-sm mt-1'>
+                          {errors.promoSectionActivityId}
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
-              <div className='md:col-span-2'>
-                {formData.promoSectionType === 'event' ? (
-                  <div>
-                    <label className='block text-sm font-medium text-gray-700 mb-2'>
-                      Event
-                    </label>
-                    <select
-                      value={formData.promoSectionEventId}
-                      onChange={async e => {
-                        const id = e.target.value
-                        handleChange('promoSectionEventId', id)
-                        const found = (events || []).find(ev => String((ev.eventId && (ev.eventId._id || ev.eventId)) || ev.eventId || ev._id || ev.id || '') === String(id)) || null
-                        const name = found ? (found.eventName || found.name || '') : ''
-                        const img = found ? sanitizeImageUrl(found.image) : ''
-                        const info = id ? await fetchMinEventTicketInfo(id) : { price: null, ticketId: '' }
-                        const priceStr = info.price != null ? formatCurrency(info.price) : ''
-                        const raw = String(formData.promoSectionTitle || '')
-                        const hasTokens = /\{NAME\}|\{PRICE\}/.test(raw)
-                        if (isEmptyEditorContent(raw) && name) {
-                          const next = `"${name}"`
-                          handleChange('promoSectionTitle', next)
-                        } else {
-                          const next = hasTokens
-                            ? resolvePromoTitle(raw, name, priceStr)
-                            : updateTitleWithNameAndPrice(raw, name, priceStr)
-                          if (next !== raw) handleChange('promoSectionTitle', next)
-                        }
-                        if (img) {
-                          handleChange('promoSectionImage', found.image || '')
-                          setImageFiles(prev => ({ ...prev, promoSectionImage: undefined }))
-                          setImagePreviews(prev => ({ ...prev, promoSectionImage: img }))
-                        }
-                        const link = buildDettyFusionUrl('event', info.ticketId || id)
-                        if (link) handleChange('promoSectionCTALink', link)
-                      }}
-                      className={`w-full px-4 py-2 border rounded-lg focus:outline-none text-gray-900 ${
-                        errors.promoSectionEventId ? 'border-red-500' : 'border-gray-300'
-                      }`}
-                    >
-                      <option value=''>Select an event</option>
-                      {events.map(ev => {
-                        const id = (ev.eventId && (ev.eventId._id || ev.eventId)) || ev.eventId || ev._id || ev.id || ''
-                        const name = ev.eventName || ev.name || 'Unnamed Event'
-                        return (
-                          <option key={id} value={id}>
-                            {name}
-                          </option>
-                        )
-                      })}
-                    </select>
-                    {errors.promoSectionEventId && (
-                      <p className='text-red-500 text-sm mt-1'>
-                        {errors.promoSectionEventId}
-                      </p>
-                    )}
-                  </div>
-                ) : (
-                  <div>
-                    <label className='block text-sm font-medium text-gray-700 mb-2'>
-                      Activity
-                    </label>
-                    <select
-                      value={formData.promoSectionActivityId}
-                      onChange={async e => {
-                        const id = e.target.value
-                        handleChange('promoSectionActivityId', id)
-                        const found = (activities || []).find(a => String((a.eventId && (a.eventId._id || a.eventId)) || a.eventId || a._id || a.id || '') === String(id)) || null
-                        const name = found ? (found.activityName || found.name || '') : ''
-                        const img = found ? sanitizeImageUrl(found.image) : ''
-                        const info = id ? await fetchMinActivityTicketInfo(id) : { price: null, ticketId: '' }
-                        const priceStr = info.price != null ? formatCurrency(info.price) : ''
-                        const raw = String(formData.promoSectionTitle || '')
-                        const hasTokens = /\{NAME\}|\{PRICE\}/.test(raw)
-                        if (isEmptyEditorContent(raw) && name) {
-                          const next = `"${name}"`
-                          handleChange('promoSectionTitle', next)
-                        } else {
-                          const next = hasTokens
-                            ? resolvePromoTitle(raw, name, priceStr)
-                            : updateTitleWithNameAndPrice(raw, name, priceStr)
-                          if (next !== raw) handleChange('promoSectionTitle', next)
-                        }
-                        if (img) {
-                          handleChange('promoSectionImage', found.image || '')
-                          setImageFiles(prev => ({ ...prev, promoSectionImage: undefined }))
-                          setImagePreviews(prev => ({ ...prev, promoSectionImage: img }))
-                        }
-                        const link = buildDettyFusionUrl('activity', info.ticketId || id)
-                        if (link) handleChange('promoSectionCTALink', link)
-                      }}
-                      className={`w-full px-4 py-2 border rounded-lg focus:outline-none text-gray-900 ${
-                        errors.promoSectionActivityId ? 'border-red-500' : 'border-gray-300'
-                      }`}
-                    >
-                      <option value=''>Select an activity</option>
-                      {activities.map(act => {
-                        const id = (act.eventId && (act.eventId._id || act.eventId)) || act.eventId || act._id || act.id || ''
-                        const name = act.activityName || act.name || 'Unnamed Activity'
-                        return (
-                          <option key={id} value={id}>
-                            {name}
-                          </option>
-                        )
-                      })}
-                    </select>
-                    {errors.promoSectionActivityId && (
-                      <p className='text-red-500 text-sm mt-1'>
-                        {errors.promoSectionActivityId}
-                      </p>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
 
               {/* Promo Title with Rich Text Editor */}
               <div className='mb-4'>
@@ -1576,32 +1739,30 @@ export default function PartnerWithUsForm () {
                       {errors.promoSectionCTAText}
                     </p>
                   )}
+                </div>
+                <div>
+                  <label className='block text-sm font-medium text-gray-700 mb-2'>
+                    CTA Link<span className='text-red-500'>*</span>
+                  </label>
+                  <input
+                    type='text'
+                    value={formData.promoSectionCTALink}
+                    onChange={e =>
+                      handleChange('promoSectionCTALink', e.target.value)
+                    }
+                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none text-gray-900 ${
+                      errors.promoSectionCTALink
+                        ? 'border-red-500'
+                        : 'border-gray-300'
+                    }`}
+                  />
+                  {errors.promoSectionCTALink && (
+                    <p className='text-red-500 text-sm mt-1'>
+                      {errors.promoSectionCTALink}
+                    </p>
+                  )}
+                </div>
               </div>
-              <div>
-                <label className='block text-sm font-medium text-gray-700 mb-2'>
-                  CTA Link<span className='text-red-500'>*</span>
-                </label>
-                <input
-                  type='text'
-                  value={formData.promoSectionCTALink}
-                  onChange={e =>
-                    handleChange('promoSectionCTALink', e.target.value)
-                  }
-                  className={`w-full px-4 py-2 border rounded-lg focus:outline-none text-gray-900 ${
-                    errors.promoSectionCTALink
-                      ? 'border-red-500'
-                      : 'border-gray-300'
-                  }`}
-                />
-                {errors.promoSectionCTALink && (
-                  <p className='text-red-500 text-sm mt-1'>
-                    {errors.promoSectionCTALink}
-                  </p>
-                )}
-              </div>
-            </div>
-
-           
             </div>
 
             {/* Steps Section */}
@@ -2514,9 +2675,13 @@ export default function PartnerWithUsForm () {
                     const updated = [...list, { image: '', text: '' }]
                     handleChange('vendorSectionImages', updated)
                   }}
-                  disabled={(formData.vendorSectionImages || []).length >= MAX_VENDOR_SECTIONS}
+                  disabled={
+                    (formData.vendorSectionImages || []).length >=
+                    MAX_VENDOR_SECTIONS
+                  }
                   className={`w-full py-3 border-2 border-dashed rounded-lg font-medium transition ${
-                    (formData.vendorSectionImages || []).length >= MAX_VENDOR_SECTIONS
+                    (formData.vendorSectionImages || []).length >=
+                    MAX_VENDOR_SECTIONS
                       ? 'border-gray-200 text-gray-400 cursor-not-allowed'
                       : 'border-gray-300 text-gray-600 hover:border-gray-400 hover:text-gray-800'
                   }`}

@@ -64,9 +64,10 @@ const toImageUrl = p => {
   if (!s) return null
   if (/^https?:\/\//i.test(s)) return s
   const originEnv = process.env.NEXT_PUBLIC_SIM_IMAGE_BASE_ORIGIN
-  const base = originEnv && originEnv.trim()
-    ? originEnv.trim()
-    : ( 'https://accessdettyfusion.com')
+  const base =
+    originEnv && originEnv.trim()
+      ? originEnv.trim()
+      : 'https://accessdettyfusion.com'
   const path = s.startsWith('/') ? s : `/${s}`
   return `${base}${path}`
 }
@@ -86,7 +87,7 @@ const filterTabs = [
   { id: 'activities', label: 'Places to Visit', active: true },
   { id: 'merchandise', label: 'Merchandise', active: false },
   { id: 'e-sim', label: 'E-Sim', active: false },
-  { id: 'accommodation', label: 'Accommodation', active: false },
+  { id: 'accommodation', label: 'Accommodation', active: false }
   // { id: 'diy', label: 'DIY', active: false },
 ]
 
@@ -157,7 +158,7 @@ export default function Activities () {
             '-'
           const pay = String(b?.paymentStatus || '-')
           const payNice = pay.toLowerCase() === 'paid' ? 'Paid' : pay
-          const created = b?.arrivalDate || b?.createdAt || b?.updatedAt
+          const created = b?.arrivalDate || "-"
           const createdTs = created
             ? new Date(
                 typeof created === 'object' && created.$date
@@ -168,6 +169,7 @@ export default function Activities () {
           return {
             id: b._id || b.id || b.bookingId || `booking-${idx}`,
             eventDate: fmtDate(created),
+            arrivalDate: fmtDate(b?.arrivalDate),
             activityName: activityObj?.activityName || b?.activityName || '-',
             activityImage: img,
             type: type,
@@ -415,10 +417,21 @@ export default function Activities () {
                       onClick={() => toggleSort('date')}
                       className='flex items-center'
                     >
-                      <span>Event Date</span>
+                      <span>Activity Date</span>
                       <TbCaretUpDownFilled className='w-3 h-3 text-gray-400 ml-1' />
                     </button>
                   </th>
+                  <th className='px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                    <button
+                      type='button'
+                      onClick={() => toggleSort('date')}
+                      className='flex items-center'
+                    >
+                      <span>Visit Date</span>
+                      <TbCaretUpDownFilled className='w-3 h-3 text-gray-400 ml-1' />
+                    </button>
+                  </th>
+
                   <th className='px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
                     <button
                       type='button'
@@ -519,6 +532,9 @@ export default function Activities () {
                       <td className='px-3 py-3 whitespace-nowrap text-sm text-gray-500'>
                         {activity.eventDate}
                       </td>
+                      <td className='px-3 py-3 whitespace-nowrap text-sm text-gray-500'>
+                        {activity.arrivalDate}
+                      </td>
                       <td className='px-3 py-3 whitespace-nowrap'>
                         <div className='flex items-center'>
                           <div className='flex-shrink-0 h-10 w-10'>
@@ -535,7 +551,11 @@ export default function Activities () {
                             ) : null}
                             <div
                               className='h-10 w-10 rounded-lg bg-gradient-to-br from-blue-400 to-green-500 flex items-center justify-center'
-                              style={{ display: activity.activityImage ? 'none' : 'flex' }}
+                              style={{
+                                display: activity.activityImage
+                                  ? 'none'
+                                  : 'flex'
+                              }}
                             >
                               <svg
                                 className='w-5 h-5 text-white'

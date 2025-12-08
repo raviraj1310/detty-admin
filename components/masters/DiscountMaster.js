@@ -21,6 +21,7 @@ import {
   getDiscountById,
   updateDiscount,
   deleteDiscount,
+  // Activity Coupon
   createActivityCoupon,
   getAllDiscount,
   getActivityCouponById,
@@ -361,9 +362,13 @@ export default function DiscountMaster () {
             eventId: String(formData.eventId).trim()
           })
           if (formData.eventId && String(formData.eventId).trim().length >= 8) {
-            await fetchEventWise(formData.eventId)
+            const id = String(formData.eventId).trim()
+            setListEventId(id)
+            await fetchEventWise(id)
+            setListEventId('')
           } else {
             await loadAllEventDiscounts()
+            setListEventId('')
           }
         } else {
           const ids =
@@ -380,10 +385,15 @@ export default function DiscountMaster () {
           await createDiscount(payloadArray)
           if (ids.length > 1) {
             await loadAllEventDiscounts()
+            setListEventId('')
           } else if (ids[0] && String(ids[0]).trim().length >= 8) {
-            await fetchEventWise(ids[0])
+            const id = String(ids[0]).trim()
+            setListEventId(id)
+            await fetchEventWise(id)
+            setListEventId('')
           } else {
             await loadAllEventDiscounts()
+            setListEventId('')
           }
         }
       } else {
@@ -401,13 +411,38 @@ export default function DiscountMaster () {
         const res = editingId
           ? await updateActivityCoupon(editingId, activityPayload)
           : await createActivityCoupon(activityPayload)
+        if (!editingId) {
+          const created = res?.data || res || null
+          const optimistic = {
+            _id: (created && (created._id || created.id)) || undefined,
+            activityId: String(formData.activityId).trim(),
+            couponCode: String(formData.couponCode).trim(),
+            discountType,
+            discountValue: Number(formData.discountValue),
+            validUpTo: String(formData.validUpTo).trim(),
+            createdAt: new Date().toISOString(),
+            status: true
+          }
+          setDiscounts(prev => {
+            const base = Array.isArray(prev) ? prev : []
+            return [optimistic, ...base]
+          })
+        }
         if (
           formData.activityId &&
           String(formData.activityId).trim().length >= 8
         ) {
-          await fetchActivityWise(formData.activityId)
+          const id = String(formData.activityId).trim()
+          setListActivityId(id)
+          setTimeout(async () => {
+            await fetchActivityWise(id)
+            setListActivityId('')
+          }, 600)
         } else {
-          await loadAllActivityCoupons()
+          setTimeout(async () => {
+            await loadAllActivityCoupons()
+            setListActivityId('')
+          }, 600)
         }
         // Refresh activities list after creating activity coupon
         if (!editingId) {
@@ -422,6 +457,10 @@ export default function DiscountMaster () {
         discountValue: '',
         validUpTo: ''
       })
+      setFormSelectedEventIds([])
+      setFormSelectedActivityIds([])
+      setFormEventOpen(false)
+      setFormActivityOpen(false)
       setErrors({})
       setEditingId(null)
       setToast({
