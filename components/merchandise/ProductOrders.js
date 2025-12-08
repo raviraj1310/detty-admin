@@ -192,7 +192,7 @@ export default function ProductOrders () {
   const metrics = useMemo(() => {
     const totalAmt = filtered.reduce((s, o) => s + (o.amount || 0), 0)
     const completed = filtered.filter(
-      o => String(o.status).toLowerCase() === 'completed'
+      o => String(o.status).toLowerCase() === 'paid'
     )
     const pending = filtered.filter(
       o => String(o.status).toLowerCase() === 'pending'

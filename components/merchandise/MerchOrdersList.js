@@ -122,7 +122,7 @@ export default function MerchOrdersList () {
   const metrics = useMemo(() => {
     const totalAmt = filtered.reduce((s, o) => s + (o.amount || 0), 0)
     const completed = filtered.filter(
-      o => String(o.status).toLowerCase() === 'completed'
+      o => String(o.status).toLowerCase() === 'paid'
     )
     const pending = filtered.filter(
       o => String(o.status).toLowerCase() === 'pending'
@@ -418,7 +418,7 @@ export default function MerchOrdersList () {
                         >
                           <div className='py-1'>
                             <a
-                              href={`/merchandise/order/receipt/${o.id}`}
+                              href={`/merchandise/order-view/${o.id}`}
                               className='flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100'
                             >
                               <span className='mr-3 text-gray-500'>
