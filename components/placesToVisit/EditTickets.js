@@ -92,16 +92,27 @@ export default function EditTickets () {
     const cleaned = s.replace(/[^0-9.]/g, '')
     const parts = cleaned.split('.')
     const intPart = parts[0] || ''
-    const decimalPart = parts.length > 1 ? parts.slice(1).join('').replace(/[^0-9]/g, '') : undefined
+    const decimalPart =
+      parts.length > 1
+        ? parts
+            .slice(1)
+            .join('')
+            .replace(/[^0-9]/g, '')
+        : undefined
     if (intPart === '') {
       return decimalPart !== undefined ? `.${decimalPart}` : ''
     }
     const formattedInt = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',')
-    return decimalPart !== undefined ? `${formattedInt}.${decimalPart}` : formattedInt
+    return decimalPart !== undefined
+      ? `${formattedInt}.${decimalPart}`
+      : formattedInt
   }
 
   const handleChange = (field, value) => {
-    const v = field === 'perTicketPrice' ? formatPriceInput(value) : value
+    const v =
+      field === 'perTicketPrice' || field === 'originalPrice'
+        ? formatPriceInput(value)
+        : value
     setFormData(prev => ({ ...prev, [field]: v }))
   }
 
@@ -144,18 +155,24 @@ export default function EditTickets () {
     return String(v)
   }
 
-  const toPayload = () => ({
-    activityId: String(formData.activityId || '').trim(),
-    ticketName: formData.ticketName.trim(),
-    ticketType: formData.ticketType === 'group' ? 'group' : 'regular',
-    groupSize: formData.ticketType === 'group' ? Number(formData.groupSize) : 0,
-    subText: formData.subText.trim(),
-    perTicketPrice: toNumber(formData.perTicketPrice),
-    ticketCount: toNumber(formData.ticketCount),
-    ticketDetail: formData.ticketDetails.trim(),
-    ticketLeft: toNumber(formData.ticketLeft),
-    status: Boolean(formData.status)
-  })
+  const toPayload = () => {
+    const p = {
+      activityId: String(formData.activityId || '').trim(),
+      ticketName: formData.ticketName.trim(),
+      ticketType: formData.ticketType === 'group' ? 'group' : 'regular',
+      groupSize:
+        formData.ticketType === 'group' ? Number(formData.groupSize) : 0,
+      subText: formData.subText.trim(),
+      perTicketPrice: toNumber(formData.perTicketPrice),
+      ticketCount: toNumber(formData.ticketCount),
+      ticketDetail: formData.ticketDetails.trim(),
+      ticketLeft: toNumber(formData.ticketLeft),
+      status: Boolean(formData.status)
+    }
+    const op = String(formData.originalPrice || '').trim()
+    if (op) p.originalPrice = toNumber(formData.originalPrice)
+    return p
+  }
 
   const handleAdd = async () => {
     if (!validate()) return
@@ -181,6 +198,7 @@ export default function EditTickets () {
           subText: '',
           groupSize: '',
           perTicketPrice: '',
+          originalPrice: '',
           ticketCount: '',
           ticketDetails: '',
           ticketLeft: '',
@@ -250,6 +268,10 @@ export default function EditTickets () {
           typeof t.perTicketPrice === 'number'
             ? formatPriceInput(String(t.perTicketPrice))
             : formatPriceInput(String(t.perTicketPrice || '')),
+        originalPrice:
+          typeof t.originalPrice === 'number'
+            ? formatPriceInput(String(t.originalPrice))
+            : formatPriceInput(String(t.originalPrice || '')),
         ticketCount:
           typeof t.ticketCount === 'number'
             ? String(t.ticketCount)
@@ -413,8 +435,8 @@ export default function EditTickets () {
             </div>
           </div>
 
-          {/* Row 2: Group Size, Per Ticket Price, Ticket Count */}
-          <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
+          {/* Row 2: Group Size, Per Ticket Price, Original Price, Ticket Count */}
+          <div className='grid grid-cols-1 md:grid-cols-4 gap-4'>
             {formData.ticketType === 'group' && (
               <div>
                 <label className='block text-sm font-medium text-gray-700 mb-2'>
@@ -448,6 +470,17 @@ export default function EditTickets () {
                   {errors.perTicketPrice}
                 </p>
               )}
+            </div>
+            <div>
+              <label className='block text-sm font-medium text-gray-700 mb-2'>
+                Original Price
+              </label>
+              <input
+                type='text'
+                value={formData.originalPrice}
+                onChange={e => handleChange('originalPrice', e.target.value)}
+                className='w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900'
+              />
             </div>
             <div>
               <label className='block text-sm font-medium text-gray-700 mb-2'>
