@@ -106,6 +106,11 @@ export default function TicketsBooked () {
       setLoading(true)
       setError('')
       try {
+        const toTime = v => {
+          const x = typeof v === 'object' && v && v.$date ? v.$date : v
+          const t = Date.parse(x)
+          return Number.isFinite(t) ? t : 0
+        }
         if (eventId) {
           const [summaryRes, bookingsRes] = await Promise.all([
             getEventTicketSummary(eventId),
@@ -144,7 +149,10 @@ export default function TicketsBooked () {
             status: String(b.status || 'Pending'),
             attendees: Array.isArray(b.attendees) ? b.attendees : []
           }))
-          setBookings(list)
+          const sorted = [...list].sort(
+            (a, b) => toTime(b.bookedOn) - toTime(a.bookedOn)
+          )
+          setBookings(sorted)
         } else {
           const res = await getEventBookedTicket()
           const raw = Array.isArray(res?.data) ? res.data : []
@@ -172,7 +180,10 @@ export default function TicketsBooked () {
             bookedAmount: '-',
             unbookedAmount: '-'
           })
-          setBookings(list)
+          const sorted = [...list].sort(
+            (a, b) => toTime(b.bookedOn) - toTime(a.bookedOn)
+          )
+          setBookings(sorted)
         }
       } catch (e) {
         setError('Failed to load bookings')
@@ -194,7 +205,9 @@ export default function TicketsBooked () {
 
   useEffect(() => {
     const onDocClick = e => {
-      const el = e.target.closest('[data-row-menu="true"], [data-menu-overlay="true"]')
+      const el = e.target.closest(
+        '[data-row-menu="true"], [data-menu-overlay="true"]'
+      )
       if (!el) setMenuOpenId(null)
     }
     document.addEventListener('click', onDocClick)
@@ -379,7 +392,10 @@ export default function TicketsBooked () {
           </div>
         </div>
 
-        <div className='overflow-x-auto overflow-y-hidden rounded-2xl border border-[#E5E8F5]' onScroll={() => setMenuOpenId(null)}>
+        <div
+          className='overflow-x-auto overflow-y-hidden rounded-2xl border border-[#E5E8F5]'
+          onScroll={() => setMenuOpenId(null)}
+        >
           <div className='min-w-[1300px]'>
             <div className='grid grid-cols-12 gap-6 bg-[#F7F9FD] px-6 py-4'>
               <div className='col-span-2 min-w-[180px]'>
@@ -431,7 +447,7 @@ export default function TicketsBooked () {
                         booking.bookingId ||
                         'booking'
                       }-${idx}`}
-                      className="grid grid-cols-12 gap-4 px-6 py-5 hover:bg-[#F9FAFD]"
+                      className='grid grid-cols-12 gap-4 px-6 py-5 hover:bg-[#F9FAFD]'
                     >
                       <div className='col-span-2 min-w-[180px] text-sm text-[#5E6582] truncate'>
                         {(() => {
@@ -480,12 +496,12 @@ export default function TicketsBooked () {
                         {(booking.buyer && booking.buyer.phone) || '-'}
                         {Array.isArray(booking.attendees) &&
                           booking.attendees.length > 0 && (
-                          <div className='mt-1 text-xs truncate'>
-                            {booking.attendees
-                              .map(a => a.phone || '-')
-                              .join(', ')}
-                          </div>
-                        )}
+                            <div className='mt-1 text-xs truncate'>
+                              {booking.attendees
+                                .map(a => a.phone || '-')
+                                .join(', ')}
+                            </div>
+                          )}
                       </div>
                       <div className='col-span-2 min-w-[220px] text-sm text-[#5E6582] truncate'>
                         {booking.ticketsBooked || booking.ticketName || '-'}
@@ -555,7 +571,8 @@ export default function TicketsBooked () {
                               if (menuOpenId === rowKey) {
                                 setMenuOpenId(null)
                               } else {
-                                const rect = e.currentTarget.getBoundingClientRect()
+                                const rect =
+                                  e.currentTarget.getBoundingClientRect()
                                 const widthPx = 208
                                 const top = Math.round(rect.bottom + 6)
                                 const left = Math.round(rect.right - widthPx)
