@@ -443,6 +443,7 @@ export default function OrderViewPage () {
                       <div className='space-y-1.5 text-sm'>
                         <Info label='Item Name' value={productName} />
                         <Info label='Quantity ' value={item.quantity || 1} />
+                        <Info label='Size' value={item.size || '-'} />
                         <Info
                           label='Total Price'
                           value={toCurrency(

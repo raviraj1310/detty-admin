@@ -8,9 +8,11 @@ export const getAllProducts = async () => {
     console.log(error)
   }
 }
-export const createProducts = async (data) => {
+export const createProducts = async data => {
   try {
-    const res = await api.post('/merchandise/create-product', data, { headers: { 'Content-Type': 'multipart/form-data' } })
+    const res = await api.post('/merchandise/create-product', data, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    })
     return res.data
   } catch (error) {
     console.log(error)
@@ -18,10 +20,9 @@ export const createProducts = async (data) => {
   }
 }
 
-
-export const getProductById = async (id) => {
-  try { 
-    const res = await api.get(`/product/get-order-by-id/${id}`)
+export const getProductById = async id => {
+  try {
+    const res = await api.get(`/merchandise/get-single-product/${id}`)
     return res.data
   } catch (error) {
     console.log(error)
@@ -38,7 +39,12 @@ export const updateProducts = async (id, data) => {
 
 export const deleteProducts = async (id, status) => {
   try {
-    const statusStr = typeof status === 'boolean' ? (status ? 'true' : 'false') : String(status || '').trim()
+    const statusStr =
+      typeof status === 'boolean'
+        ? status
+          ? 'true'
+          : 'false'
+        : String(status || '').trim()
     const suffix = statusStr ? `/${encodeURIComponent(statusStr)}` : ''
     const res = await api.delete(`/merchandise/delete-product/${id}${suffix}`)
     return res.data
@@ -47,7 +53,7 @@ export const deleteProducts = async (id, status) => {
   }
 }
 
-export const deleteHardProducts = async (id) => {
+export const deleteHardProducts = async id => {
   try {
     const res = await api.delete(`/merchandise/hard-delete-product/${id}`)
     return res.data
