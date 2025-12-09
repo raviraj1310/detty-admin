@@ -59,6 +59,7 @@ export default function EditTickets () {
     subText: '',
     groupSize: '',
     perTicketPrice: '',
+    originalPrice: '',
     ticketCount: '',
     ticketDetails: ''
   })
@@ -81,7 +82,13 @@ export default function EditTickets () {
     const cleaned = s.replace(/[^0-9.]/g, '')
     const parts = cleaned.split('.')
     const intPart = parts[0] || ''
-    const decimalPart = parts.length > 1 ? parts.slice(1).join('').replace(/[^0-9]/g, '') : undefined
+    const decimalPart =
+      parts.length > 1
+        ? parts
+            .slice(1)
+            .join('')
+            .replace(/[^0-9]/g, '')
+        : undefined
     if (intPart === '') {
       return decimalPart !== undefined ? `.${decimalPart}` : ''
     }
@@ -92,11 +99,16 @@ export default function EditTickets () {
     const rest = intPart.slice(0, -3)
     const restWithCommas = rest.replace(/\B(?=(\d{2})+(?!\d))/g, ',')
     const formattedInt = `${restWithCommas},${last3}`
-    return decimalPart !== undefined ? `${formattedInt}.${decimalPart}` : formattedInt
+    return decimalPart !== undefined
+      ? `${formattedInt}.${decimalPart}`
+      : formattedInt
   }
 
   const handleInputChange = (field, value) => {
-    const v = field === 'perTicketPrice' ? formatPriceInput(value) : value
+    const v =
+      field === 'perTicketPrice' || field === 'originalPrice'
+        ? formatPriceInput(value)
+        : value
     setFormData(prev => ({
       ...prev,
       [field]: v
@@ -118,18 +130,23 @@ export default function EditTickets () {
         ? formData.perTicketPrice.replace(/[^0-9.]/g, '')
         : String(formData.perTicketPrice || '')
     const priceNum = Number(price)
+    const original =
+      typeof formData.originalPrice === 'string'
+        ? formData.originalPrice.replace(/[^0-9.]/g, '')
+        : String(formData.originalPrice || '')
+    const originalPriceNum = Number(original)
 
     const countNum = Number(String(formData.ticketCount).replace(/[^0-9]/g, ''))
     if (!countNum || isNaN(countNum) || countNum <= 0)
       errs.ticketCount = 'Enter valid ticket count'
     if (!formData.ticketDetails || formData.ticketDetails.trim().length < 5)
       errs.ticketDetails = 'Enter ticket details'
-    return { errs, isGroup, priceNum, countNum }
+    return { errs, isGroup, priceNum, originalPriceNum, countNum }
   }
 
   const handleSubmit = async e => {
     e.preventDefault()
-    const { errs, isGroup, priceNum, countNum } = validate()
+    const { errs, isGroup, priceNum, originalPriceNum, countNum } = validate()
     setErrors(errs)
     if (Object.keys(errs).length > 0) return
     if (!eventId) {
@@ -147,6 +164,9 @@ export default function EditTickets () {
       ticketDetail: formData.ticketDetails.trim(),
       status: true
     }
+    if (String(formData.originalPrice || '').trim()) {
+      payload.originalPrice = originalPriceNum
+    }
     try {
       setSubmitting(true)
       const res = editingTicketId
@@ -160,6 +180,7 @@ export default function EditTickets () {
           subText: '',
           groupSize: '',
           perTicketPrice: '',
+          originalPrice: '',
           ticketCount: '',
           ticketDetails: ''
         })
@@ -189,7 +210,12 @@ export default function EditTickets () {
             : 'Regular Ticket',
         subText: t.subText || '',
         groupSize: t.groupSize ? String(t.groupSize) : '',
-        perTicketPrice: t.perTicketPrice ? formatPriceInput(String(t.perTicketPrice)) : '',
+        perTicketPrice: t.perTicketPrice
+          ? formatPriceInput(String(t.perTicketPrice))
+          : '',
+        originalPrice: t.originalPrice
+          ? formatPriceInput(String(t.originalPrice))
+          : '',
         ticketCount: t.ticketCount ? String(t.ticketCount) : '',
         ticketDetails: t.ticketDetail || ''
       })
@@ -420,8 +446,8 @@ export default function EditTickets () {
               </div>
             </div>
 
-            {/* Second Row - Group Size, Price, Count */}
-            <div className='grid grid-cols-1 md:grid-cols-3 gap-6'>
+            {/* Second Row - Group Size, Price, Original Price, Count */}
+            <div className='grid grid-cols-1 md:grid-cols-4 gap-6'>
               {/* Group Size */}
               {formData.ticketType === 'Group Ticket' && (
                 <div className='space-y-2'>
@@ -446,7 +472,7 @@ export default function EditTickets () {
               {/* Per Ticket Price */}
               <div className='space-y-2'>
                 <label className='text-sm font-medium text-slate-700'>
-                  Per Ticket Price*
+                  Discounted Ticket Price*
                 </label>
                 <input
                   type='text'
@@ -462,6 +488,22 @@ export default function EditTickets () {
                     {errors.perTicketPrice}
                   </p>
                 )}
+              </div>
+
+              {/* Original Price */}
+              <div className='space-y-2'>
+                <label className='text-sm font-medium text-slate-700'>
+                  Original Price
+                </label>
+                <input
+                  type='text'
+                  value={formData.originalPrice}
+                  onChange={e =>
+                    handleInputChange('originalPrice', e.target.value)
+                  }
+                  className='w-full h-12 rounded-xl border border-[#E5E6EF] bg-[#F8F9FC] px-4 text-sm text-slate-700 placeholder:text-[#B0B7D0] focus:border-[#C5CAE3] focus:outline-none focus:ring-2 focus:ring-[#C2C8E4]'
+                  placeholder='Enter original price'
+                />
               </div>
 
               {/* Ticket Count */}
