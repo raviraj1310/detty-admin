@@ -128,10 +128,9 @@ export default function EditTickets () {
     }
     if (!String(formData.perTicketPrice || '').trim())
       errs.perTicketPrice = 'Required'
-    if (!String(formData.ticketCount || '').trim())
-      errs.ticketCount = 'Required'
-    else if (Number(formData.ticketCount) <= 0)
-      errs.ticketCount = 'Must be positive'
+    const countNum = Number(String(formData.ticketCount || '').trim())
+    if (Number.isNaN(countNum) || countNum < 0)
+      errs.ticketCount = 'Enter valid ticket count'
     if (!formData.ticketDetails.trim()) errs.ticketDetails = 'Required'
     setErrors(errs)
     return Object.keys(errs).length === 0

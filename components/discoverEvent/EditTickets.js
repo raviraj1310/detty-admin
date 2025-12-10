@@ -137,7 +137,7 @@ export default function EditTickets () {
     const originalPriceNum = Number(original)
 
     const countNum = Number(String(formData.ticketCount).replace(/[^0-9]/g, ''))
-    if (!countNum || isNaN(countNum) || countNum <= 0)
+    if (isNaN(countNum) || countNum < 0)
       errs.ticketCount = 'Enter valid ticket count'
     if (!formData.ticketDetails || formData.ticketDetails.trim().length < 5)
       errs.ticketDetails = 'Enter ticket details'
