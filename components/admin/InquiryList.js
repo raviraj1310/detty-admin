@@ -49,12 +49,16 @@ export default function InquiryList () {
           const created = d?.createdAt || ''
           const createdTs = created ? new Date(created).getTime() : 0
           const name = String(d?.name || '').trim()
+          const relatedName = String(
+            d?.event?.eventName || d?.activity?.activityName || ''
+          ).trim()
           return {
             id: d?._id || d?.id,
             name,
             email: d?.email || '',
             contactNumber: d?.contactNumber || '',
             inquiryType: d?.inquiryType || '',
+            relatedName,
             message: d?.message || '',
             createdOn: created,
             createdTs
@@ -93,6 +97,7 @@ export default function InquiryList () {
       const email = String(s.email || '').toLowerCase()
       const contactNumber = String(s.contactNumber || '').toLowerCase()
       const inquiryType = String(s.inquiryType || '').toLowerCase()
+      const relatedName = String(s.relatedName || '').toLowerCase()
       const message = String(s.message || '').toLowerCase()
       const createdStr = new Date(s.createdOn)
         .toLocaleString(undefined, {
@@ -110,6 +115,7 @@ export default function InquiryList () {
         email.includes(term) ||
         contactNumber.includes(term) ||
         inquiryType.includes(term) ||
+        relatedName.includes(term) ||
         message.includes(term) ||
         createdStr.includes(term)
       const matchesDigits = termDigits && createdDigits.includes(termDigits)
@@ -148,6 +154,12 @@ export default function InquiryList () {
           return (
             String(a.inquiryType || '').localeCompare(
               String(b.inquiryType || '')
+            ) * dir
+          )
+        case 'relatedName':
+          return (
+            String(a.relatedName || '').localeCompare(
+              String(b.relatedName || '')
             ) * dir
           )
         default:
@@ -236,7 +248,7 @@ export default function InquiryList () {
         </div>
 
         <div className='overflow-visible rounded-2xl border border-[#E5E8F5]'>
-          <div className='grid grid-cols-[1.2fr_1.8fr_1.6fr_1.4fr_1.2fr_2fr] gap-3 bg-[#F7F9FD] px-6 py-4'>
+          <div className='grid grid-cols-[1.2fr_1.8fr_1.6fr_1.4fr_1.8fr_1.2fr_2fr] gap-3 bg-[#F7F9FD] px-6 py-4'>
             <div>
               <TableHeaderCell onClick={() => toggleSort('date')}>
                 Submitted On
@@ -255,6 +267,11 @@ export default function InquiryList () {
             <div>
               <TableHeaderCell onClick={() => toggleSort('contactNumber')}>
                 Contact Number
+              </TableHeaderCell>
+            </div>
+            <div>
+              <TableHeaderCell onClick={() => toggleSort('relatedName')}>
+                Event/Activity
               </TableHeaderCell>
             </div>
             <div>
@@ -279,7 +296,7 @@ export default function InquiryList () {
               sorted.map((s, idx) => (
                 <div
                   key={s.id || idx}
-                  className='grid grid-cols-[1.2fr_1.8fr_1.6fr_1.4fr_1.2fr_2fr] gap-3 px-6 py-5 hover:bg-[#F9FAFD]'
+                  className='grid grid-cols-[1.2fr_1.8fr_1.6fr_1.4fr_1.8fr_1.2fr_2fr] gap-3 px-6 py-5 hover:bg-[#F9FAFD]'
                 >
                   <div className='self-center text-sm text-[#5E6582]'>
                     {(() => {
@@ -304,6 +321,9 @@ export default function InquiryList () {
                   </div>
                   <div className='self-center text-sm text-[#5E6582] truncate'>
                     {s.contactNumber || '-'}
+                  </div>
+                  <div className='self-center text-sm text-[#5E6582] truncate'>
+                    {s.relatedName || '-'}
                   </div>
                   <div className='self-center text-sm text-[#5E6582] truncate'>
                     {s.inquiryType || '-'}
