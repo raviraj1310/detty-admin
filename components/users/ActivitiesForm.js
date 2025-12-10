@@ -158,7 +158,7 @@ export default function Activities () {
             '-'
           const pay = String(b?.paymentStatus || '-')
           const payNice = pay.toLowerCase() === 'paid' ? 'Paid' : pay
-          const created = b?.arrivalDate || "-"
+          const created = b?.arrivalDate || '-'
           const createdTs = created
             ? new Date(
                 typeof created === 'object' && created.$date
@@ -323,9 +323,7 @@ export default function Activities () {
     <div className='p-4 min-h-screen bg-white overflow-x-hidden'>
       {/* Title and Breadcrumb */}
       <div className='mb-4'>
-        <h1 className='text-xl font-bold text-gray-900 mb-1'>
-          Bookings - Oluwatobi Hassan
-        </h1>
+        <h1 className='text-xl font-bold text-gray-900 mb-1'>Bookings</h1>
         <nav className='text-sm text-gray-500'>
           <span>Dashboard</span> / <span>Users</span>
         </nav>

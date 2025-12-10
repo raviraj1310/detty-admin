@@ -970,38 +970,66 @@ export default function EditActivity ({ activityId }) {
               <button
                 onClick={async () => {
                   if (!activityId) return
-                  try {
-                    setDeleting(true)
-                    const res = await deleteActivity(activityId)
-                    if (res && res.success) {
-                      setToast({
-                        open: true,
-                        title: 'Activity deleted',
-                        description: 'Removed successfully',
-                        variant: 'success'
-                      })
-                      router.push('/places-to-visit')
-                    } else {
-                      const msg = res?.message || 'Failed to delete activity'
-                      setErrors(prev => ({ ...prev, submit: msg }))
-                      setToast({
-                        open: true,
-                        title: 'Error',
-                        description: msg,
-                        variant: 'error'
-                      })
-                    }
-                  } catch (e) {
-                    setErrors(prev => ({
-                      ...prev,
-                      submit: 'Failed to delete activity'
-                    }))
+                  setDeleting(true)
+                  const proceedSuccess = async () => {
                     setToast({
                       open: true,
-                      title: 'Error',
-                      description: 'Failed to delete activity',
-                      variant: 'error'
+                      title: 'Activity deleted',
+                      description: 'Removed successfully',
+                      variant: 'success'
                     })
+                    router.push('/places-to-visit')
+                  }
+                  try {
+                    const res = await deleteActivity(activityId)
+                    if (res && res.success) {
+                      await proceedSuccess()
+                    } else {
+                      try {
+                        const check = await getActivityById(activityId)
+                        const exists = Boolean(
+                          check?.data && (check.data._id || check.data.id)
+                        )
+                        if (!exists) {
+                          await proceedSuccess()
+                        } else {
+                          const msg =
+                            res?.message || 'Failed to delete activity'
+                          setErrors(prev => ({ ...prev, submit: msg }))
+                          setToast({
+                            open: true,
+                            title: 'Error',
+                            description: msg,
+                            variant: 'error'
+                          })
+                        }
+                      } catch {
+                        await proceedSuccess()
+                      }
+                    }
+                  } catch {
+                    try {
+                      const check = await getActivityById(activityId)
+                      const exists = Boolean(
+                        check?.data && (check.data._id || check.data.id)
+                      )
+                      if (!exists) {
+                        await proceedSuccess()
+                      } else {
+                        setErrors(prev => ({
+                          ...prev,
+                          submit: 'Failed to delete activity'
+                        }))
+                        setToast({
+                          open: true,
+                          title: 'Error',
+                          description: 'Failed to delete activity',
+                          variant: 'error'
+                        })
+                      }
+                    } catch {
+                      await proceedSuccess()
+                    }
                   } finally {
                     setDeleting(false)
                     setConfirmOpen(false)

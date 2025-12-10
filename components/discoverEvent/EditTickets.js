@@ -76,6 +76,7 @@ export default function EditTickets () {
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [confirmDeleteId, setConfirmDeleteId] = useState(null)
   const [deleting, setDeleting] = useState(false)
+  const [eventName, setEventName] = useState('')
 
   const formatPriceInput = value => {
     const s = String(value || '')
@@ -202,6 +203,8 @@ export default function EditTickets () {
     try {
       const res = await getTicketById(id)
       const t = res?.data || {}
+      const nm = String(t?.eventId?.eventName || '').trim()
+      if (nm) setEventName(nm)
       setFormData({
         ticketName: t.ticketName || '',
         ticketType:
@@ -269,6 +272,15 @@ export default function EditTickets () {
       const res = await getAllTickets({ eventId, ...apiFilters })
       const data = Array.isArray(res?.data) ? res.data : []
       setTickets(data)
+      const nm = (() => {
+        try {
+          const first = data && data.length ? data[0] : null
+          return String(first?.eventId?.eventName || '').trim()
+        } catch {
+          return ''
+        }
+      })()
+      if (nm) setEventName(nm)
     } catch (e) {
       setError('Failed to load tickets')
       setTickets([])
@@ -326,7 +338,7 @@ export default function EditTickets () {
           </button>
           <div className='flex flex-col gap-2'>
             <h1 className='text-2xl font-semibold text-slate-900'>
-              Edit Tickets
+              Add / Edit Tickets For - {eventName || '-'}
             </h1>
             <p className='text-sm text-[#99A1BC]'>Dashboard / Edit Tickets</p>
           </div>

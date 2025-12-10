@@ -178,7 +178,9 @@ function ActionDropdown ({ accommodationId, row, openCustomer }) {
                   } else if (action.label === 'View Order') {
                     const idStr = String(accommodationId || '').trim()
                     if (idStr) {
-                      router.push(`/accommodation/order-view/${encodeURIComponent(idStr)}`)
+                      router.push(
+                        `/accommodation/order-view/${encodeURIComponent(idStr)}`
+                      )
                     }
                   } else {
                     console.log(
@@ -355,9 +357,7 @@ export default function AccommodationPage () {
     <div className='p-4 h-screen bg-white overflow-hidden'>
       {/* Title and Breadcrumb */}
       <div className='mb-4'>
-        <h1 className='text-xl font-bold text-gray-900 mb-1'>
-          Bookings - Oluwatobi Hassan
-        </h1>
+        <h1 className='text-xl font-bold text-gray-900 mb-1'>Bookings</h1>
         <nav className='text-sm text-gray-500'>
           <span>Dashboard</span> / <span>Users</span>
         </nav>
@@ -583,7 +583,6 @@ export default function AccommodationPage () {
                     <td className='px-3 py-3 whitespace-nowrap'>
                       <div className='flex items-center'>
                         <div className='flex-shrink-0 h-10 w-10 item-center'>
-                        
                           <div
                             className='h-10 w-10 rounded-lg bg-gradient-to-br from-purple-400 to-pink-500 flex items-center justify-center'
                             style={{ display: 'none' }}

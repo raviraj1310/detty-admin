@@ -62,6 +62,7 @@ export default function EditTickets () {
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [confirmId, setConfirmId] = useState(null)
   const [deleting, setDeleting] = useState(false)
+  const [activityName, setActivityName] = useState('')
 
   const [activeDropdown, setActiveDropdown] = useState(null)
   const dropdownRef = useRef(null)
@@ -237,6 +238,13 @@ export default function EditTickets () {
         ? res
         : []
       setTickets(list)
+      try {
+        const nm = String(
+          (list[0] && list[0].activityId && list[0].activityId.activityName) ||
+            ''
+        ).trim()
+        if (nm) setActivityName(nm)
+      } catch {}
     } catch (e) {
       setError('Failed to load tickets')
       setTickets([])
@@ -256,6 +264,10 @@ export default function EditTickets () {
       setLoading(true)
       const res = await getActivityTicketById(id)
       const t = res?.data || {}
+      try {
+        const nm = String(t?.activityId?.activityName || '').trim()
+        if (nm) setActivityName(nm)
+      } catch {}
       setFormData({
         activityId: t.activityId || '',
         ticketName: t.ticketName || '',
@@ -336,7 +348,7 @@ export default function EditTickets () {
       {/* Header */}
       <div className='mb-6'>
         <h1 className='text-2xl sm:text-3xl font-bold text-gray-900'>
-          Add/Edit Tickets
+          Add/Edit Tickets - {activityName || '-'}
         </h1>
         <p className='text-sm text-gray-500 mt-1'>Dashboard / Edit Tickets</p>
       </div>
