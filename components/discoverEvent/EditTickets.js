@@ -93,13 +93,7 @@ export default function EditTickets () {
     if (intPart === '') {
       return decimalPart !== undefined ? `.${decimalPart}` : ''
     }
-    if (intPart.length <= 3) {
-      return decimalPart !== undefined ? `${intPart}.${decimalPart}` : intPart
-    }
-    const last3 = intPart.slice(-3)
-    const rest = intPart.slice(0, -3)
-    const restWithCommas = rest.replace(/\B(?=(\d{2})+(?!\d))/g, ',')
-    const formattedInt = `${restWithCommas},${last3}`
+    const formattedInt = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',')
     return decimalPart !== undefined
       ? `${formattedInt}.${decimalPart}`
       : formattedInt

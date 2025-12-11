@@ -1,8 +1,8 @@
 import api from '@/src/axois/axois'
 
-export const getInquiries = async () => {
+export const getInquiries = async (params = {}) => {
   try {
-    const response = await api.get('/inquiry/get-inquiries')
+    const response = await api.get('/inquiry/get-inquiries', { params })
     return response.data
   } catch (error) {
     console.error('Error fetching inquiries:', error)

@@ -33,14 +33,21 @@ export default function InquiryList () {
   const [error, setError] = useState('')
   const [sortKey, setSortKey] = useState('date')
   const [sortDir, setSortDir] = useState('desc')
+  const [page, setPage] = useState(1)
+  const [limit, setLimit] = useState(20)
+  const [totalCount, setTotalCount] = useState(0)
+  const [pageCount, setPageCount] = useState(1)
 
   useEffect(() => {
     const load = async () => {
       setLoading(true)
       setError('')
       try {
-        const res = await getInquiries()
-        const list = Array.isArray(res?.data)
+        const res = await getInquiries({ page, limit })
+        const payload = res?.data || res || {}
+        const list = Array.isArray(payload?.items)
+          ? payload.items
+          : Array.isArray(res?.data)
           ? res.data
           : Array.isArray(res)
           ? res
@@ -65,7 +72,7 @@ export default function InquiryList () {
           }
         })
         setItems(mapped)
-        const total = mapped.length
+        const total = Number(payload?.total ?? mapped.length) || 0
         const startOfToday = new Date()
         startOfToday.setHours(0, 0, 0, 0)
         const newToday = mapped.filter(
@@ -73,6 +80,13 @@ export default function InquiryList () {
         ).length
         const resolved = 0
         setMetrics({ total, new: newToday, resolved })
+        const srvPages = Number(payload?.pages ?? 1)
+        const srvPage = Number(payload?.page ?? page)
+        const srvLimit = Number(payload?.limit ?? limit)
+        if (Number.isFinite(total)) setTotalCount(total)
+        if (Number.isFinite(srvPages)) setPageCount(Math.max(1, srvPages))
+        if (Number.isFinite(srvPage)) setPage(Math.max(1, srvPage))
+        if (Number.isFinite(srvLimit)) setLimit(Math.max(1, srvLimit))
       } catch (e) {
         const msg =
           e?.response?.data?.message || e?.message || 'Failed to load inquiries'
@@ -84,7 +98,7 @@ export default function InquiryList () {
       }
     }
     load()
-  }, [])
+  }, [page, limit])
 
   const filtered = useMemo(() => {
     const term = String(searchTerm || '')
@@ -244,6 +258,40 @@ export default function InquiryList () {
             >
               <Download className='h-4 w-4 text-[#8B93AF]' />
             </button>
+            <div className='flex items-center gap-3'>
+              <label className='text-sm text-[#2D3658]'>
+                Show
+                <select
+                  value={limit}
+                  onChange={e => setLimit(Number(e.target.value) || 20)}
+                  className='ml-2 px-2 py-1 border border-[#E5E6EF] rounded'
+                >
+                  <option value={10}>10</option>
+                  <option value={20}>20</option>
+                  <option value={50}>50</option>
+                  <option value={100}>100</option>
+                </select>
+              </label>
+              <div className='flex items-center gap-2'>
+                <button
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                  disabled={page <= 1 || loading}
+                  className='h-10 px-3 py-1.5 border border-[#E5E6EF] rounded bg-white disabled:opacity-50'
+                >
+                  Prev
+                </button>
+                <span className='text-sm text-[#2D3658]'>
+                  Page {page} of {pageCount}
+                </span>
+                <button
+                  onClick={() => setPage(p => Math.min(pageCount, p + 1))}
+                  disabled={page >= pageCount || loading}
+                  className='h-10 px-3 py-1.5 border border-[#E5E6EF] rounded bg-white disabled:opacity-50'
+                >
+                  Next
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 

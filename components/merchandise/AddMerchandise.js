@@ -44,6 +44,27 @@ export default function AddMerchandise () {
     }
   }
 
+  const formatPriceInput = value => {
+    const s = String(value || '')
+    const cleaned = s.replace(/[^0-9.]/g, '')
+    const parts = cleaned.split('.')
+    const intPart = parts[0] || ''
+    const decimalPart =
+      parts.length > 1
+        ? parts
+            .slice(1)
+            .join('')
+            .replace(/[^0-9]/g, '')
+        : undefined
+    if (intPart === '') {
+      return decimalPart !== undefined ? `.${decimalPart}` : ''
+    }
+    const formattedInt = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+    return decimalPart !== undefined
+      ? `${formattedInt}.${decimalPart}`
+      : formattedInt
+  }
+
   const SIZE_OPTIONS = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL']
   const [sizesOpen, setSizesOpen] = useState(false)
 
@@ -64,7 +85,8 @@ export default function AddMerchandise () {
   }, [sizesOpen])
 
   const handleChange = (field, value) => {
-    setFormData(prev => ({ ...prev, [field]: value }))
+    const v = field === 'price' ? formatPriceInput(value) : value
+    setFormData(prev => ({ ...prev, [field]: v }))
   }
 
   const validate = () => {
