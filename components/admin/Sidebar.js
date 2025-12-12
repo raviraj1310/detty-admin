@@ -62,6 +62,11 @@ const menuSections = [
         label: 'Event/Activity Inquiries',
         icon: 'lucide-wallet',
         href: '/inquiries'
+      },
+      {
+        label: 'Request Deactivation',
+        icon: 'lucide-wallet',
+        href: '/request-deactivation'
       }
       // { label: 'Ride Services', icon: '/images/backend/side_menu/side_menu (9).svg', href: '/users/ride-services' },
     ]
