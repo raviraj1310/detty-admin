@@ -63,6 +63,35 @@ const truncateText = (str, max = 40) => {
   return `${cut}...`
 }
 
+const toText = v => {
+  if (v === null || typeof v === 'undefined') return '-'
+  if (Array.isArray(v)) {
+    return (
+      v
+        .map(it =>
+          typeof it === 'object'
+            ? it?.name || it?.title || it?.label || String(it?._id || '')
+            : String(it)
+        )
+        .filter(Boolean)
+        .join(', ') || '-'
+    )
+  }
+  if (typeof v === 'object') {
+    const cand = v?.name || v?.title || v?.label || v?.code || v?.value
+    if (cand) return String(cand)
+    if (v?._id) return String(v._id)
+    try {
+      const s = JSON.stringify(v)
+      return s || '-'
+    } catch {
+      return '-'
+    }
+  }
+  const s = String(v)
+  return s.length ? s : '-'
+}
+
 const TableHeaderCell = ({
   children,
   align = 'left',
@@ -302,6 +331,7 @@ function UserDetailModal ({ open, userId, onClose }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [data, setData] = useState(null)
+  const [profile, setProfile] = useState(null)
 
   useEffect(() => {
     const fetchDetail = async () => {
@@ -314,6 +344,7 @@ function UserDetailModal ({ open, userId, onClose }) {
         const payload = d?.data || d || {}
         const userObj = payload?.user || payload
         setData(userObj)
+        setProfile(payload?.profile || userObj?.profile || null)
       } catch (e) {
         const msg =
           e?.response?.data?.message ||
@@ -321,6 +352,7 @@ function UserDetailModal ({ open, userId, onClose }) {
           'Failed to load user details'
         setError(msg)
         setData(null)
+        setProfile(null)
       } finally {
         setLoading(false)
       }
@@ -360,6 +392,15 @@ function UserDetailModal ({ open, userId, onClose }) {
       : typeof data?.walletPoints !== 'undefined'
       ? data.walletPoints
       : '₦0.00'
+
+  const profileCreated = profile?.createdAt || ''
+  const profileUpdated = profile?.updatedAt || ''
+  const profileCreatedOn = profileCreated
+    ? new Date(profileCreated).toLocaleString()
+    : '-'
+  const profileUpdatedOn = profileUpdated
+    ? new Date(profileUpdated).toLocaleString()
+    : '-'
 
   if (!open) return null
 
@@ -439,6 +480,99 @@ function UserDetailModal ({ open, userId, onClose }) {
                     </div>
                   </div>
                 </div>
+                {profile && (
+                  <div className='border-t border-gray-200 pt-4 space-y-3'>
+                    <div className='text-sm font-semibold text-gray-900'>
+                      Profile
+                    </div>
+                    <div className='grid grid-cols-2 gap-4'>
+                      <div className='space-y-1'>
+                        <div className='text-xs text-gray-500'>
+                          Home Address
+                        </div>
+                        <div className='text-sm text-gray-900'>
+                          {toText(profile?.homeAddress)}
+                        </div>
+                      </div>
+                      <div className='space-y-1'>
+                        <div className='text-xs text-gray-500'>Postal Code</div>
+                        <div className='text-sm text-gray-900'>
+                          {toText(profile?.postalCode)}
+                        </div>
+                      </div>
+                      <div className='space-y-1'>
+                        <div className='text-xs text-gray-500'>
+                          Country of Citizenship
+                        </div>
+                        <div className='text-sm text-gray-900'>
+                          {toText(profile?.countryOfCitizenship)}
+                        </div>
+                      </div>
+                      <div className='space-y-1'>
+                        <div className='text-xs text-gray-500'>
+                          Country of Residence
+                        </div>
+                        <div className='text-sm text-gray-900'>
+                          {toText(profile?.countryOfResidence)}
+                        </div>
+                      </div>
+                      <div className='space-y-1'>
+                        <div className='text-xs text-gray-500'>State</div>
+                        <div className='text-sm text-gray-900'>
+                          {toText(profile?.state)}
+                        </div>
+                      </div>
+                      <div className='space-y-1'>
+                        <div className='text-xs text-gray-500'>
+                          Email Notification
+                        </div>
+                        <div className='text-sm text-gray-900'>
+                          {profile?.emailNotification ? 'Yes' : 'No'}
+                        </div>
+                      </div>
+                      <div className='space-y-1'>
+                        <div className='text-xs text-gray-500'>
+                          Push Notification
+                        </div>
+                        <div className='text-sm text-gray-900'>
+                          {profile?.pushNotification ? 'Yes' : 'No'}
+                        </div>
+                      </div>
+                      <div className='space-y-1'>
+                        <div className='text-xs text-gray-500'>
+                          Two-Factor Auth
+                        </div>
+                        <div className='text-sm text-gray-900'>
+                          {profile?.twoFactorAuth ? 'Enabled' : 'Disabled'}
+                        </div>
+                      </div>
+                      <div className='space-y-1'>
+                        <div className='text-xs text-gray-500'>
+                          Account Recovery
+                        </div>
+                        <div className='text-sm text-gray-900'>
+                          {profile?.accountRecovery ? 'Enabled' : 'Disabled'}
+                        </div>
+                      </div>
+                      <div className='space-y-1'>
+                        <div className='text-xs text-gray-500'>
+                          Profile Created
+                        </div>
+                        <div className='text-sm text-gray-900'>
+                          {profileCreatedOn}
+                        </div>
+                      </div>
+                      <div className='space-y-1'>
+                        <div className='text-xs text-gray-500'>
+                          Profile Updated
+                        </div>
+                        <div className='text-sm text-gray-900'>
+                          {profileUpdatedOn}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
