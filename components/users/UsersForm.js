@@ -501,9 +501,7 @@ function UserDetailModal ({ open, userId, onClose }) {
                         </div>
                       </div>
                       <div className='space-y-1'>
-                        <div className='text-xs text-gray-500'>
-                          Country of Citizenship
-                        </div>
+                        <div className='text-xs text-gray-500'>City</div>
                         <div className='text-sm text-gray-900'>
                           {toText(profile?.countryOfCitizenship)}
                         </div>
