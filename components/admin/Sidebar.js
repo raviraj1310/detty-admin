@@ -5,12 +5,12 @@ import { usePathname, useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { useState } from 'react'
 import { Wallet, User, Map, LogOut, AlertCircle, Loader2 } from 'lucide-react'
-import Swal from 'sweetalert2'
 
 const menuSections = [
   {
     title: null,
     items: [
+      
       {
         label: 'Users',
         icon: '/images/backend/side_menu/side_menu (1).svg',
@@ -272,7 +272,9 @@ export default function AdminSidebar () {
 
         {/* Header */}
         <div className='px-4 py-1 mt-4 flex-shrink-0'>
-          <h1 className='text-sm font-semibold text-gray-900'>Dashboard</h1>
+          <Link href='/dashboard'>
+            <h1 className='text-sm font-semibold text-gray-900 cursor-pointer hover:text-gray-700'>Dashboard</h1>
+          </Link>
         </div>
 
         {/* Navigation - Scrollable */}
