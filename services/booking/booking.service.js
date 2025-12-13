@@ -1,9 +1,11 @@
 import api from '../../src/axois/axois'
 
-export const getBookingList = async (eventId) => {
+export const getBookingList = async eventId => {
   try {
     const url = eventId
-      ? `/event/event-wise-booked-tickets/${encodeURIComponent(String(eventId))}`
+      ? `/event/event-wise-booked-tickets/${encodeURIComponent(
+          String(eventId)
+        )}`
       : `/event/event-wise-booked-tickets`
     const response = await api.get(url)
     return response.data
@@ -18,7 +20,9 @@ export const downloadBookingReceipt = async (bookingId, eventId) => {
     const idStr = String(bookingId || '').trim()
     const eidStr = String(eventId || '').trim()
     const url = eidStr
-      ? `/event/download-ticket/${encodeURIComponent(idStr)}?eventId=${encodeURIComponent(eidStr)}`
+      ? `/event/download-ticket/${encodeURIComponent(
+          idStr
+        )}?eventId=${encodeURIComponent(eidStr)}`
       : `/event/download-ticket/${encodeURIComponent(idStr)}`
     const response = await api.get(url, { responseType: 'blob' })
     return response.data
@@ -28,13 +32,31 @@ export const downloadBookingReceipt = async (bookingId, eventId) => {
   }
 }
 
+export const getActivityBookedTickets = async activityId => {
+  try {
+    const response = await api.get(`activity-type/get-all-activity-bookings`)
+    return response.data
+  } catch (error) {
+    console.error('Error fetching activity bookings:', error)
+    throw error
+  }
+}
 
-export const getActivityBookedTickets = async (activityId) => {
-    try {
-        const response = await api.get(`activity-type/get-all-activity-bookings`);
-        return response.data;
-    } catch (error) {
-        console.error('Error fetching activity bookings:', error);
-        throw error;
-    }
+export const eventReferralReport = async () => {
+  try {
+    const response = await api.get(`event/get-all-referral-events`)
+    return response.data
+  } catch (error) {
+    console.error('Error fetching event referral report:', error)
+    throw error
+  }
+}
+export const activityReferralReport = async () => {
+  try {
+    const response = await api.get(`/user-activity/get-all-referral-activities`)
+    return response.data
+  } catch (error) {
+    console.error('Error fetching activity referral report:', error)
+    throw error
+  }
 }

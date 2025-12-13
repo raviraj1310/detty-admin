@@ -5,6 +5,26 @@ import { useRouter } from 'next/navigation'
 
 const bookingData = []
 
+const toImageSrc = u => {
+  const s = String(u || '').trim()
+  if (!s) return ''
+  if (/^https?:\/\//i.test(s)) return s
+  const originEnv = process.env.NEXT_PUBLIC_SIM_IMAGE_BASE_ORIGIN
+  const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || ''
+  let origin = originEnv
+  if (!origin) {
+    try {
+      origin = new URL(apiBase).origin
+    } catch {
+      origin = ''
+    }
+  }
+  if (!origin) origin = originEnv
+  const base = origin.replace(/\/+$/, '')
+  const path = s.replace(/^\/+/, '')
+  return base ? `${base}/${path}` : s
+}
+
 function ActionDropdown ({ bookingId }) {
   const [isOpen, setIsOpen] = useState(false)
   const buttonRef = useRef(null)
@@ -218,15 +238,21 @@ return (
                     </td>
                     <td className='px-4 py-4 whitespace-nowrap'>
                       <div className='flex items-center'>
-                        <div className='h-12 w-12 rounded-lg bg-gradient-to-br from-blue-400 to-purple-600 flex items-center justify-center'>
-                          <svg
-                            className='w-6 h-6 text-white'
-                            fill='currentColor'
-                            viewBox='0 0 20 20'
-                          >
-                            <path d='M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z' />
-                          </svg>
-                        </div>
+                        <img
+                          src={
+                            toImageSrc(
+                              booking?.eventImage ||
+                                (booking?.eventId && booking.eventId.image) ||
+                                (booking?.event && booking.event.image) ||
+                                ''
+                            ) || '/images/no-image.webp'
+                          }
+                          alt='Event image'
+                          className='h-12 w-12 rounded-lg object-cover bg-gray-200'
+                          onError={e => {
+                            e.currentTarget.src = '/images/no-image.webp'
+                          }}
+                        />
                         <div className='ml-4'>
                           <span className='text-sm font-medium text-gray-900'>
                             {booking.bundleName}

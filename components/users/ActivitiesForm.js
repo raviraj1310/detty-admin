@@ -443,6 +443,16 @@ export default function Activities () {
                   <th className='px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
                     <button
                       type='button'
+                      onClick={() => toggleSort('name')}
+                      className='flex items-center'
+                    >
+                      <span>Referral Code</span>
+                      <TbCaretUpDownFilled className='w-3 h-3 text-gray-400 ml-1' />
+                    </button>
+                  </th>
+                  <th className='px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                    <button
+                      type='button'
                       onClick={() => toggleSort('type')}
                       className='flex items-center'
                     >
@@ -573,6 +583,11 @@ export default function Activities () {
                             ></div>
                           </div>
                         </div>
+                      </td>
+                      <td className='px-3 py-3 whitespace-nowrap'>
+                        <span className='text-sm font-medium text-gray-900'>
+                          {activity.referralCode || '-'}
+                        </span>
                       </td>
                       <td className='px-3 py-3 whitespace-nowrap'>
                         <span className='text-sm font-medium text-gray-900'>

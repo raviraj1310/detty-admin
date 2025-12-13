@@ -152,7 +152,7 @@ const filterTabs = [
   { id: 'activities', label: 'Places to Visit', active: false },
   { id: 'merchandise', label: 'Merchandise', active: false },
   { id: 'e-sim', label: 'Internet Connectivity', active: false },
-  { id: 'accommodation', label: 'Accommodation', active: false },
+  { id: 'accommodation', label: 'Accommodation', active: false }
   // { id: 'diy', label: 'DIY', active: false },
 ]
 
@@ -227,9 +227,10 @@ export default function TransactionsForm () {
     if (!s) return null
     if (/^https?:\/\//i.test(s)) return s
     const originEnv = process.env.NEXT_PUBLIC_SIM_IMAGE_BASE_ORIGIN
-    const base = originEnv && originEnv.trim()
-      ? originEnv.trim()
-      : (typeof window !== 'undefined' && 'https://accessdettyfusion.com')
+    const base =
+      originEnv && originEnv.trim()
+        ? originEnv.trim()
+        : typeof window !== 'undefined' && 'https://accessdettyfusion.com'
     const path = s.startsWith('/') ? s : `/${s}`
     return `${base}${path}`
   }
@@ -247,13 +248,16 @@ export default function TransactionsForm () {
           : []
         const list = raw.map((b, idx) => ({
           id: b.bookingId || b._id || `booking-${idx}`,
-          rowKey: `${String(b.bookingId || b._id || 'noid')}-${String(b.createdAt || b.updatedAt || idx)}`,
+          rowKey: `${String(b.bookingId || b._id || 'noid')}-${String(
+            b.createdAt || b.updatedAt || idx
+          )}`,
           bookedOn: b.createdAt || b.updatedAt || '-',
           eventName:
             b.event && (b.event.title || b.event.eventName)
               ? b.event.title || b.event.eventName
               : '-',
           eventImage: toImageUrl(b?.event?.image),
+          referralCode: b?.referralCode || '-',
           type:
             b.event && (b.event.eventType || b.event.type)
               ? b.event.eventType || b.event.type
@@ -627,6 +631,16 @@ export default function TransactionsForm () {
                   <th className='px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
                     <button
                       type='button'
+                      onClick={() => toggleSort('referralCode')}
+                      className='flex items-center'
+                    >
+                      <span>Referral Code</span>
+                      <TbCaretUpDownFilled className='w-3 h-3 text-gray-400 ml-1' />
+                    </button>
+                  </th>
+                  <th className='px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                    <button
+                      type='button'
                       onClick={() => toggleSort('type')}
                       className='flex items-center'
                     >
@@ -680,7 +694,10 @@ export default function TransactionsForm () {
               <tbody className='bg-white divide-y divide-gray-200'>
                 {filteredBookings.length > 0 ? (
                   filteredBookings.map((booking, i) => (
-                    <tr key={`${booking.rowKey || booking.id}-${i}`} className='hover:bg-gray-50'>
+                    <tr
+                      key={`${booking.rowKey || booking.id}-${i}`}
+                      className='hover:bg-gray-50'
+                    >
                       <td className='px-4 py-4 whitespace-nowrap text-sm text-gray-500'>
                         {booking.eventDateText || '-'}
                       </td>
@@ -700,7 +717,12 @@ export default function TransactionsForm () {
                                 }}
                               />
                             ) : null}
-                            <div className='h-10 w-10 rounded-lg bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center' style={{ display: booking.eventImage ? 'none' : 'flex' }}>
+                            <div
+                              className='h-10 w-10 rounded-lg bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center'
+                              style={{
+                                display: booking.eventImage ? 'none' : 'flex'
+                              }}
+                            >
                               <svg
                                 className='w-5 h-5 text-white'
                                 fill='currentColor'
@@ -718,6 +740,11 @@ export default function TransactionsForm () {
                         </div>
                       </td>
 
+                      <td className='px-4 py-4 whitespace-nowrap'>
+                        <span className='text-sm font-medium text-gray-900'>
+                          {booking.referralCode || '-'}
+                        </span>
+                      </td>
                       <td className='px-4 py-4 whitespace-nowrap'>
                         <span className='text-sm font-medium text-gray-900'>
                           {booking.type}
