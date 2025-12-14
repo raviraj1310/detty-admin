@@ -10,7 +10,6 @@ const menuSections = [
   {
     title: null,
     items: [
-      
       {
         label: 'Users',
         icon: '/images/backend/side_menu/side_menu (1).svg',
@@ -50,28 +49,33 @@ const menuSections = [
       { label: 'Wallet', icon: 'lucide-wallet', href: '/users/wallet' },
       {
         label: 'Email Subscription',
-        icon: 'lucide-wallet',
+        icon: '/images/backend/side_menu/side_menu (9).svg',
         href: '/email-subscription'
       },
       {
         label: 'Contact us Enquiries',
-        icon: 'lucide-wallet',
+        icon: '/images/backend/side_menu/side_menu (4).svg',
         href: '/contact'
       },
       {
         label: 'Event/Activity Inquiries',
-        icon: 'lucide-wallet',
+        icon: '/images/backend/side_menu/side_menu (11).svg',
         href: '/inquiries'
       },
       {
         label: 'Request Deactivation',
-        icon: 'lucide-wallet',
+        icon: '/images/backend/side_menu/side_menu (3).svg',
         href: '/request-deactivation'
       },
       {
         label: 'Referral Report',
-        icon: 'lucide-wallet',
+        icon: '/images/backend/side_menu/side_menu (7).svg',
         href: '/referral-reports'
+      },
+      {
+        label: 'Royal Concierge Bookings',
+        icon: '/images/backend/side_menu/side_menu (2).svg',
+        href: '/royal-concierge'
       }
       // { label: 'Ride Services', icon: '/images/backend/side_menu/side_menu (9).svg', href: '/users/ride-services' },
     ]
@@ -278,7 +282,9 @@ export default function AdminSidebar () {
         {/* Header */}
         <div className='px-4 py-1 mt-4 flex-shrink-0'>
           <Link href='/dashboard'>
-            <h1 className='text-sm font-semibold text-gray-900 cursor-pointer hover:text-gray-700'>Dashboard</h1>
+            <h1 className='text-sm font-semibold text-gray-900 cursor-pointer hover:text-gray-700'>
+              Dashboard
+            </h1>
           </Link>
         </div>
 
