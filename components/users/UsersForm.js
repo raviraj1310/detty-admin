@@ -1139,13 +1139,17 @@ export default function UsersForm () {
                       </td>
                       <td className='px-4 py-3 whitespace-nowrap text-sm text-gray-500'>
                         <button
-                          onClick={() =>
-                            router.push(
-                              `/users/view-booked-tickets/${encodeURIComponent(
-                                String(user.rawId || user.id)
-                              )}`
+                          onClick={() => {
+                            const id = encodeURIComponent(
+                              String(user.rawId || user.id)
                             )
-                          }
+                            const qs = new URLSearchParams({
+                              userName: String(user.name || '')
+                            }).toString()
+                            router.push(
+                              `/users/view-booked-tickets/${id}?${qs}`
+                            )
+                          }}
                           className='text-blue-600 underline hover:text-blue-800 transition-colors'
                         >
                           View Bookings
@@ -1171,10 +1175,12 @@ export default function UsersForm () {
                             setDetailOpen(true)
                           }}
                           onViewTicketsBooked={uid => {
+                            const id = encodeURIComponent(String(uid))
+                            const qs = new URLSearchParams({
+                              userName: String(user.name || '')
+                            }).toString()
                             router.push(
-                              `/users/view-booked-tickets/${encodeURIComponent(
-                                String(uid)
-                              )}`
+                              `/users/view-booked-tickets/${id}?${qs}`
                             )
                           }}
                           disabled={updatingId === String(user.rawId)}

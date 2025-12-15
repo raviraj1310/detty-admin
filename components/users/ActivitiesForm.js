@@ -920,7 +920,7 @@ export default function Activities () {
                 })()}
               </div>
             </div>
-            {Array.isArray(selectedBooking.tickets) &&
+            {/* {Array.isArray(selectedBooking.tickets) &&
             selectedBooking.tickets.some(
               t => Array.isArray(t.attendees) && t.attendees.length > 0
             ) ? (
@@ -950,7 +950,7 @@ export default function Activities () {
                     ))}
                 </div>
               </div>
-            ) : null}
+            ) : null} */}
             <div className='mt-6 flex justify-end gap-3'>
               <button
                 onClick={() => {

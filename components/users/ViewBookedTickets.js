@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { TbCaretUpDownFilled } from 'react-icons/tb'
 import { getAllBookings } from '@/services/users/user.service'
+import { useParams, useSearchParams } from 'next/navigation'
 
 const toDateString = d => {
   const v = d && typeof d === 'object' && d.$date ? d.$date : d
@@ -131,7 +132,13 @@ const mapMerchBookings = arr => {
   })
 }
 
-export default function ViewBookedTickets ({ userId }) {
+export default function ViewBookedTickets ({ userId, userName }) {
+  const searchParams = useSearchParams()
+  const params = useParams() || {}
+  const routeId = params?.id || ''
+  const uid = String(userId || routeId || '').trim()
+  const paramName = searchParams?.get('userName') || ''
+  const displayName = String(userName || paramName || '').replace(/\+/g, ' ')
   const [searchTerm, setSearchTerm] = useState('')
   const [activeTab, setActiveTab] = useState('event')
   const [events, setEvents] = useState([])
@@ -144,7 +151,7 @@ export default function ViewBookedTickets ({ userId }) {
     setLoadingTab('event')
     setErrorTab('')
     try {
-      const res = await getAllBookings(userId)
+      const res = await getAllBookings(uid)
       const payload = res?.data || res || {}
       const list = Array.isArray(payload?.event) ? payload.event : []
       setEvents(mapEventBookings(list))
@@ -160,7 +167,7 @@ export default function ViewBookedTickets ({ userId }) {
     setLoadingTab('activities')
     setErrorTab('')
     try {
-      const res = await getAllBookings(userId)
+      const res = await getAllBookings(uid)
       const payload = res?.data || res || {}
       const list = Array.isArray(payload?.activity) ? payload.activity : []
       setActivities(mapActivityBookings(list))
@@ -176,7 +183,7 @@ export default function ViewBookedTickets ({ userId }) {
     setLoadingTab('merch')
     setErrorTab('')
     try {
-      const res = await getAllBookings(userId)
+      const res = await getAllBookings(uid)
       const payload = res?.data || res || {}
       const list = Array.isArray(payload?.merchandise)
         ? payload.merchandise
@@ -191,7 +198,7 @@ export default function ViewBookedTickets ({ userId }) {
   }
 
   useEffect(() => {
-    if (!userId) return
+    if (!uid) return
     if (activeTab === 'event') {
       if (events.length === 0) loadEvents()
     } else {
@@ -201,7 +208,7 @@ export default function ViewBookedTickets ({ userId }) {
         if (merch.length === 0) loadMerch()
       }
     }
-  }, [activeTab, userId, events.length, activities.length, merch.length])
+  }, [activeTab, uid, events.length, activities.length, merch.length])
 
   const filteredEvents = events.filter(event => {
     const term = String(searchTerm || '')
@@ -262,7 +269,7 @@ export default function ViewBookedTickets ({ userId }) {
         <div className='p-4 border-b border-gray-200'>
           <div className='flex justify-between items-center mb-3'>
             <h2 className='text-lg font-semibold text-gray-900'>
-              Booking List
+              Booking List - {displayName}
             </h2>
             <div className='flex items-center space-x-4'>
               <div className='relative'>
@@ -293,7 +300,7 @@ export default function ViewBookedTickets ({ userId }) {
             <button
               onClick={() => {
                 setActiveTab('event')
-                if (userId) {
+                if (uid) {
                   loadEvents()
                 } else {
                   setErrorTab('User ID is missing')
@@ -310,7 +317,7 @@ export default function ViewBookedTickets ({ userId }) {
             <button
               onClick={() => {
                 setActiveTab('activities')
-                if (userId) {
+                if (uid) {
                   loadActivities()
                 } else {
                   setErrorTab('User ID is missing')
@@ -327,7 +334,7 @@ export default function ViewBookedTickets ({ userId }) {
             <button
               onClick={() => {
                 setActiveTab('merch')
-                if (userId) {
+                if (uid) {
                   loadMerch()
                 } else {
                   setErrorTab('User ID is missing')
