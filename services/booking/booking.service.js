@@ -60,3 +60,13 @@ export const activityReferralReport = async () => {
     throw error
   }
 }
+
+export const getAllEsimBookingList = async () => {
+  try {
+    const response = await api.get(`/sochitel/esim-order-list`)
+    return response.data
+  } catch (error) {
+    console.error('Error fetching all esim booking list:', error)
+    throw error
+  }
+}
