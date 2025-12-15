@@ -114,10 +114,14 @@ export default function AddMerchandise () {
       fd.append('price', String(toNumber(formData.price)))
       fd.append('stock', String(Number(formData.stockCount || 0)))
       if (imageFile) fd.append('image', imageFile)
-      fd.append(
-        'sizes',
-        JSON.stringify(Array.isArray(formData.sizes) ? formData.sizes : [])
-      )
+      {
+        const sizesArr = Array.isArray(formData.sizes) ? formData.sizes : []
+        if (sizesArr.length > 0) {
+          sizesArr.forEach(s => fd.append('sizes', String(s)))
+        } else {
+          fd.append('sizes', '')
+        }
+      }
       fd.append('status', 'true')
       await createProducts(fd)
       setToastOpen(true)
