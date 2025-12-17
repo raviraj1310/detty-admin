@@ -81,6 +81,11 @@ const menuSections = [
         label: 'Medical Orders',
         icon: '/images/backend/side_menu/side_menu (2).svg',
         href: '/med-orders'
+      },
+      {
+        label: 'Leadway',
+        icon: '/images/backend/side_menu/side_menu (2).svg',
+        href: '/leadway'
       }
 
       // { label: 'Ride Services', icon: '/images/backend/side_menu/side_menu (9).svg', href: '/users/ride-services' },

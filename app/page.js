@@ -1,11 +1,6 @@
+import { redirect } from 'next/navigation'
 
-import { redirect } from "next/navigation";
-
-export default function Home() {
-  redirect('/cms/landing-page')
-  return (
-  <div>
-    hello
-  </div>
-  );
+export default function Home () {
+  redirect('/dashboard')
+  return <div>hello</div>
 }
