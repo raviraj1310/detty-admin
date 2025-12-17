@@ -241,6 +241,7 @@ export default function AdminSidebar () {
   const activeHref = (() => {
     // if (pathname.startsWith('/users/view-booked-tickets')) return '/users/transactions';
     if (pathname.startsWith('/users/activities')) return '/users/transactions'
+    if (pathname.startsWith('/users/rides')) return '/users/transactions'
     if (pathname.startsWith('/users/transactions')) return '/users/transactions'
     let bestHref = ''
     let bestScore = -1

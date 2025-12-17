@@ -201,7 +201,11 @@ const filterTabs = [
   { id: 'activities', label: 'Places to Visit', active: false },
   { id: 'merchandise', label: 'Merchandise', active: true },
   { id: 'e-sim', label: 'Internet Connectivity', active: false },
-  { id: 'accommodation', label: 'Accommodation', active: false }
+  { id: 'accommodation', label: 'Accommodation', active: false },
+  { id: 'med-plus', label: 'Medical Plus', active: false },
+  { id: 'royal-concierge', label: 'Royal Concierge', active: false },
+  { id: 'rides', label: 'Rides', active: false },
+  { id: 'leadway', label: 'Leadway', active: false }
   // { id: 'diy', label: 'DIY', active: false },
 ]
 
@@ -251,6 +255,18 @@ export default function MerchandisePage () {
         break
       case 'e-sim':
         router.push('/users/e-sim')
+        break
+      case 'med-plus':
+        router.push('/med-orders')
+        break
+      case 'royal-concierge':
+        router.push('/royal-concierge')
+        break
+      case 'rides':
+        router.push('/rides')
+        break
+      case 'leadway':
+        router.push('/leadway')
         break
       default:
         setActiveTab(tabId)

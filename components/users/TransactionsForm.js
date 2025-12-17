@@ -152,7 +152,11 @@ const filterTabs = [
   { id: 'activities', label: 'Places to Visit', active: false },
   { id: 'merchandise', label: 'Merchandise', active: false },
   { id: 'e-sim', label: 'Internet Connectivity', active: false },
-  { id: 'accommodation', label: 'Accommodation', active: false }
+  { id: 'accommodation', label: 'Accommodation', active: false },
+  { id: 'med-plus', label: 'Medical Plus', active: false },
+  { id: 'royal-concierge', label: 'Royal Concierge', active: false },
+  { id: 'rides', label: 'Rides', active: false },
+  { id: 'leadway', label: 'Leadway', active: false }
   // { id: 'diy', label: 'DIY', active: false },
 ]
 
@@ -217,6 +221,23 @@ export default function TransactionsForm () {
     return `${day}, ${month} ${dayNum}, ${year} at ${timeStr}`
   }
 
+  const formatBookedOn = iso => {
+    const d = new Date(iso)
+    if (isNaN(d.getTime())) return '-'
+    const day = d.toLocaleDateString('en-US', { weekday: 'short' })
+    const datePart = d.toLocaleDateString('en-US', {
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric'
+    })
+    const timePart = d.toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    })
+    return `${day}, ${datePart} at ${timePart}`
+  }
+
   const toTimestamp = v => {
     const raw = v && typeof v === 'object' && v.$date ? v.$date : v
     const dt = raw ? new Date(raw) : null
@@ -251,7 +272,8 @@ export default function TransactionsForm () {
           rowKey: `${String(b.bookingId || b._id || 'noid')}-${String(
             b.createdAt || b.updatedAt || idx
           )}`,
-          bookedOn: b.createdAt || b.updatedAt || '-',
+          bookedOnRaw: b.createdAt || b.updatedAt,
+          bookedOn: formatBookedOn(b.createdAt || b.updatedAt),
           eventName:
             b.event && (b.event.title || b.event.eventName)
               ? b.event.title || b.event.eventName
@@ -264,7 +286,7 @@ export default function TransactionsForm () {
               : '-',
           ticketsBooked: `${
             typeof b.quantity === 'number' ? b.quantity : '-'
-          } x ${b.ticketName || '-'}`,
+          } x ${b.ticketName || 'Regular'}`,
           ticketsQty: typeof b.quantity === 'number' ? b.quantity : 0,
           additionalInfo: '',
           amount:
@@ -276,8 +298,15 @@ export default function TransactionsForm () {
               ? b.totalPrice
               : Number(b.totalPrice) || 0,
           eventStatus: String(b.status || 'Pending'),
-          paymentStatus: String(b.paymentStatus || 'Pending'),
+          paymentStatus:
+            (typeof b.totalPrice === 'number' && b.totalPrice === 0) ||
+            (typeof b.totalPrice === 'string' && parseFloat(b.totalPrice) === 0)
+              ? 'Completed'
+              : String(b.paymentStatus || 'Pending'),
           buyer: b.buyer || null,
+          buyerName: b.buyer?.fullName || '-',
+          buyerEmail: b.buyer?.email || '-',
+          buyerPhone: b.buyer?.phone || '-',
           event: b.event || null,
           eventDateText: formatEventDate(
             b?.event?.eventStartDate,
@@ -328,16 +357,22 @@ export default function TransactionsForm () {
       const val = key => {
         switch (key) {
           case 'date':
-            return a.sortTs - b.sortTs
-          case 'name':
-            return String(a.eventName || '').localeCompare(
-              String(b.eventName || ''),
+            return toTimestamp(a.bookedOnRaw) - toTimestamp(b.bookedOnRaw)
+          case 'userName':
+            return String(a.buyerName || '').localeCompare(
+              String(b.buyerName || ''),
               undefined,
               { sensitivity: 'base' }
             )
-          case 'type':
-            return String(a.type || '').localeCompare(
-              String(b.type || ''),
+          case 'email':
+            return String(a.buyerEmail || '').localeCompare(
+              String(b.buyerEmail || ''),
+              undefined,
+              { sensitivity: 'base' }
+            )
+          case 'phone':
+            return String(a.buyerPhone || '').localeCompare(
+              String(b.buyerPhone || ''),
               undefined,
               { sensitivity: 'base' }
             )
@@ -345,20 +380,20 @@ export default function TransactionsForm () {
             return (a.ticketsQty || 0) - (b.ticketsQty || 0)
           case 'amount':
             return (a.amountNum || 0) - (b.amountNum || 0)
-          case 'eventStatus':
-            return String(a.eventStatus || '').localeCompare(
-              String(b.eventStatus || ''),
-              undefined,
-              { sensitivity: 'base' }
-            )
           case 'paymentStatus':
             return String(a.paymentStatus || '').localeCompare(
               String(b.paymentStatus || ''),
               undefined,
               { sensitivity: 'base' }
             )
+          case 'activityStatus':
+            return String(a.eventStatus || '').localeCompare(
+              String(b.eventStatus || ''),
+              undefined,
+              { sensitivity: 'base' }
+            )
           default:
-            return a.sortTs - b.sortTs
+            return toTimestamp(a.bookedOnRaw) - toTimestamp(b.bookedOnRaw)
         }
       }
       return dir * val(sortKey)
@@ -465,11 +500,19 @@ export default function TransactionsForm () {
     }
   }
 
+  const TextCapitalize = str => {
+    if (!str) return ''
+    return (
+      String(str).charAt(0).toUpperCase() + String(str).slice(1).toLowerCase()
+    )
+  }
+
   const getPaymentStatusColor = status => {
-    switch (status) {
-      case 'Completed':
+    switch (String(status).toUpperCase()) {
+      case 'COMPLETED':
+      case 'PAID':
         return 'bg-green-100 text-green-800'
-      case 'Incomplete':
+      case 'INCOMPLETE':
         return 'bg-yellow-100 text-yellow-800'
       default:
         return 'bg-gray-100 text-gray-800'
@@ -587,6 +630,18 @@ export default function TransactionsForm () {
                       case 'e-sim':
                         router.push('/users/e-sim')
                         break
+                      case 'med-plus':
+                        router.push('/med-orders')
+                        break
+                      case 'royal-concierge':
+                        router.push('/royal-concierge')
+                        break
+                      case 'rides':
+                        router.push('/rides')
+                        break
+                      case 'leadway':
+                        router.push('/leadway')
+                        break
                       default:
                         setActiveTab(tab.id)
                     }
@@ -614,37 +669,30 @@ export default function TransactionsForm () {
                       onClick={() => toggleSort('date')}
                       className='flex items-center'
                     >
-                      <span>Event Date</span>
+                      <span>Booked On</span>
+                      <TbCaretUpDownFilled className='w-3 h-3 text-gray-400 ml-1' />
+                    </button>
+                  </th>
+                  <th className='px-4 py-3 text-left text-xs font-medium text-gray-500 tracking-wider'>
+                    <span>Event Name</span>
+                  </th>
+                  <th className='px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                    <button
+                      type='button'
+                      onClick={() => toggleSort('userName')}
+                      className='flex items-center'
+                    >
+                      <span>User Name</span>
                       <TbCaretUpDownFilled className='w-3 h-3 text-gray-400 ml-1' />
                     </button>
                   </th>
                   <th className='px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
                     <button
                       type='button'
-                      onClick={() => toggleSort('name')}
+                      onClick={() => toggleSort('email')}
                       className='flex items-center'
                     >
-                      <span>Event Name</span>
-                      <TbCaretUpDownFilled className='w-3 h-3 text-gray-400 ml-1' />
-                    </button>
-                  </th>
-                  <th className='px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-                    <button
-                      type='button'
-                      onClick={() => toggleSort('referralCode')}
-                      className='flex items-center'
-                    >
-                      <span>Referral Code</span>
-                      <TbCaretUpDownFilled className='w-3 h-3 text-gray-400 ml-1' />
-                    </button>
-                  </th>
-                  <th className='px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-                    <button
-                      type='button'
-                      onClick={() => toggleSort('type')}
-                      className='flex items-center'
-                    >
-                      <span>Type</span>
+                      <span>Contact Details</span>
                       <TbCaretUpDownFilled className='w-3 h-3 text-gray-400 ml-1' />
                     </button>
                   </th>
@@ -671,20 +719,20 @@ export default function TransactionsForm () {
                   <th className='px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
                     <button
                       type='button'
-                      onClick={() => toggleSort('eventStatus')}
+                      onClick={() => toggleSort('paymentStatus')}
                       className='flex items-center'
                     >
-                      <span>Event Status</span>
+                      <span>Payment Status</span>
                       <TbCaretUpDownFilled className='w-3 h-3 text-gray-400 ml-1' />
                     </button>
                   </th>
                   <th className='px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
                     <button
                       type='button'
-                      onClick={() => toggleSort('paymentStatus')}
+                      onClick={() => toggleSort('activityStatus')}
                       className='flex items-center'
                     >
-                      <span>Payment Status</span>
+                      <span>Activity Status</span>
                       <TbCaretUpDownFilled className='w-3 h-3 text-gray-400 ml-1' />
                     </button>
                   </th>
@@ -699,7 +747,7 @@ export default function TransactionsForm () {
                       className='hover:bg-gray-50'
                     >
                       <td className='px-4 py-4 whitespace-nowrap text-sm text-gray-500'>
-                        {booking.eventDateText || '-'}
+                        {booking.bookedOn || '-'}
                       </td>
 
                       <td className='px-4 py-4 whitespace-nowrap'>
@@ -742,13 +790,17 @@ export default function TransactionsForm () {
 
                       <td className='px-4 py-4 whitespace-nowrap'>
                         <span className='text-sm font-medium text-gray-900'>
-                          {booking.referralCode || '-'}
+                          {booking.buyerName || '-'}
                         </span>
                       </td>
+
                       <td className='px-4 py-4 whitespace-nowrap'>
-                        <span className='text-sm font-medium text-gray-900'>
-                          {booking.type}
-                        </span>
+                        <div className='text-sm font-medium text-gray-900'>
+                          {booking.buyerEmail || '-'}
+                        </div>
+                        <div className='text-sm text-gray-500'>
+                          {booking.buyerPhone || '-'}
+                        </div>
                       </td>
 
                       <td className='px-4 py-4 whitespace-nowrap text-sm text-gray-900'>
@@ -766,21 +818,21 @@ export default function TransactionsForm () {
 
                       <td className='px-4 py-4 whitespace-nowrap'>
                         <span
-                          className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${getEventStatusColor(
-                            booking.eventStatus
+                          className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${getPaymentStatusColor(
+                            booking.paymentStatus
                           )}`}
                         >
-                          • {booking.eventStatus}
+                          {TextCapitalize(booking.paymentStatus)}
                         </span>
                       </td>
 
                       <td className='px-4 py-4 whitespace-nowrap'>
                         <span
-                          className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${getPaymentStatusColor(
-                            booking.paymentStatus
+                          className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${getEventStatusColor(
+                            booking.eventStatus
                           )}`}
                         >
-                          {booking.paymentStatus}
+                          • {booking.eventStatus}
                         </span>
                       </td>
 

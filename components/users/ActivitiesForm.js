@@ -15,18 +15,24 @@ import { getActivityBookedTickets } from '../../services/booking/booking.service
 import { downloadActivityBookedTicket } from '@/services/places-to-visit/placesToVisit.service'
 
 const fmtCurrency = n => `₦${Number(n || 0).toLocaleString('en-NG')}`
-const fmtDate = d => {
-  if (!d) return '-'
-  const date = new Date(typeof d === 'object' && d.$date ? d.$date : d)
-  return date.toLocaleString(undefined, {
-    weekday: 'short',
-    day: '2-digit',
+
+const formatBookedOn = iso => {
+  const d = new Date(iso)
+  if (isNaN(d.getTime())) return '-'
+  const day = d.toLocaleDateString('en-US', { weekday: 'short' })
+  const datePart = d.toLocaleDateString('en-US', {
     month: 'long',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
+    day: 'numeric',
+    year: 'numeric'
   })
+  const timePart = d.toLocaleTimeString('en-US', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true
+  })
+  return `${day}, ${datePart} at ${timePart}`
 }
+
 const ticketsText = tList => {
   if (!Array.isArray(tList)) return '-'
   return tList
@@ -87,7 +93,11 @@ const filterTabs = [
   { id: 'activities', label: 'Places to Visit', active: true },
   { id: 'merchandise', label: 'Merchandise', active: false },
   { id: 'e-sim', label: 'E-Sim', active: false },
-  { id: 'accommodation', label: 'Accommodation', active: false }
+  { id: 'accommodation', label: 'Accommodation', active: false },
+  { id: 'med-plus', label: 'Medical Plus', active: false },
+  { id: 'royal-concierge', label: 'Royal Concierge', active: false },
+  { id: 'rides', label: 'Rides', active: false },
+  { id: 'leadway', label: 'Leadway', active: false }
   // { id: 'diy', label: 'DIY', active: false },
 ]
 
@@ -131,6 +141,18 @@ export default function Activities () {
       case 'e-sim':
         router.push('/users/e-sim')
         break
+      case 'med-plus':
+        router.push('/med-orders')
+        break
+      case 'royal-concierge':
+        router.push('/royal-concierge')
+        break
+      case 'rides':
+        router.push('/rides')
+        break
+      case 'leadway':
+        router.push('/leadway')
+        break
       default:
         setActiveTab(tabId)
     }
@@ -158,18 +180,23 @@ export default function Activities () {
             '-'
           const pay = String(b?.paymentStatus || '-')
           const payNice = pay.toLowerCase() === 'paid' ? 'Paid' : pay
-          const created = b?.arrivalDate || '-'
-          const createdTs = created
-            ? new Date(
-                typeof created === 'object' && created.$date
-                  ? created.$date
-                  : created
-              ).getTime()
-            : 0
+
+          const bookedOnRaw = b.createdAt || b.updatedAt
+          const bookedOn = formatBookedOn(bookedOnRaw)
+          const arrivalDate = formatBookedOn(b.arrivalDate)
+
+          const buyer = b.buyer || {}
+          const buyerName = buyer.fullName || buyer.name || '-'
+          const buyerEmail = buyer.email || '-'
+          const buyerPhone = buyer.phone || buyer.phoneNumber || '-'
+
+          const createdTs = bookedOnRaw ? new Date(bookedOnRaw).getTime() : 0
+
           return {
             id: b._id || b.id || b.bookingId || `booking-${idx}`,
-            eventDate: fmtDate(created),
-            arrivalDate: fmtDate(b?.arrivalDate),
+            bookedOn,
+            bookedOnRaw,
+            arrivalDate,
             activityName: activityObj?.activityName || b?.activityName || '-',
             activityImage: img,
             type: type,
@@ -179,7 +206,9 @@ export default function Activities () {
             activityStatus: String(b?.status || b?.bookingStatus || 'Pending'),
             paymentStatus: payNice,
             paymentStatusClass: statusClass(b?.paymentStatus),
-            buyer: b?.buyer || null,
+            buyerName,
+            buyerEmail,
+            buyerPhone,
             raw: b,
             sortTs: createdTs
           }
@@ -215,8 +244,10 @@ export default function Activities () {
     const termDigits = term.replace(/[^0-9]/g, '')
     const name = String(r.activityName || '').toLowerCase()
     const type = String(r.type || '').toLowerCase()
-    const dateStr = String(r.eventDate || '').toLowerCase()
-    const dateDigits = String(r.eventDate || '').replace(/[^0-9]/g, '')
+    const bookedOn = String(r.bookedOn || '').toLowerCase()
+    const buyerName = String(r.buyerName || '').toLowerCase()
+    const buyerEmail = String(r.buyerEmail || '').toLowerCase()
+    const buyerPhone = String(r.buyerPhone || '').toLowerCase()
     const tickets = String(r.ticketsBooked || '').toLowerCase()
     const amount = String(r.amount || '').toLowerCase()
     const ps = String(r.paymentStatus || '').toLowerCase()
@@ -224,14 +255,17 @@ export default function Activities () {
     const matchesText =
       name.includes(term) ||
       type.includes(term) ||
-      dateStr.includes(term) ||
+      bookedOn.includes(term) ||
+      buyerName.includes(term) ||
+      buyerEmail.includes(term) ||
+      buyerPhone.includes(term) ||
       tickets.includes(term) ||
       amount.includes(term) ||
       ps.includes(term) ||
       as.includes(term)
     const matchesDigits =
       termDigits &&
-      (dateDigits.includes(termDigits) ||
+      (buyerPhone.includes(termDigits) ||
         String(r.amount || '')
           .replace(/[^0-9]/g, '')
           .includes(termDigits))
@@ -252,14 +286,27 @@ export default function Activities () {
     switch (sortKey) {
       case 'date':
         return (a.sortTs - b.sortTs) * dir
-      case 'name':
+      case 'activityName':
         return (
           String(a.activityName || '').localeCompare(
             String(b.activityName || '')
           ) * dir
         )
-      case 'type':
-        return String(a.type || '').localeCompare(String(b.type || '')) * dir
+      case 'userName':
+        return (
+          String(a.buyerName || '').localeCompare(String(b.buyerName || '')) *
+          dir
+        )
+      case 'email':
+        return (
+          String(a.buyerEmail || '').localeCompare(String(b.buyerEmail || '')) *
+          dir
+        )
+      case 'phone':
+        return (
+          String(a.buyerPhone || '').localeCompare(String(b.buyerPhone || '')) *
+          dir
+        )
       case 'tickets':
         return (
           String(a.ticketsBooked || '').localeCompare(
@@ -271,6 +318,12 @@ export default function Activities () {
           (Number(String(a.amount).replace(/[^0-9.-]/g, '')) -
             Number(String(b.amount).replace(/[^0-9.-]/g, ''))) *
           dir
+        )
+      case 'arrivalDate':
+        return (
+          String(a.arrivalDate || '').localeCompare(
+            String(b.arrivalDate || '')
+          ) * dir
         )
       case 'activityStatus':
         return (
@@ -415,25 +468,14 @@ export default function Activities () {
                       onClick={() => toggleSort('date')}
                       className='flex items-center'
                     >
-                      <span>Activity Date</span>
+                      <span>Booked On</span>
                       <TbCaretUpDownFilled className='w-3 h-3 text-gray-400 ml-1' />
                     </button>
                   </th>
                   <th className='px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
                     <button
                       type='button'
-                      onClick={() => toggleSort('date')}
-                      className='flex items-center'
-                    >
-                      <span>Visit Date</span>
-                      <TbCaretUpDownFilled className='w-3 h-3 text-gray-400 ml-1' />
-                    </button>
-                  </th>
-
-                  <th className='px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-                    <button
-                      type='button'
-                      onClick={() => toggleSort('name')}
+                      onClick={() => toggleSort('activityName')}
                       className='flex items-center'
                     >
                       <span>Activity Name</span>
@@ -443,20 +485,30 @@ export default function Activities () {
                   <th className='px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
                     <button
                       type='button'
-                      onClick={() => toggleSort('name')}
+                      onClick={() => toggleSort('userName')}
                       className='flex items-center'
                     >
-                      <span>Referral Code</span>
+                      <span>User Name</span>
                       <TbCaretUpDownFilled className='w-3 h-3 text-gray-400 ml-1' />
                     </button>
                   </th>
                   <th className='px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
                     <button
                       type='button'
-                      onClick={() => toggleSort('type')}
+                      onClick={() => toggleSort('email')}
                       className='flex items-center'
                     >
-                      <span>Type</span>
+                      <span>Email ID</span>
+                      <TbCaretUpDownFilled className='w-3 h-3 text-gray-400 ml-1' />
+                    </button>
+                  </th>
+                  <th className='px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                    <button
+                      type='button'
+                      onClick={() => toggleSort('phone')}
+                      className='flex items-center'
+                    >
+                      <span>Phone Number</span>
                       <TbCaretUpDownFilled className='w-3 h-3 text-gray-400 ml-1' />
                     </button>
                   </th>
@@ -483,10 +535,10 @@ export default function Activities () {
                   <th className='px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
                     <button
                       type='button'
-                      onClick={() => toggleSort('activityStatus')}
+                      onClick={() => toggleSort('arrivalDate')}
                       className='flex items-center'
                     >
-                      <span>Activity Status</span>
+                      <span>Arrival Date</span>
                       <TbCaretUpDownFilled className='w-3 h-3 text-gray-400 ml-1' />
                     </button>
                   </th>
@@ -500,6 +552,16 @@ export default function Activities () {
                       <TbCaretUpDownFilled className='w-3 h-3 text-gray-400 ml-1' />
                     </button>
                   </th>
+                  <th className='px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                    <button
+                      type='button'
+                      onClick={() => toggleSort('activityStatus')}
+                      className='flex items-center'
+                    >
+                      <span>Activity Status</span>
+                      <TbCaretUpDownFilled className='w-3 h-3 text-gray-400 ml-1' />
+                    </button>
+                  </th>
                   <th className='px-6 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-20'></th>
                 </tr>
               </thead>
@@ -507,7 +569,7 @@ export default function Activities () {
                 {error && rows.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={8}
+                      colSpan={11}
                       className='px-3 py-6 text-center text-sm text-red-600'
                     >
                       {error}
@@ -516,7 +578,7 @@ export default function Activities () {
                 ) : loading ? (
                   <tr>
                     <td
-                      colSpan={8}
+                      colSpan={11}
                       className='px-3 py-6 text-center text-sm text-[#5E6582]'
                     >
                       Loading...
@@ -525,7 +587,7 @@ export default function Activities () {
                 ) : sortedActivities.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={8}
+                      colSpan={11}
                       className='px-3 py-6 text-center text-sm text-[#5E6582]'
                     >
                       No bookings found
@@ -537,13 +599,11 @@ export default function Activities () {
                       key={activity.id}
                       className='hover:bg-gray-50 border-b border-gray-100'
                     >
-                      <td className='px-3 py-3 whitespace-nowrap text-sm text-gray-500'>
-                        {activity.eventDate}
+                      <td className='px-3 py-4 whitespace-nowrap text-sm text-gray-500'>
+                        {activity.bookedOn}
                       </td>
-                      <td className='px-3 py-3 whitespace-nowrap text-sm text-gray-500'>
-                        {activity.arrivalDate}
-                      </td>
-                      <td className='px-3 py-3 whitespace-nowrap'>
+
+                      <td className='px-3 py-4 whitespace-nowrap'>
                         <div className='flex items-center'>
                           <div className='flex-shrink-0 h-10 w-10'>
                             {activity.activityImage ? (
@@ -553,12 +613,13 @@ export default function Activities () {
                                 alt={activity.activityName}
                                 onError={e => {
                                   e.target.style.display = 'none'
-                                  e.target.nextSibling.style.display = 'flex'
+                                  const fb = e.target.nextSibling
+                                  if (fb) fb.style.display = 'flex'
                                 }}
                               />
                             ) : null}
                             <div
-                              className='h-10 w-10 rounded-lg bg-gradient-to-br from-blue-400 to-green-500 flex items-center justify-center'
+                              className='h-10 w-10 rounded-lg bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center'
                               style={{
                                 display: activity.activityImage
                                   ? 'none'
@@ -575,56 +636,55 @@ export default function Activities () {
                             </div>
                           </div>
                           <div className='ml-3'>
-                            <div
-                              className='text-sm font-medium text-gray-900 leading-tight'
-                              dangerouslySetInnerHTML={{
-                                __html: activity.activityName
-                              }}
-                            ></div>
+                            <div className='text-sm font-medium text-gray-900'>
+                              {activity.activityName}
+                            </div>
                           </div>
                         </div>
                       </td>
-                      <td className='px-3 py-3 whitespace-nowrap'>
-                        <span className='text-sm font-medium text-gray-900'>
-                          {activity.referralCode || '-'}
-                        </span>
+
+                      <td className='px-3 py-4 whitespace-nowrap text-sm font-medium text-gray-900'>
+                        {activity.buyerName}
                       </td>
-                      <td className='px-3 py-3 whitespace-nowrap'>
-                        <span className='text-sm font-medium text-gray-900'>
-                          {activity.type}
-                        </span>
+
+                      <td className='px-3 py-4 whitespace-nowrap text-sm text-gray-500'>
+                        {activity.buyerEmail}
                       </td>
-                      <td className='px-3 py-3 whitespace-nowrap text-sm text-gray-900'>
-                        <div>{activity.ticketsBooked}</div>
-                        {activity.additionalInfo && (
-                          <div className='text-xs text-gray-500'>
-                            {activity.additionalInfo}
-                          </div>
-                        )}
+
+                      <td className='px-3 py-4 whitespace-nowrap text-sm text-gray-500'>
+                        {activity.buyerPhone}
                       </td>
-                      <td className='px-3 py-3 whitespace-nowrap'>
-                        <span className='text-sm font-semibold text-gray-900'>
-                          {activity.amount}
-                        </span>
+
+                      <td className='px-3 py-4 whitespace-nowrap text-sm text-gray-500'>
+                        {activity.ticketsBooked}
                       </td>
-                      <td className='px-3 py-3 whitespace-nowrap'>
+
+                      <td className='px-3 py-4 whitespace-nowrap text-sm font-bold text-gray-900'>
+                        {activity.amount}
+                      </td>
+
+                      <td className='px-3 py-4 whitespace-nowrap text-sm text-gray-500'>
+                        {activity.arrivalDate}
+                      </td>
+
+                      <td className='px-3 py-4 whitespace-nowrap'>
                         <span
-                          className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${getActivityStatusColor(
-                            activity.activityStatus
-                          )}`}
-                        >
-                          • {activity.activityStatus}
-                        </span>
-                      </td>
-                      <td className='px-3 py-3 whitespace-nowrap'>
-                        <span
-                          className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${getPaymentStatusColor(
-                            activity.paymentStatus
-                          )}`}
+                          className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${activity.paymentStatusClass}`}
                         >
                           {activity.paymentStatus}
                         </span>
                       </td>
+
+                      <td className='px-3 py-4 whitespace-nowrap'>
+                        <span
+                          className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getActivityStatusColor(
+                            activity.activityStatus
+                          )}`}
+                        >
+                          {activity.activityStatus}
+                        </span>
+                      </td>
+
                       <td className='px-6 py-3 whitespace-nowrap text-right relative'>
                         <div className='flex items-center justify-center self-center relative'>
                           <button

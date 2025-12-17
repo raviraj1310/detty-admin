@@ -1,8 +1,23 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { TbCaretUpDownFilled } from 'react-icons/tb'
 import { getMedOrderList } from '@/services/med/med.service'
+
+const filterTabs = [
+  // { id: 'bundle-orders', label: 'Bundle Orders', active: false },
+  { id: 'event', label: 'Event', active: false },
+  { id: 'activities', label: 'Places to Visit', active: false },
+  { id: 'merchandise', label: 'Merchandise', active: false },
+  { id: 'e-sim', label: 'Internet Connectivity', active: false },
+  { id: 'accommodation', label: 'Accommodation', active: false },
+  { id: 'med-plus', label: 'Medical Plus', active: true },
+  { id: 'royal-concierge', label: 'Royal Concierge', active: false },
+  { id: 'rides', label: 'Rides', active: false },
+  { id: 'leadway', label: 'Leadway', active: false }
+  // { id: 'diy', label: 'DIY', active: false },
+]
 
 const toCurrency = n => {
   try {
@@ -33,6 +48,7 @@ const formatDate = iso => {
 }
 
 export default function MedOrdersPage () {
+  const router = useRouter()
   const [searchTerm, setSearchTerm] = useState('')
   const [rowsRaw, setRowsRaw] = useState([])
   const [detailOpen, setDetailOpen] = useState(false)
@@ -305,19 +321,19 @@ export default function MedOrdersPage () {
   return (
     <div className='p-4 h-full flex flex-col bg-white'>
       <div className='mb-4'>
-        <h1 className='text-xl font-bold text-gray-900 mb-1'>Medical Orders</h1>
+        <h1 className='text-xl font-bold text-gray-900 mb-1'>Bookings</h1>
         <nav className='text-sm text-gray-500'>
           <span>Dashboard</span> /{' '}
-          <span className='text-gray-900 font-medium'>Healthcare</span>
+          <span className='text-gray-900 font-medium'>Users</span>
         </nav>
       </div>
 
-      <div className='bg-gray-200 p-5 rounded-xl'>
-        <div className='bg-white rounded-lg shadow-sm border border-gray-200'>
-          <div className='p-4 border-b border-gray-200'>
-            <div className='flex justify-between items-center mb-3'>
+      <div className='bg-gray-200 p-5 rounded-xl flex-1 flex flex-col min-h-0'>
+        <div className='bg-white rounded-lg shadow-sm border border-gray-200 flex-1 flex flex-col min-h-0'>
+          <div className='p-4 border-b border-gray-200 flex-shrink-0'>
+            <div className='flex justify-between items-center mb-4'>
               <h2 className='text-lg font-semibold text-gray-900'>
-                Orders List
+                Booking List
               </h2>
               <div className='flex items-center space-x-4'>
                 <div className='relative'>
@@ -342,11 +358,98 @@ export default function MedOrdersPage () {
                     />
                   </svg>
                 </div>
+
+                <button className='flex items-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 bg-white'>
+                  <svg
+                    className='w-4 h-4 mr-2 text-gray-600'
+                    fill='none'
+                    stroke='currentColor'
+                    viewBox='0 0 24 24'
+                    strokeWidth={2}
+                  >
+                    <path
+                      strokeLinecap='round'
+                      strokeLinejoin='round'
+                      d='M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 01-.659 1.591l-5.432 5.432a2.25 2.25 0 00-.659 1.591v2.927a2.25 2.25 0 01-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 00-.659-1.591L3.659 7.409A2.25 2.25 0 013 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0112 3z'
+                    />
+                  </svg>
+                  <span className='text-gray-700 font-medium'>Filters</span>
+                </button>
+
+                <button className='flex items-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 bg-white'>
+                  <svg
+                    className='w-4 h-4 text-gray-600'
+                    fill='none'
+                    stroke='currentColor'
+                    viewBox='0 0 24 24'
+                    strokeWidth={2}
+                  >
+                    <path
+                      strokeLinecap='round'
+                      strokeLinejoin='round'
+                      d='M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3'
+                    />
+                  </svg>
+                </button>
               </div>
+            </div>
+
+            <div className='flex space-x-2 overflow-x-auto pb-2'>
+              {filterTabs.map(tab => (
+                <button
+                  key={tab.id}
+                  onClick={() => {
+                    switch (tab.id) {
+                      case 'bundle-orders':
+                        router.push('/users/bookings')
+                        break
+                      case 'event':
+                        router.push('/users/transactions')
+                        break
+                      case 'activities':
+                        router.push('/users/activities')
+                        break
+                      case 'accommodation':
+                        router.push('/users/accommodation')
+                        break
+                      case 'diy':
+                        router.push('/users/diy')
+                        break
+                      case 'merchandise':
+                        router.push('/users/merchandise')
+                        break
+                      case 'e-sim':
+                        router.push('/users/e-sim')
+                        break
+                      case 'med-plus':
+                        router.push('/med-orders')
+                        break
+                      case 'royal-concierge':
+                        router.push('/royal-concierge')
+                        break
+                      case 'rides':
+                        router.push('/users/rides')
+                        break
+                      case 'leadway':
+                        router.push('/leadway')
+                        break
+                      default:
+                        break
+                    }
+                  }}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
+                    tab.active
+                      ? 'bg-[#FF6A00] text-white'
+                      : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
             </div>
           </div>
 
-          <div className='overflow-x-auto'>
+          <div className='overflow-x-auto flex-1'>
             <table className='w-full'>
               <thead className='bg-gray-50 sticky top-0'>
                 <tr>

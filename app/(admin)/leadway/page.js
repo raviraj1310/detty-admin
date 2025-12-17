@@ -1,127 +1,30 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import {
-  Search,
-  Download,
-  Shield,
-  PlusCircle,
-  CheckCircle,
-  AlertCircle
-} from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { Search } from 'lucide-react'
 import { TbCaretUpDownFilled } from 'react-icons/tb'
 import { getLeadwayList } from '@/services/leadway/leadway.service'
 import Modal from '@/components/ui/Modal'
 
-const cardDefs = [
-  { id: 'total', title: 'Total Requests', bg: 'bg-[#1F57D6]', Icon: Shield },
-  { id: 'new', title: 'New Today', bg: 'bg-[#15803D]', Icon: PlusCircle },
-  { id: 'completed', title: 'Completed', bg: 'bg-[#B91C1C]', Icon: CheckCircle }
+const filterTabs = [
+  // { id: 'bundle-orders', label: 'Bundle Orders', active: false },
+  { id: 'event', label: 'Event', active: false },
+  { id: 'activities', label: 'Places to Visit', active: false },
+  { id: 'merchandise', label: 'Merchandise', active: false },
+  { id: 'e-sim', label: 'Internet Connectivity', active: false },
+  { id: 'accommodation', label: 'Accommodation', active: false },
+  { id: 'med-plus', label: 'Medical Plus', active: false },
+  { id: 'royal-concierge', label: 'Royal Concierge', active: false },
+  { id: 'rides', label: 'Rides', active: false },
+  { id: 'leadway', label: 'Leadway', active: true }
+  // { id: 'diy', label: 'DIY', active: false },
 ]
 
-const TableHeaderCell = ({ children, onClick }) => (
-  <button
-    type='button'
-    onClick={onClick}
-    className='flex items-center gap-1 text-xs font-medium uppercase tracking-[0.12em] text-[#8A92AC] hover:text-[#2D3658]'
-  >
-    {children}
-    <TbCaretUpDownFilled className='h-3.5 w-3.5 text-[#CBCFE2]' />
-  </button>
-)
-
-const ActionDropdown = ({ row, onDetail }) => {
-  const [isOpen, setIsOpen] = useState(false)
-  const [buttonPosition, setButtonPosition] = useState({ top: 0, right: 0 })
-
-  const handleButtonClick = e => {
-    e.stopPropagation()
-    if (!isOpen) {
-      const rect = e.currentTarget.getBoundingClientRect()
-      const windowHeight = window.innerHeight
-      const dropdownHeight = 60
-      let top = rect.bottom + 8
-      let right = window.innerWidth - rect.right
-      if (top + dropdownHeight > windowHeight) {
-        top = rect.top - dropdownHeight - 8
-      }
-      setButtonPosition({ top, right })
-    }
-    setIsOpen(!isOpen)
-  }
-
-  return (
-    <div className='relative'>
-      <button
-        onClick={handleButtonClick}
-        className='p-1 hover:bg-gray-100 rounded-full transition-colors'
-      >
-        <svg
-          className='w-5 h-5 text-gray-600'
-          fill='currentColor'
-          viewBox='0 0 20 20'
-        >
-          <path d='M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z' />
-        </svg>
-      </button>
-      {isOpen && (
-        <>
-          <div
-            className='fixed inset-0 z-[99998]'
-            onClick={e => {
-              e.stopPropagation()
-              setIsOpen(false)
-            }}
-          />
-          <div
-            className='fixed w-44 bg-white rounded-lg shadow-2xl border border-gray-200 z-[99999] py-1'
-            style={{
-              top: `${buttonPosition.top}px`,
-              right: `${buttonPosition.right}px`
-            }}
-          >
-            <button
-              className='flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100'
-              onClick={e => {
-                e.stopPropagation()
-                onDetail(row)
-                setIsOpen(false)
-              }}
-            >
-              <span className='mr-3 text-gray-500'>
-                <svg
-                  className='w-4 h-4'
-                  fill='none'
-                  stroke='currentColor'
-                  viewBox='0 0 24 24'
-                >
-                  <path
-                    strokeLinecap='round'
-                    strokeLinejoin='round'
-                    strokeWidth={2}
-                    d='M15 12a3 3 0 11-6 0 3 3 0 016 0z'
-                  />
-                  <path
-                    strokeLinecap='round'
-                    strokeLinejoin='round'
-                    strokeWidth={2}
-                    d='M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z'
-                  />
-                </svg>
-              </span>
-              <span className='text-gray-800'>View Details</span>
-            </button>
-          </div>
-        </>
-      )}
-    </div>
-  )
-}
-
 export default function LeadwayPage () {
+  const router = useRouter()
   const [searchTerm, setSearchTerm] = useState('')
   const [requests, setRequests] = useState([])
-  const [metrics, setMetrics] = useState({ total: 0, new: 0, completed: 0 })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [sortKey, setSortKey] = useState('date')
@@ -163,21 +66,9 @@ export default function LeadwayPage () {
           }
         })
         setRequests(mapped)
-        const total = mapped.length
-        const startOfToday = new Date()
-        startOfToday.setHours(0, 0, 0, 0)
-        const newToday = mapped.filter(
-          m => m.createdTs >= startOfToday.getTime()
-        ).length
-        const completed = mapped.filter(
-          m => String(m.status).toLowerCase() === 'completed'
-        ).length
-        setMetrics({ total, new: newToday, completed })
       } catch (e) {
-        // Suppress error for UI demo if endpoint fails
         console.error(e)
         setRequests([])
-        setMetrics({ total: 0, new: 0, completed: 0 })
       } finally {
         setLoading(false)
       }
@@ -267,162 +158,392 @@ export default function LeadwayPage () {
     }
   }
 
-  return (
-    <div className='space-y-7 py-12 px-12'>
-      <div className='flex flex-col gap-4 md:flex-row md:items-start md:justify-between'>
-        <div className='flex flex-col gap-2'>
-          <h1 className='text-2xl font-semibold text-slate-900'>Leadway</h1>
-          <p className='text-sm text-[#99A1BC]'>Dashboard / Leadway</p>
-        </div>
-      </div>
+  const downloadCSV = () => {
+    if (!sorted.length) return
+    const headers = [
+      'Submitted On',
+      'Customer',
+      'Policy Type',
+      'Amount',
+      'Status'
+    ]
+    const rows = sorted.map(s => [
+      s.createdOn ? new Date(s.createdOn).toLocaleString() : '-',
+      s.customer,
+      s.policyType,
+      s.amount,
+      s.status
+    ])
+    const csvContent =
+      'data:text/csv;charset=utf-8,' +
+      [headers.join(','), ...rows.map(e => e.join(','))].join('\n')
+    const encodedUri = encodeURI(csvContent)
+    const link = document.createElement('a')
+    link.setAttribute('href', encodedUri)
+    link.setAttribute('download', 'leadway_requests.csv')
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
 
-      <div className='grid grid-cols-1 md:grid-cols-3 gap-6 mb-8'>
-        {cardDefs.map(card => (
-          <div
-            key={card.id}
-            className={`${card.bg} rounded-2xl p-6 text-white relative overflow-hidden`}
+  const ActionDropdown = ({ row, onDetail }) => {
+    const [isOpen, setIsOpen] = useState(false)
+    const [buttonPosition, setButtonPosition] = useState({ top: 0, right: 0 })
+
+    const handleButtonClick = e => {
+      e.stopPropagation()
+      if (!isOpen) {
+        const rect = e.currentTarget.getBoundingClientRect()
+        const windowHeight = window.innerHeight
+        const dropdownHeight = 60
+        let top = rect.bottom + 8
+        let right = window.innerWidth - rect.right
+        if (top + dropdownHeight > windowHeight) {
+          top = rect.top - dropdownHeight - 8
+        }
+        setButtonPosition({ top, right })
+      }
+      setIsOpen(!isOpen)
+    }
+
+    return (
+      <div className='relative'>
+        <button
+          onClick={handleButtonClick}
+          className='p-1 hover:bg-gray-100 rounded-full transition-colors'
+        >
+          <svg
+            className='w-5 h-5 text-gray-600'
+            fill='currentColor'
+            viewBox='0 0 20 20'
           >
-            <div className='flex items-center justify-between'>
-              <div className='bg-white/10 p-4 rounded-2xl flex-shrink-0'>
-                <card.Icon className='h-8 w-8 text-white' />
-              </div>
-              <div className='text-right'>
-                <p className='text-white/90 text-sm font-medium mb-2'>
-                  {card.title}
-                </p>
-                <p className='text-4xl font-bold text-white'>
-                  {String(
-                    card.id === 'total'
-                      ? metrics.total
-                      : card.id === 'new'
-                      ? metrics.new
-                      : metrics.completed
-                  )}
-                </p>
-              </div>
+            <path d='M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z' />
+          </svg>
+        </button>
+        {isOpen && (
+          <>
+            <div
+              className='fixed inset-0 z-[99998]'
+              onClick={e => {
+                e.stopPropagation()
+                setIsOpen(false)
+              }}
+            />
+            <div
+              className='fixed w-44 bg-white rounded-lg shadow-2xl border border-gray-200 z-[99999] py-1'
+              style={{
+                top: `${buttonPosition.top}px`,
+                right: `${buttonPosition.right}px`
+              }}
+            >
+              <button
+                className='flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100'
+                onClick={e => {
+                  e.stopPropagation()
+                  onDetail(row)
+                  setIsOpen(false)
+                }}
+              >
+                <span className='mr-3 text-gray-500'>
+                  <svg
+                    className='w-4 h-4'
+                    fill='none'
+                    stroke='currentColor'
+                    viewBox='0 0 24 24'
+                  >
+                    <path
+                      strokeLinecap='round'
+                      strokeLinejoin='round'
+                      strokeWidth={2}
+                      d='M15 12a3 3 0 11-6 0 3 3 0 016 0z'
+                    />
+                    <path
+                      strokeLinecap='round'
+                      strokeLinejoin='round'
+                      strokeWidth={2}
+                      d='M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z'
+                    />
+                  </svg>
+                </span>
+                <span className='text-gray-800'>View Details</span>
+              </button>
             </div>
-          </div>
-        ))}
+          </>
+        )}
+      </div>
+    )
+  }
+
+  return (
+    <div className='p-4 h-full flex flex-col bg-white'>
+      <div className='mb-4'>
+        <h1 className='text-xl font-bold text-gray-900 mb-1'>Bookings</h1>
+        <nav className='text-sm text-gray-500'>
+          <span>Dashboard</span> /{' '}
+          <span className='text-gray-900 font-medium'>Users</span>
+        </nav>
       </div>
 
-      <div className='rounded-[30px] border border-[#E1E6F7] bg-white p-6 shadow-[0_24px_60px_-40px_rgba(15,23,42,0.55)]'>
-        <div className='mb-6 flex flex-wrap items-center justify-between gap-4'>
-          <h2 className='text-lg font-semibold text-slate-900'>
-            Requests List
-          </h2>
-          <div className='flex flex-wrap items-center gap-3'>
-            <div className='relative flex items-center'>
-              <input
-                type='text'
-                placeholder='Search'
-                value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
-                className='h-10 rounded-xl border border-[#E5E6EF] bg-[#F8F9FC] pl-10 pr-4 text-sm text-slate-700 placeholder:text-[#B0B7D0] focus:border-[#C5CAE3] focus:outline-none focus:ring-2 focus:ring-[#C2C8E4]'
-              />
-              <Search className='absolute left-3 h-4 w-4 text-[#A6AEC7]' />
-            </div>
-          </div>
-        </div>
-
-        <div className='overflow-visible rounded-2xl border border-[#E5E8F5]'>
-          <div className='grid grid-cols-[1.2fr_1.5fr_1.2fr_1fr_1fr_0.8fr] gap-3 bg-[#F7F9FD] px-6 py-4'>
-            <div>
-              <TableHeaderCell onClick={() => toggleSort('date')}>
-                Submitted On
-              </TableHeaderCell>
-            </div>
-            <div>
-              <TableHeaderCell onClick={() => toggleSort('customer')}>
-                Customer
-              </TableHeaderCell>
-            </div>
-            <div>
-              <TableHeaderCell onClick={() => toggleSort('policy')}>
-                Policy Type
-              </TableHeaderCell>
-            </div>
-            <div>
-              <TableHeaderCell onClick={() => toggleSort('amount')}>
-                Amount
-              </TableHeaderCell>
-            </div>
-            <div>
-              <TableHeaderCell onClick={() => toggleSort('status')}>
-                Status
-              </TableHeaderCell>
-            </div>
-            <div>
-              <TableHeaderCell>Action</TableHeaderCell>
-            </div>
-          </div>
-
-          <div className='divide-y divide-[#EEF1FA] bg-white'>
-            {loading && (
-              <div className='px-6 py-5 text-sm text-[#5E6582]'>Loading...</div>
-            )}
-            {error && !loading && (
-              <div className='px-6 py-5 text-sm text-red-600'>{error}</div>
-            )}
-            {!loading && !error && sorted.length === 0 && (
-              <div className='px-6 py-5 text-center text-sm text-[#5E6582]'>
-                No requests found
-              </div>
-            )}
-            {!loading &&
-              !error &&
-              sorted.map((s, idx) => (
-                <div
-                  key={s.id || idx}
-                  className='grid grid-cols-[1.2fr_1.5fr_1.2fr_1fr_1fr_0.8fr] gap-3 px-6 py-5 hover:bg-[#F9FAFD]'
-                >
-                  <div className='self-center text-sm text-[#5E6582]'>
-                    {(() => {
-                      const d = s.createdOn
-                      if (!d || d === '-') return '-'
-                      const date = new Date(d)
-                      return date.toLocaleString(undefined, {
-                        weekday: 'short',
-                        day: '2-digit',
-                        month: 'long',
-                        year: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })
-                    })()}
-                  </div>
-                  <div className='self-center text-sm text-[#5E6582] truncate'>
-                    {s.customer || '-'}
-                  </div>
-                  <div className='self-center text-sm text-[#5E6582] truncate'>
-                    {s.policyType || '-'}
-                  </div>
-                  <div className='self-center text-sm text-[#5E6582] font-medium'>
-                    {toCurrency(s.amount)}
-                  </div>
-                  <div className='self-center text-sm'>
-                    <span
-                      className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
-                        s.status.toLowerCase() === 'completed'
-                          ? 'bg-green-100 text-green-800'
-                          : s.status.toLowerCase() === 'pending'
-                          ? 'bg-yellow-100 text-yellow-800'
-                          : 'bg-gray-100 text-gray-800'
-                      }`}
-                    >
-                      {s.status || '-'}
-                    </span>
-                  </div>
-                  <div className='self-center'>
-                    <ActionDropdown
-                      row={s.raw || s}
-                      onDetail={r => {
-                        setSelected(r)
-                        setDetailOpen(true)
-                      }}
-                    />
-                  </div>
+      <div className='bg-gray-200 p-5 rounded-xl flex-1 flex flex-col min-h-0'>
+        <div className='bg-white rounded-lg shadow-sm border border-gray-200 flex-1 flex flex-col min-h-0'>
+          {/* Header */}
+          <div className='p-4 border-b border-gray-200 flex-shrink-0'>
+            <div className='flex justify-between items-center mb-4'>
+              <h2 className='text-lg font-semibold text-gray-900'>
+                Booking List
+              </h2>
+              <div className='flex items-center space-x-4'>
+                <div className='relative'>
+                  <input
+                    type='text'
+                    placeholder='Search'
+                    value={searchTerm}
+                    onChange={e => setSearchTerm(e.target.value)}
+                    className='pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500'
+                  />
+                  <Search className='w-5 h-5 text-gray-600 absolute left-3 top-2.5' />
                 </div>
+
+                <button className='flex items-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 bg-white'>
+                  <svg
+                    className='w-4 h-4 mr-2 text-gray-600'
+                    fill='none'
+                    stroke='currentColor'
+                    viewBox='0 0 24 24'
+                    strokeWidth={2}
+                  >
+                    <path
+                      strokeLinecap='round'
+                      strokeLinejoin='round'
+                      d='M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 01-.659 1.591l-5.432 5.432a2.25 2.25 0 00-.659 1.591v2.927a2.25 2.25 0 01-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 00-.659-1.591L3.659 7.409A2.25 2.25 0 013 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0112 3z'
+                    />
+                  </svg>
+                  <span className='text-gray-700 font-medium'>Filters</span>
+                </button>
+
+                <button
+                  onClick={downloadCSV}
+                  className='flex items-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 bg-white'
+                >
+                  <svg
+                    className='w-4 h-4 text-gray-600'
+                    fill='none'
+                    stroke='currentColor'
+                    viewBox='0 0 24 24'
+                    strokeWidth={2}
+                  >
+                    <path
+                      strokeLinecap='round'
+                      strokeLinejoin='round'
+                      d='M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3'
+                    />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <div className='flex space-x-2 overflow-x-auto pb-2'>
+              {filterTabs.map(tab => (
+                <button
+                  key={tab.id}
+                  onClick={() => {
+                    switch (tab.id) {
+                      case 'bundle-orders':
+                        router.push('/users/bookings')
+                        break
+                      case 'event':
+                        router.push('/users/transactions')
+                        break
+                      case 'activities':
+                        router.push('/users/activities')
+                        break
+                      case 'accommodation':
+                        router.push('/users/accommodation')
+                        break
+                      case 'diy':
+                        router.push('/users/diy')
+                        break
+                      case 'merchandise':
+                        router.push('/users/merchandise')
+                        break
+                      case 'e-sim':
+                        router.push('/users/e-sim')
+                        break
+                      case 'med-plus':
+                        router.push('/med-orders')
+                        break
+                      case 'royal-concierge':
+                        router.push('/royal-concierge')
+                        break
+                      case 'rides':
+                        router.push('/users/rides')
+                        break
+                      case 'leadway':
+                        router.push('/leadway')
+                        break
+                      default:
+                        break
+                    }
+                  }}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
+                    tab.active
+                      ? 'bg-[#FF6A00] text-white'
+                      : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
+                  }`}
+                >
+                  {tab.label}
+                </button>
               ))}
+            </div>
+          </div>
+
+          {/* Table */}
+          <div className='overflow-auto flex-1 min-h-0'>
+            <table className='w-full'>
+              <thead className='bg-gray-50 sticky top-0 z-10'>
+                <tr>
+                  <th
+                    className='px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer'
+                    onClick={() => toggleSort('date')}
+                  >
+                    <div className='flex items-center'>
+                      <span>Submitted On</span>
+                      <TbCaretUpDownFilled className='w-3 h-3 text-gray-400 ml-1' />
+                    </div>
+                  </th>
+                  <th
+                    className='px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer'
+                    onClick={() => toggleSort('customer')}
+                  >
+                    <div className='flex items-center'>
+                      <span>Customer</span>
+                      <TbCaretUpDownFilled className='w-3 h-3 text-gray-400 ml-1' />
+                    </div>
+                  </th>
+                  <th
+                    className='px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer'
+                    onClick={() => toggleSort('policy')}
+                  >
+                    <div className='flex items-center'>
+                      <span>Policy Type</span>
+                      <TbCaretUpDownFilled className='w-3 h-3 text-gray-400 ml-1' />
+                    </div>
+                  </th>
+                  <th
+                    className='px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer'
+                    onClick={() => toggleSort('amount')}
+                  >
+                    <div className='flex items-center'>
+                      <span>Amount</span>
+                      <TbCaretUpDownFilled className='w-3 h-3 text-gray-400 ml-1' />
+                    </div>
+                  </th>
+                  <th
+                    className='px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer'
+                    onClick={() => toggleSort('status')}
+                  >
+                    <div className='flex items-center'>
+                      <span>Status</span>
+                      <TbCaretUpDownFilled className='w-3 h-3 text-gray-400 ml-1' />
+                    </div>
+                  </th>
+                  <th className='px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                    <div className='flex items-center'>
+                      <span>Action</span>
+                    </div>
+                  </th>
+                </tr>
+              </thead>
+              <tbody className='bg-white divide-y divide-gray-200'>
+                {loading && (
+                  <tr>
+                    <td
+                      colSpan={6}
+                      className='px-6 py-5 text-sm text-[#5E6582] text-center'
+                    >
+                      Loading...
+                    </td>
+                  </tr>
+                )}
+                {error && !loading && (
+                  <tr>
+                    <td
+                      colSpan={6}
+                      className='px-6 py-5 text-sm text-red-600 text-center'
+                    >
+                      {error}
+                    </td>
+                  </tr>
+                )}
+                {!loading && !error && sorted.length === 0 && (
+                  <tr>
+                    <td
+                      colSpan={6}
+                      className='px-6 py-5 text-center text-sm text-[#5E6582]'
+                    >
+                      No requests found
+                    </td>
+                  </tr>
+                )}
+                {!loading &&
+                  !error &&
+                  sorted.map((s, idx) => (
+                    <tr
+                      key={s.id || idx}
+                      className='hover:bg-gray-50 border-b border-gray-100'
+                    >
+                      <td className='px-3 py-3 whitespace-nowrap text-sm text-gray-500'>
+                        {(() => {
+                          const d = s.createdOn
+                          if (!d || d === '-') return '-'
+                          const date = new Date(d)
+                          return date.toLocaleString(undefined, {
+                            weekday: 'short',
+                            day: '2-digit',
+                            month: 'long',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })
+                        })()}
+                      </td>
+                      <td className='px-3 py-3 whitespace-nowrap'>
+                        <div className='text-sm font-medium text-gray-900 leading-tight'>
+                          {s.customer || '-'}
+                        </div>
+                      </td>
+                      <td className='px-3 py-3 whitespace-nowrap text-sm text-gray-500'>
+                        {s.policyType || '-'}
+                      </td>
+                      <td className='px-3 py-3 whitespace-nowrap text-sm font-medium text-gray-900'>
+                        {toCurrency(s.amount)}
+                      </td>
+                      <td className='px-3 py-3 whitespace-nowrap'>
+                        <span
+                          className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
+                            s.status.toLowerCase() === 'completed'
+                              ? 'bg-green-100 text-green-800'
+                              : s.status.toLowerCase() === 'pending'
+                              ? 'bg-yellow-100 text-yellow-800'
+                              : 'bg-gray-100 text-gray-800'
+                          }`}
+                        >
+                          {s.status || '-'}
+                        </span>
+                      </td>
+                      <td className='px-3 py-3 whitespace-nowrap'>
+                        <ActionDropdown
+                          row={s.raw || s}
+                          onDetail={r => {
+                            setSelected(r)
+                            setDetailOpen(true)
+                          }}
+                        />
+                      </td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
