@@ -76,7 +76,13 @@ const menuSections = [
         label: 'Royal Concierge Bookings',
         icon: '/images/backend/side_menu/side_menu (2).svg',
         href: '/royal-concierge'
+      },
+      {
+        label: 'Medical Orders',
+        icon: '/images/backend/side_menu/side_menu (2).svg',
+        href: '/med-orders'
       }
+
       // { label: 'Ride Services', icon: '/images/backend/side_menu/side_menu (9).svg', href: '/users/ride-services' },
     ]
   },
