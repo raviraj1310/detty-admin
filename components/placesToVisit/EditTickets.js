@@ -2,7 +2,14 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
-import { Search, MoreVertical, Loader2, AlertCircle } from 'lucide-react'
+import {
+  Search,
+  MoreVertical,
+  Loader2,
+  AlertCircle,
+  Plus,
+  Trash2
+} from 'lucide-react'
 import { IoFilterSharp } from 'react-icons/io5'
 import { TbCaretUpDownFilled } from 'react-icons/tb'
 import {
@@ -45,7 +52,8 @@ export default function EditTickets () {
     ticketCount: '',
     ticketDetails: '',
     ticketLeft: '',
-    status: true
+    status: true,
+    priceBreak: []
   })
   const [errors, setErrors] = useState({})
   const [submitting, setSubmitting] = useState(false)
@@ -117,6 +125,43 @@ export default function EditTickets () {
     setFormData(prev => ({ ...prev, [field]: v }))
   }
 
+  const handleAddPriceBreak = () => {
+    setFormData(prev => ({
+      ...prev,
+      priceBreak: [...(prev.priceBreak || []), { label: '', price: '' }]
+    }))
+  }
+
+  const handleRemovePriceBreak = index => {
+    setFormData(prev => {
+      const updated = [...(prev.priceBreak || [])]
+      updated.splice(index, 1)
+      const total = updated.reduce((sum, item) => sum + toNumber(item.price), 0)
+      return {
+        ...prev,
+        priceBreak: updated,
+        perTicketPrice:
+          updated.length > 0 ? formatPriceInput(total) : prev.perTicketPrice
+      }
+    })
+  }
+
+  const handlePriceBreakChange = (index, field, value) => {
+    setFormData(prev => {
+      const updated = [...(prev.priceBreak || [])]
+      const v = field === 'price' ? formatPriceInput(value) : value
+      updated[index] = { ...updated[index], [field]: v }
+
+      const total = updated.reduce((sum, item) => sum + toNumber(item.price), 0)
+
+      return {
+        ...prev,
+        priceBreak: updated,
+        perTicketPrice: formatPriceInput(total)
+      }
+    })
+  }
+
   const validate = () => {
     const errs = {}
     if (!formData.ticketName.trim()) errs.ticketName = 'Required'
@@ -167,7 +212,11 @@ export default function EditTickets () {
       ticketCount: toNumber(formData.ticketCount),
       ticketDetail: formData.ticketDetails.trim(),
       ticketLeft: toNumber(formData.ticketLeft),
-      status: Boolean(formData.status)
+      status: Boolean(formData.status),
+      priceBreak: (formData.priceBreak || []).map(item => ({
+        label: item.label,
+        price: toNumber(item.price)
+      }))
     }
     const op = String(formData.originalPrice || '').trim()
     if (op) p.originalPrice = toNumber(formData.originalPrice)
@@ -202,7 +251,8 @@ export default function EditTickets () {
           ticketCount: '',
           ticketDetails: '',
           ticketLeft: '',
-          status: true
+          status: true,
+          priceBreak: []
         }))
       }
     } catch (e) {
@@ -292,7 +342,13 @@ export default function EditTickets () {
           typeof t.ticketLeft === 'number'
             ? String(t.ticketLeft)
             : String(t.ticketLeft || ''),
-        status: typeof t.status === 'boolean' ? t.status : Boolean(t.status)
+        status: typeof t.status === 'boolean' ? t.status : Boolean(t.status),
+        priceBreak: Array.isArray(t.priceBreak)
+          ? t.priceBreak.map(pb => ({
+              label: pb.label,
+              price: formatPriceInput(pb.price)
+            }))
+          : []
       })
       setErrors({})
       setEditingTicketId(toIdString(t._id || t.id || id))
@@ -473,8 +529,11 @@ export default function EditTickets () {
               <input
                 type='text'
                 value={formData.perTicketPrice}
+                readOnly={(formData.priceBreak || []).length > 0}
                 onChange={e => handleChange('perTicketPrice', e.target.value)}
-                className='w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900'
+                className={`w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900 ${
+                  (formData.priceBreak || []).length > 0 ? 'bg-gray-100' : ''
+                }`}
               />
               {errors.perTicketPrice && (
                 <p className='text-red-600 text-xs mt-1'>
@@ -509,6 +568,73 @@ export default function EditTickets () {
                 </p>
               )}
             </div>
+          </div>
+
+          {/* Price Break Section */}
+          <div className='bg-gray-50 p-4 rounded-lg border border-gray-200'>
+            <div className='flex items-center justify-between mb-4'>
+              <label className='block text-sm font-medium text-gray-700'>
+                Price Breakdown
+              </label>
+              <button
+                type='button'
+                onClick={handleAddPriceBreak}
+                className='flex items-center gap-1 text-sm text-orange-600 hover:text-orange-700 font-medium'
+              >
+                <Plus className='w-4 h-4' />
+                Add Item
+              </button>
+            </div>
+
+            {(formData.priceBreak || []).length > 0 ? (
+              <div className='space-y-3'>
+                {formData.priceBreak.map((item, idx) => (
+                  <div key={idx} className='flex items-start gap-3'>
+                    <div className='flex-1'>
+                      <input
+                        type='text'
+                        placeholder='Label (e.g. Fast Track Access)'
+                        value={item.label}
+                        onChange={e =>
+                          handlePriceBreakChange(idx, 'label', e.target.value)
+                        }
+                        className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm bg-white text-gray-900 placeholder-gray-500'
+                      />
+                    </div>
+                    <div className='w-32'>
+                      <input
+                        type='text'
+                        placeholder='Price'
+                        value={item.price}
+                        onChange={e =>
+                          handlePriceBreakChange(idx, 'price', e.target.value)
+                        }
+                        className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm bg-white text-gray-900 placeholder-gray-500'
+                      />
+                    </div>
+                    <button
+                      type='button'
+                      onClick={() => handleRemovePriceBreak(idx)}
+                      className='p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors mt-[1px]'
+                    >
+                      <Trash2 className='w-4 h-4' />
+                    </button>
+                  </div>
+                ))}
+                <div className='flex justify-end pt-2 border-t border-gray-200 mt-2'>
+                  <div className='text-sm font-medium text-gray-900'>
+                    Total:{' '}
+                    <span className='text-orange-600'>
+                      {formData.perTicketPrice || 0}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className='text-sm text-gray-500 text-center py-4'>
+                No price breakdown items added. Total price is set manually.
+              </div>
+            )}
           </div>
 
           <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
