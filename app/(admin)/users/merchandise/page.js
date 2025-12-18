@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { Download, User, Loader2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import { downloadExcel } from '@/utils/excelExport'
 import { TbCaretUpDownFilled } from 'react-icons/tb'
 import CustomerDetailsModal from '@/components/common/CustomerDetailsModal'
 import {
@@ -375,6 +376,22 @@ export default function MerchandisePage () {
     setShowOrderDetails(true)
   }
 
+  const handleDownloadExcel = () => {
+    if (!filteredMerchandise || filteredMerchandise.length === 0) {
+      return
+    }
+    const dataToExport = filteredMerchandise.map(item => ({
+      'Order ID': item.orderId,
+      'Event Date': item.eventDate,
+      'Merchandise Name': item.merchandiseName,
+      Category: item.category,
+      Quantity: item.quantity,
+      'Total Amount': item.totalAmount,
+      'Payment Status': item.paymentStatus
+    }))
+    downloadExcel(dataToExport, 'Merchandise_Orders.xlsx')
+  }
+
   const [selectedOrderRaw, setSelectedOrderRaw] = useState(null)
 
   const openCustomer = o => {
@@ -476,7 +493,10 @@ export default function MerchandisePage () {
                 </button>
 
                 {/* Download */}
-                <button className='flex items-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 bg-white'>
+                <button
+                  onClick={handleDownloadExcel}
+                  className='flex items-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 bg-white'
+                >
                   <svg
                     className='w-4 h-4 text-gray-600'
                     fill='none'
@@ -490,6 +510,7 @@ export default function MerchandisePage () {
                       d='M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3'
                     />
                   </svg>
+                  <span className='ml-2 text-gray-700 font-medium'>Export</span>
                 </button>
               </div>
             </div>

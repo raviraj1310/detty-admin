@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { TbCaretUpDownFilled } from 'react-icons/tb'
 import { getMedOrderList } from '@/services/med/med.service'
+import { downloadExcel } from '@/utils/excelExport'
 
 const filterTabs = [
   // { id: 'bundle-orders', label: 'Bundle Orders', active: false },
@@ -134,6 +135,20 @@ export default function MedOrdersPage () {
     return matchesText || matchesDigits
   })
 
+  const handleDownloadExcel = () => {
+    if (!filteredRows || filteredRows.length === 0) {
+      return
+    }
+    const dataToExport = filteredRows.map(row => ({
+      'Order ID': row.orderId,
+      'Date & Time': row.eventDate,
+      Amount: row.amount,
+      'Activity Status': row.activityStatus,
+      'Payment Status': row.paymentStatus
+    }))
+    downloadExcel(dataToExport, 'MedPlus_Orders.xlsx')
+  }
+
   const ActionDropdown = ({ row }) => {
     const [isOpen, setIsOpen] = useState(false)
     const [buttonPosition, setButtonPosition] = useState({ top: 0, right: 0 })
@@ -240,7 +255,7 @@ export default function MedOrdersPage () {
         <div className='relative bg-white rounded-2xl shadow-xl w-[90%] max-w-2xl'>
           <div className='p-6 border-b border-gray-200 flex items-center justify-between'>
             <h3 className='text-xl font-semibold text-gray-900'>
-              Medical Order
+              MedPlus Order
             </h3>
             <button
               onClick={() => setDetailOpen(false)}
@@ -376,7 +391,10 @@ export default function MedOrdersPage () {
                   <span className='text-gray-700 font-medium'>Filters</span>
                 </button>
 
-                <button className='flex items-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 bg-white'>
+                <button
+                  onClick={handleDownloadExcel}
+                  className='flex items-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 bg-white'
+                >
                   <svg
                     className='w-4 h-4 text-gray-600'
                     fill='none'
@@ -390,6 +408,7 @@ export default function MedOrdersPage () {
                       d='M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3'
                     />
                   </svg>
+                  <span className='ml-2 text-gray-700 font-medium'>Export</span>
                 </button>
               </div>
             </div>
@@ -498,7 +517,7 @@ export default function MedOrdersPage () {
                       colSpan={6}
                       className='px-3 py-6 text-center text-sm text-[#5E6582]'
                     >
-                      No medical orders found
+                      No med orders found
                     </td>
                   </tr>
                 ) : (

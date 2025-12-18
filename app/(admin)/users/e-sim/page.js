@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { TbCaretUpDownFilled } from 'react-icons/tb'
 import { getAllEsimBookingList } from '@/services/booking/booking.service'
+import { downloadExcel } from '@/utils/excelExport'
 
 const toCurrency = n => {
   try {
@@ -155,6 +156,20 @@ export default function EsimUsersPage () {
     const matchesDigits = tDigits && dateDigits.includes(tDigits)
     return matchesText || matchesDigits
   })
+
+  const handleDownloadExcel = () => {
+    if (!filteredRows || filteredRows.length === 0) {
+      return
+    }
+    const dataToExport = filteredRows.map(row => ({
+      'Order ID': row.orderId,
+      'Date & Time': row.eventDate,
+      Amount: row.amount,
+      'Activity Status': row.activityStatus,
+      'Payment Status': row.paymentStatus
+    }))
+    downloadExcel(dataToExport, 'eSIM_Orders.xlsx')
+  }
 
   const ActionDropdown = ({ row }) => {
     const [isOpen, setIsOpen] = useState(false)
@@ -369,6 +384,27 @@ export default function EsimUsersPage () {
                     />
                   </svg>
                 </div>
+
+                {/* Download */}
+                <button
+                  onClick={handleDownloadExcel}
+                  className='flex items-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 bg-white'
+                >
+                  <svg
+                    className='w-4 h-4 text-gray-600'
+                    fill='none'
+                    stroke='currentColor'
+                    viewBox='0 0 24 24'
+                    strokeWidth={2}
+                  >
+                    <path
+                      strokeLinecap='round'
+                      strokeLinejoin='round'
+                      d='M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3'
+                    />
+                  </svg>
+                  <span className='ml-2 text-gray-700 font-medium'>Export</span>
+                </button>
               </div>
             </div>
             <div className='flex space-x-2'>

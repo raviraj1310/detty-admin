@@ -13,6 +13,7 @@ import {
 import { TbCaretUpDownFilled } from 'react-icons/tb'
 import { getRoyalBookingList } from '@/services/royal-concierge/royal.service'
 import Modal from '@/components/ui/Modal'
+import { downloadExcel } from '@/utils/excelExport'
 
 const filterTabs = [
   // { id: 'bundle-orders', label: 'Bundle Orders', active: false },
@@ -193,59 +194,22 @@ export default function RoyalConciergeList () {
     })
   }, [filtered, sortKey, sortDir])
 
-  const toCsvCell = v => {
-    const s = String(v ?? '')
-    const needsQuotes = /[\"",\n]/.test(s)
-    const escaped = s.replace(/\"/g, '""')
-    return needsQuotes ? `\"${escaped}\"` : escaped
-  }
-  const downloadCsv = async () => {
-    try {
-      const headers = [
-        'Submitted On',
-        'Customer',
-        'Partner',
-        'Transaction ID',
-        'Service',
-        'Status'
-      ]
-      const lines = []
-      lines.push(headers.map(toCsvCell).join(','))
-      sorted.forEach(r => {
-        const submitted =
-          r.createdOn && r.createdOn !== '-'
-            ? new Date(r.createdOn).toLocaleString()
-            : '-'
-        lines.push(
-          [
-            submitted,
-            r.customer,
-            r.partner,
-            r.transactionId,
-            r.service,
-            r.status
-          ]
-            .map(toCsvCell)
-            .join(',')
-        )
-      })
-      const csv = `\ufeff${lines.join('\n')}`
-      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = 'royal-concierge.csv'
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-      URL.revokeObjectURL(url)
-    } catch (e) {
-      const msg =
-        e?.response?.data?.message ||
-        e?.message ||
-        'Failed to download concierge CSV'
-      setError(msg)
+  const handleDownloadExcel = () => {
+    if (!sorted || sorted.length === 0) {
+      return
     }
+    const dataToExport = sorted.map(r => ({
+      'Submitted On':
+        r.createdOn && r.createdOn !== '-'
+          ? new Date(r.createdOn).toLocaleString()
+          : '-',
+      Customer: r.customer,
+      Partner: r.partner,
+      'Transaction ID': r.transactionId,
+      Service: r.service,
+      Status: r.status
+    }))
+    downloadExcel(dataToExport, 'Royal_Concierge_Requests.xlsx')
   }
 
   return (
@@ -308,7 +272,7 @@ export default function RoyalConciergeList () {
 
                 <button
                   className='flex items-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 bg-white'
-                  onClick={downloadCsv}
+                  onClick={handleDownloadExcel}
                 >
                   <svg
                     className='w-4 h-4 text-gray-600'
@@ -323,6 +287,7 @@ export default function RoyalConciergeList () {
                       d='M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3'
                     />
                   </svg>
+                  <span className='ml-2 text-gray-700 font-medium'>Export</span>
                 </button>
               </div>
             </div>

@@ -7,6 +7,7 @@ import {
   getBookingList,
   downloadBookingReceipt
 } from '../../services/booking/booking.service'
+import { downloadExcel } from '@/utils/excelExport'
 import Modal from '@/components/ui/Modal'
 
 function ActionDropdown ({ transactionId }) {
@@ -485,6 +486,25 @@ export default function TransactionsForm () {
     })()
   }
 
+  const handleDownloadExcel = () => {
+    if (!filteredBookings || filteredBookings.length === 0) {
+      return
+    }
+    const dataToExport = filteredBookings.map(b => ({
+      'Booking ID': b.id,
+      'Event Name': b.eventName,
+      Tickets: b.ticketsBooked,
+      Amount: b.amountNum,
+      Status: b.eventStatus,
+      'Payment Status': b.paymentStatus,
+      'Buyer Name': b.buyerName,
+      'Buyer Email': b.buyerEmail,
+      'Buyer Phone': b.buyerPhone,
+      'Booked On': b.bookedOn
+    }))
+    downloadExcel(dataToExport, 'Event_Bookings.xlsx')
+  }
+
   const getEventStatusColor = status => {
     switch (status) {
       case 'Done':
@@ -584,7 +604,10 @@ export default function TransactionsForm () {
                 </button>
 
                 {/* Download */}
-                <button className='flex items-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 bg-white'>
+                <button
+                  onClick={handleDownloadExcel}
+                  className='flex items-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 bg-white'
+                >
                   <svg
                     className='w-4 h-4 text-gray-600'
                     fill='none'
@@ -598,6 +621,7 @@ export default function TransactionsForm () {
                       d='M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3'
                     />
                   </svg>
+                  <span className='ml-2 text-gray-700 font-medium'>Export</span>
                 </button>
               </div>
             </div>

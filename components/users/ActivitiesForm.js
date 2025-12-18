@@ -13,6 +13,7 @@ import {
 } from 'lucide-react'
 import { getActivityBookedTickets } from '../../services/booking/booking.service'
 import { downloadActivityBookedTicket } from '@/services/places-to-visit/placesToVisit.service'
+import { downloadExcel } from '@/utils/excelExport'
 
 const fmtCurrency = n => `₦${Number(n || 0).toLocaleString('en-NG')}`
 
@@ -92,7 +93,11 @@ const filterTabs = [
   { id: 'event', label: 'Event', active: false },
   { id: 'activities', label: 'Places to Visit', active: true },
   { id: 'merchandise', label: 'Merchandise', active: false },
-  { id: 'e-sim', label: 'E-Sim', active: false },
+  {
+    id: 'Internet Connectivity',
+    label: 'Internet Connectivity',
+    active: false
+  },
   { id: 'accommodation', label: 'Accommodation', active: false },
   { id: 'med-plus', label: 'Med Plus', active: false },
   { id: 'royal-concierge', label: 'Royal Concierge', active: false },
@@ -138,7 +143,7 @@ export default function Activities () {
       case 'merchandise':
         router.push('/users/merchandise')
         break
-      case 'e-sim':
+      case 'Internet Connectivity':
         router.push('/users/e-sim')
         break
       case 'med-plus':
@@ -372,6 +377,27 @@ export default function Activities () {
     }
   }
 
+  const handleDownloadExcel = () => {
+    if (!sortedActivities || sortedActivities.length === 0) {
+      return
+    }
+    const dataToExport = sortedActivities.map(r => ({
+      'Booking ID': r.id,
+      'Booked On': r.bookedOn,
+      'Activity Name': r.activityName,
+      Type: r.type,
+      'User Name': r.buyerName,
+      Email: r.buyerEmail,
+      Phone: r.buyerPhone,
+      Tickets: r.ticketsBooked,
+      Amount: r.amount,
+      'Arrival Date': r.arrivalDate,
+      'Payment Status': r.paymentStatus,
+      'Activity Status': r.activityStatus
+    }))
+    downloadExcel(dataToExport, 'Places_To_Visit_Bookings.xlsx')
+  }
+
   return (
     <div className='p-4 min-h-screen bg-white overflow-x-hidden'>
       {/* Title and Breadcrumb */}
@@ -421,7 +447,10 @@ export default function Activities () {
                 </button>
 
                 {/* Download */}
-                <button className='flex items-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 bg-white'>
+                <button
+                  onClick={handleDownloadExcel}
+                  className='flex items-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 bg-white'
+                >
                   <svg
                     className='w-4 h-4 text-gray-600'
                     fill='none'
@@ -435,6 +464,7 @@ export default function Activities () {
                       d='M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3'
                     />
                   </svg>
+                  <span className='ml-2 text-gray-700 font-medium'>Export</span>
                 </button>
               </div>
             </div>

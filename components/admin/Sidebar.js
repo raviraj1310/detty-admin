@@ -71,21 +71,6 @@ const menuSections = [
         label: 'Referral Report',
         icon: '/images/backend/side_menu/side_menu (7).svg',
         href: '/referral-reports'
-      },
-      {
-        label: 'Royal Concierge Bookings',
-        icon: '/images/backend/side_menu/side_menu (2).svg',
-        href: '/royal-concierge'
-      },
-      {
-        label: 'Medical Orders',
-        icon: '/images/backend/side_menu/side_menu (2).svg',
-        href: '/med-orders'
-      },
-      {
-        label: 'Leadway',
-        icon: '/images/backend/side_menu/side_menu (2).svg',
-        href: '/leadway'
       }
 
       // { label: 'Ride Services', icon: '/images/backend/side_menu/side_menu (9).svg', href: '/users/ride-services' },

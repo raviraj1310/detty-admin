@@ -15,6 +15,7 @@ import {
   getAllOrders,
   downloadOrderReceipt
 } from '@/services/merchandise/order.service'
+import { downloadExcel } from '@/utils/excelExport'
 import Modal from '@/components/ui/Modal'
 import CustomerDetailsModal from '@/components/common/CustomerDetailsModal'
 const toCurrency = n => {
@@ -51,6 +52,22 @@ export default function MerchOrdersList () {
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
   }, [])
+
+  const handleDownloadExcel = () => {
+    if (!filtered || filtered.length === 0) {
+      return
+    }
+    const dataToExport = filtered.map(o => ({
+      'Ordered On': o.date,
+      'User Name': o.userName,
+      Email: o.email,
+      'Phone Number': o.phone,
+      'Order Details': o.details,
+      Amount: o.amount,
+      Status: o.status
+    }))
+    downloadExcel(dataToExport, 'Merchandise_Orders.xlsx')
+  }
 
   const formatDate = iso => {
     const d = new Date(iso)
@@ -317,8 +334,12 @@ export default function MerchOrdersList () {
               <IoFilterSharp className='h-4 w-4 text-[#8B93AF]' />
               {filtersOpen ? 'Hide Filters' : 'Filters'}
             </button>
-            <button className='flex h-10 items-center gap-2 rounded-xl border border-[#E5E6EF] bg-white px-4 text-sm font-medium text-[#2D3658] transition hover:bg-[#F6F7FD]'>
+            <button
+              onClick={handleDownloadExcel}
+              className='flex h-10 items-center gap-2 rounded-xl border border-[#E5E6EF] bg-white px-4 text-sm font-medium text-[#2D3658] transition hover:bg-[#F6F7FD]'
+            >
               <Download className='h-4 w-4 text-[#8B93AF]' />
+              <span>Export</span>
             </button>
           </div>
         </div>

@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { Download } from 'lucide-react'
+import { downloadExcel } from '@/utils/excelExport'
 import { TbCaretUpDownFilled } from 'react-icons/tb'
 import Modal from '@/components/ui/Modal'
 import { getAllRideBookings } from '@/services/rides/ride.service'
@@ -211,6 +213,20 @@ export default function RidesForm () {
     setDetailOpen(true)
   }
 
+  const handleDownloadExcel = () => {
+    if (!filteredRides || filteredRides.length === 0) {
+      return
+    }
+    const dataToExport = filteredRides.map(ride => ({
+      Name: ride.name,
+      Price: ride.priceFormatted,
+      Seats: ride.seats,
+      Quantity: ride.quantity,
+      Description: ride.description || '-'
+    }))
+    downloadExcel(dataToExport, 'Rides_Bookings.xlsx')
+  }
+
   return (
     <div className='p-4 h-full flex flex-col bg-white'>
       <div className='bg-gray-200 p-5 rounded-xl'>
@@ -263,6 +279,15 @@ export default function RidesForm () {
                     />
                   </svg>
                   <span className='text-gray-700 font-medium'>Filters</span>
+                </button>
+
+                {/* Download */}
+                <button
+                  onClick={handleDownloadExcel}
+                  className='flex items-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 bg-white'
+                >
+                  <Download className='h-4 w-4 text-gray-600 mr-2' />
+                  <span className='text-gray-700 font-medium'>Export</span>
                 </button>
               </div>
             </div>

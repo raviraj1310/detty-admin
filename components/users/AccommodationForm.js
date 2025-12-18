@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { downloadExcel } from '@/utils/excelExport'
 import { getAllAccommodationOrders } from '@/services/merchandise/order.service'
 
 const toCurrency = n => {
@@ -369,6 +370,26 @@ export default function AccommodationPage () {
     }
   }
 
+  const handleDownloadExcel = () => {
+    if (!filteredAccommodations || filteredAccommodations.length === 0) {
+      return
+    }
+    const dataToExport = filteredAccommodations.map(r => ({
+      'Added On': r.addedOn,
+      'Property Name': r.propertyName,
+      'Property Type': r.propertyType,
+      'Check In': r.checkInDate,
+      'Check Out': r.checkOutDate,
+      Amount: r.amount,
+      Status: r.status,
+      'Payment Status': r.paymentStatus,
+      'User Name': r.user?.name,
+      'User Email': r.user?.email,
+      'Transaction Ref': r.transactionRef
+    }))
+    downloadExcel(dataToExport, 'Accommodation_Bookings.xlsx')
+  }
+
   return (
     <div className='p-4 h-screen bg-white overflow-hidden'>
       {/* Title and Breadcrumb */}
@@ -431,7 +452,10 @@ export default function AccommodationPage () {
                 </button>
 
                 {/* Download */}
-                <button className='flex items-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 bg-white'>
+                <button
+                  onClick={handleDownloadExcel}
+                  className='flex items-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 bg-white'
+                >
                   <svg
                     className='w-4 h-4 text-gray-600'
                     fill='none'
@@ -445,6 +469,7 @@ export default function AccommodationPage () {
                       d='M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3'
                     />
                   </svg>
+                  <span className='ml-2 text-gray-700 font-medium'>Export</span>
                 </button>
               </div>
             </div>

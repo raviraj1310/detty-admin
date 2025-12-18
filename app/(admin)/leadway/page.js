@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Search } from 'lucide-react'
 import { TbCaretUpDownFilled } from 'react-icons/tb'
 import { getLeadwayList } from '@/services/leadway/leadway.service'
+import { downloadExcel } from '@/utils/excelExport'
 import Modal from '@/components/ui/Modal'
 
 const filterTabs = [
@@ -158,32 +159,18 @@ export default function LeadwayPage () {
     }
   }
 
-  const downloadCSV = () => {
+  const handleDownloadExcel = () => {
     if (!sorted.length) return
-    const headers = [
-      'Submitted On',
-      'Customer',
-      'Policy Type',
-      'Amount',
-      'Status'
-    ]
-    const rows = sorted.map(s => [
-      s.createdOn ? new Date(s.createdOn).toLocaleString() : '-',
-      s.customer,
-      s.policyType,
-      s.amount,
-      s.status
-    ])
-    const csvContent =
-      'data:text/csv;charset=utf-8,' +
-      [headers.join(','), ...rows.map(e => e.join(','))].join('\n')
-    const encodedUri = encodeURI(csvContent)
-    const link = document.createElement('a')
-    link.setAttribute('href', encodedUri)
-    link.setAttribute('download', 'leadway_requests.csv')
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
+    const dataToExport = sorted.map(s => ({
+      'Submitted On': s.createdOn
+        ? new Date(s.createdOn).toLocaleString()
+        : '-',
+      Customer: s.customer,
+      'Policy Type': s.policyType,
+      Amount: s.amount,
+      Status: s.status
+    }))
+    downloadExcel(dataToExport, 'Leadway_Requests.xlsx')
   }
 
   const ActionDropdown = ({ row, onDetail }) => {
@@ -322,7 +309,7 @@ export default function LeadwayPage () {
                 </button>
 
                 <button
-                  onClick={downloadCSV}
+                  onClick={handleDownloadExcel}
                   className='flex items-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 bg-white'
                 >
                   <svg
@@ -338,6 +325,7 @@ export default function LeadwayPage () {
                       d='M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3'
                     />
                   </svg>
+                  <span className='ml-2 text-gray-700 font-medium'>Export</span>
                 </button>
               </div>
             </div>
