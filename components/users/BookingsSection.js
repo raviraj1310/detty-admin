@@ -103,7 +103,7 @@ const filterTabs = [
   { id: 'merchandise', label: 'Merchandise', active: false },
   { id: 'e-sim', label: 'Internet Connectivity', active: false },
   { id: 'accommodation', label: 'Accommodation', active: false },
-  { id: 'med-plus', label: 'Medical Plus', active: false },
+  { id: 'med-plus', label: 'Med Plus', active: false },
   { id: 'royal-concierge', label: 'Royal Concierge', active: false },
   { id: 'rides', label: 'Rides', active: false },
   { id: 'leadway', label: 'Leadway', active: false }
@@ -145,7 +145,7 @@ export default function Bookings () {
         router.push('/royal-concierge')
         break
       case 'rides':
-        router.push('/rides')
+        router.push('/users/rides')
         break
       case 'leadway':
         router.push('/leadway')

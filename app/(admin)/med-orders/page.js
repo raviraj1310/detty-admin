@@ -12,7 +12,7 @@ const filterTabs = [
   { id: 'merchandise', label: 'Merchandise', active: false },
   { id: 'e-sim', label: 'Internet Connectivity', active: false },
   { id: 'accommodation', label: 'Accommodation', active: false },
-  { id: 'med-plus', label: 'Medical Plus', active: true },
+  { id: 'med-plus', label: 'Med Plus', active: true },
   { id: 'royal-concierge', label: 'Royal Concierge', active: false },
   { id: 'rides', label: 'Rides', active: false },
   { id: 'leadway', label: 'Leadway', active: false }
