@@ -314,7 +314,11 @@ export default function MerchandisePage () {
             : `${toCurrency(unitPrice)}`,
           totalAmount: toCurrency(total),
           activityStatus: activity,
-          paymentStatus: payment
+          paymentStatus: payment,
+          rawOrder: o,
+          rawItem: it,
+          unitPrice,
+          rawQty: qty
         })
       })
     })
@@ -380,15 +384,32 @@ export default function MerchandisePage () {
     if (!filteredMerchandise || filteredMerchandise.length === 0) {
       return
     }
-    const dataToExport = filteredMerchandise.map(item => ({
-      'Order ID': item.orderId,
-      'Event Date': item.eventDate,
-      'Merchandise Name': item.merchandiseName,
-      Category: item.category,
-      Quantity: item.quantity,
-      'Total Amount': item.totalAmount,
-      'Payment Status': item.paymentStatus
-    }))
+    const dataToExport = filteredMerchandise.map(item => {
+      const o = item.rawOrder || {}
+      return {
+        'Order ID': item.orderId,
+        'User Name': o.userName || o.userId?.name || '',
+        Email: o.email || o.userId?.email || '',
+        'Phone Number': o.phoneNumber || '',
+        'Merchandise Name': item.merchandiseName,
+        Category: item.category,
+        Quantity: item.rawQty || 0,
+        'Unit Price': item.unitPrice || 0,
+        Discount: o.discount || 0,
+        'Total Amount': o.totalAmount || 0,
+        'Final Payable Amount': o.finalPayableAmount || 0,
+        Status: o.status || '',
+        'Shipping Address': o.shippingAddress || '',
+        'Service Fee': o.serviceFee || 0,
+        'Shipping Charge': o.shippingCharge || 0,
+        'Billing Address': o.billingAddress || '',
+        'Transaction ID': o.transactionId || '',
+        'Transaction Ref': o.transactionRef || o.transacionId || '',
+        'Payment Reference': o.paymentReference || '',
+        'Created At': formatDate(o.createdAt),
+        'Updated At': formatDate(o.updatedAt)
+      }
+    })
     downloadExcel(dataToExport, 'Merchandise_Orders.xlsx')
   }
 
