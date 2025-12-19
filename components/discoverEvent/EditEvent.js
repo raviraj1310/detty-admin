@@ -209,7 +209,6 @@ export default function EditEvent ({ eventId }) {
         const eventRes = await getEventById(eventId)
         console.log('eventRes', eventRes)
         const d = eventRes?.data || {}
-        const typeId = d.eventTypeId || d.eventType?._id || ''
         const toDateInput = v => {
           if (!v) return ''
           const dt =
@@ -238,10 +237,44 @@ export default function EditEvent ({ eventId }) {
           return { start: '', end: '' }
         }
         const oh = parseOpeningHours(d.openingHours)
+
+        // Handle event type - handle object or string
+        let currentTypeId = ''
+        if (d.eventTypeId) {
+          currentTypeId =
+            typeof d.eventTypeId === 'object'
+              ? toIdString(d.eventTypeId._id)
+              : toIdString(d.eventTypeId)
+        } else if (d.eventType) {
+          currentTypeId =
+            typeof d.eventType === 'object'
+              ? toIdString(d.eventType._id)
+              : toIdString(d.eventType)
+        }
+
         setSelectedEventTypeId(
-          toIdString(typeId) ||
+          currentTypeId ||
             toIdString(typesList[0]?._id || typesList[0]?.id || '')
         )
+
+        // Handle hostedBy - check if object or string
+        let hostedById = ''
+        if (d.hostedBy) {
+          // If object, extract _id or userId
+          if (typeof d.hostedBy === 'object') {
+            hostedById = toIdString(
+              d.hostedBy._id || d.hostedBy.userId || d.hostedBy.id
+            )
+          } else {
+            hostedById = String(d.hostedBy)
+          }
+        }
+
+        // Fallback to vendor field if hostedBy is missing
+        if (!hostedById && d.vendor) {
+          hostedById = String(d.vendor.userId || d.vendor._id || '')
+        }
+
         setFormData({
           eventName: String(d.eventName || ''),
           location: String(d.location || ''),
@@ -255,13 +288,13 @@ export default function EditEvent ({ eventId }) {
           aboutEvent: String(d.about || ''),
           twitter: String(d.twitterLink || ''),
           website: String(d.websiteLink || ''),
-          hostedBy: String(d.hostedBy || '')
+          hostedBy: hostedById // Store ID string in form data
         })
         const urls = buildImageUrls(d.image || d.uploadImage || '')
         setImageUrl(urls.primary)
         setImageUrlAlt(urls.alt)
-        const initialVendorId = String(d.hostedBy || d.vendor?.userId || '')
-        setSelectedVendorId(initialVendorId || '')
+
+        setSelectedVendorId(hostedById || '')
       } catch (e) {
         setErrors({ load: 'Failed to load event' })
       } finally {
