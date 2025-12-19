@@ -298,7 +298,7 @@ export default function TransactionsForm () {
             typeof b.totalPrice === 'number'
               ? b.totalPrice
               : Number(b.totalPrice) || 0,
-          eventStatus: String(b.status || 'Pending'),
+          activityStatus: TextCapitalize(b.status || 'Pending'),
           paymentStatus:
             (typeof b.totalPrice === 'number' && b.totalPrice === 0) ||
             (typeof b.totalPrice === 'string' && parseFloat(b.totalPrice) === 0)
@@ -388,8 +388,8 @@ export default function TransactionsForm () {
               { sensitivity: 'base' }
             )
           case 'activityStatus':
-            return String(a.eventStatus || '').localeCompare(
-              String(b.eventStatus || ''),
+            return String(a.activityStatus || '').localeCompare(
+              String(b.activityStatus || ''),
               undefined,
               { sensitivity: 'base' }
             )
@@ -495,7 +495,7 @@ export default function TransactionsForm () {
       'Event Name': b.eventName,
       Tickets: b.ticketsBooked,
       Amount: b.amountNum,
-      Status: b.eventStatus,
+      Status: b.activityStatus,
       'Payment Status': b.paymentStatus,
       'Buyer Name': b.buyerName,
       'Buyer Email': b.buyerEmail,
@@ -506,14 +506,20 @@ export default function TransactionsForm () {
   }
 
   const getEventStatusColor = status => {
-    switch (status) {
-      case 'Done':
+    const s = String(status || '')
+      .trim()
+      .toLowerCase()
+    switch (s) {
+      case 'scanned':
+      case 'completed':
+      case 'done':
         return 'bg-green-100 text-green-800'
-      case 'Ongoing':
+      case 'ongoing':
         return 'bg-blue-100 text-blue-800'
-      case 'Upcoming':
-        return 'bg-red-100 text-red-800'
-      case 'TBL':
+      case 'pending':
+      case 'upcoming':
+        return 'bg-yellow-100 text-yellow-800'
+      case 'tbl':
         return 'bg-gray-100 text-gray-800'
       default:
         return 'bg-gray-100 text-gray-800'
@@ -853,10 +859,10 @@ export default function TransactionsForm () {
                       <td className='px-4 py-4 whitespace-nowrap'>
                         <span
                           className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${getEventStatusColor(
-                            booking.eventStatus
+                            booking.activityStatus
                           )}`}
                         >
-                          • {booking.eventStatus}
+                          • {booking.activityStatus}
                         </span>
                       </td>
 
