@@ -372,6 +372,7 @@ export default function DiscoverEvents() {
       await copyEventById(id);
 
       setActiveDropdown(null);
+      window.location.reload();
     } catch (error) {
       console.error("Error copying event:", error);
     }
