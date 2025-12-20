@@ -198,17 +198,48 @@ export default function RoyalConciergeList () {
     if (!sorted || sorted.length === 0) {
       return
     }
-    const dataToExport = sorted.map(r => ({
-      'Submitted On':
-        r.createdOn && r.createdOn !== '-'
-          ? new Date(r.createdOn).toLocaleString()
-          : '-',
-      Customer: r.customer,
-      Partner: r.partner,
-      'Transaction ID': r.transactionId,
-      Service: r.service,
-      Status: r.status
-    }))
+    const dataToExport = sorted.map(item => {
+      const r = item.raw || item
+      return {
+        _id: r._id,
+        userId: r.userId,
+        partnerId: r.partnerId,
+        transactionId: r.transactionId,
+
+        // Customer
+        'customer.first_name': r.customer?.first_name,
+        'customer.last_name': r.customer?.last_name,
+        'customer.email': r.customer?.email,
+        'customer.phone': r.customer?.phone,
+        'customer.nationality': r.customer?.nationality,
+
+        // Service Details
+        'service.tier': r.serviceDetails?.tier,
+        'service.flight_number': r.serviceDetails?.flight_number,
+        'service.travel_date': r.serviceDetails?.travel_date,
+        'service.passenger_count': r.serviceDetails?.passenger_count,
+
+        // Financials
+        'financials.currency': r.financials?.currency,
+        'financials.rcs_line_item_value': r.financials?.rcs_line_item_value,
+        'financials.remittance_amount': r.financials?.remittance_amount,
+        'financials.marketplace_fee': r.financials?.marketplace_fee,
+
+        signature: r.signature,
+        rcBookingReference: r.rcBookingReference,
+        rcStatus: r.rcStatus,
+
+        // RC Raw Response
+        'rcRawResponse.booking_reference': r.rcRawResponse?.booking_reference,
+        'rcRawResponse.status': r.rcRawResponse?.status,
+
+        status: r.status,
+        source: r.source,
+        createdAt: r.createdAt,
+        updatedAt: r.updatedAt,
+        __v: r.__v
+      }
+    })
     downloadExcel(dataToExport, 'Royal_Concierge_Requests.xlsx')
   }
 
@@ -457,96 +488,191 @@ export default function RoyalConciergeList () {
             }
           }}
           title={'Booking Details'}
+          maxWidth='max-w-6xl'
+          className='!p-5'
         >
-          <div className='space-y-4 text-sm text-[#2D3658]'>
-            <div className='grid grid-cols-2 gap-3'>
-              <div>Transaction ID</div>
-              <div className='text-right font-semibold'>
-                {selected?.transactionId || selected?._id || '-'}
+          <div className='max-h-[70vh] overflow-y-auto pr-2'>
+            <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+              <div className='space-y-4'>
+                {/* General Info */}
+                <div className='bg-slate-50 p-3 rounded-lg border border-slate-200'>
+                  <h3 className='font-semibold text-slate-900 mb-2 border-b border-slate-200 pb-2'>
+                    General Information
+                  </h3>
+                  <div className='grid grid-cols-2 gap-y-2 gap-x-4 text-sm'>
+                    <div className='text-slate-600'>Transaction ID</div>
+                    <div className='font-medium text-right break-all text-slate-900'>
+                      {selected?.transactionId || selected?._id || '-'}
+                    </div>
+
+                    <div className='text-slate-600'>Booking Reference</div>
+                    <div className='font-medium text-right text-slate-900'>
+                      {selected?.rcBookingReference || '-'}
+                    </div>
+
+                    <div className='text-slate-600'>Status</div>
+                    <div className='font-medium text-right'>
+                      <span
+                        className={`px-2 py-0.5 rounded-full text-xs ${
+                          selected?.rcStatus === 'created' ||
+                          selected?.status === 'created'
+                            ? 'bg-blue-100 text-blue-800'
+                            : selected?.rcStatus === 'completed' ||
+                              selected?.status === 'completed'
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-slate-200 text-slate-800'
+                        }`}
+                      >
+                        {selected?.rcStatus || selected?.status || '-'}
+                      </span>
+                    </div>
+
+                    <div className='text-slate-600'>Source</div>
+                    <div className='font-medium text-right text-slate-900'>
+                      {selected?.source || '-'}
+                    </div>
+
+                    <div className='text-slate-600'>Created At</div>
+                    <div className='font-medium text-right text-slate-900'>
+                      {selected?.createdAt
+                        ? new Date(selected.createdAt).toLocaleString()
+                        : '-'}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Customer Details */}
+                <div className='bg-slate-50 p-3 rounded-lg border border-slate-200'>
+                  <h3 className='font-semibold text-slate-900 mb-2 border-b border-slate-200 pb-2'>
+                    Customer Details
+                  </h3>
+                  <div className='grid grid-cols-2 gap-y-2 gap-x-4 text-sm'>
+                    <div className='text-slate-600'>Name</div>
+                    <div className='font-medium text-right text-slate-900'>
+                      {`${selected?.customer?.first_name || ''} ${
+                        selected?.customer?.last_name || ''
+                      }`.trim() || '-'}
+                    </div>
+
+                    <div className='text-slate-600'>Email</div>
+                    <div className='font-medium text-right break-all text-slate-900'>
+                      {selected?.customer?.email || '-'}
+                    </div>
+
+                    <div className='text-slate-600'>Phone</div>
+                    <div className='font-medium text-right text-slate-900'>
+                      {selected?.customer?.phone || '-'}
+                    </div>
+
+                    <div className='text-slate-600'>Nationality</div>
+                    <div className='font-medium text-right text-slate-900'>
+                      {selected?.customer?.nationality || '-'}
+                    </div>
+
+                    <div className='text-slate-600'>User ID</div>
+                    <div className='font-medium text-right text-xs text-slate-500'>
+                      {selected?.userId || '-'}
+                    </div>
+                  </div>
+                </div>
+
+                {/* System Info */}
+                <div className='bg-slate-50 p-3 rounded-lg border border-slate-200'>
+                  <h3 className='font-semibold text-slate-900 mb-2 border-b border-slate-200 pb-2'>
+                    System Info
+                  </h3>
+                  <div className='space-y-2 text-sm'>
+                    <div className='grid grid-cols-[100px_1fr] gap-2'>
+                      <div className='text-slate-600'>Partner ID</div>
+                      <div className='font-mono text-xs text-right break-all text-slate-500'>
+                        {selected?.partnerId || '-'}
+                      </div>
+                    </div>
+                    <div className='grid grid-cols-[100px_1fr] gap-2'>
+                      <div className='text-slate-600'>Signature</div>
+                      <div className='font-mono text-xs text-right break-all text-slate-500'>
+                        {selected?.signature || '-'}
+                      </div>
+                    </div>
+                    <div className='grid grid-cols-[100px_1fr] gap-2'>
+                      <div className='text-slate-600'>Raw Status</div>
+                      <div className='font-mono text-xs text-right text-slate-600'>
+                        {selected?.rcRawResponse?.status || '-'} (Ref:{' '}
+                        {selected?.rcRawResponse?.booking_reference || '-'})
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div>RC Booking Reference</div>
-              <div className='text-right font-semibold'>
-                {selected?.rcBookingReference || '-'}
-              </div>
-              <div>Status</div>
-              <div className='text-right font-semibold'>
-                {selected?.rcStatus || selected?.status || '-'}
-              </div>
-              <div>Customer</div>
-              <div className='text-right font-semibold'>
-                {`${selected?.customer?.first_name || ''} ${
-                  selected?.customer?.last_name || ''
-                }`.trim() || '-'}
-              </div>
-              <div>Email</div>
-              <div className='text-right font-semibold'>
-                {selected?.customer?.email || '-'}
-              </div>
-              <div>Phone</div>
-              <div className='text-right font-semibold'>
-                {selected?.customer?.phone || '-'}
-              </div>
-              <div>Nationality</div>
-              <div className='text-right font-semibold'>
-                {selected?.customer?.nationality || '-'}
-              </div>
-              <div>Tier</div>
-              <div className='text-right font-semibold'>
-                {selected?.serviceDetails?.tier || '-'}
-              </div>
-              <div>Flight Number</div>
-              <div className='text-right font-semibold'>
-                {selected?.serviceDetails?.flight_number || '-'}
-              </div>
-              <div>Travel Date</div>
-              <div className='text-right font-semibold'>
-                {(() => {
-                  const d = selected?.serviceDetails?.travel_date
-                  const dt = d && typeof d === 'string' ? new Date(d) : d
-                  return dt ? new Date(dt).toLocaleString() : '-'
-                })()}
-              </div>
-              <div>Passenger Count</div>
-              <div className='text-right font-semibold'>
-                {String(selected?.serviceDetails?.passenger_count ?? '-')}
-              </div>
-              <div>Currency</div>
-              <div className='text-right font-semibold'>
-                {selected?.financials?.currency || '-'}
-              </div>
-              <div>Line Item Value</div>
-              <div className='text-right font-semibold'>
-                {typeof selected?.financials?.rcs_line_item_value === 'number'
-                  ? selected.financials.rcs_line_item_value.toLocaleString()
-                  : '-'}
-              </div>
-              <div>Remittance Amount</div>
-              <div className='text-right font-semibold'>
-                {typeof selected?.financials?.remittance_amount === 'number'
-                  ? selected.financials.remittance_amount.toLocaleString()
-                  : '-'}
-              </div>
-              <div>Marketplace Fee</div>
-              <div className='text-right font-semibold'>
-                {typeof selected?.financials?.marketplace_fee === 'number'
-                  ? selected.financials.marketplace_fee.toLocaleString()
-                  : '-'}
-              </div>
-              <div>Created On</div>
-              <div className='text-right font-semibold'>
-                {selected?.createdAt
-                  ? new Date(selected.createdAt).toLocaleString()
-                  : '-'}
-              </div>
-              <div>Updated On</div>
-              <div className='text-right font-semibold'>
-                {selected?.updatedAt
-                  ? new Date(selected.updatedAt).toLocaleString()
-                  : '-'}
+
+              <div className='space-y-4'>
+                {/* Service Details */}
+                <div className='bg-slate-50 p-3 rounded-lg border border-slate-200'>
+                  <h3 className='font-semibold text-slate-900 mb-2 border-b border-slate-200 pb-2'>
+                    Service Details
+                  </h3>
+                  <div className='grid grid-cols-2 gap-y-2 gap-x-4 text-sm'>
+                    <div className='text-slate-600'>Tier</div>
+                    <div className='font-medium text-right text-slate-900'>
+                      {selected?.serviceDetails?.tier || '-'}
+                    </div>
+
+                    <div className='text-slate-600'>Flight Number</div>
+                    <div className='font-medium text-right text-slate-900'>
+                      {selected?.serviceDetails?.flight_number || '-'}
+                    </div>
+
+                    <div className='text-slate-600'>Travel Date</div>
+                    <div className='font-medium text-right text-slate-900'>
+                      {selected?.serviceDetails?.travel_date
+                        ? new Date(
+                            selected.serviceDetails.travel_date
+                          ).toLocaleDateString()
+                        : '-'}
+                    </div>
+
+                    <div className='text-slate-600'>Passenger Count</div>
+                    <div className='font-medium text-right text-slate-900'>
+                      {selected?.serviceDetails?.passenger_count || '-'}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Financials */}
+                <div className='bg-slate-50 p-3 rounded-lg border border-slate-200'>
+                  <h3 className='font-semibold text-slate-900 mb-2 border-b border-slate-200 pb-2'>
+                    Financials
+                  </h3>
+                  <div className='grid grid-cols-2 gap-y-2 gap-x-4 text-sm'>
+                    <div className='text-slate-600'>Currency</div>
+                    <div className='font-medium text-right text-slate-900'>
+                      {selected?.financials?.currency || 'NGN'}
+                    </div>
+
+                    <div className='text-slate-600'>Line Item Value</div>
+                    <div className='font-medium text-right text-slate-900'>
+                      {selected?.financials?.rcs_line_item_value?.toLocaleString() ||
+                        '0'}
+                    </div>
+
+                    <div className='text-slate-600'>Remittance Amount</div>
+                    <div className='font-medium text-right text-green-700'>
+                      {selected?.financials?.remittance_amount?.toLocaleString() ||
+                        '0'}
+                    </div>
+
+                    <div className='text-slate-600'>Marketplace Fee</div>
+                    <div className='font-medium text-right text-slate-900'>
+                      {selected?.financials?.marketplace_fee?.toLocaleString() ||
+                        '0'}
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-          <div className='mt-6 flex justify-end gap-3'>
+
+          <div className='mt-4 flex justify-end gap-3'>
             <button
               onClick={() => {
                 setDetailOpen(false)

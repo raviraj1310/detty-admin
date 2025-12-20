@@ -218,11 +218,26 @@ export default function RidesForm () {
       return
     }
     const dataToExport = filteredRides.map(ride => ({
+      ID: ride.id,
       Name: ride.name,
-      Price: ride.priceFormatted,
+      Description: ride.description || '-',
+      Price: ride.price,
       Seats: ride.seats,
       Quantity: ride.quantity,
-      Description: ride.description || '-'
+      Margin: ride.margin,
+      'Currency Name': ride.currency?.name,
+      'Currency Short': ride.currency?.shortName,
+      'Currency Symbol': ride.currency?.symbol,
+      'Selected For Website': ride.selected_for_website ? 'Yes' : 'No',
+      'Is Security Vehicle': ride.is_security_vehicle ? 'Yes' : 'No',
+      'Personnel Station Cost': ride.personnel_station_unit_cost,
+      'Personnel Off Station Cost': ride.personnel_off_station_unit_cost,
+      'Vehicle Off Station Cost': ride.vehicle_off_station_unit_cost,
+      'City ID': ride.city_id || '-',
+      Amenities: ride.cleanAmenities?.map(a => a.name).join(', ') || '-',
+      Images: ride.cleanImages?.join(', ') || '-',
+      'Created At': ride.created_at,
+      'Updated At': ride.updated_at
     }))
     downloadExcel(dataToExport, 'Rides_Bookings.xlsx')
   }
@@ -472,100 +487,210 @@ export default function RidesForm () {
         open={detailOpen}
         onOpenChange={setDetailOpen}
         title='Ride Details'
+        maxWidth='max-w-6xl'
+        className='!p-5'
       >
         {selectedRide && (
-          <div className='space-y-6 max-h-[70vh] overflow-y-auto pr-2'>
-            {/* Header Info */}
-            <div>
-              <h3 className='text-xl font-bold text-gray-900'>
-                {selectedRide.name}
-              </h3>
-              <p className='text-lg font-semibold text-orange-600 mt-1'>
-                {selectedRide.priceFormatted}
-              </p>
-              <div className='flex space-x-4 mt-2 text-sm text-gray-600'>
-                <span className='flex items-center'>
-                  <span className='font-medium mr-1'>Seats:</span>{' '}
-                  {selectedRide.seats}
-                </span>
-                <span className='flex items-center'>
-                  <span className='font-medium mr-1'>Quantity:</span>{' '}
-                  {selectedRide.quantity}
-                </span>
-              </div>
-            </div>
-
-            {/* Images */}
-            {selectedRide.cleanImages && selectedRide.cleanImages.length > 0 && (
-              <div>
-                <h4 className='text-sm font-medium text-gray-900 mb-2'>
-                  Images
-                </h4>
-                <div className='grid grid-cols-2 gap-2'>
-                  {selectedRide.cleanImages.map((img, idx) => (
-                    <div
-                      key={idx}
-                      className='relative aspect-video rounded-lg overflow-hidden bg-gray-100 border border-gray-200'
-                    >
-                      <img
-                        src={img}
-                        alt={`${selectedRide.name} ${idx + 1}`}
-                        className='w-full h-full object-cover'
-                      />
+          <div className='max-h-[70vh] overflow-y-auto pr-2'>
+            <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+              <div className='space-y-4'>
+                {/* General Info */}
+                <div className='bg-slate-50 p-3 rounded-lg border border-slate-200'>
+                  <h3 className='font-semibold text-slate-900 mb-2 border-b border-slate-200 pb-2'>
+                    General Information
+                  </h3>
+                  <div className='grid grid-cols-2 gap-y-2 gap-x-4 text-sm'>
+                    <div className='text-slate-600'>Name</div>
+                    <div className='font-medium text-right text-slate-900'>
+                      {selectedRide.name || '-'}
                     </div>
-                  ))}
-                </div>
-              </div>
-            )}
 
-            {/* Description */}
-            {selectedRide.description && (
-              <div>
-                <h4 className='text-sm font-medium text-gray-900 mb-2'>
-                  Description
-                </h4>
-                <p className='text-sm text-gray-600 leading-relaxed whitespace-pre-wrap'>
-                  {selectedRide.description}
-                </p>
-              </div>
-            )}
+                    <div className='text-slate-600'>Price</div>
+                    <div className='font-medium text-right text-slate-900'>
+                      {selectedRide.priceFormatted || '-'}
+                    </div>
 
-            {/* Amenities */}
-            {selectedRide.cleanAmenities &&
-              selectedRide.cleanAmenities.length > 0 && (
-                <div>
-                  <h4 className='text-sm font-medium text-gray-900 mb-2'>
-                    Amenities
-                  </h4>
-                  <div className='grid grid-cols-2 gap-3'>
-                    {selectedRide.cleanAmenities.map((amenity, idx) => (
-                      <div
-                        key={idx}
-                        className='flex items-center p-2 rounded-lg bg-gray-50 border border-gray-100'
-                      >
-                        {amenity.image && (
-                          <img
-                            src={amenity.image}
-                            alt={amenity.name}
-                            className='w-8 h-8 object-contain mr-3'
-                          />
-                        )}
-                        <div>
-                          <p className='text-sm font-medium text-gray-900'>
-                            {amenity.name}
-                          </p>
-                          {amenity.short_name &&
-                            amenity.short_name !== amenity.name && (
-                              <p className='text-xs text-gray-500'>
-                                {amenity.short_name}
-                              </p>
-                            )}
-                        </div>
-                      </div>
-                    ))}
+                    <div className='text-slate-600'>Seats</div>
+                    <div className='font-medium text-right text-slate-900'>
+                      {selectedRide.seats || '-'}
+                    </div>
+
+                    <div className='text-slate-600'>Quantity</div>
+                    <div className='font-medium text-right text-slate-900'>
+                      {selectedRide.quantity || '-'}
+                    </div>
+
+                    <div className='text-slate-600'>Margin</div>
+                    <div className='font-medium text-right text-slate-900'>
+                      {selectedRide.margin || '0'}%
+                    </div>
+
+                    <div className='text-slate-600'>Currency</div>
+                    <div className='font-medium text-right text-slate-900'>
+                      {selectedRide.currency?.shortName ||
+                        selectedRide.currency?.name ||
+                        'NGN'}
+                    </div>
                   </div>
                 </div>
-              )}
+
+                {/* Status & Dates */}
+                <div className='bg-slate-50 p-3 rounded-lg border border-slate-200'>
+                  <h3 className='font-semibold text-slate-900 mb-2 border-b border-slate-200 pb-2'>
+                    Status & Dates
+                  </h3>
+                  <div className='grid grid-cols-2 gap-y-2 gap-x-4 text-sm'>
+                    <div className='text-slate-600'>Created At</div>
+                    <div className='font-medium text-right text-slate-900'>
+                      {selectedRide.created_at
+                        ? new Date(selectedRide.created_at).toLocaleString()
+                        : '-'}
+                    </div>
+
+                    <div className='text-slate-600'>Updated At</div>
+                    <div className='font-medium text-right text-slate-900'>
+                      {selectedRide.updated_at
+                        ? new Date(selectedRide.updated_at).toLocaleString()
+                        : '-'}
+                    </div>
+
+                    <div className='text-slate-600'>Selected For Website</div>
+                    <div className='font-medium text-right'>
+                      <span
+                        className={`px-2 py-0.5 rounded-full text-xs ${
+                          selectedRide.selected_for_website
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-slate-200 text-slate-800'
+                        }`}
+                      >
+                        {selectedRide.selected_for_website ? 'Yes' : 'No'}
+                      </span>
+                    </div>
+
+                    <div className='text-slate-600'>Security Vehicle</div>
+                    <div className='font-medium text-right'>
+                      <span
+                        className={`px-2 py-0.5 rounded-full text-xs ${
+                          selectedRide.is_security_vehicle
+                            ? 'bg-blue-100 text-blue-800'
+                            : 'bg-slate-200 text-slate-800'
+                        }`}
+                      >
+                        {selectedRide.is_security_vehicle ? 'Yes' : 'No'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Costing */}
+                <div className='bg-slate-50 p-3 rounded-lg border border-slate-200'>
+                  <h3 className='font-semibold text-slate-900 mb-2 border-b border-slate-200 pb-2'>
+                    Costing
+                  </h3>
+                  <div className='grid grid-cols-2 gap-y-2 gap-x-4 text-sm'>
+                    <div className='text-slate-600'>Personnel Station Cost</div>
+                    <div className='font-medium text-right text-slate-900'>
+                      {Number(
+                        selectedRide.personnel_station_unit_cost
+                      ).toLocaleString()}
+                    </div>
+
+                    <div className='text-slate-600'>
+                      Personnel Off Station Cost
+                    </div>
+                    <div className='font-medium text-right text-slate-900'>
+                      {Number(
+                        selectedRide.personnel_off_station_unit_cost
+                      ).toLocaleString()}
+                    </div>
+
+                    <div className='text-slate-600'>
+                      Vehicle Off Station Cost
+                    </div>
+                    <div className='font-medium text-right text-slate-900'>
+                      {Number(
+                        selectedRide.vehicle_off_station_unit_cost
+                      ).toLocaleString()}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className='space-y-4'>
+                {/* Description */}
+                {selectedRide.description && (
+                  <div className='bg-slate-50 p-3 rounded-lg border border-slate-200'>
+                    <h3 className='font-semibold text-slate-900 mb-2 border-b border-slate-200 pb-2'>
+                      Description
+                    </h3>
+                    <p className='text-sm text-slate-600 leading-relaxed whitespace-pre-wrap'>
+                      {selectedRide.description}
+                    </p>
+                  </div>
+                )}
+
+                {/* Amenities */}
+                {selectedRide.cleanAmenities &&
+                  selectedRide.cleanAmenities.length > 0 && (
+                    <div className='bg-slate-50 p-3 rounded-lg border border-slate-200'>
+                      <h3 className='font-semibold text-slate-900 mb-2 border-b border-slate-200 pb-2'>
+                        Amenities
+                      </h3>
+                      <div className='grid grid-cols-2 gap-3'>
+                        {selectedRide.cleanAmenities.map((amenity, idx) => (
+                          <div
+                            key={idx}
+                            className='flex items-center p-2 rounded-lg bg-white border border-slate-100'
+                          >
+                            {amenity.image && (
+                              <img
+                                src={amenity.image}
+                                alt={amenity.name}
+                                className='w-8 h-8 object-contain mr-3'
+                              />
+                            )}
+                            <div>
+                              <p className='text-sm font-medium text-slate-900'>
+                                {amenity.name}
+                              </p>
+                              {amenity.short_name &&
+                                amenity.short_name !== amenity.name && (
+                                  <p className='text-xs text-slate-500'>
+                                    {amenity.short_name}
+                                  </p>
+                                )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                {/* Images */}
+                {selectedRide.cleanImages &&
+                  selectedRide.cleanImages.length > 0 && (
+                    <div className='bg-slate-50 p-3 rounded-lg border border-slate-200'>
+                      <h3 className='font-semibold text-slate-900 mb-2 border-b border-slate-200 pb-2'>
+                        Images
+                      </h3>
+                      <div className='grid grid-cols-2 gap-2'>
+                        {selectedRide.cleanImages.map((img, idx) => (
+                          <div
+                            key={idx}
+                            className='relative aspect-video rounded-lg overflow-hidden bg-slate-100 border border-slate-200'
+                          >
+                            <img
+                              src={img}
+                              alt={`${selectedRide.name} ${idx + 1}`}
+                              className='w-full h-full object-cover'
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+              </div>
+            </div>
           </div>
         )}
       </Modal>

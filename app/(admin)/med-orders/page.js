@@ -139,13 +139,76 @@ export default function MedOrdersPage () {
     if (!filteredRows || filteredRows.length === 0) {
       return
     }
-    const dataToExport = filteredRows.map(row => ({
-      'Order ID': row.orderId,
-      'Date & Time': row.eventDate,
-      Amount: row.amount,
-      'Activity Status': row.activityStatus,
-      'Payment Status': row.paymentStatus
-    }))
+    const dataToExport = filteredRows.map(row => {
+      const r = row.raw || {}
+      const api = r.api_response?.data || {}
+      const customer = r.customer || api.customer || {}
+      const shippingAddress = api.shipping_address || {}
+
+      // Format items
+      const items =
+        Array.isArray(r.items) && r.items.length > 0
+          ? r.items
+              .map(
+                i =>
+                  `[Product: ${i.productName}, Qty: ${i.qty}, Price: ${i.price}, Barcode: ${i.barcode}]`
+              )
+              .join('; ')
+          : Array.isArray(api.items)
+          ? api.items
+              .map(
+                i =>
+                  `[Product: ${i.productName}, Qty: ${i.qty}, Price: ${i.price}]`
+              )
+              .join('; ')
+          : ''
+
+      return {
+        _id: r._id,
+        user_id: r.user_id,
+        orderKey: r.orderKey,
+        store_id: r.store_id,
+        shipping_method: r.shipping_method,
+        delivery_zone_id: r.delivery_zone_id,
+        status: r.status,
+        createdAt: r.createdAt,
+        updatedAt: r.updatedAt,
+        __v: r.__v,
+
+        // Customer Details
+        'customer.contact_person_name':
+          customer.contact_person_name || customer.name,
+        'customer.email': customer.email,
+        'customer.phone': customer.phone,
+
+        // API Response Details
+        'api.id': api.id,
+        'api.order_amount': api.order_amount,
+        'api.order_status': api.order_status,
+        'api.order_source': api.order_source,
+        'api.payment_status': api.payment_status,
+        'api.payment_method': api.payment_method,
+        'api.shipping_cost': api.shipping_cost,
+        'api.delivery_method': api.delivery_method,
+        'api.created_at': api.created_at,
+        'api.updated_at': api.updated_at,
+
+        // Shipping Address
+        'shipping.address': shippingAddress.address,
+        'shipping.city': shippingAddress.city,
+        'shipping.state': shippingAddress.state,
+        'shipping.zip': shippingAddress.zip,
+        'shipping.country': shippingAddress.country,
+
+        // Reseller Info
+        'reseller.business_name': api.reseller?.business_name,
+        'reseller.merchant': api.reseller?.merchant,
+        'reseller.discount_percent': api.reseller?.discount_percent,
+
+        // Items
+        items: items
+      }
+    })
     downloadExcel(dataToExport, 'MedPlus_Orders.xlsx')
   }
 
@@ -237,6 +300,10 @@ export default function MedOrdersPage () {
     const api = r?.api_response?.data || {}
     const custTop = r?.customer || {}
     const cust = api?.customer || custTop || {}
+    const items =
+      Array.isArray(r.items) && r.items.length > 0 ? r.items : api.items || []
+    const shipping = api?.shipping_address || {}
+    const reseller = api?.reseller || {}
     const amount =
       typeof api?.order_amount === 'number'
         ? api.order_amount
@@ -246,16 +313,17 @@ export default function MedOrdersPage () {
             0
           )
         : 0
+
     return (
       <div className='fixed inset-0 z-[10000] flex items-center justify-center'>
         <div
           className='absolute inset-0 bg-black/30'
           onClick={() => setDetailOpen(false)}
         />
-        <div className='relative bg-white rounded-2xl shadow-xl w-[90%] max-w-2xl'>
-          <div className='p-6 border-b border-gray-200 flex items-center justify-between'>
+        <div className='relative bg-white rounded-2xl shadow-xl w-[90%] max-w-3xl max-h-[90vh] overflow-y-auto'>
+          <div className='p-6 border-b border-gray-200 flex items-center justify-between sticky top-0 bg-white z-10'>
             <h3 className='text-xl font-semibold text-gray-900'>
-              MedPlus Order
+              MedPlus Order Details
             </h3>
             <button
               onClick={() => setDetailOpen(false)}
@@ -277,56 +345,258 @@ export default function MedOrdersPage () {
               </svg>
             </button>
           </div>
-          <div className='p-6 space-y-6'>
-            <div className='grid grid-cols-2 gap-x-6 gap-y-3'>
-              <div className='text-sm text-gray-500'>Order ID</div>
-              <div className='text-sm text-gray-900'>
-                {String(r?._id || '')}
-              </div>
-              <div className='text-sm text-gray-500'>Payment Status</div>
-              <div className='text-sm text-gray-900'>
-                {String(api?.payment_status || '-')}
-              </div>
-              <div className='text-sm text-gray-500'>Amount</div>
-              <div className='text-sm font-semibold text-gray-900'>
-                {toCurrency(amount)}
-              </div>
-              <div className='text-sm text-gray-500'>Customer Name</div>
-              <div className='text-sm text-gray-900'>
-                {String(cust?.name || custTop?.contact_person_name || '-')}
-              </div>
-              <div className='text-sm text-gray-500'>Email</div>
-              <div className='text-sm text-gray-900'>
-                {String(cust?.email || custTop?.email || '-')}
-              </div>
-              <div className='text-sm text-gray-500'>Created At</div>
-              <div className='text-sm text-gray-900'>
-                {formatDate(r?.createdAt || api?.created_at) || '-'}
-              </div>
-              <div className='text-sm text-gray-500'>Updated At</div>
-              <div className='text-sm text-gray-900'>
-                {formatDate(r?.updatedAt || api?.updated_at) || '-'}
-              </div>
-            </div>
-            <div className='border-t border-gray-200 pt-4'>
-              <div className='text-sm font-semibold text-gray-900 mb-2'>
-                User
-              </div>
-              <div className='grid grid-cols-2 gap-x-6 gap-y-3'>
-                <div className='text-sm text-gray-500'>User ID</div>
-                <div className='text-sm text-gray-900'>
-                  {String(r?.user_id || '')}
+          <div className='p-6 space-y-8'>
+            {/* General Order Info */}
+            <section>
+              <h4 className='text-sm font-bold text-gray-900 uppercase tracking-wider mb-3'>
+                General Info
+              </h4>
+              <div className='grid grid-cols-2 md:grid-cols-3 gap-4 text-sm'>
+                <div>
+                  <span className='block text-gray-500'>Order ID</span>
+                  <span className='font-medium text-gray-900'>
+                    {String(r?._id || '-')}
+                  </span>
                 </div>
-                <div className='text-sm text-gray-500'>Name</div>
-                <div className='text-sm text-gray-900'>
-                  {String(cust?.name || custTop?.contact_person_name || '-')}
+                <div>
+                  <span className='block text-gray-500'>Order Key</span>
+                  <span className='font-medium text-gray-900'>
+                    {String(r?.orderKey || '-')}
+                  </span>
                 </div>
-                <div className='text-sm text-gray-500'>Email</div>
-                <div className='text-sm text-gray-900'>
-                  {String(cust?.email || custTop?.email || '-')}
+                <div>
+                  <span className='block text-gray-500'>MedPlus ID</span>
+                  <span className='font-medium text-gray-900'>
+                    {String(api?.id || '-')}
+                  </span>
+                </div>
+                <div>
+                  <span className='block text-gray-500'>Status</span>
+                  <span className='font-medium text-gray-900'>
+                    {String(r?.status || '-')}
+                  </span>
+                </div>
+                <div>
+                  <span className='block text-gray-500'>API Order Status</span>
+                  <span className='font-medium text-gray-900'>
+                    {String(api?.order_status || '-')}
+                  </span>
+                </div>
+                <div>
+                  <span className='block text-gray-500'>Order Source</span>
+                  <span className='font-medium text-gray-900'>
+                    {String(api?.order_source || '-')}
+                  </span>
+                </div>
+                <div>
+                  <span className='block text-gray-500'>Store ID</span>
+                  <span className='font-medium text-gray-900'>
+                    {String(r?.store_id || '-')}
+                  </span>
+                </div>
+                <div>
+                  <span className='block text-gray-500'>Created At</span>
+                  <span className='font-medium text-gray-900'>
+                    {formatDate(r?.createdAt || api?.created_at) || '-'}
+                  </span>
+                </div>
+                <div>
+                  <span className='block text-gray-500'>Updated At</span>
+                  <span className='font-medium text-gray-900'>
+                    {formatDate(r?.updatedAt || api?.updated_at) || '-'}
+                  </span>
                 </div>
               </div>
-            </div>
+            </section>
+
+            {/* Payment & Financials */}
+            <section className='border-t border-gray-100 pt-4'>
+              <h4 className='text-sm font-bold text-gray-900 uppercase tracking-wider mb-3'>
+                Payment & Financials
+              </h4>
+              <div className='grid grid-cols-2 md:grid-cols-3 gap-4 text-sm'>
+                <div>
+                  <span className='block text-gray-500'>Total Amount</span>
+                  <span className='font-bold text-gray-900'>
+                    {toCurrency(amount)}
+                  </span>
+                </div>
+                <div>
+                  <span className='block text-gray-500'>Payment Status</span>
+                  <span
+                    className={`inline-flex px-2 py-0.5 rounded text-xs font-semibold ${
+                      String(api?.payment_status).toLowerCase() === 'paid'
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-yellow-100 text-yellow-800'
+                    }`}
+                  >
+                    {String(api?.payment_status || '-')}
+                  </span>
+                </div>
+                <div>
+                  <span className='block text-gray-500'>Payment Method</span>
+                  <span className='font-medium text-gray-900'>
+                    {String(api?.payment_method || '-')}
+                  </span>
+                </div>
+                <div>
+                  <span className='block text-gray-500'>Shipping Cost</span>
+                  <span className='font-medium text-gray-900'>
+                    {toCurrency(api?.shipping_cost)}
+                  </span>
+                </div>
+                <div>
+                  <span className='block text-gray-500'>Discount %</span>
+                  <span className='font-medium text-gray-900'>
+                    {String(reseller?.discount_percent || '0')}%
+                  </span>
+                </div>
+              </div>
+            </section>
+
+            {/* Customer & User */}
+            <section className='border-t border-gray-100 pt-4'>
+              <h4 className='text-sm font-bold text-gray-900 uppercase tracking-wider mb-3'>
+                Customer & User
+              </h4>
+              <div className='grid grid-cols-2 md:grid-cols-3 gap-4 text-sm'>
+                <div>
+                  <span className='block text-gray-500'>Contact Name</span>
+                  <span className='font-medium text-gray-900'>
+                    {String(cust?.name || custTop?.contact_person_name || '-')}
+                  </span>
+                </div>
+                <div>
+                  <span className='block text-gray-500'>Email</span>
+                  <span className='font-medium text-gray-900'>
+                    {String(cust?.email || custTop?.email || '-')}
+                  </span>
+                </div>
+                <div>
+                  <span className='block text-gray-500'>Phone</span>
+                  <span className='font-medium text-gray-900'>
+                    {String(cust?.phone || custTop?.phone || '-')}
+                  </span>
+                </div>
+                <div>
+                  <span className='block text-gray-500'>User ID</span>
+                  <span className='font-medium text-gray-900'>
+                    {String(r?.user_id || '-')}
+                  </span>
+                </div>
+              </div>
+            </section>
+
+            {/* Shipping & Delivery */}
+            <section className='border-t border-gray-100 pt-4'>
+              <h4 className='text-sm font-bold text-gray-900 uppercase tracking-wider mb-3'>
+                Shipping & Delivery
+              </h4>
+              <div className='grid grid-cols-2 md:grid-cols-3 gap-4 text-sm'>
+                <div>
+                  <span className='block text-gray-500'>Shipping Method</span>
+                  <span className='font-medium text-gray-900'>
+                    {String(r?.shipping_method || '-')}
+                  </span>
+                </div>
+                <div>
+                  <span className='block text-gray-500'>Delivery Method</span>
+                  <span className='font-medium text-gray-900'>
+                    {String(api?.delivery_method || '-')}
+                  </span>
+                </div>
+                <div>
+                  <span className='block text-gray-500'>Delivery Zone ID</span>
+                  <span className='font-medium text-gray-900'>
+                    {String(r?.delivery_zone_id || '-')}
+                  </span>
+                </div>
+                <div className='col-span-2 md:col-span-3'>
+                  <span className='block text-gray-500'>Shipping Address</span>
+                  <span className='font-medium text-gray-900'>
+                    {shipping?.address
+                      ? `${shipping.address}, ${shipping.city || ''}, ${
+                          shipping.state || ''
+                        }, ${shipping.country || ''}`
+                      : '-'}
+                  </span>
+                </div>
+              </div>
+            </section>
+
+            {/* Reseller Info */}
+            <section className='border-t border-gray-100 pt-4'>
+              <h4 className='text-sm font-bold text-gray-900 uppercase tracking-wider mb-3'>
+                Reseller Info
+              </h4>
+              <div className='grid grid-cols-2 md:grid-cols-3 gap-4 text-sm'>
+                <div>
+                  <span className='block text-gray-500'>Business Name</span>
+                  <span className='font-medium text-gray-900'>
+                    {String(reseller?.business_name || '-')}
+                  </span>
+                </div>
+                <div>
+                  <span className='block text-gray-500'>Merchant</span>
+                  <span className='font-medium text-gray-900'>
+                    {String(reseller?.merchant || '-')}
+                  </span>
+                </div>
+              </div>
+            </section>
+
+            {/* Items */}
+            {items.length > 0 && (
+              <section className='border-t border-gray-100 pt-4'>
+                <h4 className='text-sm font-bold text-gray-900 uppercase tracking-wider mb-3'>
+                  Order Items
+                </h4>
+                <div className='overflow-x-auto border border-gray-200 rounded-lg'>
+                  <table className='min-w-full divide-y divide-gray-200'>
+                    <thead className='bg-gray-50'>
+                      <tr>
+                        <th className='px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                          Product Name
+                        </th>
+                        <th className='px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                          Barcode
+                        </th>
+                        <th className='px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                          Qty
+                        </th>
+                        <th className='px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                          Price
+                        </th>
+                        <th className='px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                          Total
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className='bg-white divide-y divide-gray-200'>
+                      {items.map((item, idx) => (
+                        <tr key={idx}>
+                          <td className='px-4 py-2 text-sm text-gray-900'>
+                            {item.productName}
+                          </td>
+                          <td className='px-4 py-2 text-sm text-gray-500'>
+                            {item.barcode || '-'}
+                          </td>
+                          <td className='px-4 py-2 text-sm text-gray-900'>
+                            {item.qty}
+                          </td>
+                          <td className='px-4 py-2 text-sm text-gray-900'>
+                            {toCurrency(item.price)}
+                          </td>
+                          <td className='px-4 py-2 text-sm font-medium text-gray-900'>
+                            {toCurrency((item.price || 0) * (item.qty || 0))}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+            )}
           </div>
         </div>
       </div>

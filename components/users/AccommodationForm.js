@@ -74,7 +74,8 @@ const mapAccommodationRows = (arr = []) => {
       additionalInfo: '',
       amount,
       status,
-      paymentStatus
+      paymentStatus,
+      raw: b
     }
   })
 }
@@ -374,19 +375,32 @@ export default function AccommodationPage () {
     if (!filteredAccommodations || filteredAccommodations.length === 0) {
       return
     }
-    const dataToExport = filteredAccommodations.map(r => ({
-      'Added On': r.addedOn,
-      'Property Name': r.propertyName,
-      'Property Type': r.propertyType,
-      'Check In': r.checkInDate,
-      'Check Out': r.checkOutDate,
-      Amount: r.amount,
-      Status: r.status,
-      'Payment Status': r.paymentStatus,
-      'User Name': r.user?.name,
-      'User Email': r.user?.email,
-      'Transaction Ref': r.transactionRef
-    }))
+    const dataToExport = filteredAccommodations.map(r => {
+      const b = r.raw || {}
+      const user = b.userId || {}
+      return {
+        _id: b._id,
+        finalPayableAmount: b.finalPayableAmount || 0,
+        hotelName: b.hotelName,
+        roomName: b.roomName,
+        checkInDate: b.checkInDate,
+        checkOutDate: b.checkOutDate,
+        amount: b.amount,
+        paymentStatus: b.paymentStatus,
+        transactionRef: b.transactionRef,
+        transactionId: b.transactionId,
+        noOfRooms: b.noOfRooms,
+        guests: b.guests,
+        createdAt: b.createdAt,
+        updatedAt: b.updatedAt,
+        __v: b.__v,
+
+        // User Details flattened
+        'user._id': user._id,
+        'user.name': user.name,
+        'user.email': user.email
+      }
+    })
     downloadExcel(dataToExport, 'Accommodation_Bookings.xlsx')
   }
 

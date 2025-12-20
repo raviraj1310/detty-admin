@@ -381,20 +381,63 @@ export default function Activities () {
     if (!sortedActivities || sortedActivities.length === 0) {
       return
     }
-    const dataToExport = sortedActivities.map(r => ({
-      'Booking ID': r.id,
-      'Booked On': r.bookedOn,
-      'Activity Name': r.activityName,
-      Type: r.type,
-      'User Name': r.buyerName,
-      Email: r.buyerEmail,
-      Phone: r.buyerPhone,
-      Tickets: r.ticketsBooked,
-      Amount: r.amount,
-      'Arrival Date': r.arrivalDate,
-      'Payment Status': r.paymentStatus,
-      'Activity Status': r.activityStatus
-    }))
+    const dataToExport = sortedActivities.map(r => {
+      const b = r.raw || {}
+      const buyer = b.buyer || {}
+      const user = b.userId || {}
+      const pricing = b.pricing || {}
+
+      // Format tickets and attendees details
+      const ticketsInfo = Array.isArray(b.tickets)
+        ? b.tickets
+            .map(t => {
+              const attendees = Array.isArray(t.attendees)
+                ? t.attendees.map(a => `${a.fullName} (${a.email})`).join(', ')
+                : ''
+              return `[Ticket: ${t.ticketName || '-'}, Type: ${
+                t.ticketType || '-'
+              }, Qty: ${t.quantity || 0}, Price: ${
+                t.perTicketPrice || 0
+              }, Total: ${t.totalPrice || 0}, Attendees: (${attendees})]`
+            })
+            .join('; ')
+        : ''
+
+      return {
+        'Booking ID': b._id || b.id,
+        'Order ID': b.orderId,
+        'Created At': b.createdAt,
+        'Arrival Date': b.arrivalDate,
+        Status: r.activityStatus,
+        'Payment Status': b.paymentStatus,
+        'Referral Code': b.referralCode,
+
+        // Buyer Details
+        'Buyer Name': buyer.fullName,
+        'Buyer Email': buyer.email,
+        'Buyer Phone': buyer.phone,
+        'Buyer Country': buyer.country,
+        'Buyer City': buyer.city,
+
+        // User Details
+        'User ID': user._id,
+        'User Name': user.name,
+        'User Email': user.email,
+        'User Phone': user.phoneNumber,
+
+        // Activity Details
+        'Activity Name': r.activityName,
+        'Activity Type': r.type,
+
+        // Pricing
+        'Service Fee': pricing.serviceFee,
+        'Discount Applied': pricing.discountApplied,
+        'Total Amount': r.amount,
+
+        // Tickets & Attendees
+        'Tickets Details': ticketsInfo
+      }
+    })
     downloadExcel(dataToExport, 'Places_To_Visit_Bookings.xlsx')
   }
 

@@ -161,15 +161,32 @@ export default function LeadwayPage () {
 
   const handleDownloadExcel = () => {
     if (!sorted.length) return
-    const dataToExport = sorted.map(s => ({
-      'Submitted On': s.createdOn
-        ? new Date(s.createdOn).toLocaleString()
-        : '-',
-      Customer: s.customer,
-      'Policy Type': s.policyType,
-      Amount: s.amount,
-      Status: s.status
-    }))
+    const dataToExport = sorted.map(s => {
+      const r = s.raw || {}
+      return {
+        _id: r._id,
+        userId: r.userId,
+        firstName: r.firstName,
+        surname: r.surname,
+        otherName: r.otherName,
+        dob_MM_dd_yyyy: r.dob_MM_dd_yyyy,
+        gender: r.gender,
+        maritalStatus: r.maritalStatus,
+        emailAddress: r.emailAddress,
+        mobileNo: r.mobileNo,
+        _scheme_id: r._scheme_id,
+        address: r.address,
+        state: r.state,
+        purchaseAmount: r.purchaseAmount,
+        totalPayAmount: r.totalPayAmount,
+        paymentStatus: r.paymentStatus,
+        enrolleeNo: r.enrolleeNo,
+        debiteNoteNo: r.debiteNoteNo,
+        createdAt: r.createdAt,
+        updatedAt: r.updatedAt,
+        __v: r.__v
+      }
+    })
     downloadExcel(dataToExport, 'Leadway_Requests.xlsx')
   }
 
@@ -545,82 +562,149 @@ export default function LeadwayPage () {
             }
           }}
           title={'Request Details'}
+          maxWidth='max-w-6xl'
+          className='!p-5'
         >
-          <div className='space-y-4 text-sm text-[#2D3658]'>
-            <div className='grid grid-cols-2 gap-3'>
-              <div>Request ID</div>
-              <div className='text-right font-semibold'>
-                {selected?._id || '-'}
+          <div className='max-h-[70vh] overflow-y-auto pr-2'>
+            <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+              <div className='space-y-4'>
+                {/* General Info */}
+                <div className='bg-slate-50 p-3 rounded-lg border border-slate-200'>
+                  <h3 className='font-semibold text-slate-900 mb-2 border-b border-slate-200 pb-2'>
+                    General Information
+                  </h3>
+                  <div className='grid grid-cols-2 gap-y-2 gap-x-4 text-sm'>
+                    <div className='text-slate-600'>Request ID</div>
+                    <div className='font-medium text-right break-all text-slate-900'>
+                      {selected?._id || '-'}
+                    </div>
+
+                    <div className='text-slate-600'>Status</div>
+                    <div className='font-medium text-right'>
+                      <span
+                        className={`px-2 py-0.5 rounded-full text-xs ${
+                          String(
+                            selected?.paymentStatus || ''
+                          ).toLowerCase() === 'completed'
+                            ? 'bg-green-100 text-green-800'
+                            : String(
+                                selected?.paymentStatus || ''
+                              ).toLowerCase() === 'pending'
+                            ? 'bg-yellow-100 text-yellow-800'
+                            : 'bg-slate-200 text-slate-800'
+                        }`}
+                      >
+                        {selected?.paymentStatus || '-'}
+                      </span>
+                    </div>
+
+                    <div className='text-slate-600'>Scheme ID</div>
+                    <div className='font-medium text-right text-slate-900'>
+                      {selected?._scheme_id || '-'}
+                    </div>
+
+                    <div className='text-slate-600'>Enrollee No</div>
+                    <div className='font-medium text-right text-slate-900'>
+                      {selected?.enrolleeNo || '-'}
+                    </div>
+
+                    <div className='text-slate-600'>Debit Note No</div>
+                    <div className='font-medium text-right text-slate-900'>
+                      {selected?.debiteNoteNo || '-'}
+                    </div>
+
+                    <div className='text-slate-600'>Created On</div>
+                    <div className='font-medium text-right text-slate-900'>
+                      {selected?.createdAt || selected?.created_at
+                        ? new Date(
+                            selected?.createdAt || selected?.created_at
+                          ).toLocaleString()
+                        : '-'}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Customer Details */}
+                <div className='bg-slate-50 p-3 rounded-lg border border-slate-200'>
+                  <h3 className='font-semibold text-slate-900 mb-2 border-b border-slate-200 pb-2'>
+                    Customer Details
+                  </h3>
+                  <div className='grid grid-cols-2 gap-y-2 gap-x-4 text-sm'>
+                    <div className='text-slate-600'>Full Name</div>
+                    <div className='font-medium text-right text-slate-900'>
+                      {`${selected?.firstName || ''} ${
+                        selected?.otherName || ''
+                      } ${selected?.surname || ''}`.trim() || '-'}
+                    </div>
+
+                    <div className='text-slate-600'>Email</div>
+                    <div className='font-medium text-right break-all text-slate-900'>
+                      {selected?.emailAddress || '-'}
+                    </div>
+
+                    <div className='text-slate-600'>Phone</div>
+                    <div className='font-medium text-right text-slate-900'>
+                      {selected?.mobileNo || '-'}
+                    </div>
+
+                    <div className='text-slate-600'>DOB</div>
+                    <div className='font-medium text-right text-slate-900'>
+                      {selected?.dob_MM_dd_yyyy || '-'}
+                    </div>
+
+                    <div className='text-slate-600'>Gender</div>
+                    <div className='font-medium text-right text-slate-900'>
+                      {selected?.gender || '-'}
+                    </div>
+
+                    <div className='text-slate-600'>Marital Status</div>
+                    <div className='font-medium text-right text-slate-900'>
+                      {selected?.maritalStatus || '-'}
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div>Status</div>
-              <div className='text-right font-semibold'>
-                {selected?.paymentStatus || '-'}
-              </div>
-              <div>Customer</div>
-              <div className='text-right font-semibold'>
-                {`${selected?.firstName || ''} ${selected?.otherName || ''} ${
-                  selected?.surname || ''
-                }`.trim() || '-'}
-              </div>
-              <div>Email</div>
-              <div className='text-right font-semibold'>
-                {selected?.emailAddress || '-'}
-              </div>
-              <div>Phone</div>
-              <div className='text-right font-semibold'>
-                {selected?.mobileNo || '-'}
-              </div>
-              <div>DOB</div>
-              <div className='text-right font-semibold'>
-                {selected?.dob_MM_dd_yyyy || '-'}
-              </div>
-              <div>Gender</div>
-              <div className='text-right font-semibold'>
-                {selected?.gender || '-'}
-              </div>
-              <div>Marital Status</div>
-              <div className='text-right font-semibold'>
-                {selected?.maritalStatus || '-'}
-              </div>
-              <div>Address</div>
-              <div className='text-right font-semibold whitespace-pre-line'>
-                {selected?.address || '-'}
-              </div>
-              <div>State</div>
-              <div className='text-right font-semibold'>
-                {selected?.state || '-'}
-              </div>
-              <div>Scheme ID</div>
-              <div className='text-right font-semibold'>
-                {selected?._scheme_id || '-'}
-              </div>
-              <div>Enrollee No</div>
-              <div className='text-right font-semibold'>
-                {selected?.enrolleeNo || '-'}
-              </div>
-              <div>Debit Note No</div>
-              <div className='text-right font-semibold'>
-                {selected?.debiteNoteNo || '-'}
-              </div>
-              <div>Purchase Amount</div>
-              <div className='text-right font-semibold'>
-                {toCurrency(selected?.purchaseAmount || 0)}
-              </div>
-              <div>Total Pay Amount</div>
-              <div className='text-right font-semibold'>
-                {toCurrency(selected?.totalPayAmount || 0)}
-              </div>
-              <div>Created On</div>
-              <div className='text-right font-semibold'>
-                {selected?.createdAt || selected?.created_at
-                  ? new Date(
-                      selected?.createdAt || selected?.created_at
-                    ).toLocaleString()
-                  : '-'}
+
+              <div className='space-y-4'>
+                {/* Financials */}
+                <div className='bg-slate-50 p-3 rounded-lg border border-slate-200'>
+                  <h3 className='font-semibold text-slate-900 mb-2 border-b border-slate-200 pb-2'>
+                    Financials
+                  </h3>
+                  <div className='grid grid-cols-2 gap-y-2 gap-x-4 text-sm'>
+                    <div className='text-slate-600'>Purchase Amount</div>
+                    <div className='font-medium text-right text-slate-900'>
+                      {toCurrency(selected?.purchaseAmount || 0)}
+                    </div>
+
+                    <div className='text-slate-600'>Total Pay Amount</div>
+                    <div className='font-medium text-right text-green-700'>
+                      {toCurrency(selected?.totalPayAmount || 0)}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Address */}
+                <div className='bg-slate-50 p-3 rounded-lg border border-slate-200'>
+                  <h3 className='font-semibold text-slate-900 mb-2 border-b border-slate-200 pb-2'>
+                    Address
+                  </h3>
+                  <div className='grid grid-cols-2 gap-y-2 gap-x-4 text-sm'>
+                    <div className='text-slate-600'>Address</div>
+                    <div className='font-medium text-right text-slate-900 whitespace-pre-line'>
+                      {selected?.address || '-'}
+                    </div>
+
+                    <div className='text-slate-600'>State</div>
+                    <div className='font-medium text-right text-slate-900'>
+                      {selected?.state || '-'}
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-          <div className='mt-6 flex justify-end gap-3'>
+          <div className='mt-4 flex justify-end gap-3'>
             <button
               onClick={() => {
                 setDetailOpen(false)
