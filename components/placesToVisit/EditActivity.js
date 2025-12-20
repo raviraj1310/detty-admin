@@ -11,6 +11,7 @@ import {
   deleteActivity
 } from '@/services/places-to-visit/placesToVisit.service'
 import { getAllActivityTypes } from '@/services/places-to-visit/activityType.service'
+import { getVendors } from '@/services/discover-events/event.service'
 
 export default function EditActivity ({ activityId }) {
   const router = useRouter()
@@ -65,6 +66,11 @@ export default function EditActivity ({ activityId }) {
   const [selectedDays, setSelectedDays] = useState([])
   const [daysOpen, setDaysOpen] = useState(false)
   const daysDropdownRef = useRef(null)
+
+  const [vendors, setVendors] = useState([])
+  const [vendorsLoading, setVendorsLoading] = useState(false)
+  const [vendorsError, setVendorsError] = useState('')
+  const [selectedVendorId, setSelectedVendorId] = useState('')
 
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }))
@@ -144,6 +150,29 @@ export default function EditActivity ({ activityId }) {
       return ''
     }
   }
+
+  useEffect(() => {
+    const fetchVendors = async () => {
+      setVendorsLoading(true)
+      setVendorsError('')
+      try {
+        const res = await getVendors()
+        let list = []
+        if (res && Array.isArray(res.data)) {
+          list = res.data
+        } else if (Array.isArray(res)) {
+          list = res
+        }
+        setVendors(list)
+      } catch (e) {
+        setVendors([])
+        setVendorsError('Failed to load vendors')
+      } finally {
+        setVendorsLoading(false)
+      }
+    }
+    fetchVendors()
+  }, [])
 
   useEffect(() => {
     const s = String(formData.openingStart || '').trim()
@@ -305,6 +334,7 @@ export default function EditActivity ({ activityId }) {
     if (!formData.openingHours.trim()) newErrors.openingHours = 'Required'
     if (!formData.aboutActivity.trim()) newErrors.aboutActivity = 'Required'
     if (!selectedDays.length) newErrors.activityDays = 'Required'
+    if (!selectedVendorId) newErrors.hostedBy = 'Required'
     if (!selectedActivityTypeId && !formData.activityTypeId.trim())
       newErrors.activityTypeId = 'Required'
     if (!formData.activityStartDate.trim())
@@ -321,6 +351,7 @@ export default function EditActivity ({ activityId }) {
 
     const fd = new FormData()
     fd.append('activityDays', selectedDays.join(','))
+    fd.append('hostedBy', selectedVendorId)
     fd.append(
       'activityType',
       (selectedActivityTypeId || formData.activityTypeId).trim()
@@ -397,6 +428,19 @@ export default function EditActivity ({ activityId }) {
         setSelectedActivityTypeId(
           String(typeId || list[0]?._id || list[0]?.id || '')
         )
+        const hostedBy = d.hostedBy
+        let hostedById = ''
+        if (typeof hostedBy === 'object' && hostedBy !== null) {
+          hostedById =
+            hostedBy._id ||
+            hostedBy.id ||
+            hostedBy.userId ||
+            hostedBy.vendorId ||
+            ''
+        } else {
+          hostedById = String(hostedBy || '')
+        }
+        setSelectedVendorId(hostedById)
         setFormData({
           activityName: String(d.activityName || ''),
           location: String(d.location || ''),
@@ -538,6 +582,37 @@ export default function EditActivity ({ activityId }) {
           </div>
 
           <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
+            <div className='md:col-span-3'>
+              <label className='block text-sm font-medium text-gray-700 mb-2'>
+                Hosted by vendor<span className='text-red-500'>*</span>
+              </label>
+              <select
+                value={selectedVendorId}
+                onChange={e => setSelectedVendorId(e.target.value)}
+                className='w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900 bg-white'
+                disabled={vendorsLoading}
+              >
+                {vendorsLoading && <option value=''>Loading vendors...</option>}
+                {!vendorsLoading && vendors.length === 0 && (
+                  <option value=''>No vendors</option>
+                )}
+                {!vendorsLoading &&
+                  vendors.map(v => (
+                    <option
+                      key={String(v.userId || v.vendorId || v._id || v.id)}
+                      value={String(v.userId || v.vendorId || v._id || v.id)}
+                    >
+                      {v.businessName || v.name || 'Vendor'}
+                    </option>
+                  ))}
+              </select>
+              {errors.hostedBy && (
+                <p className='text-xs text-red-600'>{errors.hostedBy}</p>
+              )}
+              {vendorsError && (
+                <p className='text-xs text-red-600'>{vendorsError}</p>
+              )}
+            </div>
             <div>
               <label className='block text-sm font-medium text-gray-700 mb-2'>
                 Activity Type<span className='text-red-500'>*</span>

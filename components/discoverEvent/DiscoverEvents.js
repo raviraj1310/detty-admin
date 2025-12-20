@@ -223,7 +223,8 @@ export default function DiscoverEvents () {
           ? e.eventName
           : String(e.eventName || '-'),
       hostedBy:
-        typeof e.hostedBy === 'string'
+        e.businessName ||
+        (typeof e.hostedBy === 'string'
           ? e.hostedBy
           : typeof e.hostedBy === 'object'
           ? e.hostedBy.name ||
@@ -231,7 +232,7 @@ export default function DiscoverEvents () {
             e.hostedBy.title ||
             e.hostedBy.company ||
             '-'
-          : String(e.hostedBy || '-'),
+          : String(e.hostedBy || '-')),
       type:
         (e.eventTypeId &&
           typeof e.eventTypeId === 'object' &&

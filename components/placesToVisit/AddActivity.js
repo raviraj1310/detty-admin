@@ -22,6 +22,7 @@ import {
 } from 'lucide-react'
 import { createActivity } from '@/services/places-to-visit/placesToVisit.service'
 import { getAllActivityTypes } from '@/services/places-to-visit/activityType.service'
+import { getVendors } from '@/services/discover-events/event.service'
 import Toast from '@/components/ui/Toast'
 import ImageCropper from '@/components/ui/ImageCropper'
 export default function AddActivity () {
@@ -69,6 +70,11 @@ export default function AddActivity () {
   const [selectedDays, setSelectedDays] = useState([])
   const [daysOpen, setDaysOpen] = useState(false)
   const daysDropdownRef = useRef(null)
+
+  const [vendors, setVendors] = useState([])
+  const [vendorsLoading, setVendorsLoading] = useState(false)
+  const [vendorsError, setVendorsError] = useState('')
+  const [selectedVendorId, setSelectedVendorId] = useState('')
 
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }))
@@ -155,6 +161,7 @@ export default function AddActivity () {
     if (!formData.website.trim()) newErrors.website = 'Required'
     if (!selectedActivityTypeId && !formData.activityTypeId.trim())
       newErrors.activityTypeId = 'Required'
+    if (!selectedVendorId) newErrors.hostedBy = 'Select vendor'
     if (!imageFile) newErrors.uploadImage = 'Please select an image file'
     if (!formData.activityStartDate.trim())
       newErrors.activityStartDate = 'Required'
@@ -191,6 +198,7 @@ export default function AddActivity () {
     fd.append('activityStartDate', formData.activityStartDate.trim())
     fd.append('activityEndDate', effectiveEndDate)
     fd.append('dateRangeDuration', String(calculatedDuration || 1))
+    fd.append('hostedBy', selectedVendorId)
 
     try {
       setSubmitting(true)
@@ -247,6 +255,31 @@ export default function AddActivity () {
       }
     }
     fetchTypes()
+  }, [])
+
+  useEffect(() => {
+    const fetchVendors = async () => {
+      setVendorsLoading(true)
+      setVendorsError('')
+      try {
+        const res = await getVendors()
+        const list = Array.isArray(res?.data) ? res.data : []
+        setVendors(list)
+        if (list.length > 0) {
+          const first = list[0]
+          setSelectedVendorId(String(first.userId))
+        } else {
+          setSelectedVendorId('')
+        }
+      } catch (e) {
+        setVendors([])
+        setSelectedVendorId('')
+        setVendorsError('Failed to load vendors')
+      } finally {
+        setVendorsLoading(false)
+      }
+    }
+    fetchVendors()
   }, [])
 
   useEffect(() => {
@@ -364,6 +397,40 @@ export default function AddActivity () {
                 onChange={e => handleChange('mapLocation', e.target.value)}
                 className='w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900'
               />
+            </div>
+          </div>
+
+          <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
+            <div className='md:col-span-3'>
+              <label className='block text-sm font-medium text-gray-700 mb-2'>
+                Hosted by vendor<span className='text-red-500'>*</span>
+              </label>
+              <select
+                value={selectedVendorId}
+                onChange={e => setSelectedVendorId(e.target.value)}
+                className='w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900 bg-white'
+                disabled={vendorsLoading}
+              >
+                {vendorsLoading && <option value=''>Loading vendors...</option>}
+                {!vendorsLoading && vendors.length === 0 && (
+                  <option value=''>No vendors</option>
+                )}
+                {!vendorsLoading &&
+                  vendors.map(v => (
+                    <option
+                      key={String(v.userId || v.vendorId || v._id || v.id)}
+                      value={String(v.userId || v.vendorId || v._id || v.id)}
+                    >
+                      {v.businessName || v.name || 'Vendor'}
+                    </option>
+                  ))}
+              </select>
+              {vendorsError && (
+                <p className='text-red-500 text-sm mt-1'>{vendorsError}</p>
+              )}
+              {!selectedVendorId && (
+                <p className='text-red-500 text-sm mt-1'>Select vendor</p>
+              )}
             </div>
           </div>
 

@@ -143,8 +143,7 @@ export default function PlacesToVisit () {
     try {
       const res = await getAllActivities()
       const raw = Array.isArray(res?.data) ? res.data : []
-      const IMAGE_BASE_ORIGIN =
-        process.env.NEXT_PUBLIC_SIM_IMAGE_BASE_ORIGIN 
+      const IMAGE_BASE_ORIGIN = process.env.NEXT_PUBLIC_SIM_IMAGE_BASE_ORIGIN
       const sanitizeImageUrl = input => {
         if (typeof input !== 'string') return null
         let s = input.trim().replace(/`/g, '')
@@ -173,12 +172,24 @@ export default function PlacesToVisit () {
         const st = deriveStatus(a)
         const rawImageUrl = sanitizeImageUrl(a.image) || '/images/no-image.webp'
         const added = a.createdAt || a.updatedAt || '-'
-        const ts = added && added !== '-' ? new Date(typeof added === 'object' && added.$date ? added.$date : added).getTime() : 0
+        const ts =
+          added && added !== '-'
+            ? new Date(
+                typeof added === 'object' && added.$date ? added.$date : added
+              ).getTime()
+            : 0
+
+        let hostedByName = ''
+        if (a.hostedBy && typeof a.hostedBy === 'object') {
+          hostedByName = a.hostedBy.businessName || a.hostedBy.name || ''
+        }
+
         return {
           id: a._id || idx,
           addedOn: added,
           addedTs: ts,
           activityName: a.activityName || '-',
+          hostedByName,
           type: (a.activityType && a.activityType.activityTypeName) || '-',
           location: a.location || '-',
           bookedCount: a.bookedCount || '0',
@@ -216,19 +227,28 @@ export default function PlacesToVisit () {
 
   const typeOptions = useMemo(() => {
     const base = Array.isArray(activities) ? activities : []
-    return Array.from(new Set(base.map(a => String(a.type || '').trim()).filter(Boolean)))
+    return Array.from(
+      new Set(base.map(a => String(a.type || '').trim()).filter(Boolean))
+    )
   }, [activities])
 
   const filteredActivities = useMemo(() => {
     const base = Array.isArray(activities) ? activities : []
-    let term = String(searchTerm || '').trim().toLowerCase()
+    let term = String(searchTerm || '')
+      .trim()
+      .toLowerCase()
     term = term.replace(/\sat\s/gi, ', ')
     const termDigits = term.replace(/[^0-9]/g, '')
     const formatAdded = d => {
       if (!d || d === '-') return '-'
       const date = new Date(typeof d === 'object' && d.$date ? d.$date : d)
       return date.toLocaleString(undefined, {
-        weekday: 'short', day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit'
+        weekday: 'short',
+        day: '2-digit',
+        month: 'long',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
       })
     }
     return base.filter(a => {
@@ -237,10 +257,19 @@ export default function PlacesToVisit () {
       const typeStr = String(a.type || '').toLowerCase()
       const addedStr = String(formatAdded(a.addedOn) || '').toLowerCase()
       const addedDigits = String(addedStr || '').replace(/[^0-9]/g, '')
-      const matchesText = !term ? true : (name.includes(term) || loc.includes(term) || typeStr.includes(term) || addedStr.includes(term))
+      const matchesText = !term
+        ? true
+        : name.includes(term) ||
+          loc.includes(term) ||
+          typeStr.includes(term) ||
+          addedStr.includes(term)
       const matchesDigits = termDigits && addedDigits.includes(termDigits)
-      const typeOk = typeFilter ? typeStr.includes(String(typeFilter).toLowerCase()) : true
-      const locationOk = locationFilter ? loc.includes(String(locationFilter).toLowerCase()) : true
+      const typeOk = typeFilter
+        ? typeStr.includes(String(typeFilter).toLowerCase())
+        : true
+      const locationOk = locationFilter
+        ? loc.includes(String(locationFilter).toLowerCase())
+        : true
       return (matchesText || matchesDigits) && typeOk && locationOk
     })
   }, [activities, searchTerm, typeFilter, locationFilter])
@@ -261,15 +290,24 @@ export default function PlacesToVisit () {
         case 'addedOn':
           return (a.addedTs - b.addedTs) * dir
         case 'name':
-          return String(a.activityName || '').localeCompare(String(b.activityName || '')) * dir
+          return (
+            String(a.activityName || '').localeCompare(
+              String(b.activityName || '')
+            ) * dir
+          )
         case 'type':
           return String(a.type || '').localeCompare(String(b.type || '')) * dir
         case 'location':
-          return String(a.location || '').localeCompare(String(b.location || '')) * dir
+          return (
+            String(a.location || '').localeCompare(String(b.location || '')) *
+            dir
+          )
         case 'booked':
           return (Number(a.bookedCount || 0) - Number(b.bookedCount || 0)) * dir
         case 'status':
-          return String(a.status || '').localeCompare(String(b.status || '')) * dir
+          return (
+            String(a.status || '').localeCompare(String(b.status || '')) * dir
+          )
         default:
           return 0
       }
@@ -277,7 +315,12 @@ export default function PlacesToVisit () {
   }, [filteredActivities, sortKey, sortDir])
 
   const filteredCounts = useMemo(() => {
-    const c = { total: filteredActivities.length, done: 0, ongoing: 0, upcoming: 0 }
+    const c = {
+      total: filteredActivities.length,
+      done: 0,
+      ongoing: 0,
+      upcoming: 0
+    }
     filteredActivities.forEach(m => {
       const v = String(m.status || '').toLowerCase()
       if (v === 'done') c.done += 1
@@ -375,7 +418,9 @@ export default function PlacesToVisit () {
                   >
                     <option value=''>All Types</option>
                     {typeOptions.map(t => (
-                      <option key={t} value={t}>{t}</option>
+                      <option key={t} value={t}>
+                        {t}
+                      </option>
                     ))}
                   </select>
                 </div>
@@ -406,163 +451,194 @@ export default function PlacesToVisit () {
 
         <div className='overflow-x-auto rounded-2xl border border-[#E5E8F5]'>
           <div className='min-w-[1100px]'>
-            <div className='grid grid-cols-[1.5fr_2.5fr_1fr_1.5fr_1.2fr_1fr_60px] gap-3 bg-[#F7F9FD] px-6 py-4'>
-            <div>
-              <TableHeaderCell onClick={() => toggleSort('addedOn')}>Added On</TableHeaderCell>
-            </div>
-            <div>
-              <TableHeaderCell onClick={() => toggleSort('name')}>Activity Name</TableHeaderCell>
-            </div>
-            <div>
-              <TableHeaderCell onClick={() => toggleSort('type')}>Type</TableHeaderCell>
-            </div>
-            <div>
-              <TableHeaderCell onClick={() => toggleSort('location')}>Location</TableHeaderCell>
-            </div>
-            <div>
-              <TableHeaderCell onClick={() => toggleSort('booked')}>Tickets Booked</TableHeaderCell>
-            </div>
-            <div>
-              <TableHeaderCell onClick={() => toggleSort('status')}>Status</TableHeaderCell>
-            </div>
+            <div className='grid grid-cols-[1.5fr_2.5fr_1fr_1.5fr_1.2fr_1fr_1fr_60px] gap-3 bg-[#F7F9FD] px-6 py-4'>
+              <div>
+                <TableHeaderCell onClick={() => toggleSort('addedOn')}>
+                  Added On
+                </TableHeaderCell>
+              </div>
+              <div>
+                <TableHeaderCell onClick={() => toggleSort('name')}>
+                  Activity Name
+                </TableHeaderCell>
+              </div>
+              <div>
+                <TableHeaderCell onClick={() => toggleSort('name')}>
+                  Hosted By
+                </TableHeaderCell>
+              </div>
+              <div>
+                <TableHeaderCell onClick={() => toggleSort('type')}>
+                  Type
+                </TableHeaderCell>
+              </div>
+              <div>
+                <TableHeaderCell onClick={() => toggleSort('location')}>
+                  Location
+                </TableHeaderCell>
+              </div>
+              <div>
+                <TableHeaderCell onClick={() => toggleSort('booked')}>
+                  Tickets Booked
+                </TableHeaderCell>
+              </div>
+              <div>
+                <TableHeaderCell onClick={() => toggleSort('status')}>
+                  Status
+                </TableHeaderCell>
+              </div>
               <div></div>
             </div>
 
             <div className='divide-y divide-[#EEF1FA] bg-white'>
-            {loading && (
-              <div className='px-6 py-5 text-sm text-[#5E6582]'>Loading...</div>
-            )}
-            {error && !loading && (
-              <div className='px-6 py-5 text-sm text-red-600'>{error}</div>
-            )}
-            {!loading &&
-              !error &&
-              sortedActivities.map((activity, idx) => (
-                <div
-                  key={activity.id || idx}
-                  className='grid grid-cols-[1.5fr_2.5fr_1fr_1.5fr_1.2fr_1fr_60px] gap-3 px-6 py-5 hover:bg-[#F9FAFD]'
-                >
-                  <div className='self-center text-sm text-[#5E6582]'>
-                    {(() => {
-                      const d = activity.addedOn
-                      if (!d || d === '-') return '-'
-                      const date = new Date(
-                        typeof d === 'object' && d.$date ? d.$date : d
-                      )
-                      return date.toLocaleString(undefined, {
-                        weekday: 'short',
-                        day: '2-digit',
-                        month: 'long',
-                        year: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })
-                    })()}
-                  </div>
-                  <div className='flex items-center gap-3'>
-                  <div className='relative h-14 w-14 overflow-hidden rounded-xl bg-[#F0F2F8] flex-shrink-0 flex items-center justify-center'>
-                    <span
-                      className={`absolute inset-0 text-lg font-semibold text-white ${activity.imageBg} flex items-center justify-center`}
-                    >
-                      {activity.activityName.charAt(0)}
-                    </span>
-                    {activity.image && (
-                      <img
-                        src={activity.image}
-                        alt={activity.activityName}
-                        className='absolute inset-0 h-full w-full object-cover cursor-zoom-in'
-                        onClick={() => { setPreviewSrc(activity.image); setPreviewTitle(activity.activityName); setPreviewOpen(true) }}
-                        onError={e => {
-                          e.currentTarget.style.display = 'none'
-                        }}
-                      />
-                    )}
-                  </div>
-                    <div className='min-w-0'>
-                      <p className='text-xs font-semibold text-slate-900 leading-tight'>
-                        {activity.activityName}
-                      </p>
+              {loading && (
+                <div className='px-6 py-5 text-sm text-[#5E6582]'>
+                  Loading...
+                </div>
+              )}
+              {error && !loading && (
+                <div className='px-6 py-5 text-sm text-red-600'>{error}</div>
+              )}
+              {!loading &&
+                !error &&
+                sortedActivities.map((activity, idx) => (
+                  <div
+                    key={activity.id || idx}
+                    className='grid grid-cols-[1.5fr_2.5fr_1fr_1.5fr_1.2fr_1fr_1fr_60px] gap-3 px-6 py-5 hover:bg-[#F9FAFD]'
+                  >
+                    <div className='self-center text-sm text-[#5E6582]'>
+                      {(() => {
+                        const d = activity.addedOn
+                        if (!d || d === '-') return '-'
+                        const date = new Date(
+                          typeof d === 'object' && d.$date ? d.$date : d
+                        )
+                        return date.toLocaleString(undefined, {
+                          weekday: 'short',
+                          day: '2-digit',
+                          month: 'long',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })
+                      })()}
+                    </div>
+                    <div className='flex items-center gap-3'>
+                      <div className='relative h-14 w-14 overflow-hidden rounded-xl bg-[#F0F2F8] flex-shrink-0 flex items-center justify-center'>
+                        <span
+                          className={`absolute inset-0 text-lg font-semibold text-white ${activity.imageBg} flex items-center justify-center`}
+                        >
+                          {activity.activityName.charAt(0)}
+                        </span>
+                        {activity.image && (
+                          <img
+                            src={activity.image}
+                            alt={activity.activityName}
+                            className='absolute inset-0 h-full w-full object-cover cursor-zoom-in'
+                            onClick={() => {
+                              setPreviewSrc(activity.image)
+                              setPreviewTitle(activity.activityName)
+                              setPreviewOpen(true)
+                            }}
+                            onError={e => {
+                              e.currentTarget.style.display = 'none'
+                            }}
+                          />
+                        )}
+                      </div>
+                      <div className='min-w-0'>
+                        <p className='text-xs font-semibold text-slate-900 leading-tight'>
+                          {activity.activityName}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className='self-center text-sm text-[#5E6582]'>
+                      {activity.hostedByName && (
+                        <p className=' text-slate-500 mt-0.5'>
+                          {activity.hostedByName || '-'}
+                        </p>
+                      )}
+                    </div>
+                    <div className='self-center text-sm text-[#5E6582]'>
+                      {activity.type}
+                    </div>
+                    <div className='self-center text-sm text-[#5E6582]'>
+                      {activity.location}
+                    </div>
+                    <div className='flex items-center gap-1 underline self-center'>
+                      <Link
+                        href={
+                          activity.id
+                            ? `/places-to-visit/bookings/${activity.id}`
+                            : '#'
+                        }
+                        className='text-xs text-[#0069C5] hover:text-[#0F4EF1] transition-colors font-semibold'
+                      >
+                        <span className='text-xs text-[#0069C5]  hover:text-[#0F4EF1] transition-colors'>
+                          {typeof activity.bookedCount === 'number'
+                            ? activity.bookedCount
+                            : 0}{' '}
+                        </span>
+                        View List
+                      </Link>
+                    </div>
+                    <div className='flex items-center self-center'>
+                      <span
+                        className={`inline-flex items-center justify-center rounded-full px-3 py-1 text-xs font-semibold ${activity.statusClass}`}
+                      >
+                        {activity.status}
+                      </span>
+                    </div>
+                    <div className='flex items-center justify-center self-center relative'>
+                      <button
+                        onClick={() =>
+                          setActiveDropdown(
+                            activeDropdown === (activity.id || idx)
+                              ? null
+                              : activity.id || idx
+                          )
+                        }
+                        className='rounded-full border border-transparent p-2 text-[#8C93AF] transition hover:border-[#E5E8F6] hover:bg-[#F5F7FD] hover:text-[#2D3658]'
+                      >
+                        <MoreVertical className='h-4 w-4' />
+                      </button>
+                      {activeDropdown === (activity.id || idx) && (
+                        <div
+                          ref={dropdownRef}
+                          className='absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white border border-[#E5E8F5] z-50'
+                        >
+                          <div className='py-1'>
+                            <Link
+                              href={`/places-to-visit/edit/${activity.id}`}
+                              className='block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100'
+                            >
+                              View/Edit Detail
+                            </Link>
+
+                            <Link
+                              className='block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100'
+                              href={`/places-to-visit/bookings/${activity.id}`}
+                            >
+                              View Tickets Booked
+                            </Link>
+                            <Link
+                              className='block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100'
+                              href={`/places-to-visit/edit-tickets/${activity.id}`}
+                            >
+                              View/Edit Tickets
+                            </Link>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
-                  <div className='self-center text-sm text-[#5E6582]'>
-                    {activity.type}
-                  </div>
-                  <div className='self-center text-sm text-[#5E6582]'>
-                    {activity.location}
-                  </div>
-                  <div className='flex items-center gap-1 underline self-center'>
-                    <Link
-                      href={
-                        activity.id
-                          ? `/places-to-visit/bookings/${activity.id}`
-                          : '#'
-                      }
-                      className='text-xs text-[#0069C5] hover:text-[#0F4EF1] transition-colors font-semibold'
-                    >
-                      <span className='text-xs text-[#0069C5]  hover:text-[#0F4EF1] transition-colors'>
-                        {typeof activity.bookedCount === 'number'
-                          ? activity.bookedCount
-                          : 0}{' '}
-                      </span>
-                      View List
-                    </Link>
-                  </div>
-                  <div className='flex items-center self-center'>
-                    <span
-                      className={`inline-flex items-center justify-center rounded-full px-3 py-1 text-xs font-semibold ${activity.statusClass}`}
-                    >
-                      {activity.status}
-                    </span>
-                  </div>
-                  <div className='flex items-center justify-center self-center relative'>
-                    <button
-                      onClick={() =>
-                        setActiveDropdown(
-                          activeDropdown === (activity.id || idx)
-                            ? null
-                            : activity.id || idx
-                        )
-                      }
-                      className='rounded-full border border-transparent p-2 text-[#8C93AF] transition hover:border-[#E5E8F6] hover:bg-[#F5F7FD] hover:text-[#2D3658]'
-                    >
-                      <MoreVertical className='h-4 w-4' />
-                    </button>
-                    {activeDropdown === (activity.id || idx) && (
-                      <div
-                        ref={dropdownRef}
-                        className='absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white border border-[#E5E8F5] z-50'
-                      >
-                        <div className='py-1'>
-                          <Link
-                            href={`/places-to-visit/edit/${activity.id}`}
-                            className='block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100'
-                          >
-                            View/Edit Detail
-                          </Link>
-
-                          <Link
-                            className='block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100'
-                            href={`/places-to-visit/bookings/${activity.id}`}
-                          >
-                            View Tickets Booked
-                          </Link>
-                          <Link
-                            className='block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100'
-                            href={`/places-to-visit/edit-tickets/${activity.id}`}
-                          >
-                            View/Edit Tickets
-                          </Link>
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                ))}
+              {!loading && !error && filteredActivities.length === 0 && (
+                <div className='px-6 py-5 text-sm text-[#5E6582]'>
+                  No activities found
                 </div>
-              ))}
-            {!loading && !error && filteredActivities.length === 0 && (
-              <div className='px-6 py-5 text-sm text-[#5E6582]'>
-                No activities found
-              </div>
-            )}
+              )}
             </div>
           </div>
         </div>
@@ -570,14 +646,31 @@ export default function PlacesToVisit () {
 
       {previewOpen && (
         <div className='fixed inset-0 z-50 flex items-center justify-center'>
-          <div className='absolute inset-0 bg-black/40' onClick={() => setPreviewOpen(false)} />
+          <div
+            className='absolute inset-0 bg-black/40'
+            onClick={() => setPreviewOpen(false)}
+          />
           <div className='relative z-50 w-full max-w-2xl rounded-2xl border border-[#E5E8F6] bg-white p-4 shadow-[0_24px_60px_-40px_rgba(15,23,42,0.55)]'>
             <div className='flex items-center justify-between mb-3'>
-              <p className='text-sm font-semibold text-slate-900 truncate'>{previewTitle}</p>
-              <button onClick={() => setPreviewOpen(false)} className='rounded-md border border-[#E5E6EF] bg-white px-3 py-1 text-xs font-medium text-[#1A1F3F] hover:bg-[#F9FAFD]'>Close</button>
+              <p className='text-sm font-semibold text-slate-900 truncate'>
+                {previewTitle}
+              </p>
+              <button
+                onClick={() => setPreviewOpen(false)}
+                className='rounded-md border border-[#E5E6EF] bg-white px-3 py-1 text-xs font-medium text-[#1A1F3F] hover:bg-[#F9FAFD]'
+              >
+                Close
+              </button>
             </div>
             <div className='rounded-lg overflow-hidden border border-[#E5E6EF] bg-[#F8F9FC]'>
-              <img src={previewSrc} alt={previewTitle} className='w-full h-auto object-contain max-h-[70vh]' onError={e => { e.currentTarget.style.display = 'none' }} />
+              <img
+                src={previewSrc}
+                alt={previewTitle}
+                className='w-full h-auto object-contain max-h-[70vh]'
+                onError={e => {
+                  e.currentTarget.style.display = 'none'
+                }}
+              />
             </div>
           </div>
         </div>
