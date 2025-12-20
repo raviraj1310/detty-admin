@@ -7,7 +7,10 @@ import { Search, Download, MoreVertical } from "lucide-react";
 import { IoFilterSharp } from "react-icons/io5";
 import { TbCaretUpDownFilled } from "react-icons/tb";
 import React, { useState, useEffect, useRef, useMemo } from "react";
-import { copyActivityById, getAllActivities } from "@/services/places-to-visit/placesToVisit.service";
+import {
+  copyActivityById,
+  getAllActivities,
+} from "@/services/places-to-visit/placesToVisit.service";
 
 const metricCards = [
   {
@@ -337,11 +340,8 @@ export default function PlacesToVisit() {
     try {
       await copyActivityById(id);
 
-      // optional: refresh activity list
-      // await fetchActivities();
-
-      // close dropdown
       setActiveDropdown(null);
+      window.location.reload();
     } catch (error) {
       console.error("Error copying activity:", error);
     }
