@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { TbCaretUpDownFilled } from "react-icons/tb";
 import { Wallet } from "lucide-react";
-import { getAllUsersWallet } from "@/services/users/user.service";
+import { getUserWallet } from "@/services/users/user.service";
 
 const mapTransaction = (t) => {
   const created = t?.createdAt || "";
@@ -43,8 +43,7 @@ const mapTransaction = (t) => {
     id: t?._id || Math.random().toString(36).slice(2),
     rawId: t?._id || "",
     transactionDate,
-    transactionName: t?.user?.name || t?.source || "-",
-    userEmail: t?.user?.email || "-",
+    transactionName: t?.source || "-",
     source: t?.source || "-",
     type: type,
     amount: amountStr,
@@ -192,26 +191,42 @@ function ActionDropdown({ transactionId }) {
   );
 }
 
-export default function WalletForm() {
+export default function UserWalletHistory({ userId, userName }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [grandTotalBalance, setGrandTotalBalance] = useState(0);
+  const [userBalance, setUserBalance] = useState(0);
 
   useEffect(() => {
     const loadData = async () => {
+      const userIdStr = String(userId || "").trim();
+      if (!userIdStr) {
+        setError("User ID is required");
+        setLoading(false);
+        return;
+      }
       setLoading(true);
       setError("");
       try {
-        const res = await getAllUsersWallet();
+        const res = await getUserWallet(userIdStr);
         const data = res?.data || res || {};
-        const transactionsList = Array.isArray(data?.transactions)
-          ? data.transactions
+        const transactionsList = Array.isArray(data?.passbook)
+          ? data.passbook
           : [];
-        setTransactions(transactionsList.map(mapTransaction));
-        const total = Number(data?.grandTotalBalance ?? 0);
-        setGrandTotalBalance(total);
+        const mappedTransactions = transactionsList.map(mapTransaction);
+        setTransactions(mappedTransactions);
+
+        // Calculate balance from transactions (CREDIT - DEBIT)
+        const balance = mappedTransactions.reduce((total, t) => {
+          if (t.type === "CREDIT") {
+            return total + t.amountNum;
+          } else if (t.type === "DEBIT") {
+            return total - t.amountNum;
+          }
+          return total;
+        }, 0);
+        setUserBalance(balance);
       } catch (e) {
         const msg =
           e?.response?.data?.message ||
@@ -219,13 +234,13 @@ export default function WalletForm() {
           "Failed to load wallet data";
         setError(msg);
         setTransactions([]);
-        setGrandTotalBalance(0);
+        setUserBalance(0);
       } finally {
         setLoading(false);
       }
     };
     loadData();
-  }, []);
+  }, [userId]);
 
   const filteredTransactions = useMemo(() => {
     const term = String(searchTerm || "")
@@ -235,7 +250,6 @@ export default function WalletForm() {
 
     return transactions.filter((transaction) => {
       const name = String(transaction.transactionName || "").toLowerCase();
-      const email = String(transaction.userEmail || "").toLowerCase();
       const source = String(transaction.source || "").toLowerCase();
       const type = String(transaction.type || "").toLowerCase();
       const reference = String(transaction.reference || "").toLowerCase();
@@ -243,7 +257,6 @@ export default function WalletForm() {
 
       return (
         name.includes(term) ||
-        email.includes(term) ||
         source.includes(term) ||
         type.includes(term) ||
         reference.includes(term) ||
@@ -282,31 +295,37 @@ export default function WalletForm() {
   };
 
   return (
-    <div className="p-4 h-screen bg-white overflow-hidden">
+    <div className="h-full flex flex-col bg-white">
       {/* Balance Card */}
       <div className="mb-6">
         <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl p-6 text-white">
-          <div className="flex items-center">
-            <div className="bg-white bg-opacity-20 rounded-lg p-3 mr-4">
-              <Wallet className="w-8 h-8 text-gray-900" />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <div className="bg-white bg-opacity-20 rounded-lg p-3 mr-4">
+                <Wallet className="w-8 h-8 text-gray-900" />
+              </div>
+              <div>
+                <p className="text-sm text-blue-100 mb-1">Balance</p>
+                <p className="text-3xl font-bold">
+                  {loading ? "Loading..." : formatBalance(userBalance)}
+                </p>
+              </div>
             </div>
-            <div>
-              <p className="text-sm text-blue-100 mb-1">Balance</p>
-              <p className="text-3xl font-bold">
-                {loading ? "Loading..." : formatBalance(grandTotalBalance)}
-              </p>
+            <div className="text-right">
+              <p className="text-sm text-blue-100 mb-1">User</p>
+              <p className="text-lg font-semibold">{userName || "-"}</p>
             </div>
           </div>
         </div>
       </div>
-      <div className="bg-gray-200 p-5 rounded-xl">
+      <div className="bg-gray-200 p-5 rounded-xl flex-1 flex flex-col min-h-0">
         {/* Main Content */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 flex-1 flex flex-col min-h-0">
           {/* Header with Search and Filters */}
-          <div className="p-4 border-b border-gray-200">
+          <div className="p-4 border-b border-gray-200 flex-shrink-0">
             <div className="flex justify-between items-center mb-3">
               <h2 className="text-lg font-semibold text-gray-900">
-                Transaction List
+                Transaction History
               </h2>
               <div className="flex items-center space-x-4">
                 {/* Search */}
@@ -372,7 +391,7 @@ export default function WalletForm() {
           </div>
 
           {/* Table */}
-          <div className="overflow-x-auto">
+          <div className="flex-1 overflow-auto">
             <table className="w-full">
               <thead className="bg-gray-50 sticky top-0">
                 <tr>
@@ -384,7 +403,7 @@ export default function WalletForm() {
                   </th>
                   <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     <div className="flex items-center">
-                      <span>Transaction Name</span>
+                      <span>Source</span>
                       <TbCaretUpDownFilled className="w-3 h-3 text-gray-400 ml-1" />
                     </div>
                   </th>
@@ -452,12 +471,12 @@ export default function WalletForm() {
                       </td>
                       <td className="px-3 py-3 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900 leading-tight">
-                          {transaction.transactionName}
+                          {transaction.source}
                         </div>
-                        {transaction.userEmail &&
-                          transaction.userEmail !== "-" && (
+                        {transaction.reference &&
+                          transaction.reference !== "-" && (
                             <div className="text-xs text-gray-500">
-                              {transaction.userEmail}
+                              Ref: {transaction.reference}
                             </div>
                           )}
                       </td>
@@ -465,11 +484,6 @@ export default function WalletForm() {
                         <span className="text-sm font-medium text-gray-900">
                           {transaction.type}
                         </span>
-                        {transaction.source && transaction.source !== "-" && (
-                          <div className="text-xs text-gray-500">
-                            {transaction.source}
-                          </div>
-                        )}
                       </td>
                       <td className="px-3 py-3 whitespace-nowrap">
                         <span

@@ -1,59 +1,86 @@
-import api from '@/src/axois/axois'
+import api from "@/src/axois/axois";
 
 export const getUsers = async (params = {}) => {
   try {
-    const response = await api.get('/user/get-all-users', { params })
-    return response.data
+    const response = await api.get("/user/get-all-users", { params });
+    return response.data;
   } catch (error) {
-    console.error('Error fetching users:', error)
-    throw error
+    console.error("Error fetching users:", error);
+    throw error;
   }
-}
+};
 export const changeUserStatus = async (userId, status) => {
   try {
-    const response = await api.put(`/user/change-status/${userId}`, { status })
-    return response.data
+    const response = await api.put(`/user/change-status/${userId}`, { status });
+    return response.data;
   } catch (error) {
-    console.error('Error changing user status:', error)
-    throw error
+    console.error("Error changing user status:", error);
+    throw error;
   }
-}
+};
 
-export const getUserWithProfile = async userId => {
+export const getUserWithProfile = async (userId) => {
   try {
-    const response = await api.get(`/user/get-user-with-profile/${userId}`)
-    return response.data
+    const response = await api.get(`/user/get-user-with-profile/${userId}`);
+    return response.data;
   } catch (error) {
-    console.error('Error fetching user with profile:', error)
-    throw error
+    console.error("Error fetching user with profile:", error);
+    throw error;
   }
-}
+};
 
-export const getAllEventBookings = async userId => {
+export const getAllEventBookings = async (userId) => {
   try {
-    const response = await api.get(`/user-event/my-bookings/${userId}`)
-    return response.data
+    const response = await api.get(`/user-event/my-bookings/${userId}`);
+    return response.data;
   } catch (error) {
-    console.error('Error fetching activity bookings:', error)
-    throw error
+    console.error("Error fetching activity bookings:", error);
+    throw error;
   }
-}
-export const getAllActivityBookings = async userId => {
+};
+export const getAllActivityBookings = async (userId) => {
   try {
-    const response = await api.get(`/user-activity/get-user-bookings/${userId}`)
-    return response.data
+    const response = await api.get(
+      `/user-activity/get-user-bookings/${userId}`
+    );
+    return response.data;
   } catch (error) {
-    console.error('Error fetching activity bookings:', error)
-    throw error
+    console.error("Error fetching activity bookings:", error);
+    throw error;
   }
-}
+};
 
-export const getAllBookings = async userId => {
+export const getAllBookings = async (userId) => {
   try {
-    const response = await api.get(`/user/get-user-wise-bookings/${userId}`)
-    return response.data
+    const response = await api.get(`/user/get-user-wise-bookings/${userId}`);
+    return response.data;
   } catch (error) {
-    console.error('Error fetching all bookings:', error)
-    throw error
+    console.error("Error fetching all bookings:", error);
+    throw error;
   }
-}
+};
+
+export const getAllUsersWallet = async () => {
+  try {
+    const response = await api.get(`wallet/get-all-users-wallet`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching user wallet history:", error);
+    throw error;
+  }
+};
+
+export const getUserWallet = async (userId) => {
+  try {
+    // Ensure userId is a string and properly encoded
+    const userIdStr = String(userId || "").trim();
+    if (!userIdStr) {
+      throw new Error("User ID is required");
+    }
+    const response = await api.get(`wallet/get-my-passbook/${userIdStr}`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching user wallet history:", error);
+    throw error;
+  }
+};
