@@ -161,13 +161,33 @@ export default function EsimUsersPage () {
     if (!filteredRows || filteredRows.length === 0) {
       return
     }
-    const dataToExport = filteredRows.map(row => ({
-      'Order ID': row.orderId,
-      'Date & Time': row.eventDate,
-      Amount: row.amount,
-      'Activity Status': row.activityStatus,
-      'Payment Status': row.paymentStatus
-    }))
+    const dataToExport = filteredRows.map(row => {
+      const r = row.raw || {}
+      const u = r.userId || {}
+      return {
+        'Order ID': r._id,
+        Reference: r.reference,
+        'Created At': r.createdAt,
+        'Updated At': r.updatedAt,
+
+        // Payment Details
+        Amount: r.amount,
+        'Final Payable Amount': r.finalPayableAmount,
+        'Payment Status': r.paymentStatus,
+        'Activity Status': row.activityStatus,
+
+        // Customer Details
+        'Customer Name': r.name,
+        'Customer Email': r.email,
+
+        // User Account Details
+        'User ID': u._id,
+        'User Name': u.name,
+        'User Email': u.email,
+        'User Status': u.status,
+        'Wallet Funds': u.walletFunds
+      }
+    })
     downloadExcel(dataToExport, 'eSIM_Orders.xlsx')
   }
 

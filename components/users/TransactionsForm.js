@@ -490,18 +490,55 @@ export default function TransactionsForm () {
     if (!filteredBookings || filteredBookings.length === 0) {
       return
     }
-    const dataToExport = filteredBookings.map(b => ({
-      'Booking ID': b.id,
-      'Event Name': b.eventName,
-      Tickets: b.ticketsBooked,
-      Amount: b.amountNum,
-      Status: b.activityStatus,
-      'Payment Status': b.paymentStatus,
-      'Buyer Name': b.buyerName,
-      'Buyer Email': b.buyerEmail,
-      'Buyer Phone': b.buyerPhone,
-      'Booked On': b.bookedOn
-    }))
+    const dataToExport = filteredBookings.map(booking => {
+      const b = booking.raw || {}
+      const event = b.event || {}
+      const buyer = b.buyer || {}
+      const user = b.user || {}
+      const attendees = Array.isArray(b.attendees)
+        ? b.attendees.map(a => `${a.fullName} (${a.email})`).join(', ')
+        : ''
+
+      return {
+        'Booking ID': b.bookingId || b._id,
+        'Created At': b.createdAt,
+        Status: b.status,
+        'Payment Status': b.paymentStatus,
+
+        // Event Details
+        'Event ID': event._id,
+        'Event Name': event.eventName,
+        'Event Slug': event.slug,
+        'Event Location': event.location,
+        'Event Start Date': event.eventStartDate,
+        'Event End Date': event.eventEndDate,
+        'Event Image': event.image,
+
+        // Buyer Details
+        'Buyer Name': buyer.fullName,
+        'Buyer Email': buyer.email,
+        'Buyer Country': buyer.country,
+        'Buyer City': buyer.city,
+        'Buyer Phone': buyer.phone,
+
+        // User Details
+        'User ID': user._id,
+        'User Name': user.name,
+        'User Email': user.email,
+        'User Phone': user.phoneNumber,
+
+        // Ticket Details
+        'Ticket ID': b.ticketId,
+        'Ticket Name': b.ticketName,
+        'Ticket Type': b.ticketType,
+        Quantity: b.quantity,
+        'Per Ticket Price': b.perTicketPrice,
+        'Total Price': b.totalPrice,
+
+        // Attendees
+        Attendees: attendees
+      }
+    })
     downloadExcel(dataToExport, 'Event_Bookings.xlsx')
   }
 

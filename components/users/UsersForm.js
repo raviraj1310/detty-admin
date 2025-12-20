@@ -692,11 +692,19 @@ export default function UsersForm () {
         })
       }
 
-      const active = allUsers.filter(u => u.status === 'Active').length
-      const inactive = allUsers.filter(u => u.status === 'Inactive').length
+      // Deduplicate for accurate stats
+      const uniqueMap = new Map()
+      allUsers.forEach(u => {
+        const id = u?._id || u?.id
+        if (id) uniqueMap.set(String(id), u)
+      })
+      const uniqueUsers = Array.from(uniqueMap.values())
+
+      const active = uniqueUsers.filter(u => u.status === 'Active').length
+      const inactive = uniqueUsers.filter(u => u.status === 'Inactive').length
 
       setGlobalStats({
-        total: allUsers.length || total, // Fallback to total if length is 0 but total > 0 (shouldn't happen if fetch works)
+        total: uniqueUsers.length || total, // Fallback to total if length is 0 but total > 0 (shouldn't happen if fetch works)
         active,
         inactive
       })
