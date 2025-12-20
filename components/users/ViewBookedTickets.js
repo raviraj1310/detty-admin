@@ -2,7 +2,17 @@
 
 import { useEffect, useState } from 'react'
 import { TbCaretUpDownFilled } from 'react-icons/tb'
-import { getAllBookings } from '@/services/users/user.service'
+import {
+  getAllBookings,
+  getUserActivityTicketList,
+  getMyOrders,
+  getMyESimOrders,
+  getMyStayBookings,
+  getMyMedOrders,
+  myRoyalBookings,
+  getMyRideBookings,
+  getMyLeadPlans
+} from '@/services/users/user.service'
 import { useParams, useSearchParams } from 'next/navigation'
 
 const toDateString = d => {
@@ -132,6 +142,90 @@ const mapMerchBookings = arr => {
   })
 }
 
+const mapEsimBookings = arr => {
+  const list = Array.isArray(arr) ? arr : []
+  return list.map(b => ({
+    id: b?._id || String(Math.random()),
+    eventDate: toDateString(b?.createdAt),
+    name: 'eSIM/Data Plan',
+    amount: formatCurrency(b?.amount || 0),
+    status: b?.paymentStatus === 'paid' ? 'Completed' : b?.paymentStatus || '-',
+    paymentStatus: b?.paymentStatus || '-'
+  }))
+}
+
+const mapAccommodationBookings = arr => {
+  const list = Array.isArray(arr) ? arr : []
+  return list.map(b => ({
+    id: b?._id || String(Math.random()),
+    eventDate: toDateString(b?.checkInDate),
+    hotelName: b?.hotelName || '-',
+    roomName: b?.roomName || '-',
+    amount: formatCurrency(b?.amount || 0),
+    status: b?.paymentStatus || '-',
+    paymentStatus: b?.paymentStatus || '-'
+  }))
+}
+
+const mapMedBookings = arr => {
+  const list = Array.isArray(arr) ? arr : []
+  return list.map(b => {
+    const items = Array.isArray(b?.items) ? b.items : []
+    const firstItem = items[0]?.productName || 'Med Plus Order'
+    const name = items.length > 1 ? `${items.length} Items` : firstItem
+    const amount = items.reduce(
+      (sum, it) => sum + Number(it.price || 0) * Number(it.qty || 0),
+      0
+    )
+
+    return {
+      id: b?._id || b?.orderKey || String(Math.random()),
+      eventDate: toDateString(b?.createdAt),
+      name,
+      amount: formatCurrency(amount),
+      status: b?.status || '-',
+      paymentStatus: b?.api_response?.data?.payment_status || '-'
+    }
+  })
+}
+
+const mapRoyalBookings = arr => {
+  const list = Array.isArray(arr) ? arr : []
+  return list.map(b => ({
+    id: b?._id || b?.transactionId || String(Math.random()),
+    eventDate: toDateString(b?.createdAt),
+    tier: b?.serviceDetails?.tier || '-',
+    flightNumber: b?.serviceDetails?.flight_number || '-',
+    amount: formatCurrency(b?.financials?.rcs_line_item_value || 0),
+    status: b?.rcStatus || b?.status || '-',
+    paymentStatus: b?.status === 'created' ? 'Paid' : b?.status || '-'
+  }))
+}
+
+const mapRideBookings = arr => {
+  const list = Array.isArray(arr) ? arr : []
+  return list.map(b => ({
+    id: b?._id || String(Math.random()),
+    eventDate: toDateString(b?.createdAt),
+    name: b?.name || 'Ride',
+    amount: formatCurrency(b?.price || 0),
+    status: b?.status || '-',
+    paymentStatus: b?.paymentStatus || '-'
+  }))
+}
+
+const mapLeadwayBookings = arr => {
+  const list = Array.isArray(arr) ? arr : []
+  return list.map(b => ({
+    id: b?._id || String(Math.random()),
+    eventDate: toDateString(b?.createdAt),
+    policyType: b?._scheme_id ? `Scheme ${b._scheme_id}` : '-',
+    amount: formatCurrency(b?.purchaseAmount || b?.totalPayAmount || 0),
+    status: b?.paymentStatus || '-',
+    paymentStatus: b?.paymentStatus || '-'
+  }))
+}
+
 export default function ViewBookedTickets ({ userId, userName }) {
   const searchParams = useSearchParams()
   const params = useParams() || {}
@@ -144,6 +238,12 @@ export default function ViewBookedTickets ({ userId, userName }) {
   const [events, setEvents] = useState([])
   const [activities, setActivities] = useState([])
   const [merch, setMerch] = useState([])
+  const [esim, setEsim] = useState([])
+  const [accommodation, setAccommodation] = useState([])
+  const [med, setMed] = useState([])
+  const [royal, setRoyal] = useState([])
+  const [rides, setRides] = useState([])
+  const [leadway, setLeadway] = useState([])
   const [loadingTab, setLoadingTab] = useState('')
   const [errorTab, setErrorTab] = useState('')
 
@@ -167,9 +267,12 @@ export default function ViewBookedTickets ({ userId, userName }) {
     setLoadingTab('activities')
     setErrorTab('')
     try {
-      const res = await getAllBookings(uid)
-      const payload = res?.data || res || {}
-      const list = Array.isArray(payload?.activity) ? payload.activity : []
+      const res = await getUserActivityTicketList(uid)
+      const list = Array.isArray(res)
+        ? res
+        : Array.isArray(res?.data)
+        ? res.data
+        : []
       setActivities(mapActivityBookings(list))
     } catch {
       setActivities([])
@@ -183,10 +286,11 @@ export default function ViewBookedTickets ({ userId, userName }) {
     setLoadingTab('merch')
     setErrorTab('')
     try {
-      const res = await getAllBookings(uid)
-      const payload = res?.data || res || {}
-      const list = Array.isArray(payload?.merchandise)
-        ? payload.merchandise
+      const res = await getMyOrders(uid)
+      const list = Array.isArray(res)
+        ? res
+        : Array.isArray(res?.data)
+        ? res.data
         : []
       setMerch(mapMerchBookings(list))
     } catch {
@@ -197,18 +301,150 @@ export default function ViewBookedTickets ({ userId, userName }) {
     }
   }
 
+  const loadEsim = async () => {
+    setLoadingTab('esim')
+    setErrorTab('')
+    try {
+      const res = await getMyESimOrders(uid)
+      const list = Array.isArray(res)
+        ? res
+        : Array.isArray(res?.data)
+        ? res.data
+        : []
+      setEsim(mapEsimBookings(list))
+    } catch {
+      setEsim([])
+      setErrorTab('Failed to load eSIM bookings')
+    } finally {
+      setLoadingTab('')
+    }
+  }
+
+  const loadAccommodation = async () => {
+    setLoadingTab('accommodation')
+    setErrorTab('')
+    try {
+      const res = await getMyStayBookings(uid)
+      const list = Array.isArray(res)
+        ? res
+        : Array.isArray(res?.data)
+        ? res.data
+        : []
+      setAccommodation(mapAccommodationBookings(list))
+    } catch {
+      setAccommodation([])
+      setErrorTab('Failed to load accommodation bookings')
+    } finally {
+      setLoadingTab('')
+    }
+  }
+
+  const loadMed = async () => {
+    setLoadingTab('med')
+    setErrorTab('')
+    try {
+      const res = await getMyMedOrders(uid)
+      const list = Array.isArray(res) ? res : []
+      setMed(mapMedBookings(list))
+    } catch {
+      setMed([])
+      setErrorTab('Failed to load Med Plus orders')
+    } finally {
+      setLoadingTab('')
+    }
+  }
+
+  const loadRoyal = async () => {
+    setLoadingTab('royal')
+    setErrorTab('')
+    try {
+      const res = await myRoyalBookings(uid)
+      const list = Array.isArray(res)
+        ? res
+        : Array.isArray(res?.data)
+        ? res.data
+        : []
+      setRoyal(mapRoyalBookings(list))
+    } catch {
+      setRoyal([])
+      setErrorTab('Failed to load Royal Concierge bookings')
+    } finally {
+      setLoadingTab('')
+    }
+  }
+
+  const loadRides = async () => {
+    setLoadingTab('rides')
+    setErrorTab('')
+    try {
+      const res = await getMyRideBookings(uid)
+      const list = Array.isArray(res)
+        ? res
+        : Array.isArray(res?.data)
+        ? res.data
+        : []
+      setRides(mapRideBookings(list))
+    } catch {
+      setRides([])
+      setErrorTab('Failed to load ride bookings')
+    } finally {
+      setLoadingTab('')
+    }
+  }
+
+  const loadLeadway = async () => {
+    setLoadingTab('leadway')
+    setErrorTab('')
+    try {
+      const res = await getMyLeadPlans(uid)
+      const list = Array.isArray(res)
+        ? res
+        : Array.isArray(res?.data)
+        ? res.data
+        : []
+      setLeadway(mapLeadwayBookings(list))
+    } catch {
+      setLeadway([])
+      setErrorTab('Failed to load Leadway plans')
+    } finally {
+      setLoadingTab('')
+    }
+  }
+
   useEffect(() => {
     if (!uid) return
     if (activeTab === 'event') {
       if (events.length === 0) loadEvents()
-    } else {
-      if (activeTab === 'activities') {
-        if (activities.length === 0) loadActivities()
-      } else if (activeTab === 'merch') {
-        if (merch.length === 0) loadMerch()
-      }
+    } else if (activeTab === 'activities') {
+      if (activities.length === 0) loadActivities()
+    } else if (activeTab === 'merch') {
+      if (merch.length === 0) loadMerch()
+    } else if (activeTab === 'esim') {
+      if (esim.length === 0) loadEsim()
+    } else if (activeTab === 'accommodation') {
+      if (accommodation.length === 0) loadAccommodation()
+    } else if (activeTab === 'med') {
+      if (med.length === 0) loadMed()
+    } else if (activeTab === 'royal') {
+      if (royal.length === 0) loadRoyal()
+    } else if (activeTab === 'rides') {
+      if (rides.length === 0) loadRides()
+    } else if (activeTab === 'leadway') {
+      if (leadway.length === 0) loadLeadway()
     }
-  }, [activeTab, uid, events.length, activities.length, merch.length])
+  }, [
+    activeTab,
+    uid,
+    events.length,
+    activities.length,
+    merch.length,
+    esim.length,
+    accommodation.length,
+    med.length,
+    royal.length,
+    rides.length,
+    leadway.length
+  ])
 
   const filteredEvents = events.filter(event => {
     const term = String(searchTerm || '')
@@ -263,6 +499,135 @@ export default function ViewBookedTickets ({ userId, userName }) {
     return matchesText || matchesDigits
   })
 
+  const filteredEsim = esim.filter(item => {
+    const term = String(searchTerm || '')
+      .trim()
+      .toLowerCase()
+    if (!term) return true
+    return (
+      String(item.name || '')
+        .toLowerCase()
+        .includes(term) ||
+      String(item.status || '')
+        .toLowerCase()
+        .includes(term) ||
+      String(item.paymentStatus || '')
+        .toLowerCase()
+        .includes(term) ||
+      String(item.eventDate || '')
+        .toLowerCase()
+        .includes(term)
+    )
+  })
+
+  const filteredAccommodation = accommodation.filter(item => {
+    const term = String(searchTerm || '')
+      .trim()
+      .toLowerCase()
+    if (!term) return true
+    return (
+      String(item.hotelName || '')
+        .toLowerCase()
+        .includes(term) ||
+      String(item.roomName || '')
+        .toLowerCase()
+        .includes(term) ||
+      String(item.status || '')
+        .toLowerCase()
+        .includes(term) ||
+      String(item.eventDate || '')
+        .toLowerCase()
+        .includes(term)
+    )
+  })
+
+  const filteredMed = med.filter(item => {
+    const term = String(searchTerm || '')
+      .trim()
+      .toLowerCase()
+    if (!term) return true
+    return (
+      String(item.name || '')
+        .toLowerCase()
+        .includes(term) ||
+      String(item.status || '')
+        .toLowerCase()
+        .includes(term) ||
+      String(item.eventDate || '')
+        .toLowerCase()
+        .includes(term)
+    )
+  })
+
+  const filteredRoyal = royal.filter(item => {
+    const term = String(searchTerm || '')
+      .trim()
+      .toLowerCase()
+    if (!term) return true
+    return (
+      String(item.tier || '')
+        .toLowerCase()
+        .includes(term) ||
+      String(item.flightNumber || '')
+        .toLowerCase()
+        .includes(term) ||
+      String(item.status || '')
+        .toLowerCase()
+        .includes(term) ||
+      String(item.eventDate || '')
+        .toLowerCase()
+        .includes(term)
+    )
+  })
+
+  const filteredRides = rides.filter(item => {
+    const term = String(searchTerm || '')
+      .trim()
+      .toLowerCase()
+    if (!term) return true
+    return (
+      String(item.name || '')
+        .toLowerCase()
+        .includes(term) ||
+      String(item.status || '')
+        .toLowerCase()
+        .includes(term) ||
+      String(item.eventDate || '')
+        .toLowerCase()
+        .includes(term)
+    )
+  })
+
+  const filteredLeadway = leadway.filter(item => {
+    const term = String(searchTerm || '')
+      .trim()
+      .toLowerCase()
+    if (!term) return true
+    return (
+      String(item.policyType || '')
+        .toLowerCase()
+        .includes(term) ||
+      String(item.status || '')
+        .toLowerCase()
+        .includes(term) ||
+      String(item.eventDate || '')
+        .toLowerCase()
+        .includes(term)
+    )
+  })
+
+  const tabs = [
+    { id: 'event', label: 'Events' },
+    { id: 'activities', label: 'Places to Visit' },
+    { id: 'merch', label: 'Merchandise' },
+    { id: 'esim', label: 'Internet Connectivity' },
+    { id: 'accommodation', label: 'Accommodation' },
+    { id: 'med', label: 'Med Plus' },
+    { id: 'royal', label: 'Royal Concierge' },
+    { id: 'rides', label: 'Rides' },
+    { id: 'leadway', label: 'Leadway' }
+  ]
+
   return (
     <div className='bg-gray-200 p-5 rounded-xl'>
       <div className='bg-white rounded-lg shadow-sm border border-gray-200'>
@@ -296,58 +661,35 @@ export default function ViewBookedTickets ({ userId, userName }) {
               </div>
             </div>
           </div>
-          <div className='flex space-x-2 mt-3'>
-            <button
-              onClick={() => {
-                setActiveTab('event')
-                if (uid) {
-                  loadEvents()
-                } else {
-                  setErrorTab('User ID is missing')
-                }
-              }}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors border ${
-                activeTab === 'event'
-                  ? 'bg-orange-500 text-white border-orange-500'
-                  : 'bg-white text-gray-700 hover:bg-gray-50 border-gray-300'
-              }`}
-            >
-              Event
-            </button>
-            <button
-              onClick={() => {
-                setActiveTab('activities')
-                if (uid) {
-                  loadActivities()
-                } else {
-                  setErrorTab('User ID is missing')
-                }
-              }}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors border ${
-                activeTab === 'activities'
-                  ? 'bg-orange-500 text-white border-orange-500'
-                  : 'bg-white text-gray-700 hover:bg-gray-50 border-gray-300'
-              }`}
-            >
-              Places to Visit
-            </button>
-            <button
-              onClick={() => {
-                setActiveTab('merch')
-                if (uid) {
-                  loadMerch()
-                } else {
-                  setErrorTab('User ID is missing')
-                }
-              }}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors border ${
-                activeTab === 'merch'
-                  ? 'bg-orange-500 text-white border-orange-500'
-                  : 'bg-white text-gray-700 hover:bg-gray-50 border-gray-300'
-              }`}
-            >
-              Merchandise
-            </button>
+          <div className='flex space-x-2 mt-3 overflow-x-auto pb-2'>
+            {tabs.map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => {
+                  setActiveTab(tab.id)
+                  if (uid) {
+                    if (tab.id === 'event') loadEvents()
+                    else if (tab.id === 'activities') loadActivities()
+                    else if (tab.id === 'merch') loadMerch()
+                    else if (tab.id === 'esim') loadEsim()
+                    else if (tab.id === 'accommodation') loadAccommodation()
+                    else if (tab.id === 'med') loadMed()
+                    else if (tab.id === 'royal') loadRoyal()
+                    else if (tab.id === 'rides') loadRides()
+                    else if (tab.id === 'leadway') loadLeadway()
+                  } else {
+                    setErrorTab('User ID is missing')
+                  }
+                }}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors border whitespace-nowrap ${
+                  activeTab === tab.id
+                    ? 'bg-orange-500 text-white border-orange-500'
+                    : 'bg-white text-gray-700 hover:bg-gray-50 border-gray-300'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
           </div>
         </div>
 
@@ -603,7 +945,7 @@ export default function ViewBookedTickets ({ userId, userName }) {
               </tbody>
             </table>
           </div>
-        ) : (
+        ) : activeTab === 'merch' ? (
           <div className='overflow-x-auto'>
             <table className='w-full'>
               <thead className='bg-gray-50 sticky top-0'>
@@ -701,7 +1043,507 @@ export default function ViewBookedTickets ({ userId, userName }) {
               </tbody>
             </table>
           </div>
-        )}
+        ) : activeTab === 'esim' ? (
+          <div className='overflow-x-auto'>
+            <table className='w-full'>
+              <thead className='bg-gray-50 sticky top-0'>
+                <tr>
+                  <th className='px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                    Date
+                  </th>
+                  <th className='px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                    Name
+                  </th>
+                  <th className='px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                    Amount
+                  </th>
+                  <th className='px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                    Status
+                  </th>
+                  <th className='px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                    Payment
+                  </th>
+                </tr>
+              </thead>
+              <tbody className='bg-white divide-y divide-gray-200'>
+                {errorTab && activeTab === 'esim' && esim.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={5}
+                      className='px-3 py-6 text-center text-sm text-red-600'
+                    >
+                      {errorTab}
+                    </td>
+                  </tr>
+                ) : loadingTab === 'esim' ? (
+                  <tr>
+                    <td
+                      colSpan={5}
+                      className='px-3 py-6 text-center text-sm text-[#5E6582]'
+                    >
+                      Loading...
+                    </td>
+                  </tr>
+                ) : filteredEsim.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={5}
+                      className='px-3 py-6 text-center text-sm text-[#5E6582]'
+                    >
+                      No bookings found
+                    </td>
+                  </tr>
+                ) : (
+                  filteredEsim.map(item => (
+                    <tr
+                      key={item.id}
+                      className='hover:bg-gray-50 border-b border-gray-100'
+                    >
+                      <td className='px-3 py-3 whitespace-nowrap text-sm text-gray-500'>
+                        {item.eventDate}
+                      </td>
+                      <td className='px-3 py-3 whitespace-nowrap text-sm text-gray-900'>
+                        {item.name}
+                      </td>
+                      <td className='px-3 py-3 whitespace-nowrap text-sm font-semibold text-gray-900'>
+                        {item.amount}
+                      </td>
+                      <td className='px-3 py-3 whitespace-nowrap'>
+                        <span className='inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800'>
+                          {item.status}
+                        </span>
+                      </td>
+                      <td className='px-3 py-3 whitespace-nowrap'>
+                        <span className='inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800'>
+                          {item.paymentStatus}
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        ) : activeTab === 'accommodation' ? (
+          <div className='overflow-x-auto'>
+            <table className='w-full'>
+              <thead className='bg-gray-50 sticky top-0'>
+                <tr>
+                  <th className='px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                    Check-in
+                  </th>
+                  <th className='px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                    Hotel
+                  </th>
+                  <th className='px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                    Room
+                  </th>
+                  <th className='px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                    Amount
+                  </th>
+                  <th className='px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                    Status
+                  </th>
+                  <th className='px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                    Payment
+                  </th>
+                </tr>
+              </thead>
+              <tbody className='bg-white divide-y divide-gray-200'>
+                {errorTab &&
+                activeTab === 'accommodation' &&
+                accommodation.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={6}
+                      className='px-3 py-6 text-center text-sm text-red-600'
+                    >
+                      {errorTab}
+                    </td>
+                  </tr>
+                ) : loadingTab === 'accommodation' ? (
+                  <tr>
+                    <td
+                      colSpan={6}
+                      className='px-3 py-6 text-center text-sm text-[#5E6582]'
+                    >
+                      Loading...
+                    </td>
+                  </tr>
+                ) : filteredAccommodation.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={6}
+                      className='px-3 py-6 text-center text-sm text-[#5E6582]'
+                    >
+                      No bookings found
+                    </td>
+                  </tr>
+                ) : (
+                  filteredAccommodation.map(item => (
+                    <tr
+                      key={item.id}
+                      className='hover:bg-gray-50 border-b border-gray-100'
+                    >
+                      <td className='px-3 py-3 whitespace-nowrap text-sm text-gray-500'>
+                        {item.eventDate}
+                      </td>
+                      <td className='px-3 py-3 whitespace-nowrap text-sm text-gray-900'>
+                        {item.hotelName}
+                      </td>
+                      <td className='px-3 py-3 whitespace-nowrap text-sm text-gray-900'>
+                        {item.roomName}
+                      </td>
+                      <td className='px-3 py-3 whitespace-nowrap text-sm font-semibold text-gray-900'>
+                        {item.amount}
+                      </td>
+                      <td className='px-3 py-3 whitespace-nowrap'>
+                        <span className='inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800'>
+                          {item.status}
+                        </span>
+                      </td>
+                      <td className='px-3 py-3 whitespace-nowrap'>
+                        <span className='inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800'>
+                          {item.paymentStatus}
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        ) : activeTab === 'med' ? (
+          <div className='overflow-x-auto'>
+            <table className='w-full'>
+              <thead className='bg-gray-50 sticky top-0'>
+                <tr>
+                  <th className='px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                    Date
+                  </th>
+                  <th className='px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                    Order
+                  </th>
+                  <th className='px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                    Amount
+                  </th>
+                  <th className='px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                    Status
+                  </th>
+                  <th className='px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                    Payment
+                  </th>
+                </tr>
+              </thead>
+              <tbody className='bg-white divide-y divide-gray-200'>
+                {errorTab && activeTab === 'med' && med.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={5}
+                      className='px-3 py-6 text-center text-sm text-red-600'
+                    >
+                      {errorTab}
+                    </td>
+                  </tr>
+                ) : loadingTab === 'med' ? (
+                  <tr>
+                    <td
+                      colSpan={5}
+                      className='px-3 py-6 text-center text-sm text-[#5E6582]'
+                    >
+                      Loading...
+                    </td>
+                  </tr>
+                ) : filteredMed.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={5}
+                      className='px-3 py-6 text-center text-sm text-[#5E6582]'
+                    >
+                      No orders found
+                    </td>
+                  </tr>
+                ) : (
+                  filteredMed.map(item => (
+                    <tr
+                      key={item.id}
+                      className='hover:bg-gray-50 border-b border-gray-100'
+                    >
+                      <td className='px-3 py-3 whitespace-nowrap text-sm text-gray-500'>
+                        {item.eventDate}
+                      </td>
+                      <td className='px-3 py-3 whitespace-nowrap text-sm text-gray-900'>
+                        {item.name}
+                      </td>
+                      <td className='px-3 py-3 whitespace-nowrap text-sm font-semibold text-gray-900'>
+                        {item.amount}
+                      </td>
+                      <td className='px-3 py-3 whitespace-nowrap'>
+                        <span className='inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800'>
+                          {item.status}
+                        </span>
+                      </td>
+                      <td className='px-3 py-3 whitespace-nowrap'>
+                        <span className='inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800'>
+                          {item.paymentStatus}
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        ) : activeTab === 'royal' ? (
+          <div className='overflow-x-auto'>
+            <table className='w-full'>
+              <thead className='bg-gray-50 sticky top-0'>
+                <tr>
+                  <th className='px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                    Date
+                  </th>
+                  <th className='px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                    Tier
+                  </th>
+                  <th className='px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                    Flight
+                  </th>
+                  <th className='px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                    Amount
+                  </th>
+                  <th className='px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                    Status
+                  </th>
+                  <th className='px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                    Payment
+                  </th>
+                </tr>
+              </thead>
+              <tbody className='bg-white divide-y divide-gray-200'>
+                {errorTab && activeTab === 'royal' && royal.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={6}
+                      className='px-3 py-6 text-center text-sm text-red-600'
+                    >
+                      {errorTab}
+                    </td>
+                  </tr>
+                ) : loadingTab === 'royal' ? (
+                  <tr>
+                    <td
+                      colSpan={6}
+                      className='px-3 py-6 text-center text-sm text-[#5E6582]'
+                    >
+                      Loading...
+                    </td>
+                  </tr>
+                ) : filteredRoyal.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={6}
+                      className='px-3 py-6 text-center text-sm text-[#5E6582]'
+                    >
+                      No bookings found
+                    </td>
+                  </tr>
+                ) : (
+                  filteredRoyal.map(item => (
+                    <tr
+                      key={item.id}
+                      className='hover:bg-gray-50 border-b border-gray-100'
+                    >
+                      <td className='px-3 py-3 whitespace-nowrap text-sm text-gray-500'>
+                        {item.eventDate}
+                      </td>
+                      <td className='px-3 py-3 whitespace-nowrap text-sm text-gray-900'>
+                        {item.tier}
+                      </td>
+                      <td className='px-3 py-3 whitespace-nowrap text-sm text-gray-900'>
+                        {item.flightNumber}
+                      </td>
+                      <td className='px-3 py-3 whitespace-nowrap text-sm font-semibold text-gray-900'>
+                        {item.amount}
+                      </td>
+                      <td className='px-3 py-3 whitespace-nowrap'>
+                        <span className='inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800'>
+                          {item.status}
+                        </span>
+                      </td>
+                      <td className='px-3 py-3 whitespace-nowrap'>
+                        <span className='inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800'>
+                          {item.paymentStatus}
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        ) : activeTab === 'rides' ? (
+          <div className='overflow-x-auto'>
+            <table className='w-full'>
+              <thead className='bg-gray-50 sticky top-0'>
+                <tr>
+                  <th className='px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                    Date
+                  </th>
+                  <th className='px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                    Name
+                  </th>
+                  <th className='px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                    Amount
+                  </th>
+                  <th className='px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                    Status
+                  </th>
+                  <th className='px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                    Payment
+                  </th>
+                </tr>
+              </thead>
+              <tbody className='bg-white divide-y divide-gray-200'>
+                {errorTab && activeTab === 'rides' && rides.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={5}
+                      className='px-3 py-6 text-center text-sm text-red-600'
+                    >
+                      {errorTab}
+                    </td>
+                  </tr>
+                ) : loadingTab === 'rides' ? (
+                  <tr>
+                    <td
+                      colSpan={5}
+                      className='px-3 py-6 text-center text-sm text-[#5E6582]'
+                    >
+                      Loading...
+                    </td>
+                  </tr>
+                ) : filteredRides.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={5}
+                      className='px-3 py-6 text-center text-sm text-[#5E6582]'
+                    >
+                      No bookings found
+                    </td>
+                  </tr>
+                ) : (
+                  filteredRides.map(item => (
+                    <tr
+                      key={item.id}
+                      className='hover:bg-gray-50 border-b border-gray-100'
+                    >
+                      <td className='px-3 py-3 whitespace-nowrap text-sm text-gray-500'>
+                        {item.eventDate}
+                      </td>
+                      <td className='px-3 py-3 whitespace-nowrap text-sm text-gray-900'>
+                        {item.name}
+                      </td>
+                      <td className='px-3 py-3 whitespace-nowrap text-sm font-semibold text-gray-900'>
+                        {item.amount}
+                      </td>
+                      <td className='px-3 py-3 whitespace-nowrap'>
+                        <span className='inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800'>
+                          {item.status}
+                        </span>
+                      </td>
+                      <td className='px-3 py-3 whitespace-nowrap'>
+                        <span className='inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800'>
+                          {item.paymentStatus}
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        ) : activeTab === 'leadway' ? (
+          <div className='overflow-x-auto'>
+            <table className='w-full'>
+              <thead className='bg-gray-50 sticky top-0'>
+                <tr>
+                  <th className='px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                    Date
+                  </th>
+                  <th className='px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                    Policy
+                  </th>
+                  <th className='px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                    Amount
+                  </th>
+                  <th className='px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                    Status
+                  </th>
+                  <th className='px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                    Payment
+                  </th>
+                </tr>
+              </thead>
+              <tbody className='bg-white divide-y divide-gray-200'>
+                {errorTab && activeTab === 'leadway' && leadway.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={5}
+                      className='px-3 py-6 text-center text-sm text-red-600'
+                    >
+                      {errorTab}
+                    </td>
+                  </tr>
+                ) : loadingTab === 'leadway' ? (
+                  <tr>
+                    <td
+                      colSpan={5}
+                      className='px-3 py-6 text-center text-sm text-[#5E6582]'
+                    >
+                      Loading...
+                    </td>
+                  </tr>
+                ) : filteredLeadway.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={5}
+                      className='px-3 py-6 text-center text-sm text-[#5E6582]'
+                    >
+                      No plans found
+                    </td>
+                  </tr>
+                ) : (
+                  filteredLeadway.map(item => (
+                    <tr
+                      key={item.id}
+                      className='hover:bg-gray-50 border-b border-gray-100'
+                    >
+                      <td className='px-3 py-3 whitespace-nowrap text-sm text-gray-500'>
+                        {item.eventDate}
+                      </td>
+                      <td className='px-3 py-3 whitespace-nowrap text-sm text-gray-900'>
+                        {item.policyType}
+                      </td>
+                      <td className='px-3 py-3 whitespace-nowrap text-sm font-semibold text-gray-900'>
+                        {item.amount}
+                      </td>
+                      <td className='px-3 py-3 whitespace-nowrap'>
+                        <span className='inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800'>
+                          {item.status}
+                        </span>
+                      </td>
+                      <td className='px-3 py-3 whitespace-nowrap'>
+                        <span className='inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800'>
+                          {item.paymentStatus}
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        ) : null}
       </div>
     </div>
   )

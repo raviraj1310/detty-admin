@@ -1,86 +1,210 @@
-import api from "@/src/axois/axois";
+import api from '@/src/axois/axois'
+
+const getUserIdFromStorage = () => {
+  if (typeof window === 'undefined') return null
+  try {
+    return window.localStorage?.getItem('userId') || null
+  } catch (_) {
+    return null
+  }
+}
 
 export const getUsers = async (params = {}) => {
   try {
-    const response = await api.get("/user/get-all-users", { params });
-    return response.data;
+    const response = await api.get('/user/get-all-users', { params })
+    return response.data
   } catch (error) {
-    console.error("Error fetching users:", error);
-    throw error;
+    console.error('Error fetching users:', error)
+    throw error
   }
-};
+}
 export const changeUserStatus = async (userId, status) => {
   try {
-    const response = await api.put(`/user/change-status/${userId}`, { status });
-    return response.data;
+    const response = await api.put(`/user/change-status/${userId}`, { status })
+    return response.data
   } catch (error) {
-    console.error("Error changing user status:", error);
-    throw error;
+    console.error('Error changing user status:', error)
+    throw error
   }
-};
+}
 
-export const getUserWithProfile = async (userId) => {
+export const getUserWithProfile = async userId => {
   try {
-    const response = await api.get(`/user/get-user-with-profile/${userId}`);
-    return response.data;
+    const response = await api.get(`/user/get-user-with-profile/${userId}`)
+    return response.data
   } catch (error) {
-    console.error("Error fetching user with profile:", error);
-    throw error;
+    console.error('Error fetching user with profile:', error)
+    throw error
   }
-};
+}
 
-export const getAllEventBookings = async (userId) => {
+export const getAllEventBookings = async userId => {
   try {
-    const response = await api.get(`/user-event/my-bookings/${userId}`);
-    return response.data;
+    const response = await api.get(`/user-event/my-bookings/${userId}`)
+    return response.data
   } catch (error) {
-    console.error("Error fetching activity bookings:", error);
-    throw error;
+    console.error('Error fetching activity bookings:', error)
+    throw error
   }
-};
-export const getAllActivityBookings = async (userId) => {
+}
+export const getAllActivityBookings = async userId => {
   try {
-    const response = await api.get(
-      `/user-activity/get-user-bookings/${userId}`
-    );
-    return response.data;
+    const response = await api.get(`/user-activity/get-user-bookings/${userId}`)
+    return response.data
   } catch (error) {
-    console.error("Error fetching activity bookings:", error);
-    throw error;
+    console.error('Error fetching activity bookings:', error)
+    throw error
   }
-};
-
-export const getAllBookings = async (userId) => {
-  try {
-    const response = await api.get(`/user/get-user-wise-bookings/${userId}`);
-    return response.data;
-  } catch (error) {
-    console.error("Error fetching all bookings:", error);
-    throw error;
-  }
-};
+}
 
 export const getAllUsersWallet = async () => {
   try {
-    const response = await api.get(`wallet/get-all-users-wallet`);
-    return response.data;
+    const response = await api.get(`wallet/get-all-users-wallet`)
+    return response.data
   } catch (error) {
-    console.error("Error fetching user wallet history:", error);
-    throw error;
+    console.error('Error fetching user wallet history:', error)
+    throw error
   }
-};
+}
 
-export const getUserWallet = async (userId) => {
+export const getUserWallet = async userId => {
   try {
     // Ensure userId is a string and properly encoded
-    const userIdStr = String(userId || "").trim();
+    const userIdStr = String(userId || '').trim()
     if (!userIdStr) {
-      throw new Error("User ID is required");
+      throw new Error('User ID is required')
     }
-    const response = await api.get(`wallet/get-my-passbook/${userIdStr}`);
-    return response.data;
+    const response = await api.get(`wallet/get-my-passbook/${userIdStr}`)
+    return response.data
   } catch (error) {
-    console.error("Error fetching user wallet history:", error);
-    throw error;
+    console.error('Error fetching user wallet history:', error)
+    throw error
   }
-};
+}
+
+// user wise bookings
+// event
+export const getAllBookings = async userId => {
+  try {
+    const response = await api.get(`/user/get-user-wise-bookings/${userId}`)
+    return response.data
+  } catch (error) {
+    console.error('Error fetching all bookings:', error)
+    throw error
+  }
+}
+// activity
+export const getUserActivityTicketList = async id => {
+  try {
+    const userId = id || getUserIdFromStorage()
+    if (!userId) return []
+    const response = await api.get(`/user-activity/get-user-bookings/${userId}`)
+    return response.data
+  } catch (error) {
+    return []
+  }
+}
+
+// merchandise
+export const getMyOrders = async id => {
+  try {
+    const userId = id || getUserIdFromStorage()
+    if (!userId) return []
+    const response = await api.get(`/product/get-my-orders/${userId}`)
+    return response.data
+  } catch (error) {
+    console.log('error', error)
+    return []
+  }
+}
+// esim (internet connectivity)
+export const getMyESimOrders = async id => {
+  try {
+    const userId = id || getUserIdFromStorage()
+    if (!userId) return []
+    const response = await api.get(`/sochitel/order-list/${userId}`)
+    return response.data
+  } catch (error) {
+    return []
+  }
+}
+
+// Accommodation
+export const getMyStayBookings = async id => {
+  const userId = id || getUserIdFromStorage()
+  if (!userId) return []
+  try {
+    const response = await api.get(`/stay/get-my-stay-bookings/${userId}`)
+    return response.data
+  } catch (error) {
+    console.error('GET MY STAY BOOKINGS ERROR:', error)
+    throw error
+  }
+}
+
+// Med Plus
+export const getMyMedOrders = async id => {
+  try {
+    const userId = id || getUserIdFromStorage()
+    if (!userId) return []
+    const response = await api.get(`/med/my-med-orders/${userId}`)
+    // Handle response structure: { success: true, data: [...] }
+    if (response?.data?.success && Array.isArray(response?.data?.data)) {
+      return response.data.data
+    }
+    // Fallback: if data is directly an array
+    if (Array.isArray(response?.data)) {
+      return response.data
+    }
+    // Fallback: if data.data exists
+    if (Array.isArray(response?.data?.data)) {
+      return response.data.data
+    }
+    return []
+  } catch (error) {
+    console.error('Error fetching Med Plus orders:', error)
+    return []
+  }
+}
+
+// Royal concierge
+export const myRoyalBookings = async id => {
+  try {
+    const userId = id || getUserIdFromStorage()
+    if (!userId) return []
+
+    const res = await api.get(`/rc/my-royal-bookings/${userId}`)
+    return res.data
+  } catch (err) {
+    return err?.response?.data
+  }
+}
+
+// ride
+export const getMyRideBookings = async id => {
+  const userId = id || getUserIdFromStorage()
+  if (!userId) {
+    throw new Error('userId is required to fetch ride bookings')
+  }
+
+  try {
+    const response = await api.get(`/ride/my-rides/${userId}`)
+    return response.data
+  } catch (error) {
+    console.error('Get My Ride Bookings API Error:', error)
+    throw error
+  }
+}
+
+// lead
+export const getMyLeadPlans = async id => {
+  try {
+    const userId = id || getUserIdFromStorage()
+    if (!userId) return []
+    const response = await api.get(`/leadway/get-my-plan/${userId}`)
+    return response.data
+  } catch (error) {
+    console.error('Error fetching my lead plans:', error)
+    throw error
+  }
+}
