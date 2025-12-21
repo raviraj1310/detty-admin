@@ -4,106 +4,9 @@
 import React from 'react'
 import Link from 'next/link'
 
-// --- 1. Data Structure ---
-
-const dashboardData = [
-  {
-    title: 'Users',
-    viewLink: '/users',
-    stats: [
-      { 
-        id: 'tu', 
-        title: 'Total Users', 
-        value: '1540', 
-        iconSrc: '/images/dashboard/icons (13).svg',
-        bg: 'bg-[#E8EEFF]', 
-        iconBg: 'bg-gradient-to-r from-[#AECBFF] to-[#5A7CC1]'
-      },
-      { 
-        id: 'au', 
-        title: 'Active Users', 
-        value: '1240', 
-        iconSrc: '/images/dashboard/icons (9).svg',
-        bg: 'bg-[#E8F8F0]', 
-        iconBg: 'bg-gradient-to-r from-[#8EEDC7] to-[#3FA574]'
-      },
-      { 
-        id: 'iu', 
-        title: 'Inactive Users', 
-        value: '100', 
-        iconSrc: '/images/dashboard/icons (11).svg',
-        bg: 'bg-[#FFE8E8]', 
-        iconBg: 'bg-gradient-to-r from-[#FFA8A8] to-[#E03E3E]'
-      },
-    ],
-  },
-  {
-    title: 'Bookings',
-    viewLink: '/users/transactions',
-    stats: [
-      { 
-        id: 'tb', 
-        title: 'Total Bookings', 
-        value: '1540', 
-        iconSrc: '/images/dashboard/icons (6).svg',
-        bg: 'bg-[#F0E8FF]', 
-        iconBg: 'bg-gradient-to-r from-[#C4B5FD] to-[#7C3AED]'
-      },
-      { 
-        id: 'br', 
-        title: 'Revenue', 
-        value: '₦9,00,000', 
-        iconSrc: '/images/dashboard/icons (1).svg',
-        bg: 'bg-[#E8F8F0]', 
-        iconBg: 'bg-gradient-to-r from-[#8EEDC7] to-[#3FA574]'
-      },
-    ],
-  },
-  {
-    title: 'Events',
-    viewLink: '/discover-events',
-    stats: [
-      { 
-        id: 'te', 
-        title: 'Total Events', 
-        value: '1217', 
-        iconSrc: '/images/dashboard/icons (15).svg',
-        bg: 'bg-[#FFE8F5]', 
-        iconBg: 'bg-gradient-to-r from-[#FFADD2] to-[#E91E8C]'
-      },
-      { 
-        id: 'er', 
-        title: 'Revenue', 
-        value: '₦9,00,000', 
-        iconSrc: '/images/dashboard/icons (1).svg',
-        bg: 'bg-[#E8F8F0]', 
-        iconBg: 'bg-gradient-to-r from-[#8EEDC7] to-[#3FA574]'
-      },
-    ],
-  },
-  {
-    title: 'Places To Visit/ Activities',
-    viewLink: '/places-to-visit',
-    stats: [
-      { 
-        id: 'ta', 
-        title: 'Total Activities', 
-        value: '1217', 
-        iconSrc: '/images/dashboard/icons (4).svg',
-        bg: 'bg-[#FFF4E8]', 
-        iconBg: 'bg-gradient-to-r from-[#FFD8A8] to-[#F76707]'
-      },
-      { 
-        id: 'ar', 
-        title: 'Revenue', 
-        value: '₦9,00,000', 
-        iconSrc: '/images/dashboard/icons (1).svg',
-        bg: 'bg-[#E8F8F0]', 
-        iconBg: 'bg-gradient-to-r from-[#8EEDC7] to-[#3FA574]'
-      },
-    ],
-  },
-];
+const formatCurrency = (amount) => {
+  return '₦' + (Number(amount) || 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })
+}
 
 // --- 2. Stat Card Component ---
 
@@ -156,7 +59,127 @@ const DashboardSection = ({ section }) => (
 
 // --- 4. Main Dashboard Component ---
 
-export default function AdminDashboard() {
+export default function AdminDashboard({ stats }) {
+  // Calculate total bookings and revenue if needed
+  const totalBookings = (stats?.totalEvents || 0) + 
+                        (stats?.totalActivity || 0) + 
+                        (stats?.totalAccommodations || 0) + 
+                        (stats?.totalEsims || 0) + 
+                        (stats?.totalRide || 0) + 
+                        (stats?.totalLeadWay || 0) + 
+                        (stats?.totalMed || 0) + 
+                        (stats?.totalRoyal || 0) + 
+                        (stats?.totalVisaAppition || 0);
+
+  const totalRevenue = (stats?.totalEventRevenue || 0) + 
+                       (stats?.totalActivityRevenue || 0) + 
+                       (stats?.totalProductsRevenue || 0) + 
+                       (stats?.totalAccommodationRevenue || 0) + 
+                       (stats?.totalEsimRevenue || 0) + 
+                       (stats?.totalRideRevenue || 0) + 
+                       (stats?.totalLeadWayRevenue || 0) + 
+                       (stats?.totalMedRevenue || 0) + 
+                       (stats?.totalRoyalRevenue || 0);
+
+  const dashboardData = [
+    {
+      title: 'Users',
+      viewLink: '/users',
+      stats: [
+        { 
+          id: 'tu', 
+          title: 'Total Users', 
+          value: stats?.totalUsers || 0, 
+          iconSrc: '/images/dashboard/icons (13).svg',
+          bg: 'bg-[#E8EEFF]', 
+          iconBg: 'bg-gradient-to-r from-[#AECBFF] to-[#5A7CC1]'
+        },
+        { 
+          id: 'au', 
+          title: 'Active Users', 
+          value: stats?.totalActiveUsers || 0, 
+          iconSrc: '/images/dashboard/icons (9).svg',
+          bg: 'bg-[#E8F8F0]', 
+          iconBg: 'bg-gradient-to-r from-[#8EEDC7] to-[#3FA574]'
+        },
+        { 
+          id: 'iu', 
+          title: 'Inactive Users', 
+          value: stats?.totalInactiveUsers || 0, 
+          iconSrc: '/images/dashboard/icons (11).svg',
+          bg: 'bg-[#FFE8E8]', 
+          iconBg: 'bg-gradient-to-r from-[#FFA8A8] to-[#E03E3E]'
+        },
+      ],
+    },
+    {
+      title: 'Bookings',
+      viewLink: '/users/transactions',
+      stats: [
+        { 
+          id: 'tb', 
+          title: 'Total Bookings', 
+          value: totalBookings, 
+          iconSrc: '/images/dashboard/icons (6).svg',
+          bg: 'bg-[#F0E8FF]', 
+          iconBg: 'bg-gradient-to-r from-[#C4B5FD] to-[#7C3AED]'
+        },
+        { 
+          id: 'br', 
+          title: 'Revenue', 
+          value: formatCurrency(totalRevenue), 
+          iconSrc: '/images/dashboard/icons (1).svg',
+          bg: 'bg-[#E8F8F0]', 
+          iconBg: 'bg-gradient-to-r from-[#8EEDC7] to-[#3FA574]'
+        },
+      ],
+    },
+    {
+      title: 'Events',
+      viewLink: '/discover-events',
+      stats: [
+        { 
+          id: 'te', 
+          title: 'Total Events', 
+          value: stats?.totalEvents || 0, 
+          iconSrc: '/images/dashboard/icons (15).svg',
+          bg: 'bg-[#FFE8F5]', 
+          iconBg: 'bg-gradient-to-r from-[#FFADD2] to-[#E91E8C]'
+        },
+        { 
+          id: 'er', 
+          title: 'Revenue', 
+          value: formatCurrency(stats?.totalEventRevenue), 
+          iconSrc: '/images/dashboard/icons (1).svg',
+          bg: 'bg-[#E8F8F0]', 
+          iconBg: 'bg-gradient-to-r from-[#8EEDC7] to-[#3FA574]'
+        },
+      ],
+    },
+    {
+      title: 'Places To Visit/ Activities',
+      viewLink: '/places-to-visit',
+      stats: [
+        { 
+          id: 'ta', 
+          title: 'Total Activities', 
+          value: stats?.totalActivity || 0, 
+          iconSrc: '/images/dashboard/icons (4).svg',
+          bg: 'bg-[#FFF4E8]', 
+          iconBg: 'bg-gradient-to-r from-[#FFD8A8] to-[#F76707]'
+        },
+        { 
+          id: 'ar', 
+          title: 'Revenue', 
+          value: formatCurrency(stats?.totalActivityRevenue), 
+          iconSrc: '/images/dashboard/icons (1).svg',
+          bg: 'bg-[#E8F8F0]', 
+          iconBg: 'bg-gradient-to-r from-[#8EEDC7] to-[#3FA574]'
+        },
+      ],
+    },
+  ];
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
       {dashboardData.map((section, index) => (
