@@ -14,12 +14,17 @@ import { TbCaretUpDownFilled } from 'react-icons/tb'
 import { IoFilterSharp } from 'react-icons/io5'
 import {
   getVisaApplications,
-  downloadVisaApplicationsCSV
+  downloadVisaApplicationsCSV,
+  updateStatus
 } from '@/services/visa/visa.service'
 
 const cardDefs = [
   { id: 'total', title: 'Total Visa Applications', bg: 'bg-[#1F57D6]' },
-  { id: 'completed', title: 'Completed Visa Applications', bg: 'bg-[#15803D]' },
+  {
+    id: 'completed',
+    title: 'Processing Visa Applications',
+    bg: 'bg-[#15803D]'
+  },
   { id: 'pending', title: 'Pending Visa Applications', bg: 'bg-[#B91C1C]' }
 ]
 
@@ -32,12 +37,13 @@ const toStatus = v => {
   const s = String(v || '')
     .trim()
     .toLowerCase()
+  if (s === 'processing') return 'Processing'
   return s === 'completed' ? 'Completed' : 'Pending'
 }
 
 const statusClass = s => {
   const v = String(s || '').toLowerCase()
-  if (v === 'completed')
+  if (v === 'completed' || v === 'processing')
     return 'bg-emerald-50 text-emerald-600 border border-emerald-200'
   if (v === 'pending') return 'bg-red-50 text-red-600 border border-red-200'
   return 'bg-gray-100 text-gray-600 border border-gray-200'
@@ -67,42 +73,45 @@ export default function VisaApplications () {
   const [sortDir, setSortDir] = useState('desc')
   const [selectedIds, setSelectedIds] = useState([])
 
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true)
-      setError('')
-      try {
-        const res = await getVisaApplications()
-        const list = Array.isArray(res?.data) ? res.data : []
-        const mapped = list.map(a => ({
-          id: a._id,
-          createdOn: a.createdAt || a.updatedAt,
-          createdTs: (() => {
-            const d = a.createdAt || a.updatedAt
-            const v = d && d.$date ? d.$date : d
-            const dt = v ? new Date(v) : null
-            return dt ? dt.getTime() : 0
-          })(),
-          name: toName(a) || '-',
-          email: a?.email || '-',
-          phone: a?.mobile || '-',
-          status: toStatus(a.status),
-          avatar: null
-        }))
-        setApplications(mapped)
-        const total = mapped.length
-        const completed = mapped.filter(m => m.status === 'Completed').length
-        const pending = total - completed
-        setMetrics({ total, completed, pending })
-      } catch (e) {
-        setError('Failed to load applications')
-        setApplications([])
-        setMetrics({ total: 0, completed: 0, pending: 0 })
-      } finally {
-        setLoading(false)
-      }
+  const loadApplications = async () => {
+    setLoading(true)
+    setError('')
+    try {
+      const res = await getVisaApplications()
+      const list = Array.isArray(res?.data) ? res.data : []
+      const mapped = list.map(a => ({
+        id: a._id,
+        createdOn: a.createdAt || a.updatedAt,
+        createdTs: (() => {
+          const d = a.createdAt || a.updatedAt
+          const v = d && d.$date ? d.$date : d
+          const dt = v ? new Date(v) : null
+          return dt ? dt.getTime() : 0
+        })(),
+        name: toName(a) || '-',
+        email: a?.email || '-',
+        phone: a?.mobile || '-',
+        status: toStatus(a.status),
+        avatar: null
+      }))
+      setApplications(mapped)
+      const total = mapped.length
+      const completed = mapped.filter(
+        m => m.status === 'Completed' || m.status === 'Processing'
+      ).length
+      const pending = total - completed
+      setMetrics({ total, completed, pending })
+    } catch (e) {
+      setError('Failed to load applications')
+      setApplications([])
+      setMetrics({ total: 0, completed: 0, pending: 0 })
+    } finally {
+      setLoading(false)
     }
-    fetchData()
+  }
+
+  useEffect(() => {
+    loadApplications()
   }, [])
 
   useEffect(() => {
@@ -202,12 +211,21 @@ export default function VisaApplications () {
   const toggleSelectAll = () => {
     setSelectedIds(prev => (isAllSelected ? [] : [...allRowIds]))
   }
-  const markSelectedAsProcess = () => {
-    // Implement API call or state update here
-    // For now just log selected IDs
+  const markSelectedAsProcess = async (ids = null) => {
+    const targetIds = Array.isArray(ids) ? ids : selectedIds
+    if (!targetIds || targetIds.length === 0) return
+
     try {
-      console.log('Mark as process for IDs:', selectedIds)
-    } catch {}
+      setLoading(true)
+      await updateStatus({ ids: targetIds })
+      await loadApplications()
+      setSelectedIds([])
+      setActiveDropdown(null)
+    } catch (e) {
+      console.error('Failed to update status', e)
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleDownloadExcel = () => {
@@ -503,7 +521,7 @@ export default function VisaApplications () {
                           </button>
                           <button
                             className='block w-full text-left px-4 py-2 text-sm text-[#2D3658] hover:bg-[#F6F7FD]'
-                            onClick={() => markSelectedAsProcess()}
+                            onClick={() => markSelectedAsProcess([app.id])}
                           >
                             Mark as process
                           </button>
