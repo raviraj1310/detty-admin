@@ -284,6 +284,7 @@ export default function MerchandisePage () {
       const total = Number(o?.totalAmount || 0)
       const statusRaw = String(o?.status || '').trim()
       const statusUC = statusRaw.toUpperCase()
+      const customerName = o?.userName || o?.userId?.name || '-'
       const payment =
         statusUC === 'PAID'
           ? 'PAID'
@@ -309,6 +310,7 @@ export default function MerchandisePage () {
           merchandiseName: title,
           merchandiseImage: imageUrl,
           category,
+          customerName,
           quantity: qty
             ? `${qty} x ${toCurrency(unitPrice)}`
             : `${toCurrency(unitPrice)}`,
@@ -332,6 +334,7 @@ export default function MerchandisePage () {
     if (!term) return true
     const termDigits = term.replace(/[^0-9]/g, '')
     const name = String(merchandise.merchandiseName || '').toLowerCase()
+    const customerName = String(merchandise.customerName || '').toLowerCase()
     const category = String(merchandise.category || '').toLowerCase()
     const dateStr = String(merchandise.eventDate || '').toLowerCase()
     const dateDigits = String(merchandise.eventDate || '').replace(
@@ -339,7 +342,10 @@ export default function MerchandisePage () {
       ''
     )
     const matchesText =
-      name.includes(term) || category.includes(term) || dateStr.includes(term)
+      name.includes(term) ||
+      category.includes(term) ||
+      customerName.includes(term) ||
+      dateStr.includes(term)
     const matchesDigits = termDigits && dateDigits.includes(termDigits)
     return matchesText || matchesDigits
   })
@@ -573,7 +579,7 @@ export default function MerchandisePage () {
                   </th>
                   <th className='px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
                     <div className='flex items-center'>
-                      <span>Category</span>
+                      <span>Customer Name</span>
                       <TbCaretUpDownFilled className='w-3 h-3 text-gray-400 ml-1' />
                     </div>
                   </th>
@@ -644,7 +650,7 @@ export default function MerchandisePage () {
                     </td>
                     <td className='px-3 py-3 whitespace-nowrap'>
                       <span className='text-sm font-medium text-gray-900'>
-                        {merchandise.category}
+                        {merchandise.customerName}
                       </span>
                     </td>
                     <td className='px-3 py-3 whitespace-nowrap text-sm text-gray-900'>

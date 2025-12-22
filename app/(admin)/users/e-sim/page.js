@@ -116,9 +116,15 @@ export default function EsimUsersPage () {
 
   const rows = useMemo(() => {
     const list = Array.isArray(rowsRaw) ? rowsRaw : []
-    return list.map(r => ({
+    const sortedList = [...list].sort((a, b) => {
+      const dateA = new Date(a?.createdAt || 0)
+      const dateB = new Date(b?.createdAt || 0)
+      return dateB - dateA
+    })
+    return sortedList.map(r => ({
       id: String(r?._id || r?.id || Math.random()),
       orderId: String(r?._id || '-'),
+      customerName: String(r?.name || '-'),
       eventDate: formatDate(r?.createdAt) || '-',
       amount: toCurrency(r?.amount || 0),
       activityStatus: 'Done',
@@ -456,6 +462,12 @@ export default function EsimUsersPage () {
                   </th>
                   <th className='px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
                     <div className='flex items-center'>
+                      <span>Customer Name</span>
+                      <TbCaretUpDownFilled className='w-3 h-3 text-gray-400 ml-1' />
+                    </div>
+                  </th>
+                  <th className='px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                    <div className='flex items-center'>
                       <span>Date & Time</span>
                       <TbCaretUpDownFilled className='w-3 h-3 text-gray-400 ml-1' />
                     </div>
@@ -504,6 +516,9 @@ export default function EsimUsersPage () {
                     >
                       <td className='px-3 py-3 whitespace-nowrap text-sm text-gray-500'>
                         {row.orderId}
+                      </td>
+                      <td className='px-3 py-3 whitespace-nowrap text-sm text-gray-900'>
+                        {row.customerName}
                       </td>
                       <td className='px-3 py-3 whitespace-nowrap'>
                         <div className='text-sm font-medium text-gray-900 leading-tight'>
