@@ -246,9 +246,9 @@ export default function MerchandisePage () {
         let hasApiStats = false
 
         // 1. Check if stats exist at root level
-        if (typeof res?.totalBookingsYesterday !== 'undefined') {
+        if (typeof res?.totalPurchasingYesterday !== 'undefined') {
           const d = res
-          const yesterdayCount = Number(d.totalBookingsYesterday || 0)
+          const yesterdayCount = Number(d.totalPurchasingYesterday || 0)
           let yesterdayDateStr = d.yesterdayDate || ''
           const yDate = new Date(yesterdayDateStr)
           if (!isNaN(yDate.getTime())) {
@@ -283,10 +283,10 @@ export default function MerchandisePage () {
         else if (
           res?.data &&
           !Array.isArray(res.data) &&
-          typeof res.data.totalBookingsYesterday !== 'undefined'
+          typeof res.data.totalPurchasingYesterday !== 'undefined'
         ) {
           const d = res.data
-          const yesterdayCount = Number(d.totalBookingsYesterday || 0)
+          const yesterdayCount = Number(d.totalPurchasingYesterday || 0)
           let yesterdayDateStr = d.yesterdayDate || ''
           const yDate = new Date(yesterdayDateStr)
           if (!isNaN(yDate.getTime())) {
