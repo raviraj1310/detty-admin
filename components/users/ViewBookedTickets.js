@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { TbCaretUpDownFilled } from 'react-icons/tb'
+import * as XLSX from 'xlsx'
 import {
   getAllBookings,
   getUserActivityTicketList,
@@ -628,6 +629,399 @@ export default function ViewBookedTickets ({ userId, userName }) {
     { id: 'leadway', label: 'Leadway' }
   ]
 
+  const handleExportAll = async () => {
+    if (!uid) return
+    const wb = XLSX.utils.book_new()
+    try {
+      const resEvents = await getAllBookings(uid)
+      const eventsList = Array.isArray(resEvents?.data?.event)
+        ? resEvents.data.event
+        : Array.isArray(resEvents?.event)
+        ? resEvents.event
+        : []
+      const eventsRows = (eventsList || []).map(b => {
+        const ticketsText = Array.isArray(b?.tickets)
+          ? b.tickets
+              .map(
+                t =>
+                  `${t.quantity || 0} x ${
+                    t.ticketName || '-'
+                  } (${formatCurrency(t.perTicketPrice)})`
+              )
+              .join(' | ')
+          : '-'
+        return {
+          'Event Date': toDateString(b?.createdAt || b?.arrivalDate),
+          'Event Name': b?.eventId?.eventName || b?.eventName || '-',
+          Type:
+            Array.isArray(b?.tickets) && b.tickets[0]?.ticketType
+              ? b.tickets[0].ticketType
+              : '-',
+          Quantity: b?.quantity ?? '-',
+          'Tickets Booked': ticketsText,
+          'Order ID': b?.orderId || '-',
+          'Transaction Ref': b?.transactionRef || '-',
+          'Payment Status': b?.paymentStatus || '-',
+          'Service Fee':
+            typeof b?.pricing?.serviceFee === 'number'
+              ? formatCurrency(b.pricing.serviceFee)
+              : '-',
+          'Total Amount':
+            typeof b?.totalAmount === 'number'
+              ? formatCurrency(b.totalAmount)
+              : '-',
+          'Final Payable':
+            typeof b?.finalPayableAmount === 'number'
+              ? formatCurrency(b.finalPayableAmount)
+              : '-'
+        }
+      })
+      if (eventsRows.length) {
+        const ws = XLSX.utils.json_to_sheet(eventsRows)
+        XLSX.utils.book_append_sheet(wb, ws, 'Event Booking Details')
+      }
+    } catch {}
+    try {
+      const resActivities = await getUserActivityTicketList(uid)
+      const activitiesList = Array.isArray(resActivities)
+        ? resActivities
+        : Array.isArray(resActivities?.data)
+        ? resActivities.data
+        : []
+      const activitiesRows = (activitiesList || []).map(b => {
+        const ticketsText = Array.isArray(b?.tickets)
+          ? b.tickets
+              .map(
+                t =>
+                  `${t.quantity || 0} x ${
+                    t.ticketName || '-'
+                  } (${formatCurrency(t.perTicketPrice)})`
+              )
+              .join(' | ')
+          : '-'
+        const totalTicketsAmount = Array.isArray(b?.tickets)
+          ? b.tickets.reduce(
+              (sum, t) => sum + (Number(t?.totalPrice || 0) || 0),
+              0
+            )
+          : null
+        return {
+          'Added On': toDateString(b?.createdAt || b?.arrivalDate),
+          'Activity Name':
+            b?.activityId?.activityName || b?.activityName || '-',
+          Location: b?.activityId?.location || '-',
+          Type:
+            Array.isArray(b?.tickets) && b.tickets[0]?.ticketType
+              ? b.tickets[0].ticketType
+              : '-',
+          Quantity: b?.quantity ?? '-',
+          'Tickets Booked': ticketsText,
+          'Order ID': b?.orderId || '-',
+          'Transaction Ref': b?.transactionRef || '-',
+          'Payment Status': b?.paymentStatus || '-',
+          'Service Fee':
+            typeof b?.pricing?.serviceFee === 'number'
+              ? formatCurrency(b.pricing.serviceFee)
+              : '-',
+          'Total Amount':
+            typeof totalTicketsAmount === 'number'
+              ? formatCurrency(totalTicketsAmount)
+              : '-',
+          'Final Payable':
+            typeof b?.finalPayableAmount === 'number'
+              ? formatCurrency(b.finalPayableAmount)
+              : '-',
+          Website: b?.activityId?.websiteLink || '-'
+        }
+      })
+      if (activitiesRows.length) {
+        const ws = XLSX.utils.json_to_sheet(activitiesRows)
+        XLSX.utils.book_append_sheet(wb, ws, 'Activity Booking Details')
+      }
+    } catch {}
+    try {
+      const resMerch = await getMyOrders(uid)
+      const merchList = Array.isArray(resMerch)
+        ? resMerch
+        : Array.isArray(resMerch?.data)
+        ? resMerch.data
+        : []
+      const merchRows = (merchList || []).map(m => {
+        const itemsText = Array.isArray(m?.items)
+          ? m.items
+              .map(it => {
+                const title =
+                  it?.productId?.title || it?.title || it?.name || '-'
+                const category =
+                  it?.productId?.categoryId?.title || it?.category?.title || ''
+                const qty = Number(it?.quantity || it?.qty || 0)
+                const price =
+                  typeof it?.price === 'number' ? formatCurrency(it.price) : '-'
+                const size = it?.size ? `, Size: ${it.size}` : ''
+                const cat = category ? ` [${category}]` : ''
+                return `${qty} x ${title}${cat} (${price}${size})`
+              })
+              .join(' | ')
+          : '-'
+        return {
+          'Added On': toDateString(m?.createdAt),
+          'Order ID': m?.orderId || '-',
+          Items: itemsText,
+          'Shipping Address': m?.shippingAddress || '-',
+          'Billing Address': m?.billingAddress || '-',
+          'Service Fee':
+            typeof m?.serviceFee === 'number'
+              ? formatCurrency(m.serviceFee)
+              : '-',
+          'Shipping Charge':
+            typeof m?.shippingCharge === 'number'
+              ? formatCurrency(m.shippingCharge)
+              : '-',
+          Discount:
+            typeof m?.discount === 'number' ? formatCurrency(m.discount) : '-',
+          'Total Amount':
+            typeof m?.totalAmount === 'number'
+              ? formatCurrency(m.totalAmount)
+              : '-',
+          Status: m?.status || '-',
+          'Transaction Ref': m?.transactionRef || m?.transacionId || '-'
+        }
+      })
+      if (merchRows.length) {
+        const ws = XLSX.utils.json_to_sheet(merchRows)
+        XLSX.utils.book_append_sheet(wb, ws, 'Merchandise Orders')
+      }
+    } catch {}
+    try {
+      const resEsim = await getMyESimOrders(uid)
+      const esimList = Array.isArray(resEsim)
+        ? resEsim
+        : Array.isArray(resEsim?.data)
+        ? resEsim.data
+        : []
+      const esimRows = (esimList || []).map(b => ({
+        Date: toDateString(b?.createdAt),
+        Reference: b?.reference || '-',
+        Amount: typeof b?.amount === 'number' ? formatCurrency(b.amount) : '-',
+        'Final Payable':
+          typeof b?.finalPayableAmount === 'number'
+            ? formatCurrency(b.finalPayableAmount)
+            : '-',
+        'Payment Status': b?.paymentStatus || '-',
+        'Wallet Funds':
+          typeof b?.userId?.walletFunds === 'number'
+            ? formatCurrency(b.userId.walletFunds)
+            : '-'
+      }))
+      if (esimRows.length) {
+        const ws = XLSX.utils.json_to_sheet(esimRows)
+        XLSX.utils.book_append_sheet(wb, ws, 'eSIM/Data Plans')
+      }
+    } catch {}
+    try {
+      const resAcc = await getMyStayBookings(uid)
+      const accList = Array.isArray(resAcc)
+        ? resAcc
+        : Array.isArray(resAcc?.data)
+        ? resAcc.data
+        : []
+      const accRows = (accList || []).map(b => ({
+        'Check-in': toDateString(b?.checkInDate),
+        'Check-out': toDateString(b?.checkOutDate),
+        Hotel: b?.hotelName || '-',
+        Room: b?.roomName || '-',
+        'No. of Rooms': b?.noOfRooms ?? '-',
+        Guests: b?.guests ?? '-',
+        Amount: typeof b?.amount === 'number' ? formatCurrency(b.amount) : '-',
+        'Final Payable':
+          typeof b?.finalPayableAmount === 'number'
+            ? formatCurrency(b.finalPayableAmount)
+            : '-',
+        'Transaction Ref': b?.transactionRef || b?.transactionId || '-',
+        'Payment Status': b?.paymentStatus || '-'
+      }))
+      if (accRows.length) {
+        const ws = XLSX.utils.json_to_sheet(accRows)
+        XLSX.utils.book_append_sheet(wb, ws, 'Accommodation Bookings')
+      }
+    } catch {}
+    try {
+      const resMed = await getMyMedOrders(uid)
+      const medList = Array.isArray(resMed) ? resMed : []
+      const medRows = (medList || []).map(b => {
+        const itemsText = Array.isArray(b?.items)
+          ? b.items
+              .map(it => {
+                const qty = Number(it?.qty || 0)
+                const name = it?.productName || '-'
+                const price =
+                  typeof it?.price === 'number' ? formatCurrency(it.price) : '-'
+                const barcode = it?.barcode ? ` [${it.barcode}]` : ''
+                return `${qty} x ${name}${barcode} (${price})`
+              })
+              .join(' | ')
+          : '-'
+        const shipAddr = b?.api_response?.data?.shipping_address
+        const shippingAddress = shipAddr
+          ? [shipAddr.address, shipAddr.city, shipAddr.state, shipAddr.country]
+              .filter(Boolean)
+              .join(', ')
+          : '-'
+        return {
+          Date: toDateString(b?.createdAt || b?.api_response?.data?.created_at),
+          'Order Key': b?.orderKey || '-',
+          Items: itemsText,
+          'Shipping Method':
+            b?.shipping_method || b?.api_response?.data?.delivery_method || '-',
+          'Shipping Address': shippingAddress,
+          'Store ID': b?.store_id ?? '-',
+          Status: b?.status || '-',
+          'Order Amount':
+            typeof b?.api_response?.data?.order_amount === 'number'
+              ? formatCurrency(b.api_response.data.order_amount)
+              : '-',
+          'Payment Status': b?.api_response?.data?.payment_status || '-',
+          'Payment Method': b?.api_response?.data?.payment_method || '-',
+          'Shipping Cost':
+            typeof b?.api_response?.data?.shipping_cost === 'number'
+              ? formatCurrency(b.api_response.data.shipping_cost)
+              : '-',
+          'Delivery Method': b?.api_response?.data?.delivery_method || '-'
+        }
+      })
+      if (medRows.length) {
+        const ws = XLSX.utils.json_to_sheet(medRows)
+        XLSX.utils.book_append_sheet(wb, ws, 'Med Plus Orders')
+      }
+    } catch {}
+    try {
+      const resRoyal = await myRoyalBookings(uid)
+      const royalList = Array.isArray(resRoyal)
+        ? resRoyal
+        : Array.isArray(resRoyal?.data)
+        ? resRoyal.data
+        : []
+      const royalRows = (royalList || []).map(b => ({
+        Date: toDateString(b?.createdAt || b?.serviceDetails?.travel_date),
+        Tier: b?.serviceDetails?.tier || '-',
+        Flight: b?.serviceDetails?.flight_number || '-',
+        'Passenger Count': b?.serviceDetails?.passenger_count ?? '-',
+        Currency: b?.financials?.currency || '-',
+        Amount:
+          typeof b?.financials?.rcs_line_item_value === 'number'
+            ? formatCurrency(b.financials.rcs_line_item_value)
+            : '-',
+        'Remittance Amount':
+          typeof b?.financials?.remittance_amount === 'number'
+            ? formatCurrency(b.financials.remittance_amount)
+            : '-',
+        'Marketplace Fee':
+          typeof b?.financials?.marketplace_fee === 'number'
+            ? formatCurrency(b.financials.marketplace_fee)
+            : '-',
+        'Final Payable':
+          typeof b?.finalPayableAmount === 'number'
+            ? formatCurrency(b.finalPayableAmount)
+            : '-',
+        'RC Booking Ref': b?.rcBookingReference || '-',
+        'RC Status': b?.rcStatus || '-',
+        'Transaction ID': b?.transactionId || '-',
+        Source: b?.source || '-'
+      }))
+      if (royalRows.length) {
+        const ws = XLSX.utils.json_to_sheet(royalRows)
+        XLSX.utils.book_append_sheet(wb, ws, 'Royal Concierge')
+      }
+    } catch {}
+    try {
+      const resRides = await getMyRideBookings(uid)
+      const ridesList = Array.isArray(resRides)
+        ? resRides
+        : Array.isArray(resRides?.data)
+        ? resRides.data
+        : []
+      const ridesRows = (ridesList || []).map(b => {
+        const pg = b?.pickupGeometry || {}
+        const dg = b?.dropoffGeometry || {}
+        const vehicleOrdersText = Array.isArray(b?.vehicleOrders)
+          ? b.vehicleOrders
+              .map(vo => {
+                const q = vo?.quantity ?? '-'
+                const vid = vo?.charter_vehicle_id ?? '-'
+                const pa = vo?.pickup_address || '-'
+                const da = vo?.dropoff_address || '-'
+                return `${q} x Vehicle ${vid} | ${pa} → ${da}`
+              })
+              .join(' | ')
+          : '-'
+        return {
+          Date: toDateString(b?.createdAt || b?.pickupDate),
+          Reference: b?.reference || '-',
+          'Pickup Address': b?.pickupAddress || '-',
+          'Dropoff Address': b?.dropoffAddress || '-',
+          'Pickup Geo':
+            pg?.lat != null && pg?.lng != null ? `${pg.lat},${pg.lng}` : '-',
+          'Dropoff Geo':
+            dg?.lat != null && dg?.lng != null ? `${dg.lat},${dg.lng}` : '-',
+          'Pickup Date': toDateString(b?.pickupDate),
+          'Pickup Time': b?.pickupTime || '-',
+          'Final Payable':
+            typeof b?.finalPayableAmount === 'number'
+              ? formatCurrency(b.finalPayableAmount)
+              : '-',
+          'Payment Status': b?.paymentStatus || '-',
+          Status: b?.status || '-',
+          Tag: b?.tag || '-',
+          'Vehicle Orders': vehicleOrdersText
+        }
+      })
+      if (ridesRows.length) {
+        const ws = XLSX.utils.json_to_sheet(ridesRows)
+        XLSX.utils.book_append_sheet(wb, ws, 'Rides')
+      }
+    } catch {}
+    try {
+      const resLead = await getMyLeadPlans(uid)
+      const leadList = Array.isArray(resLead)
+        ? resLead
+        : Array.isArray(resLead?.data)
+        ? resLead.data
+        : []
+      const leadRows = (leadList || []).map(b => ({
+        Date: toDateString(b?.createdAt),
+        'First Name': b?.firstName || '-',
+        Surname: b?.surname || '-',
+        'Other Name': b?.otherName || '-',
+        DOB: b?.dob_MM_dd_yyyy || '-',
+        Gender: b?.gender || '-',
+        'Marital Status': b?.maritalStatus || '-',
+        Address: b?.address || '-',
+        State: b?.state || '-',
+        'Scheme ID': b?._scheme_id ?? '-',
+        'Enrollee No': b?.enrolleeNo ?? '-',
+        'Debit Note No': b?.debiteNoteNo ?? '-',
+        'Purchase Amount':
+          typeof b?.purchaseAmount === 'number'
+            ? formatCurrency(b.purchaseAmount)
+            : '-',
+        'Total Pay Amount':
+          typeof b?.totalPayAmount === 'number'
+            ? formatCurrency(b.totalPayAmount)
+            : '-',
+        'Payment Status': b?.paymentStatus || '-'
+      }))
+      if (leadRows.length) {
+        const ws = XLSX.utils.json_to_sheet(leadRows)
+        XLSX.utils.book_append_sheet(wb, ws, 'Leadway')
+      }
+    } catch {}
+    const fn =
+      'Bookings_' +
+      (displayName ? displayName.replace(/\s+/g, '_') : uid || 'user') +
+      '.xlsx'
+    XLSX.writeFile(wb, fn)
+  }
+
   return (
     <div className='bg-gray-200 p-5 rounded-xl'>
       <div className='bg-white rounded-lg shadow-sm border border-gray-200'>
@@ -659,6 +1053,25 @@ export default function ViewBookedTickets ({ userId, userName }) {
                   />
                 </svg>
               </div>
+              <button
+                onClick={handleExportAll}
+                className='flex items-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 bg-white'
+              >
+                <svg
+                  className='w-4 h-4 text-gray-600'
+                  fill='none'
+                  stroke='currentColor'
+                  viewBox='0 0 24 24'
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap='round'
+                    strokeLinejoin='round'
+                    d='M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3'
+                  />
+                </svg>
+                <span className='ml-2 text-gray-700 font-medium'>Export</span>
+              </button>
             </div>
           </div>
           <div className='flex space-x-2 mt-3 overflow-x-auto pb-2'>

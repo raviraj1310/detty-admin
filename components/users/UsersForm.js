@@ -11,6 +11,7 @@ import {
 import Toast from '@/components/ui/Toast'
 import { ChevronUp, ChevronDown } from 'lucide-react'
 import { TbCaretUpDownFilled } from 'react-icons/tb'
+import { downloadExcel } from '@/utils/excelExport'
 
 const mapUser = d => {
   const created = d?.createdAt || d?.created_on || d?.created || ''
@@ -652,6 +653,7 @@ export default function UsersForm () {
     active: 0,
     inactive: 0
   })
+  const [exporting, setExporting] = useState(false)
 
   const fetchStats = async () => {
     try {
@@ -920,6 +922,107 @@ export default function UsersForm () {
     setFiltersOpen(v => !v)
   }
 
+  const handleDownloadExcel = async () => {
+    try {
+      setExporting(true)
+      const baseParams = { page: 1, limit: 5000 }
+      if (debouncedSearch) baseParams.search = debouncedSearch
+      if (statusFilter) baseParams.status = statusFilter
+      const firstRes = await getUsers(baseParams)
+      const firstPayload = firstRes?.data || firstRes || {}
+      const firstList = Array.isArray(firstPayload?.users)
+        ? firstPayload.users
+        : Array.isArray(firstRes?.data)
+        ? firstRes.data
+        : Array.isArray(firstRes)
+        ? firstRes
+        : []
+      const pages = Number(firstPayload?.pages ?? 1)
+      const requests = []
+      for (let p = 2; p <= pages; p++) {
+        requests.push(getUsers({ ...baseParams, page: p }))
+      }
+      const results = requests.length ? await Promise.all(requests) : []
+      const rest = results.flatMap(r => {
+        const pl = r?.data || r || {}
+        const arr = Array.isArray(pl?.users)
+          ? pl.users
+          : Array.isArray(r?.data)
+          ? r.data
+          : Array.isArray(r)
+          ? r
+          : []
+        return arr
+      })
+      const rawAll = [...firstList, ...rest]
+      const pairs = rawAll.map(d => ({ raw: d, derived: mapUser(d) }))
+      const uniqueMap = new Map()
+      pairs.forEach(p => uniqueMap.set(p.derived.id, p))
+      const deduped = Array.from(uniqueMap.values())
+      const dir = sort.dir === 'asc' ? 1 : -1
+      const getVal = u => {
+        switch (sort.key) {
+          case 'createdTs':
+            return u.derived.createdTs || 0
+          case 'name':
+            return String(u.derived.name || '').toLowerCase()
+          case 'email':
+            return String(u.derived.email || '').toLowerCase()
+          case 'phone':
+            return String(u.derived.phone || '').toLowerCase()
+          case 'walletPointsNum':
+            return Number(u.derived.walletPointsNum || 0)
+          case 'status':
+            return u.derived.status === 'Active' ? 'Active' : 'Inactive'
+          default:
+            return ''
+        }
+      }
+      const sortedAll = sort.key
+        ? [...deduped].sort((a, b) => {
+            const va = getVal(a)
+            const vb = getVal(b)
+            if (va < vb) return -1 * dir
+            if (va > vb) return 1 * dir
+            return 0
+          })
+        : deduped
+      const dataToExport = sortedAll.map(p => {
+        const u = p.derived
+        const r = p.raw || {}
+        const profile = r.profile || {}
+        return {
+          'Created On': u.createdOn,
+          'User Name': u.name,
+          Email: u.email,
+          'Phone Number': u.phone,
+          'Wallet Points': u.walletPoints,
+          Status: u.status,
+          'User ID': u.rawId || u.id,
+          Role: r.role,
+          'Profile Image': r.profileImage,
+          'Wallet Funds':
+            typeof r.walletFunds !== 'undefined'
+              ? r.walletFunds
+              : r.walletPoints,
+          'profile._id': profile._id,
+          'profile.homeAddress': profile.homeAddress,
+          'profile.postalCode': profile.postalCode,
+          'profile.countryOfCitizenship': profile.countryOfCitizenship,
+          'profile.countryOfResidence': profile.countryOfResidence,
+          'profile.state': profile.state,
+          'profile.createdAt': profile.createdAt,
+          'profile.updatedAt': profile.updatedAt
+        }
+      })
+      if (dataToExport.length) {
+        downloadExcel(dataToExport, 'Users.xlsx')
+      }
+    } finally {
+      setExporting(false)
+    }
+  }
+
   return (
     <div className='p-4 h-full flex flex-col bg-white'>
       <Toast
@@ -1061,7 +1164,11 @@ export default function UsersForm () {
                 </button>
 
                 {/* Download */}
-                <button className='flex items-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 bg-white'>
+                <button
+                  onClick={handleDownloadExcel}
+                  disabled={exporting}
+                  className='flex items-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 bg-white disabled:opacity-50'
+                >
                   <svg
                     className='w-4 h-4 text-gray-600'
                     fill='none'
