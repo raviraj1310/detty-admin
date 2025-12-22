@@ -601,7 +601,7 @@ export default function PlacesToVisit() {
                         {activity.status}
                       </span>
                     </div>
-                    <div className="flex items-center justify-end self-center relative">
+                    <div className="flex items-center justify-end self-center relative overflow-visible">
                       <button
                         onClick={() =>
                           setActiveDropdown(
@@ -610,38 +610,49 @@ export default function PlacesToVisit() {
                               : activity.id || idx
                           )
                         }
-                        className="rounded-full border border-transparent p-1 text-[#8C93AF] transition hover:border-[#E5E8F6] hover:bg-[#F5F7FD] hover:text-[#2D3658]"
+                        className="rounded-full border border-transparent p-1 text-[#8C93AF]
+               hover:bg-[#F5F7FD]"
                       >
                         <MoreVertical className="h-4 w-4" />
                       </button>
+
                       {activeDropdown === (activity.id || idx) && (
                         <div
                           ref={dropdownRef}
-                          className="absolute right-0 top-full mt-1 w-48 rounded-md shadow-lg bg-white border border-[#E5E8F5] z-50"
+                          className={`absolute right-0 w-48 rounded-md shadow-lg
+        bg-white border border-[#E5E8F5] z-[999]
+        ${
+          idx >= sortedActivities.length - 2
+            ? "bottom-full mb-2"
+            : "top-full mt-2"
+        }
+      `}
                         >
                           <div className="py-1">
                             <Link
                               href={`/places-to-visit/edit/${activity.id}`}
-                              className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                              className="block px-4 py-2 text-sm hover:bg-gray-100"
                             >
                               View/Edit Detail
                             </Link>
 
                             <Link
-                              className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                               href={`/places-to-visit/bookings/${activity.id}`}
+                              className="block px-4 py-2 text-sm hover:bg-gray-100"
                             >
                               View Tickets Booked
                             </Link>
+
                             <Link
-                              className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                               href={`/places-to-visit/edit-tickets/${activity.id}`}
+                              className="block px-4 py-2 text-sm hover:bg-gray-100"
                             >
                               View/Edit Tickets
                             </Link>
+
                             <button
                               onClick={() => handleCopyActivity(activity.id)}
-                              className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                              className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
                             >
                               Copy Activity
                             </button>
