@@ -22,7 +22,7 @@ const cardDefs = [
   { id: 'total', title: 'Total Visa Applications', bg: 'bg-[#1F57D6]' },
   {
     id: 'completed',
-    title: 'Processing Visa Applications',
+    title: 'Processed Visa Applications',
     bg: 'bg-[#15803D]'
   },
   { id: 'pending', title: 'Pending Visa Applications', bg: 'bg-[#B91C1C]' }
@@ -37,13 +37,14 @@ const toStatus = v => {
   const s = String(v || '')
     .trim()
     .toLowerCase()
-  if (s === 'processing') return 'Processing'
-  return s === 'completed' ? 'Completed' : 'Pending'
+  if (s === 'processed') return 'Processed'
+  if (s === 'completed') return 'Completed'
+  return 'Pending'
 }
 
 const statusClass = s => {
   const v = String(s || '').toLowerCase()
-  if (v === 'completed' || v === 'processing')
+  if (v === 'processed')
     return 'bg-emerald-50 text-emerald-600 border border-emerald-200'
   if (v === 'pending') return 'bg-red-50 text-red-600 border border-red-200'
   return 'bg-gray-100 text-gray-600 border border-gray-200'
@@ -97,7 +98,7 @@ export default function VisaApplications () {
       setApplications(mapped)
       const total = mapped.length
       const completed = mapped.filter(
-        m => m.status === 'Completed' || m.status === 'Processing'
+        m => m.status === 'Completed' || m.status === 'Processed'
       ).length
       const pending = total - completed
       setMetrics({ total, completed, pending })
