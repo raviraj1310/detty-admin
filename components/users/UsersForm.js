@@ -1094,7 +1094,7 @@ export default function UsersForm () {
                     <button
                       onClick={() => setPage(p => Math.max(1, p - 1))}
                       disabled={page <= 1 || loading}
-                      className='px-3 py-1.5 border border-gray-300 rounded bg-white disabled:opacity-50'
+                      className='px-3 py-1.5 border border-gray-300 rounded bg-gray-100 text-gray-700 font-medium hover:bg-gray-200 disabled:opacity-50 disabled:bg-gray-50 disabled:text-gray-400'
                     >
                       Prev
                     </button>
@@ -1104,7 +1104,7 @@ export default function UsersForm () {
                     <button
                       onClick={() => setPage(p => Math.min(pageCount, p + 1))}
                       disabled={page >= pageCount || loading}
-                      className='px-3 py-1.5 border border-gray-300 rounded bg-white disabled:opacity-50'
+                      className='px-3 py-1.5 border border-gray-300 rounded bg-gray-100 text-gray-700 font-medium hover:bg-gray-200 disabled:opacity-50 disabled:bg-gray-50 disabled:text-gray-400'
                     >
                       Next
                     </button>
@@ -1116,10 +1116,10 @@ export default function UsersForm () {
 
           {/* Table */}
           <div className='flex-1 overflow-auto'>
-            <table className='w-full'>
+            <table className='w-full table-fixed'>
               <thead className='bg-gray-50'>
                 <tr>
-                  <th className='px-4 py-2 text-left text-xs font-medium uppercase tracking-[0.12em]'>
+                  <th className='w-[12%] px-3 py-2 text-left text-xs font-medium uppercase tracking-[0.08em]'>
                     <TableHeaderCell
                       onClick={() => toggleSort('createdTs')}
                       active={sort.key === 'createdTs'}
@@ -1128,7 +1128,7 @@ export default function UsersForm () {
                       Created On
                     </TableHeaderCell>
                   </th>
-                  <th className='px-4 py-2 text-left text-xs font-medium uppercase tracking-[0.12em]'>
+                  <th className='w-[14%] px-3 py-2 text-left text-xs font-medium uppercase tracking-[0.08em]'>
                     <TableHeaderCell
                       onClick={() => toggleSort('name')}
                       active={sort.key === 'name'}
@@ -1137,7 +1137,7 @@ export default function UsersForm () {
                       User Name
                     </TableHeaderCell>
                   </th>
-                  <th className='px-4 py-2 text-left text-xs font-medium uppercase tracking-[0.12em]'>
+                  <th className='w-[22%] px-3 py-2 text-left text-xs font-medium uppercase tracking-[0.08em]'>
                     <TableHeaderCell
                       onClick={() => toggleSort('email')}
                       active={sort.key === 'email'}
@@ -1146,7 +1146,7 @@ export default function UsersForm () {
                       Email
                     </TableHeaderCell>
                   </th>
-                  <th className='px-4 py-2 text-left text-xs font-medium uppercase tracking-[0.12em]'>
+                  <th className='w-[10%] px-3 py-2 text-left text-xs font-medium uppercase tracking-[0.08em]'>
                     <TableHeaderCell
                       onClick={() => toggleSort('phone')}
                       active={sort.key === 'phone'}
@@ -1155,7 +1155,7 @@ export default function UsersForm () {
                       Phone Number
                     </TableHeaderCell>
                   </th>
-                  <th className='px-4 py-2 text-left text-xs font-medium uppercase tracking-[0.12em]'>
+                  <th className='w-[10%] px-3 py-2 text-left text-xs font-medium uppercase tracking-[0.08em]'>
                     <TableHeaderCell
                       onClick={() => toggleSort('walletPointsNum')}
                       active={sort.key === 'walletPointsNum'}
@@ -1164,10 +1164,10 @@ export default function UsersForm () {
                       Wallet Points
                     </TableHeaderCell>
                   </th>
-                  <th className='px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                  <th className='w-[12%] px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-[0.08em]'>
                     Actions
                   </th>
-                  <th className='px-4 py-2 text-left text-xs font-medium uppercase tracking-[0.12em]'>
+                  <th className='w-[10%] px-3 py-2 text-left text-xs font-medium uppercase tracking-[0.08em]'>
                     <TableHeaderCell
                       onClick={() => toggleSort('status')}
                       active={sort.key === 'status'}
@@ -1176,14 +1176,14 @@ export default function UsersForm () {
                       Status
                     </TableHeaderCell>
                   </th>
-                  <th className='px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider'></th>
+                  <th className='w-[10%] px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-[0.08em]'></th>
                 </tr>
               </thead>
               <tbody className='bg-white divide-y divide-gray-200'>
                 {loading && (
                   <tr>
                     <td
-                      className='px-4 py-3 text-sm text-[#5E6582]'
+                      className='px-3 py-4 text-sm text-[#5E6582]'
                       colSpan={8}
                     >
                       Loading...
@@ -1192,7 +1192,7 @@ export default function UsersForm () {
                 )}
                 {error && !loading && (
                   <tr>
-                    <td className='px-4 py-3 text-sm text-red-600' colSpan={8}>
+                    <td className='px-3 py-4 text-sm text-red-600' colSpan={8}>
                       {error}
                     </td>
                   </tr>
@@ -1201,15 +1201,15 @@ export default function UsersForm () {
                   !error &&
                   sortedUsers.map(user => (
                     <tr key={user.id} className='hover:bg-gray-50'>
-                      <td className='px-4 py-3 whitespace-wrap text-sm text-gray-500'>
+                      <td className='px-3 py-4 text-xs text-gray-500 line-clamp-2'>
                         {user.createdOn}
                       </td>
-                      <td className='px-4 py-3 whitespace-nowrap'>
+                      <td className='px-3 py-4'>
                         <div className='flex items-center'>
-                          <div className='flex-shrink-0 h-8 w-8'>
-                            <div className='h-8 w-8 rounded-full bg-gray-300 flex items-center justify-center'>
+                          <div className='flex-shrink-0 h-7 w-7'>
+                            <div className='h-7 w-7 rounded-full bg-gray-300 flex items-center justify-center'>
                               <svg
-                                className='w-4 h-4 text-gray-600'
+                                className='w-3.5 h-3.5 text-gray-600'
                                 fill='currentColor'
                                 viewBox='0 0 20 20'
                               >
@@ -1221,9 +1221,9 @@ export default function UsersForm () {
                               </svg>
                             </div>
                           </div>
-                          <div className='ml-3'>
+                          <div className='ml-2 min-w-0'>
                             <div
-                              className='text-sm font-medium text-gray-900 leading-tight break-all'
+                              className='text-xs font-medium text-gray-900 leading-tight line-clamp-2'
                               title={user.name}
                             >
                               {truncateText(user.name)}
@@ -1231,18 +1231,18 @@ export default function UsersForm () {
                           </div>
                         </div>
                       </td>
-                      <td className='px-4 py-3 whitespace-nowrap text-sm text-gray-500'>
+                      <td className='px-3 py-4 text-xs text-gray-500 truncate'>
                         {user.email}
                       </td>
-                      <td className='px-4 py-3 whitespace-nowrap text-sm text-gray-500'>
+                      <td className='px-3 py-4 text-xs text-gray-500'>
                         {user.phone}
                       </td>
-                      <td className='px-4 py-3 whitespace-nowrap'>
-                        <span className='text-sm font-medium text-blue-600'>
+                      <td className='px-3 py-4'>
+                        <span className='text-xs font-medium text-blue-600'>
                           {user.walletPoints}
                         </span>
                       </td>
-                      <td className='px-4 py-3 whitespace-nowrap text-sm text-gray-500'>
+                      <td className='px-3 py-4 text-xs text-gray-500'>
                         <button
                           onClick={() => {
                             const id = encodeURIComponent(
@@ -1255,14 +1255,14 @@ export default function UsersForm () {
                               `/users/view-booked-tickets/${id}?${qs}`
                             )
                           }}
-                          className='text-blue-600 underline hover:text-blue-800 transition-colors'
+                          className='text-blue-600 underline hover:text-blue-800 transition-colors text-xs'
                         >
                           View Bookings
                         </button>
                       </td>
-                      <td className='px-4 py-3 whitespace-nowrap'>
+                      <td className='px-3 py-4'>
                         <span
-                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
                             user.status === 'Active'
                               ? 'bg-green-100 text-green-800'
                               : 'bg-red-100 text-red-800'
@@ -1271,7 +1271,7 @@ export default function UsersForm () {
                           {user.status}
                         </span>
                       </td>
-                      <td className='px-4 py-3 whitespace-nowrap text-right relative'>
+                      <td className='px-3 py-4 text-right relative'>
                         <ActionDropdown
                           userId={user.rawId}
                           onChangeStatus={handleStatusChange}

@@ -2,7 +2,7 @@ import WalletForm from '@/components/users/WalletForm'
 
 export default function WalletPage () {
   return (
-    <div className='p-4 h-screen bg-white overflow-hidden'>
+    <div className='p-4 min-h-screen bg-white'>
       {/* Title and Breadcrumb */}
       <div className='mb-4'>
         <h1 className='text-xl font-bold text-gray-900 mb-1'>Wallet - </h1>

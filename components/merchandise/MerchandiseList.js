@@ -428,7 +428,7 @@ export default function MerchandiseList () {
   }, [])
 
   return (
-    <div className='space-y-7 py-12 px-12'>
+    <div className='space-y-4 py-4 px-4'>
       <Toast
         open={toastOpen}
         onOpenChange={setToastOpen}
@@ -438,23 +438,23 @@ export default function MerchandiseList () {
         duration={2500}
         position='top-right'
       />
-      <div className='flex flex-col gap-4 md:flex-row md:items-start md:justify-between'>
-        <div className='flex flex-col gap-2'>
-          <h1 className='text-2xl font-semibold text-slate-900'>Merchandise</h1>
-          <p className='text-sm text-[#99A1BC]'>Dashboard / Merchandise</p>
+      <div className='flex flex-col gap-2 md:flex-row md:items-start md:justify-between'>
+        <div className='flex flex-col gap-1'>
+          <h1 className='text-xl font-semibold text-slate-900'>Merchandise</h1>
+          <p className='text-xs text-[#99A1BC]'>Dashboard / Merchandise</p>
         </div>
-        <div className='flex flex-wrap items-center gap-3 md:justify-end'>
+        <div className='flex flex-wrap items-center gap-2 md:justify-end'>
           <button
             onClick={() => {
               setViewAllLoading(true)
               router.push('/merchandise/order')
             }}
             disabled={viewAllLoading}
-            className='rounded-xl border border-[#E5E6EF] bg-white px-5 py-2.5 text-sm font-medium text-[#1A1F3F] shadow-sm transition hover:bg-[#F9FAFD] disabled:opacity-60 disabled:cursor-not-allowed'
+            className='rounded-lg border border-[#E5E6EF] bg-white px-3 py-1.5 text-xs font-medium text-[#1A1F3F] shadow-sm transition hover:bg-[#F9FAFD] disabled:opacity-60 disabled:cursor-not-allowed'
           >
             {viewAllLoading ? (
-              <span className='flex items-center gap-2'>
-                <Loader2 className='h-4 w-4 animate-spin' />
+              <span className='flex items-center gap-1.5'>
+                <Loader2 className='h-3 w-3 animate-spin' />
                 Loading...
               </span>
             ) : (
@@ -467,11 +467,11 @@ export default function MerchandiseList () {
               router.push('/merchandise/add')
             }}
             disabled={addNewLoading}
-            className='rounded-xl bg-[#FF5B2C] px-5 py-2.5 text-sm font-semibold text-white shadow-[0_14px_30px_-20px_rgba(248,113,72,0.65)] transition hover:bg-[#F0481A] disabled:opacity-60 disabled:cursor-not-allowed'
+            className='rounded-lg bg-[#FF5B2C] px-3 py-1.5 text-xs font-semibold text-white shadow-[0_14px_30px_-20px_rgba(248,113,72,0.65)] transition hover:bg-[#F0481A] disabled:opacity-60 disabled:cursor-not-allowed'
           >
             {addNewLoading ? (
-              <span className='flex items-center gap-2'>
-                <Loader2 className='h-4 w-4 animate-spin' />
+              <span className='flex items-center gap-1.5'>
+                <Loader2 className='h-3 w-3 animate-spin' />
                 Navigating...
               </span>
             ) : (
@@ -481,7 +481,7 @@ export default function MerchandiseList () {
         </div>
       </div>
 
-      <div className='grid grid-cols-1 md:grid-cols-3 gap-6 mb-8'>
+      <div className='grid grid-cols-1 md:grid-cols-3 gap-3 mb-4'>
         {metricCards.map(card => {
           const cardValue =
             card.id === 'total'
@@ -494,21 +494,21 @@ export default function MerchandiseList () {
           return (
             <div
               key={card.id}
-              className={`${card.bg} rounded-2xl p-6 text-white relative overflow-hidden`}
+              className={`${card.bg} rounded-xl p-3 text-white relative overflow-hidden`}
             >
               <div className='flex items-center justify-between'>
-                <div className='bg-white p-4 rounded-2xl flex-shrink-0'>
+                <div className='bg-white p-2.5 rounded-xl flex-shrink-0'>
                   <img
                     src={card.iconSrc}
                     alt={card.title}
-                    className='w-8 h-8'
+                    className='w-6 h-6'
                   />
                 </div>
                 <div className='text-right'>
-                  <p className='text-white/90 text-sm font-medium mb-2'>
+                  <p className='text-white/90 text-xs font-medium mb-1'>
                     {card.title}
                   </p>
-                  <p className='text-4xl font-bold text-white'>
+                  <p className='text-2xl font-bold text-white'>
                     {String(cardValue)}
                   </p>
                 </div>
@@ -518,21 +518,21 @@ export default function MerchandiseList () {
         })}
       </div>
 
-      <div className='rounded-[30px] border border-[#E1E6F7] bg-white p-6 shadow-[0_24px_60px_-40px_rgba(15,23,42,0.55)]'>
-        <div className='mb-6 flex flex-wrap items-center justify-between gap-4'>
-          <h2 className='text-lg font-semibold text-slate-900'>
+      <div className='rounded-2xl border border-[#E1E6F7] bg-white p-4 shadow-[0_24px_60px_-40px_rgba(15,23,42,0.55)]'>
+        <div className='mb-4 flex flex-wrap items-center justify-between gap-2'>
+          <h2 className='text-sm font-semibold text-slate-900'>
             Merchandise List
           </h2>
-          <div className='flex flex-wrap items-center gap-3'>
+          <div className='flex flex-wrap items-center gap-2'>
             <div className='relative flex items-center'>
               <input
                 type='text'
                 placeholder='Search'
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
-                className='h-10 rounded-xl border border-[#E5E6EF] bg-[#F8F9FC] pl-10 pr-4 text-sm text-slate-700 placeholder:text-[#B0B7D0] focus:border-[#C5CAE3] focus:outline-none focus:ring-2 focus:ring-[#C2C8E4]'
+                className='h-8 rounded-lg border border-[#E5E6EF] bg-[#F8F9FC] pl-8 pr-3 text-xs text-slate-700 placeholder:text-[#B0B7D0] focus:border-[#C5CAE3] focus:outline-none focus:ring-2 focus:ring-[#C2C8E4]'
               />
-              <Search className='absolute left-3 h-4 w-4 text-[#A6AEC7]' />
+              <Search className='absolute left-2.5 h-3.5 w-3.5 text-[#A6AEC7]' />
             </div>
             {filtersOpen && (
               <>
@@ -540,7 +540,7 @@ export default function MerchandiseList () {
                   <select
                     value={categoryFilter}
                     onChange={e => setCategoryFilter(e.target.value)}
-                    className='h-10 rounded-xl border border-[#E5E6EF] bg-white px-3 text-sm text-slate-700 focus:border-[#C5CAE3] focus:outline-none'
+                    className='h-8 rounded-lg border border-[#E5E6EF] bg-white px-2 text-xs text-slate-700 focus:border-[#C5CAE3] focus:outline-none'
                   >
                     <option value=''>All Categories</option>
                     {categoryOptions.map(t => (
@@ -554,7 +554,7 @@ export default function MerchandiseList () {
                   <select
                     value={statusFilter}
                     onChange={e => setStatusFilter(e.target.value)}
-                    className='h-10 rounded-xl border border-[#E5E6EF] bg-white px-3 text-sm text-slate-700 focus:border-[#C5CAE3] focus:outline-none'
+                    className='h-8 rounded-lg border border-[#E5E6EF] bg-white px-2 text-xs text-slate-700 focus:border-[#C5CAE3] focus:outline-none'
                   >
                     <option value=''>All Status</option>
                     <option value='Active'>Active</option>
@@ -566,20 +566,20 @@ export default function MerchandiseList () {
             <button
               onClick={() => setFiltersOpen(prev => !prev)}
               aria-expanded={filtersOpen}
-              className='flex h-10 items-center gap-2 rounded-xl border border-[#E5E6EF] bg-white px-4 text-sm font-medium text-[#2D3658] transition hover:bg-[#F6F7FD]'
+              className='flex h-8 items-center gap-1.5 rounded-lg border border-[#E5E6EF] bg-white px-3 text-xs font-medium text-[#2D3658] transition hover:bg-[#F6F7FD]'
             >
-              <IoFilterSharp className='h-4 w-4 text-[#8B93AF]' />
+              <IoFilterSharp className='h-3.5 w-3.5 text-[#8B93AF]' />
               {filtersOpen ? 'Hide Filters' : 'Filters'}
             </button>
-            <button className='flex h-10 items-center gap-2 rounded-xl border border-[#E5E6EF] bg-white px-4 text-sm font-medium text-[#2D3658] transition hover:bg-[#F6F7FD]'>
-              <Download className='h-4 w-4 text-[#8B93AF]' />
+            <button className='flex h-8 items-center gap-1.5 rounded-lg border border-[#E5E6EF] bg-white px-3 text-xs font-medium text-[#2D3658] transition hover:bg-[#F6F7FD]'>
+              <Download className='h-3.5 w-3.5 text-[#8B93AF]' />
             </button>
           </div>
         </div>
 
-        <div className='overflow-visible rounded-2xl border border-[#E5E8F5]'>
-          <div className='grid grid-cols-12 gap-4 bg-[#F7F9FD] px-6 py-4'>
-            <div className='col-span-2'>
+        <div className='overflow-visible rounded-xl border border-[#E5E8F5]'>
+          <div className='grid grid-cols-[13%_20%_10%_10%_10%_10%_10%_9%_8%] bg-[#F7F9FD] px-3 py-2.5'>
+            <div>
               <TableHeaderCell
                 onClick={() => handleSort('addedOn')}
                 active={sortBy === 'addedOn'}
@@ -588,7 +588,7 @@ export default function MerchandiseList () {
                 Added On
               </TableHeaderCell>
             </div>
-            <div className='col-span-3'>
+            <div>
               <TableHeaderCell
                 onClick={() => handleSort('name')}
                 active={sortBy === 'name'}
@@ -597,7 +597,7 @@ export default function MerchandiseList () {
                 Merchandise Name
               </TableHeaderCell>
             </div>
-            <div className='col-span-1'>
+            <div>
               <TableHeaderCell
                 onClick={() => handleSort('category')}
                 active={sortBy === 'category'}
@@ -606,7 +606,7 @@ export default function MerchandiseList () {
                 Category
               </TableHeaderCell>
             </div>
-            <div className='col-span-1'>
+            <div>
               <TableHeaderCell
                 onClick={() => handleSort('price')}
                 active={sortBy === 'price'}
@@ -615,27 +615,27 @@ export default function MerchandiseList () {
                 Price
               </TableHeaderCell>
             </div>
-            <div className='col-span-1 flex justify-end'>
+            <div className='flex justify-end'>
               <TableHeaderCell
                 align='right'
                 onClick={() => handleSort('stockCount')}
                 active={sortBy === 'stockCount'}
                 direction={sortDir}
               >
-                Stock Count
+                Stock
               </TableHeaderCell>
             </div>
-            <div className='col-span-1 flex justify-end'>
+            <div className='flex justify-end'>
               <TableHeaderCell
                 align='right'
                 onClick={() => handleSort('stockLeft')}
                 active={sortBy === 'stockLeft'}
                 direction={sortDir}
               >
-                Stock Left
+                Left
               </TableHeaderCell>
             </div>
-            <div className='col-span-1 flex justify-end'>
+            <div className='flex justify-end'>
               <TableHeaderCell
                 align='right'
                 onClick={() => handleSort('orders')}
@@ -645,7 +645,7 @@ export default function MerchandiseList () {
                 Orders
               </TableHeaderCell>
             </div>
-            <div className='col-span-1 flex justify-end'>
+            <div className='flex justify-end'>
               <TableHeaderCell
                 align='right'
                 onClick={() => handleSort('status')}
@@ -655,7 +655,7 @@ export default function MerchandiseList () {
                 Status
               </TableHeaderCell>
             </div>
-            <div className='col-span-1 flex justify-end'>
+            <div className='flex justify-end'>
               <TableHeaderCell align='right'>Action</TableHeaderCell>
             </div>
           </div>
@@ -664,68 +664,68 @@ export default function MerchandiseList () {
             {filteredRows.map(item => (
               <div
                 key={item.rowKey}
-                className='grid grid-cols-12 gap-4 px-6 py-5 hover:bg-[#F9FAFD] relative'
+                className='grid grid-cols-[13%_20%_10%_10%_10%_10%_10%_9%_8%] px-3 py-2.5 hover:bg-[#F9FAFD] relative'
               >
-                <div className='col-span-2 self-center text-sm text-[#5E6582]'>
+                <div className='self-center text-xs text-[#5E6582] line-clamp-2'>
                   {item.addedOn}
                 </div>
-                <div className='col-span-3 flex items-center gap-4'>
-                  <div className='relative h-14 w-14 overflow-hidden rounded-xl bg-[#F0F2F8] flex items-center justify-center'>
+                <div className='flex items-center gap-2 min-w-0'>
+                  <div className='relative h-10 w-10 overflow-hidden rounded-lg bg-[#F0F2F8] flex items-center justify-center flex-shrink-0'>
                     {item.image ? (
                       <Image
                         src={item.image}
                         alt={item.name}
                         fill
-                        sizes='56px'
+                        sizes='40px'
                         className='object-cover'
                         unoptimized={true}
                       />
                     ) : (
                       <span
-                        className={`text-lg font-semibold text-white ${item.imageBg} h-full w-full flex items-center justify-center`}
+                        className={`text-sm font-semibold text-white ${item.imageBg} h-full w-full flex items-center justify-center`}
                       >
                         {item.name.charAt(0)}
                       </span>
                     )}
                   </div>
-                  <div>
+                  <div className='min-w-0'>
                     <p
-                      className='text-sm font-semibold text-slate-900'
+                      className='text-xs font-semibold text-slate-900 line-clamp-2'
                       dangerouslySetInnerHTML={{ __html: item.name }}
                     />
                   </div>
                 </div>
-                <div className='col-span-1 self-center text-sm text-[#5E6582]'>
+                <div className='self-center text-xs text-[#5E6582] line-clamp-2'>
                   {item.category}
                 </div>
-                <div className='col-span-1 self-center text-sm font-semibold text-slate-900'>
+                <div className='self-center text-xs font-semibold text-slate-900'>
                   {item.priceText}
                 </div>
-                <div className='col-span-1 self-center text-sm font-semibold text-slate-900 text-right'>
+                <div className='self-center text-xs font-semibold text-slate-900 text-right'>
                   {item.stockCount}
                 </div>
-                <div className='col-span-1 self-center text-sm font-semibold text-slate-900 text-right'>
+                <div className='self-center text-xs font-semibold text-slate-900 text-right'>
                   {item.stockLeftText}
                 </div>
-                <div className='col-span-1 flex items-center underline gap-2 self-center text-sm font-semibold whitespace-nowrap justify-end'>
+                <div className='flex items-center underline gap-1 self-center text-xs font-semibold whitespace-nowrap justify-end'>
                   <Link
                     href={item.id ? `/merchandise/order/${item.id}` : '#'}
                     className='text-xs text-[#0069C5] hover:text-[#0F4EF1] transition-colors font-semibold'
                   >
-                    <span className='text-xs text-[#0069C5]  hover:text-[#0F4EF1] transition-colors'>
+                    <span className='text-xs text-[#0069C5] hover:text-[#0F4EF1] transition-colors'>
                       {item.ordersCount}{' '}
                     </span>
-                    View List
+                    View
                   </Link>
                 </div>
-                <div className='col-span-1 flex items-center justify-end gap-1'>
+                <div className='flex items-center justify-end gap-1'>
                   <span
-                    className={`rounded-full px-3 py-1 text-xs font-semibold ${item.statusClass}`}
+                    className={`rounded-full px-2 py-0.5 text-xs font-semibold ${item.statusClass}`}
                   >
                     {item.status}
                   </span>
                 </div>
-                <div className='col-span-1 relative flex items-center justify-end gap-2 z-10'>
+                <div className='relative flex items-center justify-end gap-1 z-10'>
                   <span className='relative z-10'>
                     <button
                       onClick={() =>
@@ -887,7 +887,7 @@ export default function MerchandiseList () {
               </div>
             ))}
             {filteredRows.length === 0 && (
-              <div className='px-6 py-5 text-sm text-[#5E6582]'>
+              <div className='px-3 py-3 text-xs text-[#5E6582]'>
                 No merchandise found
               </div>
             )}

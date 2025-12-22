@@ -208,7 +208,7 @@ export default function EditMerchandise ({ merchandiseId }) {
   }
 
   return (
-    <div className='space-y-7 py-12 px-12'>
+    <div className='space-y-7 py-6 px-6'>
       <Toast
         open={toastOpen}
         onOpenChange={setToastOpen}

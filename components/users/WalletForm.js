@@ -282,7 +282,7 @@ export default function WalletForm() {
   };
 
   return (
-    <div className="p-4 h-screen bg-white overflow-hidden">
+    <div className="p-4 min-h-screen bg-white">
       {/* Balance Card */}
       <div className="mb-6">
         <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl p-6 text-white">

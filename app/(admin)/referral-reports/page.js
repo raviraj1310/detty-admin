@@ -287,7 +287,7 @@ export default function ReferralReportsPage () {
   return (
     <div className='min-h-full bg-[#F4F6FB]'>
       <div className='rounded-[30px] border border-white/80 bg-white'>
-        <div className='p-6 sm:p-8 lg:p-10'>
+        <div className='p-3 sm:p-5 lg:p-5'>
           <div className='mb-4'>
             <h1 className='text-2xl font-semibold text-slate-900'>
               Referral Reports

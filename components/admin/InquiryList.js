@@ -201,7 +201,7 @@ export default function InquiryList () {
   }
 
   return (
-    <div className='space-y-7 py-12 px-12'>
+    <div className='space-y-7 py-2 px-2'>
       <div className='flex flex-col gap-4 md:flex-row md:items-start md:justify-between'>
         <div className='flex flex-col gap-2'>
           <h1 className='text-2xl font-semibold text-slate-900'>Inquiries</h1>
@@ -209,21 +209,21 @@ export default function InquiryList () {
         </div>
       </div>
 
-      <div className='grid grid-cols-1 md:grid-cols-3 gap-6 mb-8'>
+      <div className='grid grid-cols-1 md:grid-cols-3 gap-3 mb-4'>
         {cardDefs.map(card => (
           <div
             key={card.id}
-            className={`${card.bg} rounded-2xl p-6 text-white relative overflow-hidden`}
+            className={`${card.bg} rounded-xl p-3 text-white relative overflow-hidden`}
           >
             <div className='flex items-center justify-between'>
-              <div className='bg-white/10 p-4 rounded-2xl flex-shrink-0'>
-                <card.Icon className='h-8 w-8 text-white' />
+              <div className='bg-white/10 p-2.5 rounded-xl flex-shrink-0'>
+                <card.Icon className='h-6 w-6 text-white' />
               </div>
               <div className='text-right'>
-                <p className='text-white/90 text-sm font-medium mb-2'>
+                <p className='text-white/90 text-xs font-medium mb-1'>
                   {card.title}
                 </p>
-                <p className='text-4xl font-bold text-white'>
+                <p className='text-2xl font-bold text-white'>
                   {String(
                     card.id === 'total'
                       ? metrics.total
@@ -296,7 +296,7 @@ export default function InquiryList () {
         </div>
 
         <div className='overflow-visible rounded-2xl border border-[#E5E8F5]'>
-          <div className='grid grid-cols-[1.2fr_1.8fr_1.6fr_1.4fr_1.8fr_1.2fr_2fr] gap-3 bg-[#F7F9FD] px-6 py-4'>
+          <div className='grid grid-cols-[1.2fr_1.8fr_1.6fr_1.4fr_1.8fr_1.2fr_2fr] gap-2 bg-[#F7F9FD] px-4 py-3'>
             <div>
               <TableHeaderCell onClick={() => toggleSort('date')}>
                 Submitted On
@@ -334,17 +334,17 @@ export default function InquiryList () {
 
           <div className='divide-y divide-[#EEF1FA] bg-white'>
             {loading && (
-              <div className='px-6 py-5 text-sm text-[#5E6582]'>Loading...</div>
+              <div className='px-4 py-3 text-sm text-[#5E6582]'>Loading...</div>
             )}
             {error && !loading && (
-              <div className='px-6 py-5 text-sm text-red-600'>{error}</div>
+              <div className='px-4 py-3 text-sm text-red-600'>{error}</div>
             )}
             {!loading &&
               !error &&
               sorted.map((s, idx) => (
                 <div
                   key={s.id || idx}
-                  className='grid grid-cols-[1.2fr_1.8fr_1.6fr_1.4fr_1.8fr_1.2fr_2fr] gap-3 px-6 py-5 hover:bg-[#F9FAFD]'
+                  className='grid grid-cols-[1.2fr_1.8fr_1.6fr_1.4fr_1.8fr_1.2fr_2fr] gap-2 px-4 py-3 hover:bg-[#F9FAFD]'
                 >
                   <div className='self-center text-sm text-[#5E6582]'>
                     {(() => {

@@ -179,29 +179,29 @@ export default function ContactUsList () {
   }
 
   return (
-    <div className='space-y-7 py-12 px-12'>
-      <div className='flex flex-col gap-4 md:flex-row md:items-start md:justify-between'>
-        <div className='flex flex-col gap-2'>
+    <div className='space-y-4 py-6 px-6'>
+      <div className='flex flex-col gap-1 md:flex-row md:items-start md:justify-between'>
+        <div className='flex flex-col gap-1'>
           <h1 className='text-2xl font-semibold text-slate-900'>Contact Us</h1>
           <p className='text-sm text-[#99A1BC]'>Dashboard / Contact Us</p>
         </div>
       </div>
 
-      <div className='grid grid-cols-1 md:grid-cols-3 gap-6 mb-8'>
+      <div className='grid grid-cols-1 md:grid-cols-3 gap-3 mb-4'>
         {cardDefs.map(card => (
           <div
             key={card.id}
-            className={`${card.bg} rounded-2xl p-6 text-white relative overflow-hidden`}
+            className={`${card.bg} rounded-xl p-3 text-white relative overflow-hidden`}
           >
             <div className='flex items-center justify-between'>
-              <div className='bg-white/10 p-4 rounded-2xl flex-shrink-0'>
-                <card.Icon className='h-8 w-8 text-white' />
+              <div className='bg-white/10 p-2.5 rounded-xl flex-shrink-0'>
+                <card.Icon className='h-6 w-6 text-white' />
               </div>
               <div className='text-right'>
-                <p className='text-white/90 text-sm font-medium mb-2'>
+                <p className='text-white/90 text-xs font-medium mb-1'>
                   {card.title}
                 </p>
-                <p className='text-4xl font-bold text-white'>
+                <p className='text-2xl font-bold text-white'>
                   {String(
                     card.id === 'total'
                       ? metrics.total
@@ -216,33 +216,33 @@ export default function ContactUsList () {
         ))}
       </div>
 
-      <div className='rounded-[30px] border border-[#E1E6F7] bg-white p-6 shadow-[0_24px_60px_-40px_rgba(15,23,42,0.55)]'>
-        <div className='mb-6 flex flex-wrap items-center justify-between gap-4'>
-          <h2 className='text-lg font-semibold text-slate-900'>
+      <div className='rounded-xl border border-[#E1E6F7] bg-white p-4 shadow-[0_24px_60px_-40px_rgba(15,23,42,0.55)]'>
+        <div className='mb-3 flex flex-wrap items-center justify-between gap-2'>
+          <h2 className='text-sm font-semibold text-slate-900'>
             Contact us Enquiries
           </h2>
-          <div className='flex flex-wrap items-center gap-3'>
+          <div className='flex flex-wrap items-center gap-2'>
             <div className='relative flex items-center'>
               <input
                 type='text'
                 placeholder='Search'
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
-                className='h-10 rounded-xl border border-[#E5E6EF] bg-[#F8F9FC] pl-10 pr-4 text-sm text-slate-700 placeholder:text-[#B0B7D0] focus:border-[#C5CAE3] focus:outline-none focus:ring-2 focus:ring-[#C2C8E4]'
+                className='h-8 rounded-lg border border-[#E5E6EF] bg-[#F8F9FC] pl-8 pr-3 text-xs text-slate-700 placeholder:text-[#B0B7D0] focus:border-[#C5CAE3] focus:outline-none focus:ring-2 focus:ring-[#C2C8E4]'
               />
-              <Search className='absolute left-3 h-4 w-4 text-[#A6AEC7]' />
+              <Search className='absolute left-2.5 h-3.5 w-3.5 text-[#A6AEC7]' />
             </div>
             <button
-              className='flex h-10 items-center gap-2 rounded-xl border border-[#E5E6EF] bg-white px-4 text-sm font-medium text-[#2D3658] transition hover:bg-[#F6F7FD]'
+              className='flex h-8 items-center gap-1.5 rounded-lg border border-[#E5E6EF] bg-white px-3 text-xs font-medium text-[#2D3658] transition hover:bg-[#F6F7FD]'
               onClick={downloadCsv}
             >
-              <Download className='h-4 w-4 text-[#8B93AF]' />
+              <Download className='h-3.5 w-3.5 text-[#8B93AF]' />
             </button>
           </div>
         </div>
 
-        <div className='overflow-visible rounded-2xl border border-[#E5E8F5]'>
-          <div className='grid grid-cols-[1.2fr_1fr_1fr_1.8fr_1.6fr_2fr] gap-3 bg-[#F7F9FD] px-6 py-4'>
+        <div className='overflow-visible rounded-lg border border-[#E5E8F5]'>
+          <div className='grid grid-cols-[1.2fr_1fr_1fr_1.8fr_1.6fr_2fr] gap-2 bg-[#F7F9FD] px-4 py-2.5'>
             <div>
               <TableHeaderCell onClick={() => toggleSort('date')}>
                 Submitted On
@@ -275,17 +275,17 @@ export default function ContactUsList () {
 
           <div className='divide-y divide-[#EEF1FA] bg-white'>
             {loading && (
-              <div className='px-6 py-5 text-sm text-[#5E6582]'>Loading...</div>
+              <div className='px-4 py-3 text-sm text-[#5E6582]'>Loading...</div>
             )}
             {error && !loading && (
-              <div className='px-6 py-5 text-sm text-red-600'>{error}</div>
+              <div className='px-4 py-3 text-sm text-red-600'>{error}</div>
             )}
             {!loading &&
               !error &&
               sorted.map((s, idx) => (
                 <div
                   key={s.id || idx}
-                  className='grid grid-cols-[1.2fr_1fr_1fr_1.8fr_1.6fr_2fr] gap-3 px-6 py-5 hover:bg-[#F9FAFD]'
+                  className='grid grid-cols-[1.2fr_1fr_1fr_1.8fr_1.6fr_2fr] gap-2 px-4 py-3 hover:bg-[#F9FAFD]'
                 >
                   <div className='self-center text-sm text-[#5E6582]'>
                     {(() => {

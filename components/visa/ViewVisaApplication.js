@@ -104,7 +104,7 @@ export default function ViewVisaApplication({ applicationId }) {
   }, [applicationId])
 
   return (
-    <div className='space-y-7 py-12 px-12'>
+    <div className='space-y-7 py-6 px-6'>
       <div className='flex flex-col gap-2'>
         <h1 className='text-2xl font-semibold text-slate-900'>View Visa Application</h1>
         <p className='text-sm text-[#99A1BC]'>Dashboard / Visa Applications / View</p>

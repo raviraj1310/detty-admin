@@ -379,7 +379,7 @@ export default function DiscoverEvents() {
   };
 
   return (
-    <div className="space-y-7 py-12 px-12">
+    <div className="space-y-7 py-6 px-6">
       <Toast
         open={toastOpen}
         onOpenChange={setToastOpen}
@@ -431,7 +431,7 @@ export default function DiscoverEvents() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {metricCards.map((card) => {
           const cardValue =
             card.id === "total"
@@ -446,21 +446,21 @@ export default function DiscoverEvents() {
           return (
             <div
               key={card.id}
-              className={`${card.bg} rounded-2xl p-5 text-white relative overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300`}
+              className={`${card.bg} rounded-xl p-3 text-white relative overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300`}
             >
-              <div className="flex items-start justify-between gap-3">
-                <div className="bg-white/95 p-3.5 rounded-xl flex-shrink-0 shadow-sm">
+              <div className="flex items-center justify-between gap-2">
+                <div className="bg-white/95 p-2.5 rounded-lg flex-shrink-0 shadow-sm">
                   <img
                     src={card.iconSrc}
                     alt={card.title}
-                    className="w-9 h-9"
+                    className="w-7 h-7"
                   />
                 </div>
                 <div className="text-right flex-1 min-w-0">
-                  <p className="text-white/95 text-xs font-medium mb-1.5 leading-tight">
+                  <p className="text-white/95 text-xs font-medium mb-0.5 leading-tight">
                     {card.title}
                   </p>
-                  <p className="text-3xl lg:text-4xl font-bold text-white tracking-tight">
+                  <p className="text-2xl font-bold text-white tracking-tight">
                     {String(cardValue)}
                   </p>
                 </div>
@@ -526,9 +526,9 @@ export default function DiscoverEvents() {
         </div>
 
         <div className="overflow-x-auto rounded-2xl border border-[#E5E8F5]">
-          <div className="min-w-[1200px]">
-            <div className="grid grid-cols-12 gap-4 bg-[#F7F9FD] px-6 py-4">
-              <div className="col-span-2">
+          <div className="w-full min-w-[900px]">
+            <div className="grid grid-cols-[14%_22%_12%_10%_16%_10%_8%_8%] gap-1 bg-[#F7F9FD] px-3 py-3">
+              <div>
                 <TableHeaderCell
                   onClick={() => handleSort("eventDate")}
                   active={sortBy === "eventDate"}
@@ -537,7 +537,7 @@ export default function DiscoverEvents() {
                   Event Date
                 </TableHeaderCell>
               </div>
-              <div className="col-span-3">
+              <div>
                 <TableHeaderCell
                   onClick={() => handleSort("eventName")}
                   active={sortBy === "eventName"}
@@ -546,7 +546,7 @@ export default function DiscoverEvents() {
                   Event Name
                 </TableHeaderCell>
               </div>
-              <div className="col-span-1">
+              <div>
                 <TableHeaderCell
                   onClick={() => handleSort("hostedBy")}
                   active={sortBy === "hostedBy"}
@@ -555,7 +555,7 @@ export default function DiscoverEvents() {
                   Hosted By
                 </TableHeaderCell>
               </div>
-              <div className="col-span-1">
+              <div>
                 <TableHeaderCell
                   onClick={() => handleSort("type")}
                   active={sortBy === "type"}
@@ -564,7 +564,7 @@ export default function DiscoverEvents() {
                   Type
                 </TableHeaderCell>
               </div>
-              <div className="col-span-2">
+              <div>
                 <TableHeaderCell
                   onClick={() => handleSort("location")}
                   active={sortBy === "location"}
@@ -573,7 +573,7 @@ export default function DiscoverEvents() {
                   Location
                 </TableHeaderCell>
               </div>
-              <div className="col-span-1">
+              <div>
                 <TableHeaderCell
                   onClick={() => handleSort("ticketsBooked")}
                   active={sortBy === "ticketsBooked"}
@@ -582,9 +582,8 @@ export default function DiscoverEvents() {
                   Tickets Booked
                 </TableHeaderCell>
               </div>
-              <div className="col-span-1 flex justify-end">
+              <div>
                 <TableHeaderCell
-                  align="right"
                   onClick={() => handleSort("status")}
                   active={sortBy === "status"}
                   direction={sortDir}
@@ -592,141 +591,136 @@ export default function DiscoverEvents() {
                   Status
                 </TableHeaderCell>
               </div>
-              <div className="col-span-1 flex justify-end">
+              <div className="flex justify-end">
                 <TableHeaderCell align="right">Action</TableHeaderCell>
               </div>
-              <div></div>
             </div>
 
             <div className="divide-y divide-[#EEF1FA] bg-white">
               {filteredRows.map((event) => (
                 <div
                   key={event.rowKey}
-                  className="grid grid-cols-12 gap-4 px-6 py-5 hover:bg-[#F9FAFD]"
+                  className="grid grid-cols-[14%_22%_12%_10%_16%_10%_8%_8%] gap-1 px-3 py-3 hover:bg-[#F9FAFD]"
                 >
-                  <div className="col-span-2 self-center text-sm text-[#5E6582]">
+                  <div className="self-center text-xs text-[#5E6582] line-clamp-2">
                     {event.eventDate}
                   </div>
-                  <div className="col-span-3 flex items-center gap-4">
-                    <div className="relative h-14 w-14 overflow-hidden rounded-xl bg-[#F0F2F8] flex items-center justify-center">
+                  <div className="flex items-center gap-2">
+                    <div className="relative h-9 w-9 flex-shrink-0 overflow-hidden rounded-lg bg-[#F0F2F8] flex items-center justify-center">
                       {event.image ? (
                         <Image
                           src={event.image}
                           alt={event.eventName}
                           fill
-                          sizes="56px"
+                          sizes="36px"
                           className="object-cover"
                           unoptimized={true}
                         />
                       ) : (
                         <span
-                          className={`text-lg font-semibold text-white ${event.imageBg} h-full w-full flex items-center justify-center`}
+                          className={`text-sm font-semibold text-white ${event.imageBg} h-full w-full flex items-center justify-center`}
                         >
                           {event.eventName.charAt(0)}
                         </span>
                       )}
                     </div>
-                    <div>
+                    <div className="min-w-0 flex-1">
                       <p
-                        className="text-sm font-semibold text-slate-900"
+                        className="text-xs font-semibold text-slate-900 line-clamp-2"
                         dangerouslySetInnerHTML={{ __html: event.eventName }}
                       />
                     </div>
                   </div>
-                  <div className="col-span-1 self-center text-sm font-medium text-slate-900">
+                  <div className="self-center text-xs font-medium text-slate-900 line-clamp-2">
                     {event.hostedBy}
                   </div>
-                  <div className="col-span-1 self-center text-sm text-[#5E6582]">
+                  <div className="self-center text-xs text-[#5E6582] line-clamp-2">
                     {event.type}
                   </div>
-                  <div className="col-span-2 self-center text-sm text-[#5E6582]">
+                  <div className="self-center text-xs text-[#5E6582] line-clamp-2">
                     {event.location}
                   </div>
-                  <div className="col-span-1 flex items-center underline gap-2 self-center text-sm font-semibold whitespace-nowrap">
+                  <div className="flex items-center self-center text-xs font-semibold">
                     <Link
                       href={
                         event.id
                           ? `/discover-events/tickets-booked/${event.id}`
                           : "#"
                       }
-                      className="text-xs text-[#0069C5] hover:text-[#0F4EF1] transition-colors font-semibold"
+                      className="text-xs text-[#0069C5] hover:text-[#0F4EF1] transition-colors font-semibold underline"
                     >
-                      <span className="text-xs text-[#0069C5]  hover:text-[#0F4EF1] transition-colors">
-                        {typeof event.ticketsBooked === "number"
-                          ? event.ticketsBooked
-                          : 0}{" "}
-                      </span>
+                      {typeof event.ticketsBooked === "number"
+                        ? event.ticketsBooked
+                        : 0}{" "}
                       View List
                     </Link>
                   </div>
-                  <div className="col-span-1 flex items-center justify-end gap-1">
+                  <div className="flex items-center">
                     <span
-                      className={`rounded-full px-3 py-1 text-xs font-semibold ${event.statusClass}`}
+                      className={`rounded-full px-2 py-0.5 text-xs font-semibold ${event.statusClass}`}
                     >
                       {event.status}
                     </span>
                   </div>
-                  <div className="col-span-1 relative flex items-center justify-end gap-2">
-                    <span>
-                      <button
-                        onClick={() =>
-                          setActiveDropdown(
-                            activeDropdown === event.rowKey
-                              ? null
-                              : event.rowKey
-                          )
-                        }
-                        className="rounded-full border border-transparent p-2 text-[#8C93AF] transition hover:border-[#E5E8F6] hover:bg-[#F5F7FD] hover:text-[#2D3658]"
+                  <div className="relative flex items-center justify-end">
+                    <button
+                      onClick={() =>
+                        setActiveDropdown(
+                          activeDropdown === event.rowKey
+                            ? null
+                            : event.rowKey
+                        )
+                      }
+                      className="rounded-full border border-transparent p-1 text-[#8C93AF] transition hover:border-[#E5E8F6] hover:bg-[#F5F7FD] hover:text-[#2D3658]"
+                    >
+                      <MoreVertical className="h-4 w-4" />
+                    </button>
+                    {activeDropdown === event.rowKey && (
+                      <div
+                        ref={dropdownRef}
+                        className="absolute right-0 top-full mt-1 w-48 rounded-md shadow-lg bg-white z-50"
                       >
-                        <MoreVertical className="h-4 w-4" />
-                      </button>
-                      {activeDropdown === event.rowKey && (
-                        <div
-                          ref={dropdownRef}
-                          className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white z-50"
-                        >
-                          <div className="py-1">
-                            <Link
-                              href={
-                                event.id
-                                  ? `/discover-events/detail/${event.id}`
-                                  : "#"
-                              }
-                              className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                            >
-                              View/Edit Detail
-                            </Link>
-                            <Link
-                              href={
-                                event.id
-                                  ? `/discover-events/tickets-booked/${event.id}`
-                                  : "#"
-                              }
-                              className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                            >
-                              View Tickets Booked
-                            </Link>
-                            <Link
-                              href={
-                                event.id
-                                  ? `/discover-events/edit-tickets/${event.id}`
-                                  : "#"
-                              }
-                              className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                            >
-                              View/Edit Tickets
-                            </Link>
+                        <div className="py-1">
+                          <Link
+                            href={
+                              event.id
+                                ? `/discover-events/detail/${event.id}`
+                                : "#"
+                            }
+                            className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                          >
+                            View/Edit Detail
+                          </Link>
+                          <Link
+                            href={
+                              event.id
+                                ? `/discover-events/tickets-booked/${event.id}`
+                                : "#"
+                            }
+                            className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                          >
+                            View Tickets Booked
+                          </Link>
+                          <Link
+                            href={
+                              event.id
+                                ? `/discover-events/edit-tickets/${event.id}`
+                                : "#"
+                            }
+                            className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                          >
+                            View/Edit Tickets
+                          </Link>
 
-                            <button
-                              onClick={() => handleCopyEvent(event.id)}
-                              className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                            >
-                              Copy Event
-                            </button>
-                          </div>
+                          <button
+                            onClick={() => handleCopyEvent(event.id)}
+                            className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                          >
+                            Copy Event
+                          </button>
                         </div>
-                      )}
-                    </span>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}

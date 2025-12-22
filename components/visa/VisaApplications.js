@@ -264,41 +264,33 @@ export default function VisaApplications () {
   }
 
   return (
-    <div className='space-y-7 py-12 px-12'>
-      <div className='flex flex-col gap-4 md:flex-row md:items-start md:justify-between'>
-        <div className='flex flex-col gap-2'>
-          <h1 className='text-2xl font-semibold text-slate-900'>
+    <div className='space-y-4 py-4 px-4'>
+      <div className='flex flex-col gap-2 md:flex-row md:items-start md:justify-between'>
+        <div className='flex flex-col gap-1'>
+          <h1 className='text-xl font-semibold text-slate-900'>
             Visa Applications
           </h1>
-          <p className='text-sm text-[#99A1BC]'>
+          <p className='text-xs text-[#99A1BC]'>
             Dashboard / Visa Applications
           </p>
         </div>
-        {/* <div className='flex flex-wrap items-center gap-3 md:justify-end'>
-          <button className='rounded-xl border border-[#E5E6EF] bg-white px-5 py-2.5 text-sm font-medium text-[#1A1F3F] shadow-sm transition hover:bg-[#F9FAFD]'>
-            View All Bookings
-          </button>
-          <button className='rounded-xl bg-[#FF5B2C] px-5 py-2.5 text-sm font-semibold text-white shadow-[0_14px_30px_-20px_rgba(248,113,72,0.65)] transition hover:bg-[#F0481A]'>
-            Add New Accommodation
-          </button>
-        </div> */}
       </div>
 
-      <div className='grid grid-cols-1 md:grid-cols-3 gap-6 mb-8'>
+      <div className='grid grid-cols-1 md:grid-cols-3 gap-3 mb-4'>
         {cardDefs.map(card => (
           <div
             key={card.id}
-            className={`${card.bg} rounded-2xl p-6 text-white relative overflow-hidden`}
+            className={`${card.bg} rounded-xl p-3 text-white relative overflow-hidden`}
           >
             <div className='flex items-center justify-between'>
-              <div className='bg-white/10 p-4 rounded-2xl flex-shrink-0'>
+              <div className='bg-white/10 p-2.5 rounded-xl flex-shrink-0'>
                 {card.id === 'completed' ? (
-                  <CheckCircle className='h-8 w-8 text-white' />
+                  <CheckCircle className='h-6 w-6 text-white' />
                 ) : card.id === 'pending' ? (
-                  <MinusCircle className='h-8 w-8 text-white' />
+                  <MinusCircle className='h-6 w-6 text-white' />
                 ) : (
                   <svg
-                    className='h-8 w-8 text-white'
+                    className='h-6 w-6 text-white'
                     fill='none'
                     stroke='currentColor'
                     viewBox='0 0 24 24'
@@ -313,10 +305,10 @@ export default function VisaApplications () {
                 )}
               </div>
               <div className='text-right'>
-                <p className='text-white/90 text-sm font-medium mb-2'>
+                <p className='text-white/90 text-xs font-medium mb-1'>
                   {card.title}
                 </p>
-                <p className='text-4xl font-bold text-white'>
+                <p className='text-2xl font-bold text-white'>
                   {String(
                     card.id === 'total'
                       ? metrics.total
@@ -331,16 +323,16 @@ export default function VisaApplications () {
         ))}
       </div>
 
-      <div className='rounded-[30px] border border-[#E1E6F7] bg-white p-6 shadow-[0_24px_60px_-40px_rgba(15,23,42,0.55)]'>
-        <div className='mb-6 flex flex-wrap items-center justify-between gap-4'>
-          <h2 className='text-lg font-semibold text-slate-900'>
+      <div className='rounded-2xl border border-[#E1E6F7] bg-white p-4 shadow-[0_24px_60px_-40px_rgba(15,23,42,0.55)]'>
+        <div className='mb-4 flex flex-wrap items-center justify-between gap-2'>
+          <h2 className='text-sm font-semibold text-slate-900'>
             Visa Applications List
           </h2>
-          <div className='flex flex-wrap items-center gap-3'>
+          <div className='flex flex-wrap items-center gap-2'>
             {selectedIds.length > 0 && (
               <button
                 onClick={markSelectedAsProcess}
-                className='flex h-10 items-center gap-2 rounded-xl bg-[#FF5B2C] px-4 text-sm font-semibold text-white transition hover:bg-[#F0481A]'
+                className='flex h-8 items-center gap-1.5 rounded-lg bg-[#FF5B2C] px-3 text-xs font-semibold text-white transition hover:bg-[#F0481A]'
               >
                 Mark as process
               </button>
@@ -351,32 +343,32 @@ export default function VisaApplications () {
                 placeholder='Search'
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
-                className='h-10 rounded-xl border border-[#E5E6EF] bg-[#F8F9FC] pl-10 pr-4 text-sm text-slate-700 placeholder:text-[#B0B7D0] focus:border-[#C5CAE3] focus:outline-none focus:ring-2 focus:ring-[#C2C8E4]'
+                className='h-8 rounded-lg border border-[#E5E6EF] bg-[#F8F9FC] pl-8 pr-3 text-xs text-slate-700 placeholder:text-[#B0B7D0] focus:border-[#C5CAE3] focus:outline-none focus:ring-2 focus:ring-[#C2C8E4]'
               />
-              <Search className='absolute left-3 h-4 w-4 text-[#A6AEC7]' />
+              <Search className='absolute left-2.5 h-3.5 w-3.5 text-[#A6AEC7]' />
             </div>
-            <button className='flex h-10 items-center gap-2 rounded-xl border border-[#E5E6EF] bg-white px-4 text-sm font-medium text-[#2D3658] transition hover:bg-[#F6F7FD]'>
-              <IoFilterSharp className='h-4 w-4 text-[#8B93AF]' />
+            <button className='flex h-8 items-center gap-1.5 rounded-lg border border-[#E5E6EF] bg-white px-3 text-xs font-medium text-[#2D3658] transition hover:bg-[#F6F7FD]'>
+              <IoFilterSharp className='h-3.5 w-3.5 text-[#8B93AF]' />
               Filters
             </button>
             <button
               onClick={handleDownloadExcel}
-              className='flex h-10 items-center gap-2 rounded-xl border border-[#E5E6EF] bg-white px-4 text-sm font-medium text-[#2D3658] transition hover:bg-[#F6F7FD]'
+              className='flex h-8 items-center gap-1.5 rounded-lg border border-[#E5E6EF] bg-white px-3 text-xs font-medium text-[#2D3658] transition hover:bg-[#F6F7FD]'
             >
-              <Download className='h-4 w-4 text-[#8B93AF]' />
+              <Download className='h-3.5 w-3.5 text-[#8B93AF]' />
               Export
             </button>
           </div>
         </div>
 
-        <div className='overflow-visible rounded-2xl border border-[#E5E8F5]'>
-          <div className='grid grid-cols-[44px_1.5fr_2fr_2fr_1.5fr_1fr_1.2fr_60px] gap-3 bg-[#F7F9FD] px-6 py-4'>
+        <div className='overflow-visible rounded-xl border border-[#E5E8F5]'>
+          <div className='grid grid-cols-[4%_14%_18%_22%_14%_10%_10%_8%] bg-[#F7F9FD] px-3 py-2.5'>
             <div className='flex items-center'>
               <input
                 type='checkbox'
                 checked={isAllSelected}
                 onChange={toggleSelectAll}
-                className='h-4 w-4 rounded border-[#D0D5DD] text-[#FF5B2C] focus:ring-[#FF5B2C]'
+                className='h-3.5 w-3.5 rounded border-[#D0D5DD] text-[#FF5B2C] focus:ring-[#FF5B2C]'
               />
             </div>
             <div>
@@ -412,27 +404,27 @@ export default function VisaApplications () {
 
           <div className='divide-y divide-[#EEF1FA] bg-white'>
             {loading && (
-              <div className='px-6 py-5 text-sm text-[#5E6582]'>Loading...</div>
+              <div className='px-3 py-3 text-xs text-[#5E6582]'>Loading...</div>
             )}
             {error && !loading && (
-              <div className='px-6 py-5 text-sm text-red-600'>{error}</div>
+              <div className='px-3 py-3 text-xs text-red-600'>{error}</div>
             )}
             {!loading &&
               !error &&
               sorted.map((app, idx) => (
                 <div
                   key={app.id || idx}
-                  className='grid grid-cols-[44px_1.5fr_2fr_2fr_1.5fr_1fr_1.2fr_60px] gap-3 px-6 py-5 hover:bg-[#F9FAFD]'
+                  className='grid grid-cols-[4%_14%_18%_22%_14%_10%_10%_8%] px-3 py-2.5 hover:bg-[#F9FAFD]'
                 >
                   <div className='self-center'>
                     <input
                       type='checkbox'
                       checked={isSelected(app.id)}
                       onChange={() => toggleRowSelect(app.id)}
-                      className='h-4 w-4 rounded border-[#D0D5DD] text-[#FF5B2C] focus:ring-[#FF5B2C]'
+                      className='h-3.5 w-3.5 rounded border-[#D0D5DD] text-[#FF5B2C] focus:ring-[#FF5B2C]'
                     />
                   </div>
-                  <div className='self-center text-sm text-[#5E6582]'>
+                  <div className='self-center text-xs text-[#5E6582] line-clamp-2'>
                     {(() => {
                       const d = app.createdOn
                       if (!d || d === '-') return '-'
@@ -440,15 +432,13 @@ export default function VisaApplications () {
                       return date.toLocaleString(undefined, {
                         weekday: 'short',
                         day: '2-digit',
-                        month: 'long',
-                        year: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
+                        month: 'short',
+                        year: 'numeric'
                       })
                     })()}
                   </div>
-                  <div className='flex items-center gap-3'>
-                    <div className='relative h-10 w-10 overflow-hidden rounded-full border-2 border-red-500 flex-shrink-0'>
+                  <div className='flex items-center gap-2 min-w-0'>
+                    <div className='relative h-8 w-8 overflow-hidden rounded-full border-2 border-red-500 flex-shrink-0'>
                       {app.avatar ? (
                         <img
                           src={app.avatar}
@@ -456,36 +446,36 @@ export default function VisaApplications () {
                           className='h-full w-full object-cover'
                         />
                       ) : (
-                        <span className='flex h-full w-full items-center justify-center bg-[#F0F2F8] text-sm font-semibold text-[#2D3658]'>
+                        <span className='flex h-full w-full items-center justify-center bg-[#F0F2F8] text-xs font-semibold text-[#2D3658]'>
                           {app.name?.charAt(0) || '?'}
                         </span>
                       )}
                     </div>
                     <div className='min-w-0'>
-                      <p className='text-sm font-medium text-slate-900 leading-tight'>
+                      <p className='text-xs font-medium text-slate-900 leading-tight line-clamp-2'>
                         {app.name}
                       </p>
                     </div>
                   </div>
-                  <div className='self-center text-sm text-[#5E6582]'>
+                  <div className='self-center text-xs text-[#5E6582] truncate'>
                     {app.email}
                   </div>
-                  <div className='self-center text-sm text-[#5E6582]'>
+                  <div className='self-center text-xs text-[#5E6582]'>
                     {app.phone}
                   </div>
-                  <div className='self-center text-sm text-[#5E6582]'>
+                  <div className='self-center text-xs text-[#5E6582]'>
                     <button
-                      className='text-[11px] font-semibold text-[#0F4EF1] hover:underline'
+                      className='text-[10px] font-semibold text-[#0F4EF1] hover:underline'
                       onClick={() =>
                         router.push(`/visa/applications/${app.id}`)
                       }
                     >
-                      View Application
+                      View
                     </button>
                   </div>
                   <div className='flex items-center self-center'>
                     <span
-                      className={`inline-flex items-center justify-center rounded-full px-3 py-1 text-xs font-semibold ${statusClass(
+                      className={`inline-flex items-center justify-center rounded-full px-2 py-0.5 text-[10px] font-semibold ${statusClass(
                         app.status
                       )}`}
                     >
@@ -501,18 +491,18 @@ export default function VisaApplications () {
                             : app.id || idx
                         )
                       }
-                      className='rounded-full border border-transparent p-2 text-[#8C93AF] transition hover:border-[#E5E8F6] hover:bg-[#F5F7FD] hover:text-[#2D3658]'
+                      className='rounded-full border border-transparent p-1.5 text-[#8C93AF] transition hover:border-[#E5E8F6] hover:bg-[#F5F7FD] hover:text-[#2D3658]'
                     >
-                      <MoreVertical className='h-4 w-4' />
+                      <MoreVertical className='h-3.5 w-3.5' />
                     </button>
                     {activeDropdown === (app.id || idx) && (
                       <div
                         ref={dropdownRef}
-                        className='absolute right-0 mt-2 w-52 rounded-xl border border-[#E5E8F5] bg-white shadow-[0_14px_30px_-20px_rgba(15,23,42,0.25)] z-50'
+                        className='absolute right-0 mt-2 w-44 rounded-lg border border-[#E5E8F5] bg-white shadow-[0_14px_30px_-20px_rgba(15,23,42,0.25)] z-50'
                       >
-                        <div className='py-2'>
+                        <div className='py-1'>
                           <button
-                            className='block w-full text-left px-4 py-2 text-sm text-[#2D3658] hover:bg-[#F6F7FD]'
+                            className='block w-full text-left px-3 py-1.5 text-xs text-[#2D3658] hover:bg-[#F6F7FD]'
                             onClick={() =>
                               router.push(`/visa/applications/${app.id}`)
                             }
@@ -520,13 +510,11 @@ export default function VisaApplications () {
                             View Application
                           </button>
                           <button
-                            className='block w-full text-left px-4 py-2 text-sm text-[#2D3658] hover:bg-[#F6F7FD]'
+                            className='block w-full text-left px-3 py-1.5 text-xs text-[#2D3658] hover:bg-[#F6F7FD]'
                             onClick={() => markSelectedAsProcess([app.id])}
                           >
                             Mark as process
                           </button>
-                          {/* <button className='block w-full text-left px-4 py-2 text-sm text-[#2D3658] hover:bg-[#F6F7FD]'>Mark as Completed</button>
-                        <button className='block w-full text-left px-4 py-2 text-sm text-[#2D3658] hover:bg-[#F6F7FD]'>Send VISA</button> */}
                         </div>
                       </div>
                     )}
