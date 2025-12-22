@@ -9,7 +9,14 @@ import {
   getUserWithProfile
 } from '@/services/users/user.service'
 import Toast from '@/components/ui/Toast'
-import { ChevronUp, ChevronDown } from 'lucide-react'
+import {
+  ChevronUp,
+  ChevronDown,
+  UserPlus,
+  TrendingUp,
+  TrendingDown,
+  BarChart2
+} from 'lucide-react'
 import { TbCaretUpDownFilled } from 'react-icons/tb'
 import { downloadExcel } from '@/utils/excelExport'
 
@@ -647,11 +654,18 @@ export default function UsersForm () {
   const [limit, setLimit] = useState(20)
   const [totalCount, setTotalCount] = useState(0)
   const [pageCount, setPageCount] = useState(1)
+  const [allCachedUsers, setAllCachedUsers] = useState(null)
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const [globalStats, setGlobalStats] = useState({
     total: 0,
     active: 0,
-    inactive: 0
+    inactive: 0,
+    yesterdayCount: 0,
+    yesterdayDateStr: '',
+    avgGrowthCount: 0,
+    isCountIncreasing: false,
+    avgGrowthPercent: 0,
+    isPctIncreasing: false
   })
   const [exporting, setExporting] = useState(false)
 
@@ -702,13 +716,125 @@ export default function UsersForm () {
       })
       const uniqueUsers = Array.from(uniqueMap.values())
 
+      setAllCachedUsers(uniqueUsers.map(mapUser))
+
       const active = uniqueUsers.filter(u => u.status === 'Active').length
       const inactive = uniqueUsers.filter(u => u.status === 'Inactive').length
 
+      // --- New Metrics ---
+      const now = new Date()
+      // 1. Total Bookings (Users) Yesterday
+      const yesterday = new Date(now)
+      yesterday.setDate(yesterday.getDate() - 1)
+      const yesterdayDateStr = yesterday.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric'
+      })
+
+      // Check if API provides the stats directly
+      if (
+        typeof payload?.activeUsers !== 'undefined' &&
+        typeof payload?.newRegistrationYesterday !== 'undefined'
+      ) {
+        const apiAvgCount = Number(payload.avgDailyGrowthCount || 0)
+        const apiAvgPctStr = String(payload.avgDailyGrowthPercent || '0')
+        const apiAvgPct = parseFloat(apiAvgPctStr.replace('%', ''))
+
+        setGlobalStats({
+          total: Number(payload.total || 0),
+          active: Number(payload.activeUsers || 0),
+          inactive: Number(payload.inactiveUsers || 0),
+          yesterdayCount: Number(payload.newRegistrationYesterday || 0),
+          yesterdayDateStr,
+          avgGrowthCount: apiAvgCount,
+          isCountIncreasing: apiAvgCount >= 0,
+          avgGrowthPercent: apiAvgPctStr,
+          isPctIncreasing: apiAvgPct >= 0
+        })
+        return
+      }
+
+      yesterday.setHours(0, 0, 0, 0)
+      const yesterdayEnd = new Date(yesterday)
+      yesterdayEnd.setHours(23, 59, 59, 999)
+
+      const yesterdayCount = uniqueUsers.filter(u => {
+        const d = new Date(u.createdAt || u.created_on || u.created || 0)
+        return d >= yesterday && d <= yesterdayEnd
+      }).length
+
+      // 2. Avg Daily Growth Logic
+      // Group all users by date (timestamp of midnight)
+      const countsByDate = {}
+      uniqueUsers.forEach(u => {
+        const d = new Date(u.createdAt || u.created_on || u.created || 0)
+        d.setHours(0, 0, 0, 0)
+        const t = d.getTime()
+        if (t > 0) countsByDate[t] = (countsByDate[t] || 0) + 1
+      })
+
+      // Analyze last 30 days
+      const last30Days = []
+      for (let i = 0; i < 30; i++) {
+        const d = new Date(now)
+        d.setDate(d.getDate() - i)
+        d.setHours(0, 0, 0, 0)
+        last30Days.push(d.getTime())
+      }
+      last30Days.reverse() // Chronological
+
+      // Calculate cumulative base before the window
+      const firstWindowDay = last30Days[0]
+      let cumulative = uniqueUsers.filter(u => {
+        const d = new Date(u.createdAt || u.created_on || u.created || 0)
+        return d.getTime() < firstWindowDay
+      }).length
+
+      const dailyCounts = []
+      const dailyPcts = []
+
+      last30Days.forEach(t => {
+        const count = countsByDate[t] || 0
+        dailyCounts.push(count)
+
+        const pct = cumulative > 0 ? (count / cumulative) * 100 : 0
+        dailyPcts.push(pct)
+
+        cumulative += count
+      })
+
+      const avgGrowthCount =
+        dailyCounts.reduce((a, b) => a + b, 0) / (dailyCounts.length || 1)
+      const avgGrowthPercent =
+        dailyPcts.reduce((a, b) => a + b, 0) / (dailyPcts.length || 1)
+
+      // Trends (last 7 days vs previous 7 days)
+      const recent7Counts = dailyCounts.slice(-7)
+      const prev7Counts = dailyCounts.slice(-14, -7)
+      const recent7Avg =
+        recent7Counts.reduce((a, b) => a + b, 0) / (recent7Counts.length || 1)
+      const prev7Avg =
+        prev7Counts.reduce((a, b) => a + b, 0) / (prev7Counts.length || 1)
+      const isCountIncreasing = recent7Avg >= prev7Avg
+
+      const recent7Pcts = dailyPcts.slice(-7)
+      const prev7Pcts = dailyPcts.slice(-14, -7)
+      const recent7AvgPct =
+        recent7Pcts.reduce((a, b) => a + b, 0) / (recent7Pcts.length || 1)
+      const prev7AvgPct =
+        prev7Pcts.reduce((a, b) => a + b, 0) / (prev7Pcts.length || 1)
+      const isPctIncreasing = recent7AvgPct >= prev7AvgPct
+
       setGlobalStats({
-        total: uniqueUsers.length || total, // Fallback to total if length is 0 but total > 0 (shouldn't happen if fetch works)
+        total: uniqueUsers.length || total,
         active,
-        inactive
+        inactive,
+        yesterdayCount,
+        yesterdayDateStr,
+        avgGrowthCount: avgGrowthCount.toFixed(1),
+        isCountIncreasing,
+        avgGrowthPercent: avgGrowthPercent.toFixed(2),
+        isPctIncreasing
       })
     } catch (e) {
       console.error('Failed to fetch stats', e)
@@ -732,6 +858,13 @@ export default function UsersForm () {
 
   useEffect(() => {
     const load = async () => {
+      // If we have cached users, use them for instant client-side search/filtering
+      if (allCachedUsers && allCachedUsers.length > 0) {
+        setUsers(allCachedUsers)
+        setLoading(false)
+        return
+      }
+
       setLoading(true)
       setError('')
       try {
@@ -809,7 +942,7 @@ export default function UsersForm () {
       }
     }
     load()
-  }, [page, limit, debouncedSearch, statusFilter])
+  }, [page, limit, debouncedSearch, statusFilter, allCachedUsers])
 
   const handleStatusChange = async (userId, newStatus) => {
     try {
@@ -858,7 +991,6 @@ export default function UsersForm () {
           ''
         )
         const created = String(u.createdOn || '').toLowerCase()
-        const createdDigits = String(u.createdOn || '').replace(/[^0-9]/g, '')
         const statusStr = String(u.status || '').toLowerCase()
         const idStr = String(u.id || '').toLowerCase()
         const rawIdStr = String(u.rawId || '').toLowerCase()
@@ -866,8 +998,7 @@ export default function UsersForm () {
         const matchesText = haystack.includes(term)
         const matchesDigits =
           (termDigits && phoneDigits.includes(termDigits)) ||
-          (termDigits && walletDigits.includes(termDigits)) ||
-          (termDigits && createdDigits.includes(termDigits))
+          (termDigits && walletDigits.includes(termDigits))
         return matchesText || matchesDigits
       })
     }
@@ -908,6 +1039,23 @@ export default function UsersForm () {
     })
     return arr
   }, [filteredUsers, sort])
+
+  // Update pagination info when using client-side data
+  useEffect(() => {
+    if (allCachedUsers && users === allCachedUsers) {
+      const count = sortedUsers.length
+      setTotalCount(count)
+      setPageCount(Math.ceil(count / limit) || 1)
+    }
+  }, [allCachedUsers, users, sortedUsers.length, limit])
+
+  const paginatedUsers = useMemo(() => {
+    if (allCachedUsers && users === allCachedUsers) {
+      const start = (page - 1) * limit
+      return sortedUsers.slice(start, start + limit)
+    }
+    return sortedUsers
+  }, [allCachedUsers, users, sortedUsers, page, limit])
 
   const toggleSort = key => {
     setSort(prev => {
@@ -1091,6 +1239,80 @@ export default function UsersForm () {
             <div>
               <p className='text-xs opacity-90'>Inactive Users</p>
               <p className='text-2xl font-bold'>{globalStats.inactive}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Total Bookings Yesterday */}
+        <div className='bg-indigo-600 text-white p-4 rounded-lg'>
+          <div className='flex items-center'>
+            <div className='bg-white p-2 rounded-lg mr-3'>
+              <UserPlus className='w-6 h-6 text-indigo-600' />
+            </div>
+            <div>
+              <p className='text-xs opacity-90'>
+                New Registrations Yesterday{' '}
+                <span className='text-[10px] opacity-75'>
+                  ({globalStats.yesterdayDateStr})
+                </span>
+              </p>
+              <p className='text-2xl font-bold'>{globalStats.yesterdayCount}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Avg Daily Growth (Count) */}
+        <div className='bg-purple-600 text-white p-4 rounded-lg'>
+          <div className='flex items-center'>
+            <div className='bg-white p-2 rounded-lg mr-3'>
+              <TrendingUp className='w-6 h-6 text-purple-600' />
+            </div>
+            <div>
+              <p className='text-xs opacity-90'>Avg Daily Growth (Count)</p>
+              <div className='flex items-end gap-2'>
+                <p className='text-2xl font-bold'>
+                  {globalStats.avgGrowthCount}
+                </p>
+                {globalStats.isCountIncreasing ? (
+                  <span className='text-xs flex items-center mb-1 text-green-200'>
+                    <TrendingUp className='w-3 h-3 mr-0.5' />
+                    Increasing
+                  </span>
+                ) : (
+                  <span className='text-xs flex items-center mb-1 text-red-200'>
+                    <TrendingDown className='w-3 h-3 mr-0.5' />
+                    Decreasing
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Avg Daily Growth (%) */}
+        <div className='bg-teal-600 text-white p-4 rounded-lg'>
+          <div className='flex items-center'>
+            <div className='bg-white p-2 rounded-lg mr-3'>
+              <BarChart2 className='w-6 h-6 text-teal-600' />
+            </div>
+            <div>
+              <p className='text-xs opacity-90'>Avg Daily Growth (%)</p>
+              <div className='flex items-end gap-2'>
+                <p className='text-2xl font-bold'>
+                  {globalStats.avgGrowthPercent}
+                </p>
+                {globalStats.isPctIncreasing ? (
+                  <span className='text-xs flex items-center mb-1 text-green-200'>
+                    <TrendingUp className='w-3 h-3 mr-0.5' />
+                    Increasing
+                  </span>
+                ) : (
+                  <span className='text-xs flex items-center mb-1 text-red-200'>
+                    <TrendingDown className='w-3 h-3 mr-0.5' />
+                    Decreasing
+                  </span>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -1306,7 +1528,7 @@ export default function UsersForm () {
                 )}
                 {!loading &&
                   !error &&
-                  sortedUsers.map(user => (
+                  paginatedUsers.map(user => (
                     <tr key={user.id} className='hover:bg-gray-50'>
                       <td className='px-3 py-4 text-xs text-gray-500 line-clamp-2'>
                         {user.createdOn}
