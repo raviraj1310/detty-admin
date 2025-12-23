@@ -18,7 +18,7 @@ const menuSections = [
       // { label: 'Profile', icon: 'lucide-user', href: '/users/profile' },
       // { label: 'Itinerary', icon: 'lucide-map', href: '/users/itinerary' },
       {
-        label: 'Bookings',
+        label: 'Gross Transaction Value',
         icon: '/images/backend/side_menu/side_menu (1).svg',
         href: '/users/transactions'
       },

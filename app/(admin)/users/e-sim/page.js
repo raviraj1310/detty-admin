@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { TbCaretUpDownFilled } from 'react-icons/tb'
+import { Ticket, TrendingUp, TrendingDown, BarChart2 } from 'lucide-react'
 import { getAllEsimBookingList } from '@/services/booking/booking.service'
 import { downloadExcel } from '@/utils/excelExport'
 
@@ -59,23 +60,180 @@ export default function EsimUsersPage () {
   const [detailOpen, setDetailOpen] = useState(false)
   const [detailRow, setDetailRow] = useState(null)
   const router = useRouter()
+  const [statsLoadedFromApi, setStatsLoadedFromApi] = useState(false)
+  const [stats, setStats] = useState({
+    yesterdayCount: 0,
+    yesterdayDateStr: '',
+    avgGrowthCount: 0,
+    isCountIncreasing: false,
+    avgGrowthPercent: '0%',
+    isPctIncreasing: false
+  })
 
   useEffect(() => {
     ;(async () => {
       try {
         const res = await getAllEsimBookingList()
-        const payload = res?.data || res || {}
-        const list = Array.isArray(payload?.data)
-          ? payload.data
-          : Array.isArray(payload)
-          ? payload
-          : []
+        let list = []
+        let hasApiStats = false
+
+        if (typeof res?.totalBookingsYesterday !== 'undefined') {
+          const d = res
+          const yesterdayCount = Number(d.totalBookingsYesterday || 0)
+          let yesterdayDateStr = d.yesterdayDate || ''
+          const yDate = new Date(yesterdayDateStr)
+          if (!isNaN(yDate.getTime())) {
+            yesterdayDateStr = yDate.toLocaleDateString('en-US', {
+              month: 'short',
+              day: 'numeric'
+            })
+          }
+          const avgGrowthCount = Number(d.avgDailyGrowthCount || 0)
+          const avgGrowthPercentStr = String(d.avgDailyGrowthPercent || '0%')
+          const avgGrowthPercentVal = parseFloat(
+            avgGrowthPercentStr.replace('%', '')
+          )
+          setStats({
+            yesterdayCount,
+            yesterdayDateStr,
+            avgGrowthCount,
+            isCountIncreasing: avgGrowthCount >= 0,
+            avgGrowthPercent: avgGrowthPercentStr,
+            isPctIncreasing: avgGrowthPercentVal >= 0
+          })
+          setStatsLoadedFromApi(true)
+          hasApiStats = true
+          if (Array.isArray(res.data)) list = res.data
+          else if (Array.isArray(res.bookings)) list = res.bookings
+          else if (Array.isArray(res.orders)) list = res.orders
+        } else if (
+          res?.data &&
+          !Array.isArray(res.data) &&
+          typeof res.data.totalBookingsYesterday !== 'undefined'
+        ) {
+          const d = res.data
+          const yesterdayCount = Number(d.totalBookingsYesterday || 0)
+          let yesterdayDateStr = d.yesterdayDate || ''
+          const yDate = new Date(yesterdayDateStr)
+          if (!isNaN(yDate.getTime())) {
+            yesterdayDateStr = yDate.toLocaleDateString('en-US', {
+              month: 'short',
+              day: 'numeric'
+            })
+          }
+          const avgGrowthCount = Number(d.avgDailyGrowthCount || 0)
+          const avgGrowthPercentStr = String(d.avgDailyGrowthPercent || '0%')
+          const avgGrowthPercentVal = parseFloat(
+            avgGrowthPercentStr.replace('%', '')
+          )
+          setStats({
+            yesterdayCount,
+            yesterdayDateStr,
+            avgGrowthCount,
+            isCountIncreasing: avgGrowthCount >= 0,
+            avgGrowthPercent: avgGrowthPercentStr,
+            isPctIncreasing: avgGrowthPercentVal >= 0
+          })
+          setStatsLoadedFromApi(true)
+          hasApiStats = true
+          if (Array.isArray(d.data)) list = d.data
+          else if (Array.isArray(d.bookings)) list = d.bookings
+          else if (Array.isArray(d.orders)) list = d.orders
+        }
+
+        if (!hasApiStats) {
+          const payload = res?.data || res || {}
+          list = Array.isArray(payload?.data)
+            ? payload.data
+            : Array.isArray(payload)
+            ? payload
+            : []
+          setStatsLoadedFromApi(false)
+        }
+
         setRowsRaw(list)
       } catch {
         setRowsRaw([])
       }
     })()
   }, [])
+
+  useEffect(() => {
+    if (statsLoadedFromApi || !rowsRaw || rowsRaw.length === 0) return
+    const now = new Date()
+    const yesterday = new Date(now)
+    yesterday.setDate(yesterday.getDate() - 1)
+    yesterday.setHours(0, 0, 0, 0)
+    const yesterdayEnd = new Date(yesterday)
+    yesterdayEnd.setHours(23, 59, 59, 999)
+    const yesterdayDateStr = yesterday.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric'
+    })
+    const yesterdayCount = rowsRaw.filter(o => {
+      const d = new Date(o.createdAt)
+      return d >= yesterday && d <= yesterdayEnd
+    }).length
+    const bookingsByDate = {}
+    rowsRaw.forEach(o => {
+      const d = new Date(o.createdAt)
+      if (isNaN(d.getTime())) return
+      const dateKey = d.toISOString().split('T')[0]
+      bookingsByDate[dateKey] = (bookingsByDate[dateKey] || 0) + 1
+    })
+    const days30 = []
+    for (let i = 0; i < 30; i++) {
+      const d = new Date(now)
+      d.setDate(d.getDate() - i)
+      const dateKey = d.toISOString().split('T')[0]
+      days30.push({ date: dateKey, count: bookingsByDate[dateKey] || 0 })
+    }
+    days30.reverse()
+    const totalCount30 = days30.reduce((acc, curr) => acc + curr.count, 0)
+    const avgGrowthCount = Math.round(totalCount30 / 30)
+    const last7 = days30.slice(-7)
+    const prev7 = days30.slice(-14, -7)
+    const avgLast7 = last7.reduce((a, c) => a + c.count, 0) / 7
+    const avgPrev7 = prev7.reduce((a, c) => a + c.count, 0) / 7
+    const isCountIncreasing = avgLast7 >= avgPrev7
+    let totalPctChange = 0
+    let validDays = 0
+    const pctChanges = []
+    for (let i = 1; i < days30.length; i++) {
+      const prev = days30[i - 1].count
+      const curr = days30[i].count
+      let pct = 0
+      if (prev === 0) {
+        pct = curr > 0 ? 100 : 0
+      } else {
+        pct = ((curr - prev) / prev) * 100
+      }
+      pctChanges.push(pct)
+      totalPctChange += pct
+      validDays++
+    }
+    const avgGrowthPercentVal = validDays > 0 ? totalPctChange / validDays : 0
+    const avgGrowthPercent = `${avgGrowthPercentVal.toFixed(2)}%`
+    const last7Pct = pctChanges.slice(-7)
+    const prev7Pct = pctChanges.slice(-14, -7)
+    const avgLast7Pct =
+      last7Pct.length > 0
+        ? last7Pct.reduce((a, c) => a + c, 0) / last7Pct.length
+        : 0
+    const avgPrev7Pct =
+      prev7Pct.length > 0
+        ? prev7Pct.reduce((a, c) => a + c, 0) / prev7Pct.length
+        : 0
+    const isPctIncreasing = avgLast7Pct >= avgPrev7Pct
+    setStats({
+      yesterdayCount,
+      yesterdayDateStr,
+      avgGrowthCount,
+      isCountIncreasing,
+      avgGrowthPercent,
+      isPctIncreasing
+    })
+  }, [rowsRaw, statsLoadedFromApi])
 
   const handleTabClick = tabId => {
     switch (tabId) {
@@ -292,7 +450,7 @@ export default function EsimUsersPage () {
         <div className='relative bg-white rounded-2xl shadow-xl w-[90%] max-w-2xl'>
           <div className='p-6 border-b border-gray-200 flex items-center justify-between'>
             <h3 className='text-xl font-semibold text-gray-900'>
-              Internet Connectivity Order
+              Gross Transaction Value of e-Sim
             </h3>
             <button
               onClick={() => setDetailOpen(false)}
@@ -373,11 +531,92 @@ export default function EsimUsersPage () {
   return (
     <div className='p-4 h-full flex flex-col bg-white'>
       <div className='mb-4'>
-        <h1 className='text-xl font-bold text-gray-900 mb-1'>Users</h1>
+        <h1 className='text-xl font-bold text-gray-900 mb-1'>
+          Gross Transaction Value
+        </h1>
         <nav className='text-sm text-gray-500'>
           <span>Dashboard</span> /{' '}
-          <span className='text-gray-900 font-medium'>Users</span>
+          <span className='text-gray-900 font-medium'>
+            Gross Transaction Value
+          </span>
         </nav>
+      </div>
+
+      <div className='grid grid-cols-1 md:grid-cols-3 gap-4 mb-6'>
+        <div className='bg-indigo-300 text-white p-4 rounded-lg'>
+          <div className='flex items-center'>
+            <div className='bg-white p-2 rounded-lg mr-3'>
+              <Ticket className='w-6 h-6 text-indigo-600' />
+            </div>
+            <div>
+              <p className='text-xs text-black opacity-90'>
+                Total purchasing Yesterday{' '}
+                <span className='text-[10px] opacity-75'>
+                  ({stats.yesterdayDateStr})
+                </span>
+              </p>
+              <p className='text-2xl text-black font-bold'>
+                {stats.yesterdayCount}
+              </p>
+            </div>
+          </div>
+        </div>
+        <div className='bg-purple-300 text-white p-4 rounded-lg'>
+          <div className='flex items-center'>
+            <div className='bg-white p-2 rounded-lg mr-3'>
+              <TrendingUp className='w-6 h-6 text-purple-600' />
+            </div>
+            <div>
+              <p className='text-xs text-black opacity-90'>
+                Avg Daily Growth (Count)
+              </p>
+              <div className='flex items-end gap-2'>
+                <p className='text-2xl text-black font-bold'>
+                  {stats.avgGrowthCount}
+                </p>
+                {stats.isCountIncreasing ? (
+                  <span className='text-xs flex items-center mb-1 text-green-500'>
+                    <TrendingUp className='w-3 h-3 mr-0.5' />
+                    Increasing
+                  </span>
+                ) : (
+                  <span className='text-xs flex items-center mb-1 text-red-500'>
+                    <TrendingDown className='w-3 h-3 mr-0.5' />
+                    Decreasing
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className='bg-teal-300 text-white p-4 rounded-lg'>
+          <div className='flex items-center'>
+            <div className='bg-white p-2 rounded-lg mr-3'>
+              <BarChart2 className='w-6 h-6 text-teal-600' />
+            </div>
+            <div>
+              <p className='text-xs text-black opacity-90'>
+                Avg Daily Growth (%)
+              </p>
+              <div className='flex items-end gap-2'>
+                <p className='text-2xl text-black font-bold'>
+                  {stats.avgGrowthPercent}
+                </p>
+                {stats.isPctIncreasing ? (
+                  <span className='text-xs flex items-center mb-1 text-green-500'>
+                    <TrendingUp className='w-3 h-3 mr-0.5' />
+                    Increasing
+                  </span>
+                ) : (
+                  <span className='text-xs flex items-center mb-1 text-red-500'>
+                    <TrendingDown className='w-3 h-3 mr-0.5' />
+                    Decreasing
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div className='bg-gray-200 p-5 rounded-xl'>
@@ -385,7 +624,7 @@ export default function EsimUsersPage () {
           <div className='p-4 border-b border-gray-200'>
             <div className='flex justify-between items-center mb-3'>
               <h2 className='text-lg font-semibold text-gray-900'>
-                Internet Connectivity
+                Gross Transaction Value of Internet Connectivity
               </h2>
               <div className='flex items-center space-x-4'>
                 <div className='relative'>

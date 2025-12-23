@@ -770,7 +770,9 @@ export default function TransactionsForm () {
                   ({stats.yesterdayDateStr})
                 </span>
               </p>
-              <p className='text-2xl text-black font-bold'>{stats.yesterdayCount}</p>
+              <p className='text-2xl text-black font-bold'>
+                {stats.yesterdayCount}
+              </p>
             </div>
           </div>
         </div>
@@ -843,7 +845,7 @@ export default function TransactionsForm () {
           <div className='p-4 border-b border-gray-200 flex-shrink-0'>
             <div className='flex justify-between items-center mb-4'>
               <h2 className='text-lg font-semibold text-gray-900'>
-                Booking List
+                Gross Transaction Value of Event
               </h2>
               <div className='flex items-center space-x-4'>
                 {/* Search */}
