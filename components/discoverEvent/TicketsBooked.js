@@ -22,6 +22,7 @@ import {
   getEventBookedTicket,
   downloadBookedTickets
 } from '@/services/discover-events/event.service'
+import * as XLSX from 'xlsx'
 import Modal from '@/components/ui/Modal'
 
 const metricCards = [
@@ -131,7 +132,9 @@ export default function TicketsBooked () {
             unbookedAmount: '-',
             eventName: s.eventName || 'Event'
           })
-          const rawList = Array.isArray(bookingsRes?.data)
+          const rawList = Array.isArray(bookingsRes?.data?.tickets)
+            ? bookingsRes.data.tickets
+            : Array.isArray(bookingsRes?.data)
             ? bookingsRes.data
             : []
           const list = rawList.map((b, idx) => ({
@@ -331,6 +334,42 @@ export default function TicketsBooked () {
     })()
   }
 
+  const handleDownloadExcel = () => {
+    if (!bookings || bookings.length === 0) {
+      alert('No data to download')
+      return
+    }
+
+    const dataToExport = bookings.map(b => ({
+      'Booking ID': b.bookingId || b.id,
+      'Booked On': (() => {
+        const d = b.bookedOn || b.createdAt
+        return d ? new Date(d).toLocaleString() : '-'
+      })(),
+      'Event Name': b.event?.eventName || summary?.eventName || '-',
+      Location: b.event?.location || '-',
+      'User Name': b.buyer?.fullName || b.userName || '-',
+      Email: b.buyer?.email || b.email || '-',
+      Phone: b.buyer?.phone || b.phoneNumber || '-',
+      'Ticket Name': b.ticketName || '-',
+      Quantity: b.quantity || 1,
+      'Price Per Ticket': b.ticketId?.perTicketPrice || b.perTicketPrice || 0,
+      'Total Price': b.totalPrice || b.amount || 0,
+      'Payment Status': b.paymentStatus || '-',
+      Status: b.status || '-',
+      Attendees: Array.isArray(b.attendees)
+        ? b.attendees.map(a => a.fullName).join(', ')
+        : '-'
+    }))
+
+    const ws = XLSX.utils.json_to_sheet(dataToExport)
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, 'Bookings')
+
+    const filename = `${summary?.eventName || 'Event_Bookings'}.xlsx`
+    XLSX.writeFile(wb, filename)
+  }
+
   return (
     <div className='space-y-4 py-4 px-6'>
       {/* Header */}
@@ -386,7 +425,10 @@ export default function TicketsBooked () {
               <IoFilterSharp className='h-3.5 w-3.5 text-[#8B93AF]' />
               Filters
             </button>
-            <button className='flex h-8 items-center gap-1.5 rounded-lg border border-[#E5E6EF] bg-white px-3 text-xs font-medium text-[#2D3658] transition hover:bg-[#F6F7FD]'>
+            <button
+              onClick={handleDownloadExcel}
+              className='flex h-8 items-center gap-1.5 rounded-lg border border-[#E5E6EF] bg-white px-3 text-xs font-medium text-[#2D3658] transition hover:bg-[#F6F7FD]'
+            >
               <Download className='h-3.5 w-3.5 text-[#8B93AF]' />
             </button>
           </div>
