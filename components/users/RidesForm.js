@@ -253,7 +253,7 @@ export default function RidesForm () {
               <h2 className='text-lg font-semibold text-gray-900'>
                 Gross Transaction Value of Rides
               </h2>
-              <div className='flex items-center space-x-4'>
+              <div className='flex items-center space-x-3'>
                 {/* Search */}
                 <div className='relative'>
                   <input
@@ -261,10 +261,10 @@ export default function RidesForm () {
                     placeholder='Search rides...'
                     value={searchTerm}
                     onChange={e => setSearchTerm(e.target.value)}
-                    className='pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500'
+                    className='h-9 pl-10 pr-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs text-gray-900 placeholder-gray-500'
                   />
                   <svg
-                    className='w-5 h-5 text-gray-600 absolute left-3 top-2.5'
+                    className='w-4 h-4 text-gray-600 absolute left-3 top-2.5'
                     fill='none'
                     stroke='currentColor'
                     viewBox='0 0 24 24'
@@ -279,7 +279,7 @@ export default function RidesForm () {
                 </div>
 
                 {/* Filters Button (Visual only for now as per previous form) */}
-                <button className='flex items-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 bg-white'>
+                <button className='h-9 flex items-center px-4 border border-gray-300 rounded-lg hover:bg-gray-50 bg-white'>
                   <svg
                     className='w-4 h-4 mr-2 text-gray-600'
                     fill='none'
@@ -293,22 +293,22 @@ export default function RidesForm () {
                       d='M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 01-.659 1.591l-5.432 5.432a2.25 2.25 0 00-.659 1.591v2.927a2.25 2.25 0 01-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 00-.659-1.591L3.659 7.409A2.25 2.25 0 013 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0112 3z'
                     />
                   </svg>
-                  <span className='text-gray-700 font-medium'>Filters</span>
+                  <span className='text-xs text-gray-700 font-medium'>Filters</span>
                 </button>
 
                 {/* Download */}
                 <button
                   onClick={handleDownloadExcel}
-                  className='flex items-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 bg-white'
+                  className='h-9 flex items-center px-4 border border-gray-300 rounded-lg hover:bg-gray-50 bg-white'
                 >
                   <Download className='h-4 w-4 text-gray-600 mr-2' />
-                  <span className='text-gray-700 font-medium'>Export</span>
+                  <span className='text-xs text-gray-700 font-medium'>Export</span>
                 </button>
               </div>
             </div>
 
             {/* Filter Tabs */}
-            <div className='flex space-x-2 overflow-x-auto pb-2'>
+            <div className='flex flex-wrap gap-1.5'>
               {filterTabs.map(tab => (
                 <button
                   key={tab.id}
@@ -351,7 +351,7 @@ export default function RidesForm () {
                         setActiveTab(tab.id)
                     }
                   }}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors border whitespace-nowrap ${
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border whitespace-nowrap ${
                     tab.id === activeTab
                       ? 'bg-orange-500 text-white border-orange-500'
                       : 'bg-white text-gray-700 hover:bg-gray-50 border-gray-300'

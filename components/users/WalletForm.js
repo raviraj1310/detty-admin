@@ -1,9 +1,41 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
+import { Search, Download, MoreVertical } from "lucide-react";
+import { IoFilterSharp } from "react-icons/io5";
 import { TbCaretUpDownFilled } from "react-icons/tb";
-import { Wallet } from "lucide-react";
 import { getAllUsersWallet } from "@/services/users/user.service";
+
+const metricCards = [
+  {
+    id: "balance",
+    title: "Total Balance",
+    value: "0",
+    iconSrc: "/images/backend/icons/icons (3).svg",
+    bg: "bg-[#4F46E5]",
+  },
+  {
+    id: "completed",
+    title: "Completed",
+    value: "0",
+    iconSrc: "/images/backend/icons/icons (5).svg",
+    bg: "bg-[#059669]",
+  },
+  {
+    id: "pending",
+    title: "Pending",
+    value: "0",
+    iconSrc: "/images/backend/icons/icons (2).svg",
+    bg: "bg-[#EA580C]",
+  },
+  {
+    id: "failed",
+    title: "Failed",
+    value: "0",
+    iconSrc: "/images/backend/icons/icons (4).svg",
+    bg: "bg-[#DC2626]",
+  },
+];
 
 const mapTransaction = (t) => {
   const created = t?.createdAt || "";
@@ -57,147 +89,42 @@ const mapTransaction = (t) => {
   };
 };
 
-function ActionDropdown({ transactionId }) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [buttonPosition, setButtonPosition] = useState({ top: 0, right: 0 });
-
-  const actions = [
-    {
-      label: "View Detail",
-      icon: (
-        <svg
-          className="w-4 h-4"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-          />
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-          />
-        </svg>
-      ),
-    },
-    {
-      label: "Download Receipt",
-      icon: (
-        <svg
-          className="w-4 h-4"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-          />
-        </svg>
-      ),
-    },
-    {
-      label: "Dispute Transaction",
-      icon: (
-        <svg
-          className="w-4 h-4"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-          />
-        </svg>
-      ),
-    },
-  ];
-
-  const handleButtonClick = (e) => {
-    if (!isOpen) {
-      const rect = e.currentTarget.getBoundingClientRect();
-      const windowHeight = window.innerHeight;
-      const dropdownHeight = 150;
-
-      let top = rect.bottom + 8;
-      let right = window.innerWidth - rect.right;
-
-      if (top + dropdownHeight > windowHeight) {
-        top = rect.top - dropdownHeight - 8;
-      }
-
-      setButtonPosition({ top, right });
-    }
-    setIsOpen(!isOpen);
-  };
-
-  return (
-    <div className="relative">
-      <button
-        onClick={handleButtonClick}
-        className="p-1 hover:bg-gray-100 rounded-full transition-colors"
-      >
-        <svg
-          className="w-5 h-5 text-gray-600"
-          fill="currentColor"
-          viewBox="0 0 20 20"
-        >
-          <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
-        </svg>
-      </button>
-
-      {isOpen && (
-        <>
-          <div
-            className="fixed inset-0 z-40"
-            onClick={() => setIsOpen(false)}
-          />
-          <div
-            className="fixed w-52 bg-white rounded-lg shadow-2xl border border-gray-200 z-50 py-2"
-            style={{
-              top: `${buttonPosition.top}px`,
-              right: `${buttonPosition.right}px`,
-            }}
-          >
-            {actions.map((action, index) => (
-              <button
-                key={index}
-                className="flex items-center w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                onClick={() => {
-                  console.log(
-                    `${action.label} for transaction ${transactionId}`
-                  );
-                  setIsOpen(false);
-                }}
-              >
-                <span className="mr-3 text-gray-500">{action.icon}</span>
-                <span className="text-gray-800">{action.label}</span>
-              </button>
-            ))}
-          </div>
-        </>
-      )}
-    </div>
-  );
-}
+const TableHeaderCell = ({ children, align = "left", onClick }) => (
+  <button
+    type="button"
+    onClick={onClick}
+    className={`flex items-center gap-1 text-xs font-medium uppercase tracking-[0.12em] text-[#8A92AC] ${
+      align === "right" ? "justify-end" : "justify-start"
+    } hover:text-[#2D3658]`}
+  >
+    {children}
+    <TbCaretUpDownFilled className="h-3.5 w-3.5 text-[#CBCFE2]" />
+  </button>
+);
 
 export default function WalletForm() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [typeFilter, setTypeFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [grandTotalBalance, setGrandTotalBalance] = useState(0);
+  const [sortKey, setSortKey] = useState("transactionDate");
+  const [sortDir, setSortDir] = useState("desc");
+  const [activeDropdown, setActiveDropdown] = useState(null);
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setActiveDropdown(null);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   useEffect(() => {
     const loadData = async () => {
@@ -228,42 +155,76 @@ export default function WalletForm() {
   }, []);
 
   const filteredTransactions = useMemo(() => {
-    const term = String(searchTerm || "")
-      .trim()
-      .toLowerCase();
-    if (!term) return transactions;
+    const term = String(searchTerm || "").trim().toLowerCase();
+    if (!term && !typeFilter && !statusFilter) return transactions;
 
-    return transactions.filter((transaction) => {
-      const name = String(transaction.transactionName || "").toLowerCase();
-      const email = String(transaction.userEmail || "").toLowerCase();
-      const source = String(transaction.source || "").toLowerCase();
-      const type = String(transaction.type || "").toLowerCase();
-      const reference = String(transaction.reference || "").toLowerCase();
-      const status = String(transaction.paymentStatus || "").toLowerCase();
+    return transactions.filter((t) => {
+      const name = String(t.transactionName || "").toLowerCase();
+      const email = String(t.userEmail || "").toLowerCase();
+      const source = String(t.source || "").toLowerCase();
+      const type = String(t.type || "").toLowerCase();
+      const reference = String(t.reference || "").toLowerCase();
+      const status = String(t.paymentStatus || "").toLowerCase();
 
-      return (
-        name.includes(term) ||
-        email.includes(term) ||
-        source.includes(term) ||
-        type.includes(term) ||
-        reference.includes(term) ||
-        status.includes(term)
-      );
+      const matchesText = !term
+        ? true
+        : name.includes(term) ||
+          email.includes(term) ||
+          source.includes(term) ||
+          type.includes(term) ||
+          reference.includes(term) ||
+          status.includes(term);
+
+      const typeOk = typeFilter
+        ? type.includes(String(typeFilter).toLowerCase())
+        : true;
+      const statusOk = statusFilter
+        ? status.includes(String(statusFilter).toLowerCase())
+        : true;
+
+      return matchesText && typeOk && statusOk;
     });
-  }, [transactions, searchTerm]);
+  }, [transactions, searchTerm, typeFilter, statusFilter]);
 
-  const getPaymentStatusColor = (status) => {
-    switch (status) {
-      case "Completed":
-        return "bg-green-100 text-green-800";
-      case "Failed":
-        return "bg-red-100 text-red-800";
-      case "Pending":
-        return "bg-yellow-100 text-yellow-800";
-      default:
-        return "bg-gray-100 text-gray-800";
+  const toggleSort = (key) => {
+    if (sortKey === key) {
+      setSortDir((prev) => (prev === "asc" ? "desc" : "asc"));
+    } else {
+      setSortKey(key);
+      setSortDir("desc");
     }
   };
+
+  const sortedTransactions = useMemo(() => {
+    const dir = sortDir === "asc" ? 1 : -1;
+    return [...filteredTransactions].sort((a, b) => {
+      switch (sortKey) {
+        case "transactionDate":
+          return (a.createdAtTs - b.createdAtTs) * dir;
+        case "transactionName":
+          return String(a.transactionName || "").localeCompare(String(b.transactionName || "")) * dir;
+        case "type":
+          return String(a.type || "").localeCompare(String(b.type || "")) * dir;
+        case "amount":
+          return (a.amountNum - b.amountNum) * dir;
+        case "status":
+          return String(a.paymentStatus || "").localeCompare(String(b.paymentStatus || "")) * dir;
+        default:
+          return 0;
+      }
+    });
+  }, [filteredTransactions, sortKey, sortDir]);
+
+  const counts = useMemo(() => {
+    const c = { completed: 0, pending: 0, failed: 0 };
+    filteredTransactions.forEach((t) => {
+      const s = String(t.paymentStatus || "").toLowerCase();
+      if (s === "completed") c.completed += 1;
+      else if (s === "pending") c.pending += 1;
+      else if (s === "failed") c.failed += 1;
+    });
+    return c;
+  }, [filteredTransactions]);
 
   const formatBalance = (amount) => {
     return `₦${amount.toLocaleString("en-NG", {
@@ -272,230 +233,233 @@ export default function WalletForm() {
     })}`;
   };
 
+  const statusClass = (s) => {
+    const v = String(s || "").toLowerCase();
+    if (v === "completed") return "bg-emerald-50 text-emerald-600 border border-emerald-200";
+    if (v === "pending") return "bg-orange-50 text-orange-600 border border-orange-200";
+    return "bg-red-50 text-red-600 border border-red-200";
+  };
+
   const getAmountColor = (amount) => {
-    if (amount.startsWith("-")) {
-      return "text-red-600 font-semibold";
-    } else if (amount.startsWith("+")) {
-      return "text-green-600 font-semibold";
-    }
+    if (amount.startsWith("-")) return "text-red-600 font-semibold";
+    if (amount.startsWith("+")) return "text-green-600 font-semibold";
     return "text-gray-900 font-semibold";
   };
 
+  const typeOptions = ["CREDIT", "DEBIT"];
+  const statusOptions = ["Completed", "Pending", "Failed"];
+
   return (
-    <div className="p-4 min-h-screen bg-white">
-      {/* Balance Card */}
-      <div className="mb-6">
-        <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl p-6 text-white">
-          <div className="flex items-center">
-            <div className="bg-white bg-opacity-20 rounded-lg p-3 mr-4">
-              <Wallet className="w-8 h-8 text-gray-900" />
-            </div>
-            <div>
-              <p className="text-sm text-blue-100 mb-1">Balance</p>
-              <p className="text-3xl font-bold">
-                {loading ? "Loading..." : formatBalance(grandTotalBalance)}
-              </p>
-            </div>
-          </div>
+    <div className="space-y-4 py-4 px-6">
+      <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+        <div className="flex flex-col gap-1">
+          <h1 className="text-xl font-semibold text-slate-900">Wallet</h1>
+          <p className="text-xs text-[#99A1BC]">Dashboard / Wallet</p>
         </div>
       </div>
-      <div className="bg-gray-200 p-5 rounded-xl">
-        {/* Main Content */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-          {/* Header with Search and Filters */}
-          <div className="p-4 border-b border-gray-200">
-            <div className="flex justify-between items-center mb-3">
-              <h2 className="text-lg font-semibold text-gray-900">
-                Transaction List
-              </h2>
-              <div className="flex items-center space-x-4">
-                {/* Search */}
-                <div className="relative">
-                  <input
-                    type="text"
-                    placeholder="Search"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500"
-                  />
-                  <svg
-                    className="w-5 h-5 text-gray-600 absolute left-3 top-2.5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    strokeWidth={2}
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                    />
-                  </svg>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr] gap-3 mb-4">
+        {metricCards.map((card) => {
+          const value =
+            card.id === "balance"
+              ? formatBalance(grandTotalBalance)
+              : card.id === "completed"
+              ? counts.completed
+              : card.id === "pending"
+              ? counts.pending
+              : counts.failed;
+          return (
+            <div
+              key={card.id}
+              className={`${card.bg} rounded-xl p-3 text-white relative overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300`}
+            >
+              <div className="flex items-center justify-between gap-2">
+                <div className="bg-white/95 p-2.5 rounded-lg flex-shrink-0 shadow-sm">
+                  <img src={card.iconSrc} alt={card.title} className="w-7 h-7" />
                 </div>
-
-                {/* Filters */}
-                <button className="flex items-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 bg-white">
-                  <svg
-                    className="w-4 h-4 mr-2 text-gray-600"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    strokeWidth={2}
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 01-.659 1.591l-5.432 5.432a2.25 2.25 0 00-.659 1.591v2.927a2.25 2.25 0 01-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 00-.659-1.591L3.659 7.409A2.25 2.25 0 013 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0112 3z"
-                    />
-                  </svg>
-                  <span className="text-gray-700 font-medium">Filters</span>
-                </button>
-
-                {/* Download */}
-                <button className="flex items-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 bg-white">
-                  <svg
-                    className="w-4 h-4 text-gray-600"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    strokeWidth={2}
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"
-                    />
-                  </svg>
-                </button>
+                <div className="text-right flex-1 min-w-0">
+                  <p className="text-white/95 text-xs font-medium mb-0.5 leading-tight">
+                    {card.title}
+                  </p>
+                  <p className="text-2xl font-bold text-white tracking-tight">
+                    {loading && card.id === "balance" ? "..." : String(value)}
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
+          );
+        })}
+      </div>
 
-          {/* Table */}
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 sticky top-0">
-                <tr>
-                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    <div className="flex items-center">
-                      <span>Transaction Date</span>
-                      <TbCaretUpDownFilled className="w-3 h-3 text-gray-400 ml-1" />
-                    </div>
-                  </th>
-                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    <div className="flex items-center">
-                      <span>Transaction Name</span>
-                      <TbCaretUpDownFilled className="w-3 h-3 text-gray-400 ml-1" />
-                    </div>
-                  </th>
-                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    <div className="flex items-center">
-                      <span>Type</span>
-                      <TbCaretUpDownFilled className="w-3 h-3 text-gray-400 ml-1" />
-                    </div>
-                  </th>
-                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    <div className="flex items-center">
-                      <span>Amount</span>
-                      <TbCaretUpDownFilled className="w-3 h-3 text-gray-400 ml-1" />
-                    </div>
-                  </th>
-                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    <div className="flex items-center">
-                      <span>Payment Status</span>
-                      <TbCaretUpDownFilled className="w-3 h-3 text-gray-400 ml-1" />
-                    </div>
-                  </th>
-                  <th className="px-6 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-20"></th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {loading && (
-                  <tr>
-                    <td
-                      className="px-3 py-3 text-sm text-gray-500 text-center"
-                      colSpan={6}
+      <div className="rounded-2xl border border-[#E1E6F7] bg-white p-4 shadow-[0_24px_60px_-40px_rgba(15,23,42,0.55)]">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-base font-semibold text-slate-900">Transaction List</h2>
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="relative flex items-center">
+              <input
+                type="text"
+                placeholder="Search"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="h-8 rounded-lg border border-[#E5E6EF] bg-[#F8F9FC] pl-8 pr-3 text-xs text-slate-700 placeholder:text-[#B0B7D0] focus:border-[#C5CAE3] focus:outline-none focus:ring-2 focus:ring-[#C2C8E4]"
+              />
+              <Search className="absolute left-2.5 h-3.5 w-3.5 text-[#A6AEC7]" />
+            </div>
+            {filtersOpen && (
+              <>
+                <div className="relative">
+                  <select
+                    value={typeFilter}
+                    onChange={(e) => setTypeFilter(e.target.value)}
+                    className="h-8 rounded-lg border border-[#E5E6EF] bg-white px-2 text-xs text-slate-700 focus:border-[#C5CAE3] focus:outline-none"
+                  >
+                    <option value="">All Types</option>
+                    {typeOptions.map((t) => (
+                      <option key={t} value={t}>{t}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="relative">
+                  <select
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                    className="h-8 rounded-lg border border-[#E5E6EF] bg-white px-2 text-xs text-slate-700 focus:border-[#C5CAE3] focus:outline-none"
+                  >
+                    <option value="">All Status</option>
+                    {statusOptions.map((s) => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
+                </div>
+              </>
+            )}
+            <button
+              onClick={() => setFiltersOpen((prev) => !prev)}
+              aria-expanded={filtersOpen}
+              className="flex h-8 items-center gap-1.5 rounded-lg border border-[#E5E6EF] bg-white px-3 text-xs font-medium text-[#2D3658] transition hover:bg-[#F6F7FD]"
+            >
+              <IoFilterSharp className="h-3.5 w-3.5 text-[#8B93AF]" />
+              {filtersOpen ? "Hide Filters" : "Filters"}
+            </button>
+            <button className="flex h-8 items-center gap-1.5 rounded-lg border border-[#E5E6EF] bg-white px-3 text-xs font-medium text-[#2D3658] transition hover:bg-[#F6F7FD]">
+              <Download className="h-3.5 w-3.5 text-[#8B93AF]" />
+            </button>
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-[#E5E8F5] overflow-hidden">
+          <div className="w-full overflow-hidden">
+            <div className="grid grid-cols-[18%_22%_12%_18%_15%_15%] gap-0 bg-[#F7F9FD] px-3 py-3">
+              <div>
+                <TableHeaderCell onClick={() => toggleSort("transactionDate")}>
+                  Transaction Date
+                </TableHeaderCell>
+              </div>
+              <div>
+                <TableHeaderCell onClick={() => toggleSort("transactionName")}>
+                  Transaction Name
+                </TableHeaderCell>
+              </div>
+              <div>
+                <TableHeaderCell onClick={() => toggleSort("type")}>
+                  Type
+                </TableHeaderCell>
+              </div>
+              <div>
+                <TableHeaderCell onClick={() => toggleSort("amount")}>
+                  Amount
+                </TableHeaderCell>
+              </div>
+              <div>
+                <TableHeaderCell onClick={() => toggleSort("status")}>
+                  Status
+                </TableHeaderCell>
+              </div>
+              <div></div>
+            </div>
+
+            <div className="divide-y divide-[#EEF1FA] bg-white">
+              {loading && (
+                <div className="px-3 py-3 text-xs text-[#5E6582]">Loading...</div>
+              )}
+              {error && !loading && (
+                <div className="px-3 py-3 text-xs text-red-600">{error}</div>
+              )}
+              {!loading && !error && sortedTransactions.map((transaction, idx) => (
+                <div
+                  key={transaction.id || idx}
+                  className="grid grid-cols-[18%_22%_12%_18%_15%_15%] gap-0 px-3 py-3 hover:bg-[#F9FAFD]"
+                >
+                  <div className="self-center text-xs text-[#5E6582] line-clamp-2">
+                    {transaction.transactionDate}
+                  </div>
+                  <div className="self-center">
+                    <p className="text-xs font-semibold text-slate-900 leading-tight line-clamp-1">
+                      {transaction.transactionName}
+                    </p>
+                    {transaction.userEmail && transaction.userEmail !== "-" && (
+                      <p className="text-xs text-[#5E6582] line-clamp-1">
+                        {transaction.userEmail}
+                      </p>
+                    )}
+                  </div>
+                  <div className="self-center">
+                    <span className="text-xs font-medium text-slate-900">
+                      {transaction.type}
+                    </span>
+                    {transaction.source && transaction.source !== "-" && (
+                      <p className="text-xs text-[#5E6582] line-clamp-1">
+                        {transaction.source}
+                      </p>
+                    )}
+                  </div>
+                  <div className="self-center">
+                    <span className={`text-xs ${getAmountColor(transaction.amount)}`}>
+                      {transaction.amount}
+                    </span>
+                  </div>
+                  <div className="flex items-center self-center">
+                    <span className={`inline-flex items-center justify-center rounded-full px-2 py-0.5 text-xs font-semibold ${statusClass(transaction.paymentStatus)}`}>
+                      {transaction.paymentStatus}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-end self-center relative">
+                    <button
+                      onClick={() =>
+                        setActiveDropdown(
+                          activeDropdown === (transaction.id || idx)
+                            ? null
+                            : transaction.id || idx
+                        )
+                      }
+                      className="rounded-full border border-transparent p-1 text-[#8C93AF] transition hover:border-[#E5E8F6] hover:bg-[#F5F7FD] hover:text-[#2D3658]"
                     >
-                      Loading...
-                    </td>
-                  </tr>
-                )}
-                {error && !loading && (
-                  <tr>
-                    <td
-                      className="px-3 py-3 text-sm text-red-600 text-center"
-                      colSpan={6}
-                    >
-                      {error}
-                    </td>
-                  </tr>
-                )}
-                {!loading && !error && filteredTransactions.length === 0 && (
-                  <tr>
-                    <td
-                      className="px-3 py-3 text-sm text-gray-500 text-center"
-                      colSpan={6}
-                    >
-                      No transactions found
-                    </td>
-                  </tr>
-                )}
-                {!loading &&
-                  !error &&
-                  filteredTransactions.map((transaction) => (
-                    <tr
-                      key={transaction.id}
-                      className="hover:bg-gray-50 border-b border-gray-100"
-                    >
-                      <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-500">
-                        {transaction.transactionDate}
-                      </td>
-                      <td className="px-3 py-3 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900 leading-tight">
-                          {transaction.transactionName}
+                      <MoreVertical className="h-4 w-4" />
+                    </button>
+                    {activeDropdown === (transaction.id || idx) && (
+                      <div
+                        ref={dropdownRef}
+                        className="absolute right-0 top-full mt-1 w-48 rounded-md shadow-lg bg-white border border-[#E5E8F5] z-50"
+                      >
+                        <div className="py-1">
+                          <button className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                            View Detail
+                          </button>
+                          <button className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                            Download Receipt
+                          </button>
                         </div>
-                        {transaction.userEmail &&
-                          transaction.userEmail !== "-" && (
-                            <div className="text-xs text-gray-500">
-                              {transaction.userEmail}
-                            </div>
-                          )}
-                      </td>
-                      <td className="px-3 py-3 whitespace-nowrap">
-                        <span className="text-sm font-medium text-gray-900">
-                          {transaction.type}
-                        </span>
-                        {transaction.source && transaction.source !== "-" && (
-                          <div className="text-xs text-gray-500">
-                            {transaction.source}
-                          </div>
-                        )}
-                      </td>
-                      <td className="px-3 py-3 whitespace-nowrap">
-                        <span
-                          className={`text-sm ${getAmountColor(
-                            transaction.amount
-                          )}`}
-                        >
-                          {transaction.amount}
-                        </span>
-                      </td>
-                      <td className="px-3 py-3 whitespace-nowrap">
-                        <span
-                          className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${getPaymentStatusColor(
-                            transaction.paymentStatus
-                          )}`}
-                        >
-                          {transaction.paymentStatus}
-                        </span>
-                      </td>
-                      <td className="px-6 py-3 whitespace-nowrap text-right relative">
-                        <ActionDropdown transactionId={transaction.rawId} />
-                      </td>
-                    </tr>
-                  ))}
-              </tbody>
-            </table>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+              {!loading && !error && filteredTransactions.length === 0 && (
+                <div className="px-3 py-3 text-xs text-[#5E6582]">
+                  No transactions found
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>

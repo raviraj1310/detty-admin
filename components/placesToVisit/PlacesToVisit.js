@@ -466,8 +466,8 @@ export default function PlacesToVisit() {
           </div>
         </div>
 
-        <div className="rounded-xl border border-[#E5E8F5] overflow-hidden">
-          <div className="w-full overflow-hidden">
+        <div className="rounded-xl border border-[#E5E8F5]">
+          <div className="w-full">
             <div className="grid grid-cols-[12%_21%_11%_9%_15%_11%_9%_12%] gap-0 bg-[#F7F9FD] px-3 py-3">
               <div>
                 <TableHeaderCell onClick={() => toggleSort("addedOn")}>
@@ -619,40 +619,37 @@ export default function PlacesToVisit() {
                       {activeDropdown === (activity.id || idx) && (
                         <div
                           ref={dropdownRef}
-                          className={`absolute right-0 w-48 rounded-md shadow-lg
-        bg-white border border-[#E5E8F5] z-[999]
-        ${
-          idx >= sortedActivities.length - 2
-            ? "bottom-full mb-2"
-            : "top-full mt-2"
-        }
-      `}
+                          className={`absolute right-0 w-48 rounded-lg shadow-lg bg-white border border-[#E5E8F5] z-[999] ${
+                            idx >= sortedActivities.length - 2
+                              ? "bottom-full mb-2"
+                              : "top-full mt-2"
+                          }`}
                         >
                           <div className="py-1">
                             <Link
                               href={`/places-to-visit/edit/${activity.id}`}
-                              className="block px-4 py-2 text-sm hover:bg-gray-100"
+                              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                             >
                               View/Edit Detail
                             </Link>
 
                             <Link
                               href={`/places-to-visit/bookings/${activity.id}`}
-                              className="block px-4 py-2 text-sm hover:bg-gray-100"
+                              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                             >
                               View Tickets Booked
                             </Link>
 
                             <Link
                               href={`/places-to-visit/edit-tickets/${activity.id}`}
-                              className="block px-4 py-2 text-sm hover:bg-gray-100"
+                              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                             >
                               View/Edit Tickets
                             </Link>
 
                             <button
                               onClick={() => handleCopyActivity(activity.id)}
-                              className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
+                              className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                             >
                               Copy Activity
                             </button>

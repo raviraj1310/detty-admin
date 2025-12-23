@@ -51,17 +51,17 @@ const metricCards = [
 const bookingRows = []
 
 const MetricCard = ({ title, value, iconSrc, bg }) => (
-  <div className={`${bg} rounded-2xl p-6 text-white relative overflow-hidden`}>
+  <div className={`${bg} rounded-xl p-3 text-white relative overflow-hidden`}>
     <div className='flex items-center justify-between'>
       {/* Icon on the left */}
-      <div className='bg-white p-4 rounded-2xl flex-shrink-0'>
-        <img src={iconSrc} alt={title} className='w-8 h-8' />
+      <div className='bg-white p-2.5 rounded-xl flex-shrink-0'>
+        <img src={iconSrc} alt={title} className='w-6 h-6' />
       </div>
 
       {/* Content on the right */}
       <div className='text-right'>
-        <p className='text-white/90 text-sm font-medium mb-2'>{title}</p>
-        <p className='text-4xl font-bold text-white'>{value}</p>
+        <p className='text-white/90 text-xs font-medium mb-1'>{title}</p>
+        <p className='text-2xl font-bold text-white'>{value}</p>
       </div>
     </div>
   </div>
@@ -332,19 +332,19 @@ export default function TicketsBooked () {
   }
 
   return (
-    <div className='space-y-7 py-12 px-12'>
+    <div className='space-y-4 py-4 px-6'>
       {/* Header */}
-      <div className='flex flex-col gap-4 md:flex-row md:items-start md:justify-between'>
-        <div className='flex flex-col gap-2'>
-          <h1 className='text-2xl font-semibold text-slate-900'>
+      <div className='flex flex-col gap-1 md:flex-row md:items-start md:justify-between'>
+        <div className='flex flex-col gap-1'>
+          <h1 className='text-xl font-semibold text-slate-900'>
             Tickets Booked - {summary?.eventName || 'Event'}
           </h1>
-          <p className='text-sm text-[#99A1BC]'>Dashboard / Tickets Booked</p>
+          <p className='text-xs text-[#99A1BC]'>Dashboard / Tickets Booked</p>
         </div>
       </div>
 
       {/* Metric Cards */}
-      <div className='grid grid-cols-1 md:grid-cols-3 gap-6 mb-8'>
+      <div className='grid grid-cols-1 md:grid-cols-3 gap-3 mb-4'>
         {metricCards.map(card => {
           const value =
             card.id === 'total'
@@ -366,28 +366,28 @@ export default function TicketsBooked () {
       </div>
 
       {/* Tickets Booked List */}
-      <div className='rounded-[30px] border border-[#E1E6F7] bg-white p-8 shadow-[0_24px_60px_-40px_rgba(15,23,42,0.55)]'>
-        <div className='mb-6 flex flex-wrap items-center justify-between gap-4'>
-          <h2 className='text-lg font-semibold text-slate-900'>
+      <div className='rounded-2xl border border-[#E1E6F7] bg-white p-4 shadow-[0_24px_60px_-40px_rgba(15,23,42,0.55)]'>
+        <div className='mb-4 flex flex-wrap items-center justify-between gap-2'>
+          <h2 className='text-sm font-semibold text-slate-900'>
             Tickets Booked List
           </h2>
-          <div className='flex flex-wrap items-center gap-3'>
+          <div className='flex flex-wrap items-center gap-2'>
             <div className='relative flex items-center'>
               <input
                 type='text'
                 placeholder='Search'
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
-                className='h-10 rounded-xl border border-[#E5E6EF] bg-[#F8F9FC] pl-10 pr-4 text-sm text-slate-700 placeholder:text-[#B0B7D0] focus:border-[#C5CAE3] focus:outline-none focus:ring-2 focus:ring-[#C2C8E4]'
+                className='h-8 rounded-lg border border-[#E5E6EF] bg-[#F8F9FC] pl-8 pr-3 text-xs text-slate-700 placeholder:text-[#B0B7D0] focus:border-[#C5CAE3] focus:outline-none focus:ring-2 focus:ring-[#C2C8E4]'
               />
-              <Search className='absolute left-3 h-4 w-4 text-[#A6AEC7]' />
+              <Search className='absolute left-2.5 h-3.5 w-3.5 text-[#A6AEC7]' />
             </div>
-            <button className='flex h-10 items-center gap-2 rounded-xl border border-[#E5E6EF] bg-white px-4 text-sm font-medium text-[#2D3658] transition hover:bg-[#F6F7FD]'>
-              <IoFilterSharp className='h-4 w-4 text-[#8B93AF]' />
+            <button className='flex h-8 items-center gap-1.5 rounded-lg border border-[#E5E6EF] bg-white px-3 text-xs font-medium text-[#2D3658] transition hover:bg-[#F6F7FD]'>
+              <IoFilterSharp className='h-3.5 w-3.5 text-[#8B93AF]' />
               Filters
             </button>
-            <button className='flex h-10 items-center gap-2 rounded-xl border border-[#E5E6EF] bg-white px-4 text-sm font-medium text-[#2D3658] transition hover:bg-[#F6F7FD]'>
-              <Download className='h-4 w-4 text-[#8B93AF]' />
+            <button className='flex h-8 items-center gap-1.5 rounded-lg border border-[#E5E6EF] bg-white px-3 text-xs font-medium text-[#2D3658] transition hover:bg-[#F6F7FD]'>
+              <Download className='h-3.5 w-3.5 text-[#8B93AF]' />
             </button>
           </div>
         </div>
@@ -397,29 +397,29 @@ export default function TicketsBooked () {
           onScroll={() => setMenuOpenId(null)}
         >
           <div className='min-w-[1300px]'>
-            <div className='grid grid-cols-12 gap-6 bg-[#F7F9FD] px-6 py-4'>
-              <div className='col-span-2 min-w-[180px]'>
+            <div className='grid grid-cols-[14%_14%_16%_12%_14%_10%_10%_10%] gap-2 bg-[#F7F9FD] px-6 py-4'>
+              <div>
                 <TableHeaderCell>Booked On</TableHeaderCell>
               </div>
-              <div className='col-span-2 min-w-[180px]'>
+              <div>
                 <TableHeaderCell>User Name</TableHeaderCell>
               </div>
-              <div className='col-span-2 min-w-[200px]'>
+              <div>
                 <TableHeaderCell>Email Id</TableHeaderCell>
               </div>
-              <div className='col-span-1 min-w-[200px] text-sm text-[#5E6582]'>
+              <div>
                 <TableHeaderCell>Phone Number</TableHeaderCell>
               </div>
-              <div className='col-span-2 min-w-[220px]'>
+              <div>
                 <TableHeaderCell>Tickets Booked</TableHeaderCell>
               </div>
-              <div className='col-span-1 min-w-[180px]'>
+              <div>
                 <TableHeaderCell>Amount</TableHeaderCell>
               </div>
-              <div className='col-span-1 min-w-[200px]'>
+              <div>
                 <TableHeaderCell>Payment Status</TableHeaderCell>
               </div>
-              <div className='col-span-1 min-w-[200px] flex justify-end'>
+              <div className='flex justify-end'>
                 <TableHeaderCell align='right'>Activity Status</TableHeaderCell>
               </div>
             </div>
@@ -447,9 +447,9 @@ export default function TicketsBooked () {
                         booking.bookingId ||
                         'booking'
                       }-${idx}`}
-                      className='grid grid-cols-12 gap-4 px-6 py-5 hover:bg-[#F9FAFD]'
+                      className='grid grid-cols-[14%_14%_16%_12%_14%_10%_10%_10%] gap-2 px-6 py-5 hover:bg-[#F9FAFD]'
                     >
-                      <div className='col-span-2 min-w-[180px] text-sm text-[#5E6582] truncate'>
+                      <div className='text-sm text-[#5E6582] truncate'>
                         {(() => {
                           const d =
                             booking.bookedOn ||
@@ -472,7 +472,7 @@ export default function TicketsBooked () {
                             : '-'
                         })()}
                       </div>
-                      <div className='col-span-2 min-w-[180px] text-sm font-semibold text-slate-900 truncate'>
+                      <div className='text-sm font-semibold text-slate-900 truncate'>
                         {(booking.buyer && booking.buyer.fullName) || '-'}
                         {Array.isArray(booking.attendees) &&
                           booking.attendees.length > 0 && (
@@ -483,7 +483,7 @@ export default function TicketsBooked () {
                             </div>
                           )}
                       </div>
-                      <div className='col-span-2 min-w-[200px] text-sm text-[#5E6582] truncate'>
+                      <div className='text-sm text-[#5E6582] truncate'>
                         {(booking.buyer && booking.buyer.email) || '-'}
                         {Array.isArray(booking.attendees) &&
                           booking.attendees.length > 0 && (
@@ -492,7 +492,7 @@ export default function TicketsBooked () {
                             </div>
                           )}
                       </div>
-                      <div className='col-span-1 min-w-[200px] text-sm text-[#5E6582] truncate'>
+                      <div className='text-sm text-[#5E6582] truncate'>
                         {(booking.buyer && booking.buyer.phone) || '-'}
                         {Array.isArray(booking.attendees) &&
                           booking.attendees.length > 0 && (
@@ -503,10 +503,10 @@ export default function TicketsBooked () {
                             </div>
                           )}
                       </div>
-                      <div className='col-span-2 min-w-[220px] text-sm text-[#5E6582] truncate'>
+                      <div className='text-sm text-[#5E6582] truncate'>
                         {booking.ticketsBooked || booking.ticketName || '-'}
                       </div>
-                      <div className='col-span-1 min-w-[180px] text-sm font-semibold text-slate-900 whitespace-nowrap'>
+                      <div className='text-sm font-semibold text-slate-900 whitespace-nowrap'>
                         {(() => {
                           const amt =
                             typeof booking.amount === 'number'
@@ -519,7 +519,7 @@ export default function TicketsBooked () {
                             : booking.amount || booking.totalPrice || '-'
                         })()}
                       </div>
-                      <div className='col-span-1 min-w-[200px] flex items-center'>
+                      <div className='flex items-center'>
                         {(() => {
                           const status = String(
                             booking.paymentStatus ||
@@ -541,7 +541,7 @@ export default function TicketsBooked () {
                           )
                         })()}
                       </div>
-                      <div className='col-span-1 min-w-[200px] flex items-center justify-end gap-3'>
+                      <div className='flex items-center justify-end gap-3'>
                         {(() => {
                           const status = String(
                             booking.status || 'Active'

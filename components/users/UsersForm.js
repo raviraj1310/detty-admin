@@ -1336,7 +1336,7 @@ export default function UsersForm () {
           <div className='p-4 border-b border-gray-200 flex-shrink-0'>
             <div className='flex justify-between items-center'>
               <h2 className='text-lg font-semibold text-gray-900'>User List</h2>
-              <div className='flex items-center space-x-4'>
+              <div className='flex items-center space-x-3'>
                 {/* Search */}
                 <div className='relative'>
                   <input
@@ -1344,10 +1344,10 @@ export default function UsersForm () {
                     placeholder='Search'
                     value={searchTerm}
                     onChange={e => setSearchTerm(e.target.value)}
-                    className='pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500'
+                    className='h-9 pl-10 pr-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs text-gray-900 placeholder-gray-500'
                   />
                   <svg
-                    className='w-5 h-5 text-gray-600 absolute left-3 top-2.5'
+                    className='w-4 h-4 text-gray-600 absolute left-3 top-2.5'
                     fill='none'
                     stroke='currentColor'
                     viewBox='0 0 24 24'
@@ -1367,7 +1367,7 @@ export default function UsersForm () {
                     <select
                       value={statusFilter}
                       onChange={e => setStatusFilter(e.target.value)}
-                      className='px-3 py-2 border border-gray-300 rounded-lg bg-white text-sm text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent'
+                      className='h-9 px-3 border border-gray-300 rounded-lg bg-white text-xs text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent'
                     >
                       <option value=''>All Status</option>
                       <option value='Active'>Active</option>
@@ -1377,7 +1377,7 @@ export default function UsersForm () {
                 )}
                 <button
                   onClick={handleToggleFilters}
-                  className='flex items-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 bg-white'
+                  className='h-9 flex items-center px-4 border border-gray-300 rounded-lg hover:bg-gray-50 bg-white'
                 >
                   <svg
                     className='w-4 h-4 mr-2 text-gray-600'
@@ -1392,7 +1392,7 @@ export default function UsersForm () {
                       d='M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 01-.659 1.591l-5.432 5.432a2.25 2.25 0 00-.659 1.591v2.927a2.25 2.25 0 01-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 00-.659-1.591L3.659 7.409A2.25 2.25 0 013 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0112 3z'
                     />
                   </svg>
-                  <span className='text-gray-700 font-medium'>
+                  <span className='text-xs text-gray-700 font-medium'>
                     {filtersOpen ? 'Hide Filters' : 'Filters'}
                   </span>
                 </button>
@@ -1401,7 +1401,7 @@ export default function UsersForm () {
                 <button
                   onClick={handleDownloadExcel}
                   disabled={exporting}
-                  className='flex items-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 bg-white disabled:opacity-50'
+                  className='h-9 flex items-center px-3 border border-gray-300 rounded-lg hover:bg-gray-50 bg-white disabled:opacity-50'
                 >
                   <svg
                     className='w-4 h-4 text-gray-600'
@@ -1417,13 +1417,13 @@ export default function UsersForm () {
                     />
                   </svg>
                 </button>
-                <div className='flex items-center gap-3'>
-                  <label className='text-sm text-gray-700'>
+                <div className='flex items-center gap-2'>
+                  <label className='text-xs text-gray-700'>
                     Show
                     <select
                       value={limit}
                       onChange={e => setLimit(Number(e.target.value) || 20)}
-                      className='ml-2 px-2 py-1 border border-gray-300 rounded'
+                      className='ml-1.5 h-9 px-2 border border-gray-300 rounded-lg text-xs'
                     >
                       <option value={10}>10</option>
                       <option value={20}>20</option>
@@ -1431,21 +1431,21 @@ export default function UsersForm () {
                       <option value={100}>100</option>
                     </select>
                   </label>
-                  <div className='flex items-center gap-2'>
+                  <div className='flex items-center gap-1.5'>
                     <button
                       onClick={() => setPage(p => Math.max(1, p - 1))}
                       disabled={page <= 1 || loading}
-                      className='px-3 py-1.5 border border-gray-300 rounded bg-gray-100 text-gray-700 font-medium hover:bg-gray-200 disabled:opacity-50 disabled:bg-gray-50 disabled:text-gray-400'
+                      className='h-9 px-3 border border-gray-300 rounded-lg bg-gray-100 text-xs text-gray-700 font-medium hover:bg-gray-200 disabled:opacity-50 disabled:bg-gray-50 disabled:text-gray-400'
                     >
                       Prev
                     </button>
-                    <span className='text-sm text-gray-700'>
+                    <span className='text-xs text-gray-700'>
                       Page {page} of {pageCount}
                     </span>
                     <button
                       onClick={() => setPage(p => Math.min(pageCount, p + 1))}
                       disabled={page >= pageCount || loading}
-                      className='px-3 py-1.5 border border-gray-300 rounded bg-gray-100 text-gray-700 font-medium hover:bg-gray-200 disabled:opacity-50 disabled:bg-gray-50 disabled:text-gray-400'
+                      className='h-9 px-3 border border-gray-300 rounded-lg bg-gray-100 text-xs text-gray-700 font-medium hover:bg-gray-200 disabled:opacity-50 disabled:bg-gray-50 disabled:text-gray-400'
                     >
                       Next
                     </button>
