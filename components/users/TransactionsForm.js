@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { TbCaretUpDownFilled } from 'react-icons/tb'
-import { Ticket, TrendingUp, TrendingDown, BarChart2 } from 'lucide-react'
+import { TbCaretUpDownFilled, TbTicket, TbTrendingUp, TbTrendingDown } from 'react-icons/tb'
+import { FaChartColumn } from 'react-icons/fa6'
 import {
   getBookingList,
   downloadBookingReceipt,
@@ -774,7 +774,7 @@ export default function TransactionsForm() {
         <div className='bg-indigo-300 text-white p-4 rounded-lg'>
           <div className='flex items-center'>
             <div className='bg-white p-2 rounded-lg mr-3'>
-              <Ticket className='w-6 h-6 text-indigo-600' />
+              <TbTicket className='w-6 h-6 text-indigo-600' />
             </div>
             <div>
               <p className="text-xs text-black opacity-90">
@@ -794,7 +794,7 @@ export default function TransactionsForm() {
         <div className='bg-purple-300 text-white p-4 rounded-lg'>
           <div className='flex items-center'>
             <div className='bg-white p-2 rounded-lg mr-3'>
-              <TrendingUp className='w-6 h-6 text-purple-600' />
+              <TbTrendingUp className='w-6 h-6 text-purple-600' />
             </div>
             <div>
               <p className="text-xs text-black opacity-90">
@@ -806,12 +806,12 @@ export default function TransactionsForm() {
                 </p>
                 {stats.isCountIncreasing ? (
                   <span className='text-xs flex items-center mb-1 text-green-500'>
-                    <TrendingUp className='w-3 h-3 mr-0.5' />
+                    <TbTrendingUp className='w-3 h-3 mr-0.5' />
                     Increasing
                   </span>
                 ) : (
                   <span className='text-xs flex items-center mb-1 text-red-500'>
-                    <TrendingDown className='w-3 h-3 mr-0.5' />
+                    <TbTrendingDown className='w-3 h-3 mr-0.5' />
                     Decreasing
                   </span>
                 )}
@@ -824,7 +824,7 @@ export default function TransactionsForm() {
         <div className='bg-teal-300 text-white p-4 rounded-lg'>
           <div className='flex items-center'>
             <div className='bg-white p-2 rounded-lg mr-3'>
-              <BarChart2 className='w-6 h-6 text-teal-900' />
+              <FaChartColumn className='w-6 h-6 text-teal-600' />
             </div>
             <div>
               <p className="text-xs text-black opacity-90">
@@ -836,12 +836,12 @@ export default function TransactionsForm() {
                 </p>
                 {stats.isPctIncreasing ? (
                   <span className='text-xs flex items-center mb-1 text-green-500'>
-                    <TrendingUp className='w-3 h-3 mr-0.5' />
+                    <TbTrendingUp className='w-3 h-3 mr-0.5' />
                     Increasing
                   </span>
                 ) : (
                   <span className='text-xs flex items-center mb-1 text-red-500'>
-                    <TrendingDown className='w-3 h-3 mr-0.5' />
+                    <TbTrendingDown className='w-3 h-3 mr-0.5' />
                     Decreasing
                   </span>
                 )}

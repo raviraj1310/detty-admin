@@ -1284,12 +1284,12 @@ export default function UsersForm () {
                 </p>
                 {globalStats.isCountIncreasing ? (
                   <span className='text-xs flex items-center mb-1 text-green-600'>
-                    <TrendingUp className='w-3 h-3 mr-0.5' />
+                    <TbTrendingUp className='w-3 h-3 mr-0.5' />
                     Increasing
                   </span>
                 ) : (
                   <span className='text-xs flex items-center mb-1 text-red-600'>
-                    <TrendingDown className='w-3 h-3 mr-0.5' />
+                    <TbTrendingDown className='w-3 h-3 mr-0.5' />
                     Decreasing
                   </span>
                 )}
@@ -1314,12 +1314,12 @@ export default function UsersForm () {
                 </p>
                 {globalStats.isPctIncreasing ? (
                   <span className='text-xs flex items-center mb-1 text-green-600'>
-                    <TrendingUp className='w-3 h-3 mr-0.5' />
+                    <TbTrendingUp className='w-3 h-3 mr-0.5' />
                     Increasing
                   </span>
                 ) : (
                   <span className='text-xs flex items-center mb-1 text-red-600'>
-                    <TrendingDown className='w-3 h-3 mr-0.5' />
+                    <TbTrendingDown className='w-3 h-3 mr-0.5' />
                     Decreasing
                   </span>
                 )}
