@@ -9,7 +9,10 @@ import {
   Download,
   Ticket,
   User,
-  Loader2
+  Loader2,
+  TrendingUp,
+  TrendingDown,
+  BarChart2
 } from 'lucide-react'
 import { getActivityBookedTickets } from '../../services/booking/booking.service'
 import { downloadActivityBookedTicket } from '@/services/places-to-visit/placesToVisit.service'
@@ -122,6 +125,113 @@ export default function Activities () {
   const [downloadingId, setDownloadingId] = useState(null)
   const [sortKey, setSortKey] = useState('date')
   const [sortDir, setSortDir] = useState('desc')
+  const [statsLoadedFromApi, setStatsLoadedFromApi] = useState(false)
+
+  const [stats, setStats] = useState({
+    yesterdayCount: 0,
+    yesterdayDateStr: '',
+    avgGrowthCount: 0,
+    isCountIncreasing: false,
+    avgGrowthPercent: '0%',
+    isPctIncreasing: false
+  })
+
+  useEffect(() => {
+    // If stats are already loaded from API, skip client-side calc
+    if (statsLoadedFromApi || !rows || rows.length === 0) return
+
+    const now = new Date()
+    const yesterday = new Date(now)
+    yesterday.setDate(yesterday.getDate() - 1)
+    yesterday.setHours(0, 0, 0, 0)
+    const yesterdayEnd = new Date(yesterday)
+    yesterdayEnd.setHours(23, 59, 59, 999)
+
+    const yesterdayDateStr = yesterday.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric'
+    })
+
+    // 1. Total Bookings Yesterday
+    const yesterdayCount = rows.filter(b => {
+      const d = new Date(b.bookedOnRaw)
+      return d >= yesterday && d <= yesterdayEnd
+    }).length
+
+    // 2. Avg Daily Growth Logic
+    const bookingsByDate = {}
+    rows.forEach(b => {
+      const d = new Date(b.bookedOnRaw)
+      if (isNaN(d.getTime())) return
+      const dateKey = d.toISOString().split('T')[0]
+      bookingsByDate[dateKey] = (bookingsByDate[dateKey] || 0) + 1
+    })
+
+    // Get last 30 days
+    const days30 = []
+    for (let i = 0; i < 30; i++) {
+      const d = new Date(now)
+      d.setDate(d.getDate() - i)
+      const dateKey = d.toISOString().split('T')[0]
+      days30.push({ date: dateKey, count: bookingsByDate[dateKey] || 0 })
+    }
+    days30.reverse() // Oldest to newest
+
+    // Avg Daily Count
+    const totalCount30 = days30.reduce((acc, curr) => acc + curr.count, 0)
+    const avgGrowthCount = Math.round(totalCount30 / 30)
+
+    // Trend for Count (Last 7 vs Prev 7)
+    const last7 = days30.slice(-7)
+    const prev7 = days30.slice(-14, -7)
+    const avgLast7 = last7.reduce((a, c) => a + c.count, 0) / 7
+    const avgPrev7 = prev7.reduce((a, c) => a + c.count, 0) / 7
+    const isCountIncreasing = avgLast7 >= avgPrev7
+
+    // Avg Daily Growth %
+    let totalPctChange = 0
+    let validDays = 0
+    const pctChanges = []
+
+    for (let i = 1; i < days30.length; i++) {
+      const prev = days30[i - 1].count
+      const curr = days30[i].count
+      let pct = 0
+      if (prev === 0) {
+        pct = curr > 0 ? 100 : 0
+      } else {
+        pct = ((curr - prev) / prev) * 100
+      }
+      pctChanges.push(pct)
+      totalPctChange += pct
+      validDays++
+    }
+
+    const avgGrowthPercentVal = validDays > 0 ? totalPctChange / validDays : 0
+    const avgGrowthPercent = `${avgGrowthPercentVal.toFixed(2)}%`
+
+    // Trend for % (Last 7 vs Prev 7)
+    const last7Pct = pctChanges.slice(-7)
+    const prev7Pct = pctChanges.slice(-14, -7)
+    const avgLast7Pct =
+      last7Pct.length > 0
+        ? last7Pct.reduce((a, c) => a + c, 0) / last7Pct.length
+        : 0
+    const avgPrev7Pct =
+      prev7Pct.length > 0
+        ? prev7Pct.reduce((a, c) => a + c, 0) / prev7Pct.length
+        : 0
+    const isPctIncreasing = avgLast7Pct >= avgPrev7Pct
+
+    setStats({
+      yesterdayCount,
+      yesterdayDateStr,
+      avgGrowthCount,
+      isCountIncreasing,
+      avgGrowthPercent,
+      isPctIncreasing
+    })
+  }, [rows, statsLoadedFromApi])
 
   const handleTabClick = tabId => {
     switch (tabId) {
@@ -169,11 +279,64 @@ export default function Activities () {
       setError('')
       try {
         const res = await getActivityBookedTickets()
-        const data = Array.isArray(res?.data)
-          ? res.data
-          : Array.isArray(res)
-          ? res
-          : []
+        let data = []
+
+        if (
+          res?.data &&
+          typeof res.data === 'object' &&
+          !Array.isArray(res.data) &&
+          (typeof res.totalBookingsYesterday !== 'undefined' ||
+            typeof res.data.totalBookingsYesterday !== 'undefined' ||
+            res.data ||
+            res.data.bookings)
+        ) {
+          // Structure from user snippet: { success: true, message: "...", total: 2, totalBookingsYesterday: 0, yesterdayDate: "...", ... data: [...] }
+          // OR it might be inside res.data depending on axios interceptor
+          // Let's assume 'res' is the response object from axios interceptor which returns response.data
+          // The snippet shows keys at root level if res is the object.
+
+          const d = res // The object itself as per snippet
+
+          if (Array.isArray(d.data)) data = d.data
+          else if (Array.isArray(d.bookings)) data = d.bookings
+          else data = []
+
+          // Extract Stats
+          const yesterdayCount = Number(d.totalBookingsYesterday || 0)
+          let yesterdayDateStr = d.yesterdayDate || ''
+          const yDate = new Date(yesterdayDateStr)
+          if (!isNaN(yDate.getTime())) {
+            yesterdayDateStr = yDate.toLocaleDateString('en-US', {
+              month: 'short',
+              day: 'numeric'
+            })
+          }
+
+          const avgGrowthCount = Number(d.avgDailyGrowthCount || 0)
+          const avgGrowthPercentStr = String(d.avgDailyGrowthPercent || '0%')
+          const avgGrowthPercentVal = parseFloat(
+            avgGrowthPercentStr.replace('%', '')
+          )
+
+          setStats({
+            yesterdayCount,
+            yesterdayDateStr,
+            avgGrowthCount,
+            isCountIncreasing: avgGrowthCount >= 0,
+            avgGrowthPercent: avgGrowthPercentStr,
+            isPctIncreasing: avgGrowthPercentVal >= 0
+          })
+          setStatsLoadedFromApi(true)
+        } else {
+          // Fallback or different structure
+          data = Array.isArray(res?.data)
+            ? res.data
+            : Array.isArray(res)
+            ? res
+            : []
+          setStatsLoadedFromApi(false)
+        }
+
         const mapped = data.map((b, idx) => {
           const activityObj = b?.activityId || b?.activity || {}
           const img = toImageUrl(activityObj?.image || b?.activityImage)
@@ -450,6 +613,80 @@ export default function Activities () {
           <span>Dashboard</span> / <span>Users</span>
         </nav>
       </div>
+
+      {/* Stats Cards */}
+      <div className='grid grid-cols-1 md:grid-cols-3 gap-4 mb-6'>
+        {/* Total Bookings Yesterday */}
+        <div className='bg-indigo-600 text-white p-4 rounded-lg'>
+          <div className='flex items-center'>
+            <div className='bg-white p-2 rounded-lg mr-3'>
+              <Ticket className='w-6 h-6 text-indigo-600' />
+            </div>
+            <div>
+              <p className='text-xs opacity-90'>
+                Total Bookings Yesterday{' '}
+                <span className='text-[10px] opacity-75'>
+                  ({stats.yesterdayDateStr})
+                </span>
+              </p>
+              <p className='text-2xl font-bold'>{stats.yesterdayCount}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Avg Daily Growth (Count) */}
+        <div className='bg-purple-600 text-white p-4 rounded-lg'>
+          <div className='flex items-center'>
+            <div className='bg-white p-2 rounded-lg mr-3'>
+              <TrendingUp className='w-6 h-6 text-purple-600' />
+            </div>
+            <div>
+              <p className='text-xs opacity-90'>Avg Daily Growth (Count)</p>
+              <div className='flex items-end gap-2'>
+                <p className='text-2xl font-bold'>{stats.avgGrowthCount}</p>
+                {stats.isCountIncreasing ? (
+                  <span className='text-xs flex items-center mb-1 text-green-200'>
+                    <TrendingUp className='w-3 h-3 mr-0.5' />
+                    Increasing
+                  </span>
+                ) : (
+                  <span className='text-xs flex items-center mb-1 text-red-200'>
+                    <TrendingDown className='w-3 h-3 mr-0.5' />
+                    Decreasing
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Avg Daily Growth (%) */}
+        <div className='bg-teal-600 text-white p-4 rounded-lg'>
+          <div className='flex items-center'>
+            <div className='bg-white p-2 rounded-lg mr-3'>
+              <BarChart2 className='w-6 h-6 text-teal-600' />
+            </div>
+            <div>
+              <p className='text-xs opacity-90'>Avg Daily Growth (%)</p>
+              <div className='flex items-end gap-2'>
+                <p className='text-2xl font-bold'>{stats.avgGrowthPercent}</p>
+                {stats.isPctIncreasing ? (
+                  <span className='text-xs flex items-center mb-1 text-green-200'>
+                    <TrendingUp className='w-3 h-3 mr-0.5' />
+                    Increasing
+                  </span>
+                ) : (
+                  <span className='text-xs flex items-center mb-1 text-red-200'>
+                    <TrendingDown className='w-3 h-3 mr-0.5' />
+                    Decreasing
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div className='bg-gray-200 p-5 rounded-xl'>
         {/* Main Content */}
         <div className='bg-white rounded-lg shadow-sm border border-gray-200'>
