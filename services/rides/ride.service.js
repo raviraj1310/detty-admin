@@ -2,7 +2,7 @@ import api from '@/src/axois/axois'
 
 export const getAllRideBookings = async () => {
   try {
-    const response = await api.get('/ride/get-all-rides')
+    const response = await api.get('/ride/get-all-rides-admin')
     return response.data
   } catch (error) {
     console.error('Error fetching ride bookings:', error)

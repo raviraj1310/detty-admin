@@ -68,7 +68,9 @@ const mapUser = d => {
     createdOn,
     createdTs,
     status,
-    avatar: d?.avatar || '/images/backend/side_menu/side_menu (1).svg'
+    avatar: d?.avatar || '/images/backend/side_menu/side_menu (1).svg',
+    bookingCounts: Number(d?.bookingCounts || 0),
+    bookingTotalAmount: Number(d?.bookingValues?.totalAmount || 0)
   }
 }
 
@@ -1282,12 +1284,12 @@ export default function UsersForm () {
                 </p>
                 {globalStats.isCountIncreasing ? (
                   <span className='text-xs flex items-center mb-1 text-green-600'>
-                    <TbTrendingUp className='w-3 h-3 mr-0.5' />
+                    <TrendingUp className='w-3 h-3 mr-0.5' />
                     Increasing
                   </span>
                 ) : (
                   <span className='text-xs flex items-center mb-1 text-red-600'>
-                    <TbTrendingDown className='w-3 h-3 mr-0.5' />
+                    <TrendingDown className='w-3 h-3 mr-0.5' />
                     Decreasing
                   </span>
                 )}
@@ -1312,12 +1314,12 @@ export default function UsersForm () {
                 </p>
                 {globalStats.isPctIncreasing ? (
                   <span className='text-xs flex items-center mb-1 text-green-600'>
-                    <TbTrendingUp className='w-3 h-3 mr-0.5' />
+                    <TrendingUp className='w-3 h-3 mr-0.5' />
                     Increasing
                   </span>
                 ) : (
                   <span className='text-xs flex items-center mb-1 text-red-600'>
-                    <TbTrendingDown className='w-3 h-3 mr-0.5' />
+                    <TrendingDown className='w-3 h-3 mr-0.5' />
                     Decreasing
                   </span>
                 )}
@@ -1593,9 +1595,14 @@ export default function UsersForm () {
                               `/users/view-booked-tickets/${id}?${qs}`
                             )
                           }}
-                          className='text-blue-600 underline hover:text-blue-800 transition-colors text-xs'
+                          className='text-blue-800 font-bold underline hover:text-blue-800 transition-colors text-xs'
+                          title='total bookings and total amount spent'
                         >
-                          View Bookings
+                          {typeof user.bookingCounts === 'number'
+                            ? `${user.bookingCounts} (₦${Number(
+                                user.bookingTotalAmount || 0
+                              ).toLocaleString()})`
+                            : 'View Bookings'}
                         </button>
                       </td>
                       <td className='px-3 py-4'>

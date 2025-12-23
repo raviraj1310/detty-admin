@@ -2,7 +2,13 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Download } from 'lucide-react'
+import {
+  Download,
+  Ticket,
+  TrendingUp,
+  TrendingDown,
+  BarChart2
+} from 'lucide-react'
 import { downloadExcel } from '@/utils/excelExport'
 import { TbCaretUpDownFilled } from 'react-icons/tb'
 import Modal from '@/components/ui/Modal'
@@ -119,6 +125,14 @@ export default function RidesForm () {
   const [rides, setRides] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [stats, setStats] = useState({
+    yesterdayCount: 0,
+    yesterdayDateStr: '',
+    avgGrowthCount: 0,
+    isCountIncreasing: false,
+    avgGrowthPercent: '0%',
+    isPctIncreasing: false
+  })
 
   // Modal states
   const [selectedRide, setSelectedRide] = useState(null)
@@ -139,6 +153,36 @@ export default function RidesForm () {
       try {
         const res = await getAllRideBookings()
         // API structure: { success: true, data: { data: [...] } }
+
+        const d = res?.data || {}
+        const yesterdayCount = Number(d.totalPurchasingYesterday || 0)
+
+        const yesterday = new Date()
+        yesterday.setDate(yesterday.getDate() - 1)
+        const yesterdayDateStr = yesterday.toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric'
+        })
+
+        const avgGrowthCount = Number(
+          d.growthCount ?? d.avgDailyGrowthCount ?? 0
+        )
+        const gp = d.growthPercent ?? d.avgDailyGrowthPercent ?? '0%'
+        const avgGrowthPercentStr =
+          typeof gp === 'number' ? `${gp}%` : String(gp)
+        const avgGrowthPercentVal = parseFloat(
+          avgGrowthPercentStr.replace('%', '')
+        )
+
+        setStats({
+          yesterdayCount,
+          yesterdayDateStr,
+          avgGrowthCount,
+          isCountIncreasing: avgGrowthCount >= 0,
+          avgGrowthPercent: avgGrowthPercentStr,
+          isPctIncreasing: avgGrowthPercentVal >= 0
+        })
+
         const rawList = res?.data?.data || []
 
         const list = rawList.map(item => {
@@ -244,7 +288,84 @@ export default function RidesForm () {
 
   return (
     <div className='p-4 h-full flex flex-col bg-white'>
-      <div className='bg-gray-200 p-5 rounded-xl'>
+      <div className='grid grid-cols-1 md:grid-cols-3 gap-4 mb-6'>
+        <div className='bg-indigo-300 text-white p-4 rounded-lg'>
+          <div className='flex items-center'>
+            <div className='bg-white p-2 rounded-lg mr-3'>
+              <Ticket className='w-6 h-6 text-indigo-600' />
+            </div>
+            <div>
+              <p className='text-xs text-black opacity-90'>
+                Total Purchasing Yesterday{' '}
+                <span className='text-[10px] opacity-75'>
+                  ({stats.yesterdayDateStr})
+                </span>
+              </p>
+              <p className='text-2xl text-black font-bold'>
+                {stats.yesterdayCount}
+              </p>
+            </div>
+          </div>
+        </div>
+        <div className='bg-purple-300 text-white p-4 rounded-lg'>
+          <div className='flex items-center'>
+            <div className='bg-white p-2 rounded-lg mr-3'>
+              <TrendingUp className='w-6 h-6 text-purple-600' />
+            </div>
+            <div>
+              <p className='text-xs text-black opacity-90'>
+                Avg Daily Growth (Count)
+              </p>
+              <div className='flex items-end gap-2'>
+                <p className='text-2xl text-black font-bold'>
+                  {stats.avgGrowthCount}
+                </p>
+                {stats.isCountIncreasing ? (
+                  <span className='text-xs flex items-center mb-1 text-green-500'>
+                    <TrendingUp className='w-3 h-3 mr-0.5' />
+                    Increasing
+                  </span>
+                ) : (
+                  <span className='text-xs flex items-center mb-1 text-red-500'>
+                    <TrendingDown className='w-3 h-3 mr-0.5' />
+                    Decreasing
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className='bg-teal-300 text-white p-4 rounded-lg'>
+          <div className='flex items-center'>
+            <div className='bg-white p-2 rounded-lg mr-3'>
+              <BarChart2 className='w-6 h-6 text-teal-600' />
+            </div>
+            <div>
+              <p className='text-xs text-black opacity-90'>
+                Avg Daily Growth (%)
+              </p>
+              <div className='flex items-end gap-2'>
+                <p className='text-2xl text-black font-bold'>
+                  {stats.avgGrowthPercent}
+                </p>
+                {stats.isPctIncreasing ? (
+                  <span className='text-xs flex items-center mb-1 text-green-500'>
+                    <TrendingUp className='w-3 h-3 mr-0.5' />
+                    Increasing
+                  </span>
+                ) : (
+                  <span className='text-xs flex items-center mb-1 text-red-500'>
+                    <TrendingDown className='w-3 h-3 mr-0.5' />
+                    Decreasing
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className='bg-gray-200 p-5 rounded-xl flex-1 flex flex-col min-h-0'>
         {/* Main Content */}
         <div className='bg-white rounded-lg shadow-sm border border-gray-200 flex-1 flex flex-col min-h-0'>
           {/* Header with Search and Filters */}
@@ -293,7 +414,9 @@ export default function RidesForm () {
                       d='M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 01-.659 1.591l-5.432 5.432a2.25 2.25 0 00-.659 1.591v2.927a2.25 2.25 0 01-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 00-.659-1.591L3.659 7.409A2.25 2.25 0 013 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0112 3z'
                     />
                   </svg>
-                  <span className='text-xs text-gray-700 font-medium'>Filters</span>
+                  <span className='text-xs text-gray-700 font-medium'>
+                    Filters
+                  </span>
                 </button>
 
                 {/* Download */}
@@ -302,7 +425,9 @@ export default function RidesForm () {
                   className='h-9 flex items-center px-4 border border-gray-300 rounded-lg hover:bg-gray-50 bg-white'
                 >
                   <Download className='h-4 w-4 text-gray-600 mr-2' />
-                  <span className='text-xs text-gray-700 font-medium'>Export</span>
+                  <span className='text-xs text-gray-700 font-medium'>
+                    Export
+                  </span>
                 </button>
               </div>
             </div>
