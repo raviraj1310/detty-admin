@@ -77,8 +77,8 @@ export default function RequestDeactivation () {
   }
 
   return (
-    <div className='rounded-[30px] border border-[#E1E6F7] bg-white p-6 shadow-[0_24px_60px_-40px_rgba(15,23,42,0.55)]'>
-      <div className='mb-6 flex flex-wrap items-center justify-between gap-4'>
+    <div className='rounded-[30px] border border-[#E1E6F7] bg-white p-4 shadow-[0_24px_60px_-40px_rgba(15,23,42,0.55)]'>
+      <div className='mb-4 flex flex-wrap items-center justify-between gap-3'>
         <h2 className='text-lg font-semibold text-slate-900'>
           Request Deactivation
         </h2>
@@ -88,36 +88,36 @@ export default function RequestDeactivation () {
             placeholder='Search'
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
-            className='h-10 rounded-xl border border-[#E5E6EF] bg-[#F8F9FC] pl-10 pr-4 text-sm text-slate-700 placeholder:text-[#B0B7D0] focus:border-[#C5CAE3] focus:outline-none focus:ring-2 focus:ring-[#C2C8E4]'
+            className='h-9 rounded-xl border border-[#E5E6EF] bg-[#F8F9FC] pl-10 pr-4 text-sm text-slate-700 placeholder:text-[#B0B7D0] focus:border-[#C5CAE3] focus:outline-none focus:ring-2 focus:ring-[#C2C8E4]'
           />
           <Search className='absolute left-3 h-4 w-4 text-[#A6AEC7]' />
         </div>
       </div>
 
-      <div className='overflow-visible rounded-2xl border border-[#E5E8F5]'>
-        <div className='grid grid-cols-[1.5fr_2fr_1.2fr_1fr] gap-3 bg-[#F7F9FD] px-6 py-4'>
-          <div className='text-xs font-medium uppercase tracking-[0.12em] text-[#8A92AC]'>
+      <div className='overflow-visible rounded-xl border border-[#E5E8F5]'>
+        <div className='grid grid-cols-[1.5fr_2fr_1.2fr_1fr] gap-2 bg-[#F7F9FD] px-4 py-2.5'>
+          <div className='text-xs font-medium capitalize tracking-wider text-gray-500'>
             Name
           </div>
-          <div className='text-xs font-medium uppercase tracking-[0.12em] text-[#8A92AC]'>
+          <div className='text-xs font-medium capitalize tracking-wider text-gray-500'>
             Email
           </div>
-          <div className='text-xs font-medium uppercase tracking-[0.12em] text-[#8A92AC]'>
+          <div className='text-xs font-medium capitalize tracking-wider text-gray-500'>
             Status
           </div>
-          <div className='text-right text-xs font-medium uppercase tracking-[0.12em] text-[#8A92AC]'>
+          <div className='text-right text-xs font-medium capitalize tracking-wider text-gray-500'>
             Action
           </div>
         </div>
         <div className='divide-y divide-[#EEF1FA] bg-white'>
           {loading && (
-            <div className='px-6 py-5 text-sm text-[#5E6582]'>Loading...</div>
+            <div className='px-4 py-3 text-sm text-[#5E6582]'>Loading...</div>
           )}
           {error && !loading && (
-            <div className='px-6 py-5 text-sm text-red-600'>{error}</div>
+            <div className='px-4 py-3 text-sm text-red-600'>{error}</div>
           )}
           {!loading && !error && filtered.length === 0 && (
-            <div className='px-6 py-5 text-sm text-[#5E6582]'>
+            <div className='px-4 py-3 text-sm text-[#5E6582]'>
               No requests found
             </div>
           )}
@@ -126,7 +126,7 @@ export default function RequestDeactivation () {
             filtered.map(row => (
               <div
                 key={row.id}
-                className='grid grid-cols-[1.5fr_2fr_1.2fr_1fr] items-center gap-3 px-6 py-4'
+                className='grid grid-cols-[1.5fr_2fr_1.2fr_1fr] items-center gap-2 px-4 py-3'
               >
                 <div className='text-sm font-medium text-slate-900'>
                   {row.name}

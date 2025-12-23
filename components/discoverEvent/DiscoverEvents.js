@@ -71,11 +71,11 @@ const TableHeaderCell = ({
   <button
     type="button"
     onClick={onClick}
-    className={`flex items-center gap-1 text-xs font-medium uppercase tracking-[0.12em] ${
-      active ? "text-[#2D3658]" : "text-[#8A92AC]"
+    className={`flex items-center gap-1 text-xs font-medium capitalize tracking-wider ${
+      active ? "text-gray-500" : "text-gray-500"
     } ${
       align === "right" ? "justify-end" : "justify-start"
-    } hover:text-[#2D3658]`}
+    } hover:text-gray-700`}
   >
     {children}
     {active ? (
@@ -391,10 +391,10 @@ export default function DiscoverEvents() {
       />
       <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
         <div className="flex flex-col gap-2">
-          <h1 className="text-2xl font-semibold text-slate-900">
+          <h1 className="text-xl font-semibold text-slate-900">
             Discover Events
           </h1>
-          <p className="text-sm text-[#99A1BC]">Dashboard / Discover Events</p>
+          <p className="text-xs text-[#99A1BC]">Dashboard / Discover Events</p>
         </div>
         <div className="flex flex-wrap items-center gap-3 md:justify-end">
           <button
@@ -606,19 +606,19 @@ export default function DiscoverEvents() {
                     {event.eventDate}
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="relative h-9 w-9 flex-shrink-0 overflow-hidden rounded-lg bg-[#F0F2F8] flex items-center justify-center">
+                    <div className="relative h-8 w-8 flex-shrink-0 overflow-hidden rounded-lg bg-[#F0F2F8] flex items-center justify-center">
                       {event.image ? (
                         <Image
                           src={event.image}
                           alt={event.eventName}
                           fill
-                          sizes="36px"
+                          sizes="32px"
                           className="object-cover"
                           unoptimized={true}
                         />
                       ) : (
                         <span
-                          className={`text-sm font-semibold text-white ${event.imageBg} h-full w-full flex items-center justify-center`}
+                          className={`text-xs font-semibold text-white ${event.imageBg} h-full w-full flex items-center justify-center`}
                         >
                           {event.eventName.charAt(0)}
                         </span>

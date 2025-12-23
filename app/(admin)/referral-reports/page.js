@@ -342,30 +342,30 @@ export default function ReferralReportsPage () {
             {activeTab === 'event' ? (
               <div className='rounded-xl border border-[#E5E8F5]'>
                 <div className='grid grid-cols-[16%_16%_10%_8%_14%_9%_12%_12%] gap-2 bg-[#F7F9FD] px-3 py-2.5'>
-                  <div className='flex items-center text-xs font-medium uppercase tracking-[0.08em] text-[#8A92AC]'>
+                  <div className='flex items-center text-xs font-medium capitalize tracking-wider text-gray-500'>
                     <span>Event Date</span>
                     <TbCaretUpDownFilled className='w-3 h-3 text-gray-400 ml-1' />
                   </div>
-                  <div className='flex items-center text-xs font-medium uppercase tracking-[0.08em] text-[#8A92AC]'>
+                  <div className='flex items-center text-xs font-medium capitalize tracking-wider text-gray-500'>
                     <span>Event Name</span>
                     <TbCaretUpDownFilled className='w-3 h-3 text-gray-400 ml-1' />
                   </div>
-                  <div className='text-xs font-medium uppercase tracking-[0.08em] text-[#8A92AC]'>
+                  <div className='text-xs font-medium capitalize tracking-wider text-gray-500'>
                     Referral Code
                   </div>
-                  <div className='text-xs font-medium uppercase tracking-[0.08em] text-[#8A92AC]'>
+                  <div className='text-xs font-medium capitalize tracking-wider text-gray-500'>
                     Type
                   </div>
-                  <div className='text-xs font-medium uppercase tracking-[0.08em] text-[#8A92AC]'>
+                  <div className='text-xs font-medium capitalize tracking-wider text-gray-500'>
                     Tickets Booked
                   </div>
-                  <div className='text-xs font-medium uppercase tracking-[0.08em] text-[#8A92AC]'>
+                  <div className='text-xs font-medium capitalize tracking-wider text-gray-500'>
                     Amount
                   </div>
-                  <div className='text-xs font-medium uppercase tracking-[0.08em] text-[#8A92AC]'>
+                  <div className='text-xs font-medium capitalize tracking-wider text-gray-500'>
                     Event Status
                   </div>
-                  <div className='text-xs font-medium uppercase tracking-[0.08em] text-[#8A92AC]'>
+                  <div className='text-xs font-medium capitalize tracking-wider text-gray-500'>
                     Payment Status
                   </div>
                 </div>
@@ -427,30 +427,30 @@ export default function ReferralReportsPage () {
             ) : (
               <div className='rounded-xl border border-[#E5E8F5]'>
                 <div className='grid grid-cols-[16%_16%_10%_8%_14%_9%_12%_12%] gap-2 bg-[#F7F9FD] px-3 py-2.5'>
-                  <div className='flex items-center text-xs font-medium uppercase tracking-[0.08em] text-[#8A92AC]'>
+                  <div className='flex items-center text-xs font-medium capitalize tracking-wider text-gray-500'>
                     <span>Added On</span>
                     <TbCaretUpDownFilled className='w-3 h-3 text-gray-400 ml-1' />
                   </div>
-                  <div className='flex items-center text-xs font-medium uppercase tracking-[0.08em] text-[#8A92AC]'>
+                  <div className='flex items-center text-xs font-medium capitalize tracking-wider text-gray-500'>
                     <span>Activity Name</span>
                     <TbCaretUpDownFilled className='w-3 h-3 text-gray-400 ml-1' />
                   </div>
-                  <div className='text-xs font-medium uppercase tracking-[0.08em] text-[#8A92AC]'>
+                  <div className='text-xs font-medium capitalize tracking-wider text-gray-500'>
                     Referral Code
                   </div>
-                  <div className='text-xs font-medium uppercase tracking-[0.08em] text-[#8A92AC]'>
+                  <div className='text-xs font-medium capitalize tracking-wider text-gray-500'>
                     Type
                   </div>
-                  <div className='text-xs font-medium uppercase tracking-[0.08em] text-[#8A92AC]'>
+                  <div className='text-xs font-medium capitalize tracking-wider text-gray-500'>
                     Tickets Booked
                   </div>
-                  <div className='text-xs font-medium uppercase tracking-[0.08em] text-[#8A92AC]'>
+                  <div className='text-xs font-medium capitalize tracking-wider text-gray-500'>
                     Amount
                   </div>
-                  <div className='text-xs font-medium uppercase tracking-[0.08em] text-[#8A92AC]'>
+                  <div className='text-xs font-medium capitalize tracking-wider text-gray-500'>
                     Status
                   </div>
-                  <div className='text-xs font-medium uppercase tracking-[0.08em] text-[#8A92AC]'>
+                  <div className='text-xs font-medium capitalize tracking-wider text-gray-500'>
                     Payment Status
                   </div>
                 </div>

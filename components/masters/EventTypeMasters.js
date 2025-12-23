@@ -30,9 +30,9 @@ const TableHeaderCell = ({ children, align = 'left', onClick, active = false, or
   <button
     type='button'
     onClick={onClick}
-    className={`flex items-center gap-1 text-xs font-medium uppercase tracking-[0.12em] ${
+    className={`flex items-center gap-1 text-xs font-medium capitalize tracking-wider ${
       align === 'right' ? 'justify-end' : 'justify-start'
-    } ${active ? 'text-[#2D3658]' : 'text-[#8A92AC]'} `}
+    } ${active ? 'text-gray-500' : 'text-gray-500'} hover:text-gray-700`}
   >
     {children}
     <TbCaretUpDownFilled className={`h-3.5 w-3.5 ${active ? 'text-[#4F46E5]' : 'text-[#CBCFE2]'} ${order === 'asc' ? 'rotate-180' : ''}`} />
@@ -292,26 +292,26 @@ export default function EventTypeMasters () {
         position='top-right'
       />
       {/* Header */}
-      <div className='flex flex-col gap-4 md:flex-row md:items-start md:justify-between'>
-        <div className='flex flex-col gap-2'>
-          <h1 className='text-2xl font-semibold text-slate-900'>
+      <div className='flex flex-col gap-2 md:flex-row md:items-start md:justify-between'>
+        <div className='flex flex-col gap-1'>
+          <h1 className='text-xl font-semibold text-slate-900'>
             Event Type Masters
           </h1>
-          <p className='text-sm text-[#99A1BC]'>Dashboard / Masters</p>
+          <p className='text-xs text-[#99A1BC]'>Dashboard / Masters</p>
         </div>
       </div>
 
       {/* Event Type Details Form */}
-      <div className='bg-gray-200 p-3 rounded-xl p-4'>
-        <div className='rounded-xl border border-[#E1E6F7] bg-white p-8 shadow-[0_24px_60px_-40px_rgba(15,23,42,0.55)]'>
-          <div className='flex items-center justify-between mb-6'>
-            <h2 className='text-lg font-semibold text-slate-900'>
+      <div className='bg-gray-100 p-3 rounded-xl'>
+        <div className='rounded-xl border border-[#E1E6F7] bg-white p-4 shadow-[0_24px_60px_-40px_rgba(15,23,42,0.55)]'>
+          <div className='flex items-center justify-between mb-4 border-b pb-2 border-gray-200'>
+            <h2 className='text-base font-semibold text-slate-900'>
               Event Type Details
             </h2>
             <button
               onClick={handleSubmit}
               disabled={submitting}
-              className='rounded-xl bg-[#FF5B2C] px-6 py-2.5 text-sm font-semibold text-white shadow-[0_14px_30px_-20px_rgba(248,113,72,0.65)] transition hover:bg-[#F0481A] disabled:opacity-60 disabled:cursor-not-allowed'
+              className='rounded-lg bg-[#FF5B2C] px-4 py-1.5 text-sm font-semibold text-white shadow-[0_14px_30px_-20px_rgba(248,113,72,0.65)] transition hover:bg-[#F0481A] disabled:opacity-60 disabled:cursor-not-allowed'
             >
               {submitting ? (
                 <span className='flex items-center gap-2'>
@@ -327,10 +327,10 @@ export default function EventTypeMasters () {
           </div>
 
           <form onSubmit={handleSubmit} ref={formSectionRef}>
-            <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+            <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
               {/* Event Type Name */}
-              <div className='space-y-2'>
-                <label className='text-sm font-medium text-slate-700'>
+              <div className='space-y-1'>
+                <label className='text-xs font-medium text-slate-700'>
                   Event Types Name
                 </label>
                 <input
@@ -340,7 +340,7 @@ export default function EventTypeMasters () {
                   onChange={e =>
                     handleInputChange('eventTypeName', e.target.value)
                   }
-                  className='w-full h-12 rounded-xl border border-[#E5E6EF] bg-[#F8F9FC] px-4 text-sm text-slate-700 placeholder:text-[#B0B7D0] focus:border-[#C5CAE3] focus:outline-none focus:ring-2 focus:ring-[#C2C8E4]'
+                  className='w-full h-9 rounded-lg border border-[#E5E6EF] bg-[#F8F9FC] px-3 text-sm text-slate-700 placeholder:text-[#B0B7D0] focus:border-[#C5CAE3] focus:outline-none focus:ring-2 focus:ring-[#C2C8E4]'
                   placeholder='Enter event type name'
                 />
                 {errors.eventTypeName && (
@@ -349,15 +349,15 @@ export default function EventTypeMasters () {
               </div>
 
               {/* Status */}
-              <div className='space-y-2'>
-                <label className='text-sm font-medium text-slate-700'>
+              <div className='space-y-1'>
+                <label className='text-xs font-medium text-slate-700'>
                   Status
                 </label>
                 <div className='relative'>
                   <select
                     value={formData.status}
                     onChange={e => handleInputChange('status', e.target.value)}
-                    className='w-full h-12 appearance-none rounded-xl border border-[#E5E6EF] bg-[#F8F9FC] px-4 pr-10 text-sm text-slate-700 focus:border-[#C5CAE3] focus:outline-none focus:ring-2 focus:ring-[#C2C8E4]'
+                    className='w-full h-9 appearance-none rounded-lg border border-[#E5E6EF] bg-[#F8F9FC] px-3 pr-10 text-sm text-slate-700 focus:border-[#C5CAE3] focus:outline-none focus:ring-2 focus:ring-[#C2C8E4]'
                   >
                     <option value='Active'>Active</option>
                     <option value='Inactive'>Inactive</option>
@@ -383,35 +383,35 @@ export default function EventTypeMasters () {
                 </div>
               </div>
 
-              <div className='space-y-2'>
-                <label className='text-sm font-medium text-slate-700'>Title</label>
+              <div className='space-y-1'>
+                <label className='text-xs font-medium text-slate-700'>Title</label>
                 <input
                   type='text'
                   value={formData.title}
                   onChange={e => handleInputChange('title', e.target.value)}
-                  className='w-full h-12 rounded-xl border border-[#E5E6EF] bg-[#F8F9FC] px-4 text-sm text-slate-700 placeholder:text-[#B0B7D0] focus:border-[#C5CAE3] focus:outline-none focus:ring-2 focus:ring-[#C2C8E4]'
+                  className='w-full h-9 rounded-lg border border-[#E5E6EF] bg-[#F8F9FC] px-3 text-sm text-slate-700 placeholder:text-[#B0B7D0] focus:border-[#C5CAE3] focus:outline-none focus:ring-2 focus:ring-[#C2C8E4]'
                   placeholder='Enter title'
                 />
               </div>
 
-              <div className='space-y-2'>
-                <label className='text-sm font-medium text-slate-700'>Event For</label>
+              <div className='space-y-1'>
+                <label className='text-xs font-medium text-slate-700'>Event For</label>
                 <input
                   type='text'
                   value={formData.eventFor}
                   onChange={e => handleInputChange('eventFor', e.target.value)}
-                  className='w-full h-12 rounded-xl border border-[#E5E6EF] bg-[#F8F9FC] px-4 text-sm text-slate-700 placeholder:text-[#B0B7D0] focus:border-[#C5CAE3] focus:outline-none focus:ring-2 focus:ring-[#C2C8E4]'
+                  className='w-full h-9 rounded-lg border border-[#E5E6EF] bg-[#F8F9FC] px-3 text-sm text-slate-700 placeholder:text-[#B0B7D0] focus:border-[#C5CAE3] focus:outline-none focus:ring-2 focus:ring-[#C2C8E4]'
                   placeholder='Enter audience'
                 />
               </div>
 
-              <div className='space-y-2 md:col-span-2'>
-                <label className='text-sm font-medium text-slate-700'>Description</label>
+              <div className='space-y-1 md:col-span-2'>
+                <label className='text-xs font-medium text-slate-700'>Description</label>
                 <textarea
-                  rows={3}
+                  rows={2}
                   value={formData.description}
                   onChange={e => handleInputChange('description', e.target.value)}
-                  className='w-full rounded-xl border border-[#E5E6EF] bg-[#F8F9FC] px-4 py-3 text-sm text-slate-700 placeholder:text-[#B0B7D0] focus:border-[#C5CAE3] focus:outline-none focus:ring-2 focus:ring-[#C2C8E4]'
+                  className='w-full rounded-lg border border-[#E5E6EF] bg-[#F8F9FC] px-3 py-2 text-sm text-slate-700 placeholder:text-[#B0B7D0] focus:border-[#C5CAE3] focus:outline-none focus:ring-2 focus:ring-[#C2C8E4]'
                   placeholder='Enter description'
                 />
               </div>
@@ -475,9 +475,9 @@ export default function EventTypeMasters () {
                 sortedEventTypes.map((eventType, idx) => (
                   <div
                     key={eventType._id || idx}
-                    className='grid grid-cols-12 gap-6 px-6 py-5 hover:bg-[#F9FAFD]'
+                    className='grid grid-cols-12 gap-6 px-6 py-3 hover:bg-[#F9FAFD]'
                   >
-                    <div className='col-span-4 self-center text-sm text-[#5E6582]'>
+                    <div className='col-span-4 self-center text-xs text-[#5E6582]'>
                       {eventType.createdAt || eventType.updatedAt
                         ? new Date(
                             eventType.createdAt || eventType.updatedAt
@@ -491,12 +491,12 @@ export default function EventTypeMasters () {
                           })
                         : '-'}
                     </div>
-                    <div className='col-span-4 self-center text-sm font-semibold text-slate-900'>
+                    <div className='col-span-4 self-center text-xs font-semibold text-slate-900'>
                       {eventType.eventType || '-'}
                     </div>
                     <div className='col-span-4 flex items-center justify-between'>
                       <span
-                        className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                        className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
                           eventType.status
                             ? 'bg-emerald-50 text-emerald-600 border border-emerald-200'
                             : 'bg-red-50 text-red-600 border border-red-200'
@@ -514,15 +514,15 @@ export default function EventTypeMasters () {
                                 : eventType._id || idx
                             )
                           }
-                          className='rounded-full border border-transparent p-2 text-[#8C93AF] transition hover:border-[#E5E8F6] hover:bg-[#F5F7FD] hover:text-[#2D3658]'
+                          className='rounded-full border border-transparent p-1.5 text-[#8C93AF] transition hover:border-[#E5E8F6] hover:bg-[#F5F7FD] hover:text-[#2D3658]'
                         >
                           <MoreVertical className='h-4 w-4' />
                         </button>
                         {menuOpenId === (eventType._id || idx) && (
-                          <div data-menu-content className='absolute right-0 mt-2 w-40 rounded-xl border border-[#E5E8F6] bg-white shadow-[0_14px_30px_-20px_rgba(15,23,42,0.25)] z-20'>
+                          <div data-menu-content className='absolute right-0 mt-1 w-32 rounded-lg border border-[#E5E8F6] bg-white shadow-[0_14px_30px_-20px_rgba(15,23,42,0.25)] z-20'>
                             <button
                               onClick={() => startEdit(eventType._id)}
-                              className='flex w-full items-center gap-2 px-3 py-2 text-sm text-[#2D3658] hover:bg-[#F6F7FD]'
+                              className='flex w-full items-center gap-1.5 px-2.5 py-1.5 text-sm text-[#2D3658] hover:bg-[#F6F7FD]'
                               disabled={rowActionLoading === eventType._id}
                             >
                               {rowActionLoading === eventType._id ? (

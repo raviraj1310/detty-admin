@@ -61,21 +61,21 @@ export default function () {
         position="top-right"
       />
       {/* Header */}
-      <div className="mb-4 sm:mb-4">
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Terms & Condition</h1>
-        <p className="text-xs sm:text-sm text-gray-500 mt-1">Dashboard / CMS</p>
+      <div className="mb-3">
+        <h1 className="text-xl font-bold text-gray-900">Terms & Condition</h1>
+        <p className="text-xs text-gray-500 mt-0.5">Dashboard / CMS</p>
       </div>
 
-      <div className="bg-gray-200 p-3 sm:p-4 lg:p-6 rounded-xl">
+      <div className="bg-gray-100 p-3 rounded-xl">
         {/* Terms & Condition Details Card */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3">
           {/* Card Header with Save Button */}
-          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 sm:gap-0 mb-4 sm:mb-4">
-            <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Terms & Condition Details</h2>
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-3 border-b pb-2 border-gray-200">
+            <h2 className="text-base font-semibold text-gray-900">Terms & Condition Details</h2>
             <button
               onClick={handleSave}
               disabled={saving}
-              className="px-4 sm:px-6 py-2 sm:py-2.5 bg-orange-600 hover:bg-orange-700 text-white text-sm sm:text-base font-medium rounded-lg transition-colors cursor-pointer w-full sm:w-auto disabled:opacity-60 disabled:cursor-not-allowed"
+              className="px-4 py-1.5 bg-orange-600 hover:bg-orange-700 text-white text-sm font-medium rounded-lg transition-colors cursor-pointer w-full sm:w-auto disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {saving ? 'Saving...' : 'Save Changes'}
             </button>
@@ -83,20 +83,20 @@ export default function () {
 
           {/* Rich Text Editor */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Title<span className="text-red-500">*</span></label>
+            <label className="block text-xs font-medium text-gray-700 mb-1">Title<span className="text-red-500">*</span></label>
             <input
               type="text"
               value={formData.title}
               onChange={e => setField('title', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white"
+              className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white"
               placeholder="Enter title"
             />
-            <label className="block text-sm font-medium text-gray-700 mb-2 mt-4">Terms & Conditions<span className="text-red-500">*</span></label>
+            <label className="block text-xs font-medium text-gray-700 mb-1 mt-3">Terms & Conditions<span className="text-red-500">*</span></label>
             <TiptapEditor
               content={formData.content}
               onChange={(html) => setFormData(prev => ({ ...prev, content: html }))}
               placeholder="Enter terms and conditions..."
-              minHeight="600px"
+              minHeight="500px"
             />
           </div>
         </div>

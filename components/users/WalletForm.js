@@ -93,9 +93,9 @@ const TableHeaderCell = ({ children, align = "left", onClick }) => (
   <button
     type="button"
     onClick={onClick}
-    className={`flex items-center gap-1 text-xs font-medium uppercase tracking-[0.12em] text-[#8A92AC] ${
+    className={`flex items-center gap-1 text-xs font-medium capitalize tracking-wider text-gray-500 ${
       align === "right" ? "justify-end" : "justify-start"
-    } hover:text-[#2D3658]`}
+    } hover:text-gray-700`}
   >
     {children}
     <TbCaretUpDownFilled className="h-3.5 w-3.5 text-[#CBCFE2]" />

@@ -177,86 +177,86 @@ export default function LandingPageForm() {
     <>
     <div className="p-4 sm:p-6 lg:p-8 bg-white">
       {/* Header */}
-      <div className="mb-4">
-        <h1 className="text-3xl font-bold text-gray-900">Landing Page</h1>
-        <p className="text-sm text-gray-600 mt-1">Dashboard / CMS</p>
+      <div className="mb-3">
+        <h1 className="text-xl font-bold text-gray-900">Landing Page</h1>
+        <p className="text-xs text-gray-500 mt-0.5">Dashboard / CMS</p>
       </div>
-      <div className='bg-gray-200 p-4 rounded-xl'>
+      <div className='bg-gray-100 p-3 rounded-xl'>
         {/* Form Card */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-          <div className="p-4">
+          <div className="p-3">
             {/* Header with Save Button */}
-            <div className="flex justify-between items-center mb-4 border-b p-2 border-gray-300">
-              <h2 className="text-xl font-semibold text-gray-900">Landing Page Details</h2>
+            <div className="flex justify-between items-center mb-3 border-b pb-2 border-gray-200">
+              <h2 className="text-base font-semibold text-gray-900">Landing Page Details</h2>
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="px-6 py-2 bg-orange-600 hover:bg-orange-700 text-white font-medium rounded-lg transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                className="px-4 py-1.5 text-sm bg-orange-600 hover:bg-orange-700 text-white font-medium rounded-lg transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {saving ? 'Saving...' : 'Save Changes'}
               </button>
             </div>
 
             {/* Section Title and Top Titles in One Row */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
               <div>
-                <label className="block text-sm font-medium text-gray-800 mb-2">
+                <label className="block text-xs font-medium text-gray-700 mb-1">
                   Section Title<span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
                   value={formData.sectionTitle}
                   onChange={(e) => handleChange('sectionTitle', e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none text-gray-900"
+                  className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none text-gray-900"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-800 mb-2">
+                <label className="block text-xs font-medium text-gray-700 mb-1">
                   Top Title<span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
                   value={formData.topTitle1}
                   onChange={(e) => handleChange('topTitle1', e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none text-gray-900"
+                  className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none text-gray-900"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-800 mb-2">
+                <label className="block text-xs font-medium text-gray-700 mb-1">
                   Top Title<span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
                   value={formData.topTitle2}
                   onChange={(e) => handleChange('topTitle2', e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none text-gray-900"
+                  className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none text-gray-900"
                 />
               </div>
             </div>
 
             {/* Description */}
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-800 mb-2">
+            <div className="mb-3">
+              <label className="block text-xs font-medium text-gray-700 mb-1">
                 Description<span className="text-red-500">*</span>
               </label>
               <textarea
                 value={formData.description}
                 onChange={(e) => handleChange('description', e.target.value)}
-                rows={3}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none resize-none text-gray-900"
+                rows={2}
+                className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none resize-none text-gray-900"
               />
             </div>
 
             {/* Upload Image */}
-            <div className="mb-4 max-w-md">
-              <label className="block text-sm font-medium text-gray-800 mb-2">
+            <div className="mb-3 max-w-md">
+              <label className="block text-xs font-medium text-gray-700 mb-1">
                 Upload Image<span className="text-red-500">*</span>
               </label>
               <div
-                className="flex h-12 items-stretch rounded-xl border border-[#E5E6EF]"
+                className="flex h-9 items-stretch rounded-lg border border-[#E5E6EF]"
                 onClick={() => heroFileRef.current?.click()}
               >
-                <div className="flex-1 bg-[#F8F9FC] px-4 text-sm text-slate-700 flex items-center justify-between cursor-pointer overflow-hidden">
+                <div className="flex-1 bg-[#F8F9FC] px-3 text-xs text-slate-700 flex items-center justify-between cursor-pointer overflow-hidden">
                   <span className="truncate" title={formData.image}>
                     {formData.image || "Image.jpg"}
                   </span>
@@ -264,7 +264,7 @@ export default function LandingPageForm() {
                 <button
                   type="button"
                   onClick={() => heroFileRef.current?.click()}
-                  className="px-6 text-sm font-medium text-[#2D3658] bg-white transition hover:bg-[#F6F7FD] whitespace-nowrap"
+                  className="px-4 text-xs font-medium text-[#2D3658] bg-white transition hover:bg-[#F6F7FD] whitespace-nowrap"
                 >
                   Browse
                 </button>
@@ -277,12 +277,12 @@ export default function LandingPageForm() {
                 onChange={(e) => handleImageChange('image', e)}
               />
               {errors.image && (
-                <p className="text-red-500 text-sm mt-1">{errors.image}</p>
+                <p className="text-red-500 text-xs mt-1">{errors.image}</p>
               )}
-              <p className="text-gray-500 text-xs mt-1">Max size: 2MB. Allowed: JPG, JPEG, PNG, WEBP, AVIF</p>
+              <p className="text-gray-500 text-[10px] mt-1">Max size: 2MB. Allowed: JPG, JPEG, PNG, WEBP, AVIF</p>
               {(previewUrl || formData.image) && (
                 <div className="mt-2">
-                  <img src={previewUrl || toImageSrc(formData.image)} alt="Hero preview" className="w-48 h-28 object-cover rounded border border-gray-300" />
+                  <img src={previewUrl || toImageSrc(formData.image)} alt="Hero preview" className="w-36 h-20 object-cover rounded border border-gray-300" />
                 </div>
               )}
             </div>

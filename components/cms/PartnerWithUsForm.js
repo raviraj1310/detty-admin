@@ -1037,41 +1037,41 @@ export default function PartnerWithUsForm () {
   }
 
   return (
-    <div className='p-4 sm:p-6 lg:p-8 pt-16 lg:pt-8 bg-white'>
+    <div className='p-3 sm:p-4 lg:p-6 pt-16 lg:pt-6 bg-white'>
       {/* Header */}
-      <div className='mb-4'>
-        <h1 className='text-3xl font-bold text-gray-900'>Partner With Us</h1>
-        <p className='text-sm text-gray-500 mt-1'>Dashboard / CMS</p>
+      <div className='mb-3'>
+        <h1 className='text-xl font-bold text-gray-900'>Partner With Us</h1>
+        <p className='text-xs text-gray-500 mt-0.5'>Dashboard / CMS</p>
       </div>
 
-      <div className='bg-gray-200 p-6 rounded-xl'>
+      <div className='bg-gray-100 p-3 rounded-xl'>
         {/* Form Card */}
         <div className='bg-white rounded-lg shadow-sm border border-gray-200'>
-          <div className='p-6'>
+          <div className='p-3'>
             {/* Header with Save Button */}
-            <div className='flex justify-between items-center mb-4 border-b p-2 border-gray-300'>
-              <h2 className='text-xl font-semibold text-gray-900'>
+            <div className='flex justify-between items-center mb-3 border-b pb-2 border-gray-200'>
+              <h2 className='text-base font-semibold text-gray-900'>
                 Partner With Us Detail
               </h2>
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className='px-6 py-2 bg-orange-600 hover:bg-orange-700 text-white font-medium rounded-lg transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed'
+                className='px-4 py-1.5 text-sm bg-orange-600 hover:bg-orange-700 text-white font-medium rounded-lg transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed'
               >
                 {saving ? 'Saving...' : 'Save Changes'}
               </button>
             </div>
 
             {/* Banner Section */}
-            <div className='mb-8'>
-              <div className='bg-gray-900 text-white px-4 py-2 rounded-t-lg inline-block mb-4'>
-                <h3 className='font-medium'>Banner Section</h3>
+            <div className='mb-6'>
+              <div className='bg-gray-900 text-white px-3 py-1.5 rounded-t-lg inline-block mb-3'>
+                <h3 className='font-medium text-sm'>Banner Section</h3>
               </div>
 
               {/* Section Title and Title in one row */}
-              <div className='grid grid-cols-1 md:grid-cols-2 gap-4 mb-4'>
+              <div className='grid grid-cols-1 md:grid-cols-2 gap-3 mb-3'>
                 <div>
-                  <label className='block text-sm font-medium text-gray-700 mb-2'>
+                  <label className='block text-xs font-medium text-gray-700 mb-1'>
                     Section Title<span className='text-red-500'>*</span>
                   </label>
                   <input
@@ -1080,20 +1080,20 @@ export default function PartnerWithUsForm () {
                     onChange={e =>
                       handleChange('bannerSectionTitle', e.target.value)
                     }
-                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none text-gray-900 ${
+                    className={`w-full px-3 py-1.5 text-sm border rounded-lg focus:outline-none text-gray-900 ${
                       errors.bannerSectionTitle
                         ? 'border-red-500'
                         : 'border-gray-300'
                     }`}
                   />
                   {errors.bannerSectionTitle && (
-                    <p className='text-red-500 text-sm mt-1'>
+                    <p className='text-red-500 text-xs mt-1'>
                       {errors.bannerSectionTitle}
                     </p>
                   )}
                 </div>
                 <div>
-                  <label className='block text-sm font-medium text-gray-700 mb-2'>
+                  <label className='block text-xs font-medium text-gray-700 mb-1'>
                     Title 2<span className='text-red-500'>*</span>
                   </label>
                   <input
@@ -1102,14 +1102,14 @@ export default function PartnerWithUsForm () {
                     onChange={e =>
                       handleChange('bannerSectionTitle2', e.target.value)
                     }
-                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none text-gray-900 ${
+                    className={`w-full px-3 py-1.5 text-sm border rounded-lg focus:outline-none text-gray-900 ${
                       errors.bannerSectionTitle2
                         ? 'border-red-500'
                         : 'border-gray-300'
                     }`}
                   />
                   {errors.bannerSectionTitle2 && (
-                    <p className='text-red-500 text-sm mt-1'>
+                    <p className='text-red-500 text-xs mt-1'>
                       {errors.bannerSectionTitle2}
                     </p>
                   )}
@@ -1118,7 +1118,7 @@ export default function PartnerWithUsForm () {
 
               {/* Description with Rich Text Editor */}
               <div className='mb-4'>
-                <label className='block text-sm font-medium text-gray-700 mb-2'>
+                <label className='block text-xs font-medium text-gray-700 mb-1'>
                   Description<span className='text-red-500'>*</span>
                 </label>
                 <div
@@ -1136,16 +1136,16 @@ export default function PartnerWithUsForm () {
                   />
                 </div>
                 {errors.bannerSectionDetail && (
-                  <p className='text-red-500 text-sm mt-1'>
+                  <p className='text-red-500 text-xs mt-1'>
                     {errors.bannerSectionDetail}
                   </p>
                 )}
               </div>
 
               {/* CTA Text, CTA Link, Upload Banner Image 1 in one row */}
-              <div className='grid grid-cols-1 md:grid-cols-3 gap-4 mb-4'>
+              <div className='grid grid-cols-1 md:grid-cols-3 gap-3 mb-3'>
                 <div>
-                  <label className='block text-sm font-medium text-gray-700 mb-2'>
+                  <label className='block text-xs font-medium text-gray-700 mb-1'>
                     CTA Text<span className='text-red-500'>*</span>
                   </label>
                   <input
@@ -1154,20 +1154,20 @@ export default function PartnerWithUsForm () {
                     onChange={e =>
                       handleChange('bannerCTAText', e.target.value)
                     }
-                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none text-gray-900 ${
+                    className={`w-full px-3 py-1.5 text-sm border rounded-lg focus:outline-none text-gray-900 ${
                       errors.bannerCTAText
                         ? 'border-red-500'
                         : 'border-gray-300'
                     }`}
                   />
                   {errors.bannerCTAText && (
-                    <p className='text-red-500 text-sm mt-1'>
+                    <p className='text-red-500 text-xs mt-1'>
                       {errors.bannerCTAText}
                     </p>
                   )}
                 </div>
                 <div>
-                  <label className='block text-sm font-medium text-gray-700 mb-2'>
+                  <label className='block text-xs font-medium text-gray-700 mb-1'>
                     CTA Link<span className='text-red-500'>*</span>
                   </label>
                   <input
@@ -1176,24 +1176,24 @@ export default function PartnerWithUsForm () {
                     onChange={e =>
                       handleChange('bannerCTALink', e.target.value)
                     }
-                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none text-gray-900 ${
+                    className={`w-full px-3 py-1.5 text-sm border rounded-lg focus:outline-none text-gray-900 ${
                       errors.bannerCTALink
                         ? 'border-red-500'
                         : 'border-gray-300'
                     }`}
                   />
                   {errors.bannerCTALink && (
-                    <p className='text-red-500 text-sm mt-1'>
+                    <p className='text-red-500 text-xs mt-1'>
                       {errors.bannerCTALink}
                     </p>
                   )}
                 </div>
                 <div>
-                  <label className='block text-sm font-medium text-gray-700 mb-2'>
+                  <label className='block text-xs font-medium text-gray-700 mb-1'>
                     Upload Banner Image 1<span className='text-red-500'>*</span>
                   </label>
                   <div
-                    className='flex h-12 items-stretch overflow-hidden rounded-xl border border-[#E5E6EF]'
+                    className='flex h-9 items-stretch overflow-hidden rounded-xl border border-[#E5E6EF]'
                     onClick={() =>
                       fileRefs.current.bannerSectionImage1?.click()
                     }
@@ -1226,7 +1226,7 @@ export default function PartnerWithUsForm () {
                     onChange={e => handleImageChange('bannerSectionImage1', e)}
                   />
                   {errors.bannerSectionImage1 && (
-                    <p className='text-red-500 text-sm mt-1'>
+                    <p className='text-red-500 text-xs mt-1'>
                       {errors.bannerSectionImage1}
                     </p>
                   )}
@@ -1246,13 +1246,13 @@ export default function PartnerWithUsForm () {
               </div>
 
               {/* Upload Banner Images 2, 3, 4 in one row */}
-              <div className='grid grid-cols-1 md:grid-cols-3 gap-4 mb-4'>
+              <div className='grid grid-cols-1 md:grid-cols-3 gap-3 mb-3'>
                 <div>
-                  <label className='block text-sm font-medium text-gray-700 mb-2'>
+                  <label className='block text-xs font-medium text-gray-700 mb-1'>
                     Upload Banner Image 2<span className='text-red-500'>*</span>
                   </label>
                   <div
-                    className='flex h-12 items-stretch overflow-hidden rounded-xl border border-[#E5E6EF]'
+                    className='flex h-9 items-stretch overflow-hidden rounded-xl border border-[#E5E6EF]'
                     onClick={() =>
                       fileRefs.current.bannerSectionImage2?.click()
                     }
@@ -1285,7 +1285,7 @@ export default function PartnerWithUsForm () {
                     onChange={e => handleImageChange('bannerSectionImage2', e)}
                   />
                   {errors.bannerSectionImage2 && (
-                    <p className='text-red-500 text-sm mt-1'>
+                    <p className='text-red-500 text-xs mt-1'>
                       {errors.bannerSectionImage2}
                     </p>
                   )}
@@ -1303,11 +1303,11 @@ export default function PartnerWithUsForm () {
                   )}
                 </div>
                 <div>
-                  <label className='block text-sm font-medium text-gray-700 mb-2'>
+                  <label className='block text-xs font-medium text-gray-700 mb-1'>
                     Upload Banner Image 3<span className='text-red-500'>*</span>
                   </label>
                   <div
-                    className='flex h-12 items-stretch overflow-hidden rounded-xl border border-[#E5E6EF]'
+                    className='flex h-9 items-stretch overflow-hidden rounded-xl border border-[#E5E6EF]'
                     onClick={() =>
                       fileRefs.current.bannerSectionImage3?.click()
                     }
@@ -1340,7 +1340,7 @@ export default function PartnerWithUsForm () {
                     onChange={e => handleImageChange('bannerSectionImage3', e)}
                   />
                   {errors.bannerSectionImage3 && (
-                    <p className='text-red-500 text-sm mt-1'>
+                    <p className='text-red-500 text-xs mt-1'>
                       {errors.bannerSectionImage3}
                     </p>
                   )}
@@ -1358,11 +1358,11 @@ export default function PartnerWithUsForm () {
                   )}
                 </div>
                 <div>
-                  <label className='block text-sm font-medium text-gray-700 mb-2'>
+                  <label className='block text-xs font-medium text-gray-700 mb-1'>
                     Upload Banner Image 4<span className='text-red-500'>*</span>
                   </label>
                   <div
-                    className='flex h-12 items-stretch overflow-hidden rounded-xl border border-[#E5E6EF]'
+                    className='flex h-9 items-stretch overflow-hidden rounded-xl border border-[#E5E6EF]'
                     onClick={() =>
                       fileRefs.current.bannerSectionImage4?.click()
                     }
@@ -1395,7 +1395,7 @@ export default function PartnerWithUsForm () {
                     onChange={e => handleImageChange('bannerSectionImage4', e)}
                   />
                   {errors.bannerSectionImage4 && (
-                    <p className='text-red-500 text-sm mt-1'>
+                    <p className='text-red-500 text-xs mt-1'>
                       {errors.bannerSectionImage4}
                     </p>
                   )}
@@ -1421,9 +1421,9 @@ export default function PartnerWithUsForm () {
                 <h3 className='font-medium'>Promo Section</h3>
               </div>
 
-              <div className='grid grid-cols-1 md:grid-cols-3 gap-4 mb-4'>
+              <div className='grid grid-cols-1 md:grid-cols-3 gap-3 mb-3'>
                 <div>
-                  <label className='block text-sm font-medium text-gray-700 mb-2'>
+                  <label className='block text-xs font-medium text-gray-700 mb-1'>
                     Select Type
                   </label>
                   <div className='flex items-center gap-6'>
@@ -1458,7 +1458,7 @@ export default function PartnerWithUsForm () {
                 <div className='md:col-span-2'>
                   {formData.promoSectionType === 'event' ? (
                     <div>
-                      <label className='block text-sm font-medium text-gray-700 mb-2'>
+                      <label className='block text-xs font-medium text-gray-700 mb-1'>
                         Event
                       </label>
                       <select
@@ -1516,7 +1516,7 @@ export default function PartnerWithUsForm () {
                           )
                           if (link) handleChange('promoSectionCTALink', link)
                         }}
-                        className={`w-full px-4 py-2 border rounded-lg focus:outline-none text-gray-900 ${
+                        className={`w-full px-3 py-1.5 text-sm border rounded-lg focus:outline-none text-gray-900 ${
                           errors.promoSectionEventId
                             ? 'border-red-500'
                             : 'border-gray-300'
@@ -1540,14 +1540,14 @@ export default function PartnerWithUsForm () {
                         })}
                       </select>
                       {errors.promoSectionEventId && (
-                        <p className='text-red-500 text-sm mt-1'>
+                        <p className='text-red-500 text-xs mt-1'>
                           {errors.promoSectionEventId}
                         </p>
                       )}
                     </div>
                   ) : (
                     <div>
-                      <label className='block text-sm font-medium text-gray-700 mb-2'>
+                      <label className='block text-xs font-medium text-gray-700 mb-1'>
                         Activity
                       </label>
                       <select
@@ -1604,7 +1604,7 @@ export default function PartnerWithUsForm () {
                           )
                           if (link) handleChange('promoSectionCTALink', link)
                         }}
-                        className={`w-full px-4 py-2 border rounded-lg focus:outline-none text-gray-900 ${
+                        className={`w-full px-3 py-1.5 text-sm border rounded-lg focus:outline-none text-gray-900 ${
                           errors.promoSectionActivityId
                             ? 'border-red-500'
                             : 'border-gray-300'
@@ -1628,7 +1628,7 @@ export default function PartnerWithUsForm () {
                         })}
                       </select>
                       {errors.promoSectionActivityId && (
-                        <p className='text-red-500 text-sm mt-1'>
+                        <p className='text-red-500 text-xs mt-1'>
                           {errors.promoSectionActivityId}
                         </p>
                       )}
@@ -1639,7 +1639,7 @@ export default function PartnerWithUsForm () {
 
               {/* Promo Title with Rich Text Editor */}
               <div className='mb-4'>
-                <label className='block text-sm font-medium text-gray-700 mb-2'>
+                <label className='block text-xs font-medium text-gray-700 mb-1'>
                   Title<span className='text-red-500'>*</span>
                 </label>
                 <div
@@ -1657,20 +1657,20 @@ export default function PartnerWithUsForm () {
                   />
                 </div>
                 {errors.promoSectionTitle && (
-                  <p className='text-red-500 text-sm mt-1'>
+                  <p className='text-red-500 text-xs mt-1'>
                     {errors.promoSectionTitle}
                   </p>
                 )}
               </div>
 
               {/* Upload Image, CTA Text, CTA Link in one row */}
-              <div className='grid grid-cols-1 md:grid-cols-3 gap-4 mb-4'>
+              <div className='grid grid-cols-1 md:grid-cols-3 gap-3 mb-3'>
                 <div>
-                  <label className='block text-sm font-medium text-gray-700 mb-2'>
+                  <label className='block text-xs font-medium text-gray-700 mb-1'>
                     Upload Image<span className='text-red-500'>*</span>
                   </label>
                   <div
-                    className='flex h-12 items-stretch overflow-hidden rounded-xl border border-[#E5E6EF]'
+                    className='flex h-9 items-stretch overflow-hidden rounded-xl border border-[#E5E6EF]'
                     onClick={() => fileRefs.current.promoSectionImage?.click()}
                   >
                     <div className='flex-1 bg-[#F8F9FC] px-4 text-sm text-slate-700 flex items-center justify-between cursor-pointer'>
@@ -1701,7 +1701,7 @@ export default function PartnerWithUsForm () {
                     onChange={e => handleImageChange('promoSectionImage', e)}
                   />
                   {errors.promoSectionImage && (
-                    <p className='text-red-500 text-sm mt-1'>
+                    <p className='text-red-500 text-xs mt-1'>
                       {errors.promoSectionImage}
                     </p>
                   )}
@@ -1719,7 +1719,7 @@ export default function PartnerWithUsForm () {
                   )}
                 </div>
                 <div>
-                  <label className='block text-sm font-medium text-gray-700 mb-2'>
+                  <label className='block text-xs font-medium text-gray-700 mb-1'>
                     CTA Text<span className='text-red-500'>*</span>
                   </label>
                   <input
@@ -1728,20 +1728,20 @@ export default function PartnerWithUsForm () {
                     onChange={e =>
                       handleChange('promoSectionCTAText', e.target.value)
                     }
-                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none text-gray-900 ${
+                    className={`w-full px-3 py-1.5 text-sm border rounded-lg focus:outline-none text-gray-900 ${
                       errors.promoSectionCTAText
                         ? 'border-red-500'
                         : 'border-gray-300'
                     }`}
                   />
                   {errors.promoSectionCTAText && (
-                    <p className='text-red-500 text-sm mt-1'>
+                    <p className='text-red-500 text-xs mt-1'>
                       {errors.promoSectionCTAText}
                     </p>
                   )}
                 </div>
                 <div>
-                  <label className='block text-sm font-medium text-gray-700 mb-2'>
+                  <label className='block text-xs font-medium text-gray-700 mb-1'>
                     CTA Link<span className='text-red-500'>*</span>
                   </label>
                   <input
@@ -1750,14 +1750,14 @@ export default function PartnerWithUsForm () {
                     onChange={e =>
                       handleChange('promoSectionCTALink', e.target.value)
                     }
-                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none text-gray-900 ${
+                    className={`w-full px-3 py-1.5 text-sm border rounded-lg focus:outline-none text-gray-900 ${
                       errors.promoSectionCTALink
                         ? 'border-red-500'
                         : 'border-gray-300'
                     }`}
                   />
                   {errors.promoSectionCTALink && (
-                    <p className='text-red-500 text-sm mt-1'>
+                    <p className='text-red-500 text-xs mt-1'>
                       {errors.promoSectionCTALink}
                     </p>
                   )}
@@ -1772,27 +1772,27 @@ export default function PartnerWithUsForm () {
               </div>
 
               {/* Step 1 */}
-              <div className='grid grid-cols-1 md:grid-cols-3 gap-4 mb-4'>
+              <div className='grid grid-cols-1 md:grid-cols-3 gap-3 mb-3'>
                 <div>
-                  <label className='block text-sm font-medium text-gray-700 mb-2'>
+                  <label className='block text-xs font-medium text-gray-700 mb-1'>
                     Step 1 Title<span className='text-red-500'>*</span>
                   </label>
                   <input
                     type='text'
                     value={formData.stepTitle1}
                     onChange={e => handleChange('stepTitle1', e.target.value)}
-                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none text-gray-900 ${
+                    className={`w-full px-3 py-1.5 text-sm border rounded-lg focus:outline-none text-gray-900 ${
                       errors.stepTitle1 ? 'border-red-500' : 'border-gray-300'
                     }`}
                   />
                   {errors.stepTitle1 && (
-                    <p className='text-red-500 text-sm mt-1'>
+                    <p className='text-red-500 text-xs mt-1'>
                       {errors.stepTitle1}
                     </p>
                   )}
                 </div>
                 <div>
-                  <label className='block text-sm font-medium text-gray-700 mb-2'>
+                  <label className='block text-xs font-medium text-gray-700 mb-1'>
                     Description<span className='text-red-500'>*</span>
                   </label>
                   <input
@@ -1801,24 +1801,24 @@ export default function PartnerWithUsForm () {
                     onChange={e =>
                       handleChange('stepDescription1', e.target.value)
                     }
-                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none text-gray-900 ${
+                    className={`w-full px-3 py-1.5 text-sm border rounded-lg focus:outline-none text-gray-900 ${
                       errors.stepDescription1
                         ? 'border-red-500'
                         : 'border-gray-300'
                     }`}
                   />
                   {errors.stepDescription1 && (
-                    <p className='text-red-500 text-sm mt-1'>
+                    <p className='text-red-500 text-xs mt-1'>
                       {errors.stepDescription1}
                     </p>
                   )}
                 </div>
                 <div>
-                  <label className='block text-sm font-medium text-gray-700 mb-2'>
+                  <label className='block text-xs font-medium text-gray-700 mb-1'>
                     Upload Image<span className='text-red-500'>*</span>
                   </label>
                   <div
-                    className='flex h-12 items-stretch overflow-hidden rounded-xl border border-[#E5E6EF]'
+                    className='flex h-9 items-stretch overflow-hidden rounded-xl border border-[#E5E6EF]'
                     onClick={() => fileRefs.current.stepImage1?.click()}
                   >
                     <div className='flex-1 bg-[#F8F9FC] px-4 text-sm text-slate-700 flex items-center justify-between cursor-pointer'>
@@ -1844,7 +1844,7 @@ export default function PartnerWithUsForm () {
                     onChange={e => handleImageChange('stepImage1', e)}
                   />
                   {errors.stepImage1 && (
-                    <p className='text-red-500 text-sm mt-1'>
+                    <p className='text-red-500 text-xs mt-1'>
                       {errors.stepImage1}
                     </p>
                   )}
@@ -1864,27 +1864,27 @@ export default function PartnerWithUsForm () {
               </div>
 
               {/* Step 2 */}
-              <div className='grid grid-cols-1 md:grid-cols-3 gap-4 mb-4'>
+              <div className='grid grid-cols-1 md:grid-cols-3 gap-3 mb-3'>
                 <div>
-                  <label className='block text-sm font-medium text-gray-700 mb-2'>
+                  <label className='block text-xs font-medium text-gray-700 mb-1'>
                     Step 2 Title<span className='text-red-500'>*</span>
                   </label>
                   <input
                     type='text'
                     value={formData.stepTitle2}
                     onChange={e => handleChange('stepTitle2', e.target.value)}
-                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none text-gray-900 ${
+                    className={`w-full px-3 py-1.5 text-sm border rounded-lg focus:outline-none text-gray-900 ${
                       errors.stepTitle2 ? 'border-red-500' : 'border-gray-300'
                     }`}
                   />
                   {errors.stepTitle2 && (
-                    <p className='text-red-500 text-sm mt-1'>
+                    <p className='text-red-500 text-xs mt-1'>
                       {errors.stepTitle2}
                     </p>
                   )}
                 </div>
                 <div>
-                  <label className='block text-sm font-medium text-gray-700 mb-2'>
+                  <label className='block text-xs font-medium text-gray-700 mb-1'>
                     Description<span className='text-red-500'>*</span>
                   </label>
                   <input
@@ -1893,24 +1893,24 @@ export default function PartnerWithUsForm () {
                     onChange={e =>
                       handleChange('stepDescription2', e.target.value)
                     }
-                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none text-gray-900 ${
+                    className={`w-full px-3 py-1.5 text-sm border rounded-lg focus:outline-none text-gray-900 ${
                       errors.stepDescription2
                         ? 'border-red-500'
                         : 'border-gray-300'
                     }`}
                   />
                   {errors.stepDescription2 && (
-                    <p className='text-red-500 text-sm mt-1'>
+                    <p className='text-red-500 text-xs mt-1'>
                       {errors.stepDescription2}
                     </p>
                   )}
                 </div>
                 <div>
-                  <label className='block text-sm font-medium text-gray-700 mb-2'>
+                  <label className='block text-xs font-medium text-gray-700 mb-1'>
                     Upload Image<span className='text-red-500'>*</span>
                   </label>
                   <div
-                    className='flex h-12 items-stretch overflow-hidden rounded-xl border border-[#E5E6EF]'
+                    className='flex h-9 items-stretch overflow-hidden rounded-xl border border-[#E5E6EF]'
                     onClick={() => fileRefs.current.stepImage2?.click()}
                   >
                     <div className='flex-1 bg-[#F8F9FC] px-4 text-sm text-slate-700 flex items-center justify-between cursor-pointer'>
@@ -1936,7 +1936,7 @@ export default function PartnerWithUsForm () {
                     onChange={e => handleImageChange('stepImage2', e)}
                   />
                   {errors.stepImage2 && (
-                    <p className='text-red-500 text-sm mt-1'>
+                    <p className='text-red-500 text-xs mt-1'>
                       {errors.stepImage2}
                     </p>
                   )}
@@ -1956,27 +1956,27 @@ export default function PartnerWithUsForm () {
               </div>
 
               {/* Step 3 */}
-              <div className='grid grid-cols-1 md:grid-cols-3 gap-4 mb-4'>
+              <div className='grid grid-cols-1 md:grid-cols-3 gap-3 mb-3'>
                 <div>
-                  <label className='block text-sm font-medium text-gray-700 mb-2'>
+                  <label className='block text-xs font-medium text-gray-700 mb-1'>
                     Step 3 Title<span className='text-red-500'>*</span>
                   </label>
                   <input
                     type='text'
                     value={formData.stepTitle3}
                     onChange={e => handleChange('stepTitle3', e.target.value)}
-                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none text-gray-900 ${
+                    className={`w-full px-3 py-1.5 text-sm border rounded-lg focus:outline-none text-gray-900 ${
                       errors.stepTitle3 ? 'border-red-500' : 'border-gray-300'
                     }`}
                   />
                   {errors.stepTitle3 && (
-                    <p className='text-red-500 text-sm mt-1'>
+                    <p className='text-red-500 text-xs mt-1'>
                       {errors.stepTitle3}
                     </p>
                   )}
                 </div>
                 <div>
-                  <label className='block text-sm font-medium text-gray-700 mb-2'>
+                  <label className='block text-xs font-medium text-gray-700 mb-1'>
                     Description<span className='text-red-500'>*</span>
                   </label>
                   <input
@@ -1985,24 +1985,24 @@ export default function PartnerWithUsForm () {
                     onChange={e =>
                       handleChange('stepDescription3', e.target.value)
                     }
-                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none text-gray-900 ${
+                    className={`w-full px-3 py-1.5 text-sm border rounded-lg focus:outline-none text-gray-900 ${
                       errors.stepDescription3
                         ? 'border-red-500'
                         : 'border-gray-300'
                     }`}
                   />
                   {errors.stepDescription3 && (
-                    <p className='text-red-500 text-sm mt-1'>
+                    <p className='text-red-500 text-xs mt-1'>
                       {errors.stepDescription3}
                     </p>
                   )}
                 </div>
                 <div>
-                  <label className='block text-sm font-medium text-gray-700 mb-2'>
+                  <label className='block text-xs font-medium text-gray-700 mb-1'>
                     Upload Image<span className='text-red-500'>*</span>
                   </label>
                   <div
-                    className='flex h-12 items-stretch overflow-hidden rounded-xl border border-[#E5E6EF]'
+                    className='flex h-9 items-stretch overflow-hidden rounded-xl border border-[#E5E6EF]'
                     onClick={() => fileRefs.current.stepImage3?.click()}
                   >
                     <div className='flex-1 bg-[#F8F9FC] px-4 text-sm text-slate-700 flex items-center justify-between cursor-pointer'>
@@ -2028,7 +2028,7 @@ export default function PartnerWithUsForm () {
                     onChange={e => handleImageChange('stepImage3', e)}
                   />
                   {errors.stepImage3 && (
-                    <p className='text-red-500 text-sm mt-1'>
+                    <p className='text-red-500 text-xs mt-1'>
                       {errors.stepImage3}
                     </p>
                   )}
@@ -2048,27 +2048,27 @@ export default function PartnerWithUsForm () {
               </div>
 
               {/* Step 4 */}
-              <div className='grid grid-cols-1 md:grid-cols-3 gap-4 mb-4'>
+              <div className='grid grid-cols-1 md:grid-cols-3 gap-3 mb-3'>
                 <div>
-                  <label className='block text-sm font-medium text-gray-700 mb-2'>
+                  <label className='block text-xs font-medium text-gray-700 mb-1'>
                     Step 4 Title<span className='text-red-500'>*</span>
                   </label>
                   <input
                     type='text'
                     value={formData.stepTitle4}
                     onChange={e => handleChange('stepTitle4', e.target.value)}
-                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none text-gray-900 ${
+                    className={`w-full px-3 py-1.5 text-sm border rounded-lg focus:outline-none text-gray-900 ${
                       errors.stepTitle4 ? 'border-red-500' : 'border-gray-300'
                     }`}
                   />
                   {errors.stepTitle4 && (
-                    <p className='text-red-500 text-sm mt-1'>
+                    <p className='text-red-500 text-xs mt-1'>
                       {errors.stepTitle4}
                     </p>
                   )}
                 </div>
                 <div>
-                  <label className='block text-sm font-medium text-gray-700 mb-2'>
+                  <label className='block text-xs font-medium text-gray-700 mb-1'>
                     Description<span className='text-red-500'>*</span>
                   </label>
                   <input
@@ -2077,24 +2077,24 @@ export default function PartnerWithUsForm () {
                     onChange={e =>
                       handleChange('stepDescription4', e.target.value)
                     }
-                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none text-gray-900 ${
+                    className={`w-full px-3 py-1.5 text-sm border rounded-lg focus:outline-none text-gray-900 ${
                       errors.stepDescription4
                         ? 'border-red-500'
                         : 'border-gray-300'
                     }`}
                   />
                   {errors.stepDescription4 && (
-                    <p className='text-red-500 text-sm mt-1'>
+                    <p className='text-red-500 text-xs mt-1'>
                       {errors.stepDescription4}
                     </p>
                   )}
                 </div>
                 <div>
-                  <label className='block text-sm font-medium text-gray-700 mb-2'>
+                  <label className='block text-xs font-medium text-gray-700 mb-1'>
                     Upload Image<span className='text-red-500'>*</span>
                   </label>
                   <div
-                    className='flex h-12 items-stretch overflow-hidden rounded-xl border border-[#E5E6EF]'
+                    className='flex h-9 items-stretch overflow-hidden rounded-xl border border-[#E5E6EF]'
                     onClick={() => fileRefs.current.stepImage4?.click()}
                   >
                     <div className='flex-1 bg-[#F8F9FC] px-4 text-sm text-slate-700 flex items-center justify-between cursor-pointer'>
@@ -2120,7 +2120,7 @@ export default function PartnerWithUsForm () {
                     onChange={e => handleImageChange('stepImage4', e)}
                   />
                   {errors.stepImage4 && (
-                    <p className='text-red-500 text-sm mt-1'>
+                    <p className='text-red-500 text-xs mt-1'>
                       {errors.stepImage4}
                     </p>
                   )}
@@ -2147,9 +2147,9 @@ export default function PartnerWithUsForm () {
               </div>
 
               {/* Section Title 1 and Title 2 in one row */}
-              <div className='grid grid-cols-1 md:grid-cols-2 gap-4 mb-4'>
+              <div className='grid grid-cols-1 md:grid-cols-2 gap-3 mb-3'>
                 <div>
-                  <label className='block text-sm font-medium text-gray-700 mb-2'>
+                  <label className='block text-xs font-medium text-gray-700 mb-1'>
                     Section Title 1<span className='text-red-500'>*</span>
                   </label>
                   <input
@@ -2158,20 +2158,20 @@ export default function PartnerWithUsForm () {
                     onChange={e =>
                       handleChange('whyPartnerSectionTitle1', e.target.value)
                     }
-                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none text-gray-900 ${
+                    className={`w-full px-3 py-1.5 text-sm border rounded-lg focus:outline-none text-gray-900 ${
                       errors.whyPartnerSectionTitle1
                         ? 'border-red-500'
                         : 'border-gray-300'
                     }`}
                   />
                   {errors.whyPartnerSectionTitle1 && (
-                    <p className='text-red-500 text-sm mt-1'>
+                    <p className='text-red-500 text-xs mt-1'>
                       {errors.whyPartnerSectionTitle1}
                     </p>
                   )}
                 </div>
                 <div>
-                  <label className='block text-sm font-medium text-gray-700 mb-2'>
+                  <label className='block text-xs font-medium text-gray-700 mb-1'>
                     Section Title 2<span className='text-red-500'>*</span>
                   </label>
                   <input
@@ -2180,14 +2180,14 @@ export default function PartnerWithUsForm () {
                     onChange={e =>
                       handleChange('whyPartnerSectionTitle2', e.target.value)
                     }
-                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none text-gray-900 ${
+                    className={`w-full px-3 py-1.5 text-sm border rounded-lg focus:outline-none text-gray-900 ${
                       errors.whyPartnerSectionTitle2
                         ? 'border-red-500'
                         : 'border-gray-300'
                     }`}
                   />
                   {errors.whyPartnerSectionTitle2 && (
-                    <p className='text-red-500 text-sm mt-1'>
+                    <p className='text-red-500 text-xs mt-1'>
                       {errors.whyPartnerSectionTitle2}
                     </p>
                   )}
@@ -2196,7 +2196,7 @@ export default function PartnerWithUsForm () {
 
               {/* Description with Rich Text Editor */}
               <div className='mb-4'>
-                <label className='block text-sm font-medium text-gray-700 mb-2'>
+                <label className='block text-xs font-medium text-gray-700 mb-1'>
                   Description<span className='text-red-500'>*</span>
                 </label>
                 <div
@@ -2216,7 +2216,7 @@ export default function PartnerWithUsForm () {
                   />
                 </div>
                 {errors.whyPartnerSectionDescription && (
-                  <p className='text-red-500 text-sm mt-1'>
+                  <p className='text-red-500 text-xs mt-1'>
                     {errors.whyPartnerSectionDescription}
                   </p>
                 )}
@@ -2224,11 +2224,11 @@ export default function PartnerWithUsForm () {
 
               {/* Upload Image */}
               <div className='mb-4'>
-                <label className='block text-sm font-medium text-gray-700 mb-2'>
+                <label className='block text-xs font-medium text-gray-700 mb-1'>
                   Upload Image<span className='text-red-500'>*</span>
                 </label>
                 <div
-                  className='flex h-12 items-stretch overflow-hidden rounded-xl border border-[#E5E6EF]'
+                  className='flex h-9 items-stretch overflow-hidden rounded-xl border border-[#E5E6EF]'
                   onClick={() =>
                     fileRefs.current.whyPartnerSectionImage?.click()
                   }
@@ -2261,7 +2261,7 @@ export default function PartnerWithUsForm () {
                   onChange={e => handleImageChange('whyPartnerSectionImage', e)}
                 />
                 {errors.whyPartnerSectionImage && (
-                  <p className='text-red-500 text-sm mt-1'>
+                  <p className='text-red-500 text-xs mt-1'>
                     {errors.whyPartnerSectionImage}
                   </p>
                 )}
@@ -2280,9 +2280,9 @@ export default function PartnerWithUsForm () {
               </div>
 
               {/* Card 1 */}
-              <div className='grid grid-cols-1 md:grid-cols-2 gap-4 mb-4'>
+              <div className='grid grid-cols-1 md:grid-cols-2 gap-3 mb-3'>
                 <div>
-                  <label className='block text-sm font-medium text-gray-700 mb-2'>
+                  <label className='block text-xs font-medium text-gray-700 mb-1'>
                     Card Title 1<span className='text-red-500'>*</span>
                   </label>
                   <input
@@ -2294,20 +2294,20 @@ export default function PartnerWithUsForm () {
                         e.target.value
                       )
                     }
-                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none text-gray-900 ${
+                    className={`w-full px-3 py-1.5 text-sm border rounded-lg focus:outline-none text-gray-900 ${
                       errors.whyPartnerSectionCartTitle1
                         ? 'border-red-500'
                         : 'border-gray-300'
                     }`}
                   />
                   {errors.whyPartnerSectionCartTitle1 && (
-                    <p className='text-red-500 text-sm mt-1'>
+                    <p className='text-red-500 text-xs mt-1'>
                       {errors.whyPartnerSectionCartTitle1}
                     </p>
                   )}
                 </div>
                 <div>
-                  <label className='block text-sm font-medium text-gray-700 mb-2'>
+                  <label className='block text-xs font-medium text-gray-700 mb-1'>
                     Card Description 1<span className='text-red-500'>*</span>
                   </label>
                   <input
@@ -2319,14 +2319,14 @@ export default function PartnerWithUsForm () {
                         e.target.value
                       )
                     }
-                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none text-gray-900 ${
+                    className={`w-full px-3 py-1.5 text-sm border rounded-lg focus:outline-none text-gray-900 ${
                       errors.whyPartnerSectionCardDescription1
                         ? 'border-red-500'
                         : 'border-gray-300'
                     }`}
                   />
                   {errors.whyPartnerSectionCardDescription1 && (
-                    <p className='text-red-500 text-sm mt-1'>
+                    <p className='text-red-500 text-xs mt-1'>
                       {errors.whyPartnerSectionCardDescription1}
                     </p>
                   )}
@@ -2334,9 +2334,9 @@ export default function PartnerWithUsForm () {
               </div>
 
               {/* Card 2 */}
-              <div className='grid grid-cols-1 md:grid-cols-2 gap-4 mb-4'>
+              <div className='grid grid-cols-1 md:grid-cols-2 gap-3 mb-3'>
                 <div>
-                  <label className='block text-sm font-medium text-gray-700 mb-2'>
+                  <label className='block text-xs font-medium text-gray-700 mb-1'>
                     Card Title 2<span className='text-red-500'>*</span>
                   </label>
                   <input
@@ -2348,20 +2348,20 @@ export default function PartnerWithUsForm () {
                         e.target.value
                       )
                     }
-                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none text-gray-900 ${
+                    className={`w-full px-3 py-1.5 text-sm border rounded-lg focus:outline-none text-gray-900 ${
                       errors.whyPartnerSectionCartTitle2
                         ? 'border-red-500'
                         : 'border-gray-300'
                     }`}
                   />
                   {errors.whyPartnerSectionCartTitle2 && (
-                    <p className='text-red-500 text-sm mt-1'>
+                    <p className='text-red-500 text-xs mt-1'>
                       {errors.whyPartnerSectionCartTitle2}
                     </p>
                   )}
                 </div>
                 <div>
-                  <label className='block text-sm font-medium text-gray-700 mb-2'>
+                  <label className='block text-xs font-medium text-gray-700 mb-1'>
                     Card Description 2<span className='text-red-500'>*</span>
                   </label>
                   <input
@@ -2373,14 +2373,14 @@ export default function PartnerWithUsForm () {
                         e.target.value
                       )
                     }
-                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none text-gray-900 ${
+                    className={`w-full px-3 py-1.5 text-sm border rounded-lg focus:outline-none text-gray-900 ${
                       errors.whyPartnerSectionCardDescription2
                         ? 'border-red-500'
                         : 'border-gray-300'
                     }`}
                   />
                   {errors.whyPartnerSectionCardDescription2 && (
-                    <p className='text-red-500 text-sm mt-1'>
+                    <p className='text-red-500 text-xs mt-1'>
                       {errors.whyPartnerSectionCardDescription2}
                     </p>
                   )}
@@ -2388,9 +2388,9 @@ export default function PartnerWithUsForm () {
               </div>
 
               {/* Card 3 */}
-              <div className='grid grid-cols-1 md:grid-cols-2 gap-4 mb-4'>
+              <div className='grid grid-cols-1 md:grid-cols-2 gap-3 mb-3'>
                 <div>
-                  <label className='block text-sm font-medium text-gray-700 mb-2'>
+                  <label className='block text-xs font-medium text-gray-700 mb-1'>
                     Card Title 3<span className='text-red-500'>*</span>
                   </label>
                   <input
@@ -2402,20 +2402,20 @@ export default function PartnerWithUsForm () {
                         e.target.value
                       )
                     }
-                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none text-gray-900 ${
+                    className={`w-full px-3 py-1.5 text-sm border rounded-lg focus:outline-none text-gray-900 ${
                       errors.whyPartnerSectionCartTitle3
                         ? 'border-red-500'
                         : 'border-gray-300'
                     }`}
                   />
                   {errors.whyPartnerSectionCartTitle3 && (
-                    <p className='text-red-500 text-sm mt-1'>
+                    <p className='text-red-500 text-xs mt-1'>
                       {errors.whyPartnerSectionCartTitle3}
                     </p>
                   )}
                 </div>
                 <div>
-                  <label className='block text-sm font-medium text-gray-700 mb-2'>
+                  <label className='block text-xs font-medium text-gray-700 mb-1'>
                     Card Description 3<span className='text-red-500'>*</span>
                   </label>
                   <input
@@ -2427,14 +2427,14 @@ export default function PartnerWithUsForm () {
                         e.target.value
                       )
                     }
-                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none text-gray-900 ${
+                    className={`w-full px-3 py-1.5 text-sm border rounded-lg focus:outline-none text-gray-900 ${
                       errors.whyPartnerSectionCardDescription3
                         ? 'border-red-500'
                         : 'border-gray-300'
                     }`}
                   />
                   {errors.whyPartnerSectionCardDescription3 && (
-                    <p className='text-red-500 text-sm mt-1'>
+                    <p className='text-red-500 text-xs mt-1'>
                       {errors.whyPartnerSectionCardDescription3}
                     </p>
                   )}
@@ -2449,9 +2449,9 @@ export default function PartnerWithUsForm () {
               </div>
 
               {/* Section Title 1 and Title 2 in one row */}
-              <div className='grid grid-cols-1 md:grid-cols-2 gap-4 mb-4'>
+              <div className='grid grid-cols-1 md:grid-cols-2 gap-3 mb-3'>
                 <div>
-                  <label className='block text-sm font-medium text-gray-700 mb-2'>
+                  <label className='block text-xs font-medium text-gray-700 mb-1'>
                     Section Title 1<span className='text-red-500'>*</span>
                   </label>
                   <input
@@ -2460,20 +2460,20 @@ export default function PartnerWithUsForm () {
                     onChange={e =>
                       handleChange('vendorSectionTitle1', e.target.value)
                     }
-                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none text-gray-900 ${
+                    className={`w-full px-3 py-1.5 text-sm border rounded-lg focus:outline-none text-gray-900 ${
                       errors.vendorSectionTitle1
                         ? 'border-red-500'
                         : 'border-gray-300'
                     }`}
                   />
                   {errors.vendorSectionTitle1 && (
-                    <p className='text-red-500 text-sm mt-1'>
+                    <p className='text-red-500 text-xs mt-1'>
                       {errors.vendorSectionTitle1}
                     </p>
                   )}
                 </div>
                 <div>
-                  <label className='block text-sm font-medium text-gray-700 mb-2'>
+                  <label className='block text-xs font-medium text-gray-700 mb-1'>
                     Section Title 2<span className='text-red-500'>*</span>
                   </label>
                   <input
@@ -2482,14 +2482,14 @@ export default function PartnerWithUsForm () {
                     onChange={e =>
                       handleChange('vendorSectionTitle2', e.target.value)
                     }
-                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none text-gray-900 ${
+                    className={`w-full px-3 py-1.5 text-sm border rounded-lg focus:outline-none text-gray-900 ${
                       errors.vendorSectionTitle2
                         ? 'border-red-500'
                         : 'border-gray-300'
                     }`}
                   />
                   {errors.vendorSectionTitle2 && (
-                    <p className='text-red-500 text-sm mt-1'>
+                    <p className='text-red-500 text-xs mt-1'>
                       {errors.vendorSectionTitle2}
                     </p>
                   )}
@@ -2498,7 +2498,7 @@ export default function PartnerWithUsForm () {
 
               {/* Description with Rich Text Editor */}
               <div className='mb-4'>
-                <label className='block text-sm font-medium text-gray-700 mb-2'>
+                <label className='block text-xs font-medium text-gray-700 mb-1'>
                   Description<span className='text-red-500'>*</span>
                 </label>
                 <div
@@ -2518,7 +2518,7 @@ export default function PartnerWithUsForm () {
                   />
                 </div>
                 {errors.vendorSectionDescription && (
-                  <p className='text-red-500 text-sm mt-1'>
+                  <p className='text-red-500 text-xs mt-1'>
                     {errors.vendorSectionDescription}
                   </p>
                 )}
@@ -2555,7 +2555,7 @@ export default function PartnerWithUsForm () {
                       </div>
                       <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
                         <div>
-                          <label className='block text-sm font-medium text-gray-700 mb-2'>
+                          <label className='block text-xs font-medium text-gray-700 mb-1'>
                             Vendor Title<span className='text-red-500'>*</span>
                           </label>
                           <input
@@ -2569,15 +2569,15 @@ export default function PartnerWithUsForm () {
                               }
                               handleChange('vendorSectionImages', updated)
                             }}
-                            className='w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none text-gray-900'
+                            className='w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none text-gray-900'
                             placeholder='e.g., Food Vendors'
                           />
                         </div>
                         <div>
-                          <label className='block text-sm font-medium text-gray-700 mb-2'>
+                          <label className='block text-xs font-medium text-gray-700 mb-1'>
                             Upload Image<span className='text-red-500'>*</span>
                           </label>
-                          <div className='flex h-12 items-stretch overflow-hidden rounded-xl border border-[#E5E6EF]'>
+                          <div className='flex h-9 items-stretch overflow-hidden rounded-xl border border-[#E5E6EF]'>
                             <div
                               className='flex-1 bg-[#F8F9FC] px-4 text-sm text-slate-700 flex items-center justify-between cursor-pointer'
                               onClick={() =>
@@ -2698,9 +2698,9 @@ export default function PartnerWithUsForm () {
               </div>
 
               {/* Title 1 and Title 2 in one row */}
-              <div className='grid grid-cols-1 md:grid-cols-2 gap-4 mb-4'>
+              <div className='grid grid-cols-1 md:grid-cols-2 gap-3 mb-3'>
                 <div>
-                  <label className='block text-sm font-medium text-gray-700 mb-2'>
+                  <label className='block text-xs font-medium text-gray-700 mb-1'>
                     Title 1<span className='text-red-500'>*</span>
                   </label>
                   <input
@@ -2709,20 +2709,20 @@ export default function PartnerWithUsForm () {
                     onChange={e =>
                       handleChange('BecomeVendorTitle1', e.target.value)
                     }
-                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none text-gray-900 ${
+                    className={`w-full px-3 py-1.5 text-sm border rounded-lg focus:outline-none text-gray-900 ${
                       errors.BecomeVendorTitle1
                         ? 'border-red-500'
                         : 'border-gray-300'
                     }`}
                   />
                   {errors.BecomeVendorTitle1 && (
-                    <p className='text-red-500 text-sm mt-1'>
+                    <p className='text-red-500 text-xs mt-1'>
                       {errors.BecomeVendorTitle1}
                     </p>
                   )}
                 </div>
                 <div>
-                  <label className='block text-sm font-medium text-gray-700 mb-2'>
+                  <label className='block text-xs font-medium text-gray-700 mb-1'>
                     Title 2<span className='text-red-500'>*</span>
                   </label>
                   <input
@@ -2731,14 +2731,14 @@ export default function PartnerWithUsForm () {
                     onChange={e =>
                       handleChange('BecomeVendorTitle2', e.target.value)
                     }
-                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none text-gray-900 ${
+                    className={`w-full px-3 py-1.5 text-sm border rounded-lg focus:outline-none text-gray-900 ${
                       errors.BecomeVendorTitle2
                         ? 'border-red-500'
                         : 'border-gray-300'
                     }`}
                   />
                   {errors.BecomeVendorTitle2 && (
-                    <p className='text-red-500 text-sm mt-1'>
+                    <p className='text-red-500 text-xs mt-1'>
                       {errors.BecomeVendorTitle2}
                     </p>
                   )}
@@ -2747,7 +2747,7 @@ export default function PartnerWithUsForm () {
 
               {/* Description with Rich Text Editor */}
               <div className='mb-4'>
-                <label className='block text-sm font-medium text-gray-700 mb-2'>
+                <label className='block text-xs font-medium text-gray-700 mb-1'>
                   Description<span className='text-red-500'>*</span>
                 </label>
                 <div
@@ -2767,20 +2767,20 @@ export default function PartnerWithUsForm () {
                   />
                 </div>
                 {errors.BecomeVendorDescription && (
-                  <p className='text-red-500 text-sm mt-1'>
+                  <p className='text-red-500 text-xs mt-1'>
                     {errors.BecomeVendorDescription}
                   </p>
                 )}
               </div>
 
               {/* Upload Image, CTA Text, CTA Link in one row */}
-              <div className='grid grid-cols-1 md:grid-cols-3 gap-4 mb-4'>
+              <div className='grid grid-cols-1 md:grid-cols-3 gap-3 mb-3'>
                 <div>
-                  <label className='block text-sm font-medium text-gray-700 mb-2'>
+                  <label className='block text-xs font-medium text-gray-700 mb-1'>
                     Upload Image<span className='text-red-500'>*</span>
                   </label>
                   <div
-                    className='flex h-12 items-stretch overflow-hidden rounded-xl border border-[#E5E6EF]'
+                    className='flex h-9 items-stretch overflow-hidden rounded-xl border border-[#E5E6EF]'
                     onClick={() => fileRefs.current.BecomeVendorImage?.click()}
                   >
                     <div className='flex-1 bg-[#F8F9FC] px-4 text-sm text-slate-700 flex items-center justify-between cursor-pointer'>
@@ -2811,7 +2811,7 @@ export default function PartnerWithUsForm () {
                     onChange={e => handleImageChange('BecomeVendorImage', e)}
                   />
                   {errors.BecomeVendorImage && (
-                    <p className='text-red-500 text-sm mt-1'>
+                    <p className='text-red-500 text-xs mt-1'>
                       {errors.BecomeVendorImage}
                     </p>
                   )}
@@ -2829,7 +2829,7 @@ export default function PartnerWithUsForm () {
                   )}
                 </div>
                 <div>
-                  <label className='block text-sm font-medium text-gray-700 mb-2'>
+                  <label className='block text-xs font-medium text-gray-700 mb-1'>
                     CTA Text<span className='text-red-500'>*</span>
                   </label>
                   <input
@@ -2838,20 +2838,20 @@ export default function PartnerWithUsForm () {
                     onChange={e =>
                       handleChange('BecomeVendorCTAText', e.target.value)
                     }
-                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none text-gray-900 ${
+                    className={`w-full px-3 py-1.5 text-sm border rounded-lg focus:outline-none text-gray-900 ${
                       errors.BecomeVendorCTAText
                         ? 'border-red-500'
                         : 'border-gray-300'
                     }`}
                   />
                   {errors.BecomeVendorCTAText && (
-                    <p className='text-red-500 text-sm mt-1'>
+                    <p className='text-red-500 text-xs mt-1'>
                       {errors.BecomeVendorCTAText}
                     </p>
                   )}
                 </div>
                 <div>
-                  <label className='block text-sm font-medium text-gray-700 mb-2'>
+                  <label className='block text-xs font-medium text-gray-700 mb-1'>
                     CTA Link<span className='text-red-500'>*</span>
                   </label>
                   <input
@@ -2860,14 +2860,14 @@ export default function PartnerWithUsForm () {
                     onChange={e =>
                       handleChange('BecomeVendorCTALink', e.target.value)
                     }
-                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none text-gray-900 ${
+                    className={`w-full px-3 py-1.5 text-sm border rounded-lg focus:outline-none text-gray-900 ${
                       errors.BecomeVendorCTALink
                         ? 'border-red-500'
                         : 'border-gray-300'
                     }`}
                   />
                   {errors.BecomeVendorCTALink && (
-                    <p className='text-red-500 text-sm mt-1'>
+                    <p className='text-red-500 text-xs mt-1'>
                       {errors.BecomeVendorCTALink}
                     </p>
                   )}

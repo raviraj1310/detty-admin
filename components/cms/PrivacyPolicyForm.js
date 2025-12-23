@@ -141,21 +141,21 @@ export default function PrivacyPolicyForm() {
         position="top-right"
       />
       {/* Header */}
-      <div className="mb-4">
-        <h1 className="text-3xl font-bold text-gray-900">Privacy Policy</h1>
-        <p className="text-sm text-gray-500 mt-1">Dashboard / CMS</p>
+      <div className="mb-3">
+        <h1 className="text-xl font-bold text-gray-900">Privacy Policy</h1>
+        <p className="text-xs text-gray-500 mt-0.5">Dashboard / CMS</p>
       </div>
 
-      <div className="bg-gray-200 p-6 rounded-xl">
+      <div className="bg-gray-100 p-3 rounded-xl">
         {/* Privacy Policy Details Card */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3">
           {/* Card Header with Save Button */}
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-semibold text-gray-900">Privacy Policy Details</h2>
+          <div className="flex justify-between items-center mb-3 border-b pb-2 border-gray-200">
+            <h2 className="text-base font-semibold text-gray-900">Privacy Policy Details</h2>
             <button
               onClick={handleSave}
               disabled={saving}
-              className="px-6 py-2.5 bg-orange-500 hover:bg-orange-600 text-white font-medium rounded-lg transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+              className="px-4 py-1.5 text-sm bg-orange-500 hover:bg-orange-600 text-white font-medium rounded-lg transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {saving ? 'Saving...' : 'Save Changes'}
             </button>
@@ -163,15 +163,15 @@ export default function PrivacyPolicyForm() {
 
           {/* Rich Text Editor */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Title<span className="text-red-500">*</span></label>
+            <label className="block text-xs font-medium text-gray-700 mb-1">Title<span className="text-red-500">*</span></label>
             <input
               type="text"
               value={formData.title}
               onChange={e => setField('title', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+              className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm"
               placeholder="Enter title"
             />
-            <label className="block text-sm font-medium text-gray-700 mb-2 mt-4">Privacy Policy<span className="text-red-500">*</span></label>
+            <label className="block text-xs font-medium text-gray-700 mb-1 mt-3">Privacy Policy<span className="text-red-500">*</span></label>
             <div className={`tiptap-editor-wrapper border border-gray-300 rounded-lg overflow-hidden ${isFullscreen ? 'fixed inset-0 z-50 bg-white' : ''}`}>
               {/* Toolbar */}
               <div className="flex items-center gap-0.5 p-2 border-b border-gray-300 bg-gray-50 flex-wrap">

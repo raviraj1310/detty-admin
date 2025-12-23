@@ -1,28 +1,25 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { Search, Download, MoreVertical, Loader2, Pencil, Trash2 } from 'lucide-react'
-import { IoFilterSharp } from 'react-icons/io5'
+import { Search, MoreVertical, Loader2, Pencil, Trash2 } from 'lucide-react'
 import { TbCaretUpDownFilled } from 'react-icons/tb'
 import Toast from '@/components/ui/Toast'
-import {registerVendor, getVendors} from '@/services/vendor/vendor.service'
+import { registerVendor, getVendors } from '@/services/vendor/vendor.service'
 
 const TableHeaderCell = ({ children, align = 'left', onClick, active = false, order = 'desc' }) => (
   <button
     type='button'
     onClick={onClick}
-    className={`flex items-center gap-1 text-xs font-medium uppercase tracking-[0.12em] ${
+    className={`flex items-center gap-1 text-xs font-medium uppercase tracking-wide whitespace-nowrap ${
       align === 'right' ? 'justify-end' : 'justify-start'
-    } ${active ? 'text-[#2D3658]' : 'text-[#8A92AC]'} `}
+    } ${active ? 'text-[#2D3658]' : 'text-[#8A92AC]'}`}
   >
     {children}
-    <TbCaretUpDownFilled className={`h-3.5 w-3.5 ${active ? 'text-[#4F46E5]' : 'text-[#CBCFE2]'} ${order === 'asc' ? 'rotate-180' : ''}`} />
+    <TbCaretUpDownFilled className={`h-3 w-3 ${active ? 'text-[#4F46E5]' : 'text-[#CBCFE2]'} ${order === 'asc' ? 'rotate-180' : ''}`} />
   </button>
 )
 
-export default function VendorMaster () {
-  const router = useRouter()
+export default function VendorMaster() {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -36,9 +33,7 @@ export default function VendorMaster () {
   const [vendors, setVendors] = useState([])
   const [searchTerm, setSearchTerm] = useState('')
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
   const [menuOpenId, setMenuOpenId] = useState(null)
-  const [rowActionLoading, setRowActionLoading] = useState(null)
   const [editingId, setEditingId] = useState(null)
   const [sortKey, setSortKey] = useState('addedOn')
   const [sortOrder, setSortOrder] = useState('desc')
@@ -70,13 +65,7 @@ export default function VendorMaster () {
   }
 
   const resetForm = () => {
-    setFormData({
-      name: '',
-      email: '',
-      password: '',
-      phoneNumber: '',
-      businessName: ''
-    })
+    setFormData({ name: '', email: '', password: '', phoneNumber: '', businessName: '' })
   }
 
   const handleSubmit = async e => {
@@ -106,16 +95,13 @@ export default function VendorMaster () {
           setToast({ open: true, title: 'Email already exists', description: 'Please use a different email', variant: 'error' })
           return
         }
-        
         if (res?.success && hasData) {
-          const createdApi = res.data
-          const created = normalizeVendor(createdApi)
+          const created = normalizeVendor(res.data)
           setVendors(prev => [created, ...prev])
           setToast({ open: true, title: 'Vendor created', description: 'Your vendor has been added', variant: 'success' })
           const listRes = await getVendors({})
           const list = Array.isArray(listRes?.data) ? listRes.data : Array.isArray(listRes) ? listRes : []
-          const normalized = list.map(normalizeVendor)
-          setVendors(normalized)
+          setVendors(list.map(normalizeVendor))
         } else {
           setToast({ open: true, title: 'Failed', description: msg || 'Could not register vendor', variant: 'error' })
           return
@@ -199,19 +185,16 @@ export default function VendorMaster () {
   useEffect(() => {
     const fetchVendors = async () => {
       setLoading(true)
-      setError('')
       try {
         const res = await getVendors({})
         const list = Array.isArray(res?.data) ? res.data : Array.isArray(res) ? res : []
-        const normalized = list.map(normalizeVendor)
-          .sort((a, b) => {
-            const va = getSortValue(a, 'addedOn')
-            const vb = getSortValue(b, 'addedOn')
-            return vb - va
-          })
+        const normalized = list.map(normalizeVendor).sort((a, b) => {
+          const va = getSortValue(a, 'addedOn')
+          const vb = getSortValue(b, 'addedOn')
+          return vb - va
+        })
         setVendors(normalized)
-      } catch (e) {
-        setError('Failed to load vendors')
+      } catch {
         setVendors([])
       } finally {
         setLoading(false)
@@ -226,24 +209,21 @@ export default function VendorMaster () {
         const target = event.target
         const isMenuButton = target.closest('button[data-menu-button]')
         const isMenuContent = target.closest('[data-menu-content]')
-        
         if (!isMenuButton && !isMenuContent) {
           setMenuOpenId(null)
         }
       }
     }
-
     if (menuOpenId !== null) {
       document.addEventListener('mousedown', handleClickOutside)
     }
-
     return () => {
       document.removeEventListener('mousedown', handleClickOutside)
     }
   }, [menuOpenId])
 
   return (
-    <div className='space-y-7 py-12 px-12'>
+    <div className='space-y-5 py-6 px-6'>
       <Toast
         open={toast.open}
         onOpenChange={o => setToast(prev => ({ ...prev, open: o }))}
@@ -254,67 +234,61 @@ export default function VendorMaster () {
         position='top-right'
       />
 
-      <div className='flex flex-col gap-4 md:flex-row md:items-start md:justify-between'>
-        <div className='flex flex-col gap-2'>
-          <h1 className='text-2xl font-semibold text-slate-900'>Vendor Master</h1>
-          <p className='text-sm text-[#99A1BC]'>Dashboard / Vendor Master</p>
+      <div className='flex flex-col gap-1 md:flex-row md:items-start md:justify-between'>
+        <div className='flex flex-col gap-1'>
+          <h1 className='text-xl font-semibold text-slate-900'>Vendor Master</h1>
+          <p className='text-xs text-[#99A1BC]'>Dashboard / Vendor Master</p>
         </div>
-         <div className='mt-6 flex justify-end gap-3'>
-            <button form='vendorForm' type='submit' disabled={submitting} className='rounded-xl bg-[#FF5B2C] px-5 py-2.5 text-sm font-semibold text-white shadow-[0_14px_30px_-20px_rgba(248,113,72,0.65)] transition hover:bg-[#F0481A] disabled:opacity-60 disabled:cursor-not-allowed'>
-              {submitting ? (
-                <span className='flex items-center gap-2'>
-                  <Loader2 className='h-4 w-4 animate-spin' />
-                  {editingId ? 'Saving...' : 'Adding...'}
-                </span>
-              ) : (
-                editingId ? 'Save' : 'Add'
-              )}
-            </button>
-          </div>
+        <button form='vendorForm' type='submit' disabled={submitting} className='rounded-xl bg-[#FF5B2C] px-4 py-2 text-xs font-semibold text-white shadow-[0_14px_30px_-20px_rgba(248,113,72,0.65)] transition hover:bg-[#F0481A] disabled:opacity-60 disabled:cursor-not-allowed'>
+          {submitting ? (
+            <span className='flex items-center gap-2'>
+              <Loader2 className='h-3.5 w-3.5 animate-spin' />
+              {editingId ? 'Saving...' : 'Adding...'}
+            </span>
+          ) : (editingId ? 'Save' : 'Add')}
+        </button>
       </div>
 
       <form id='vendorForm' onSubmit={handleSubmit}>
-        <div className='rounded-[30px] border border-[#E1E6F7] bg-white p-8 shadow-[0_24px_60px_-40px_rgba(15,23,42,0.55)]'>
-          <h2 className='text-lg font-semibold text-slate-900 mb-6'>Vendor Details</h2>
-          <div className='grid grid-cols-1 md:grid-cols-3 gap-6'>
-            <div className='space-y-2'>
-              <label className='text-sm font-medium text-slate-700'>Name*</label>
-              <input type='text' value={formData.name} onChange={e => handleInputChange('name', e.target.value)} className='w-full h-12 rounded-xl border border-[#E5E6EF] bg-[#F8F9FC] px-4 text-sm text-slate-700 focus:border-[#C5CAE3] focus:outline-none focus:ring-2 focus:ring-[#C2C8E4]' />
-              {errors.name && (<p className='text-xs text-red-600'>{errors.name}</p>)}
+        <div className='rounded-2xl border border-[#E1E6F7] bg-white p-5 shadow-[0_24px_60px_-40px_rgba(15,23,42,0.55)]'>
+          <h2 className='text-sm font-semibold text-slate-900 mb-4'>Vendor Details</h2>
+          <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
+            <div className='space-y-1'>
+              <label className='text-xs font-medium text-slate-700'>Name*</label>
+              <input type='text' value={formData.name} onChange={e => handleInputChange('name', e.target.value)} className='w-full h-9 rounded-lg border border-[#E5E6EF] bg-[#F8F9FC] px-3 text-xs text-slate-700 focus:border-[#C5CAE3] focus:outline-none focus:ring-2 focus:ring-[#C2C8E4]' />
+              {errors.name && <p className='text-xs text-red-600'>{errors.name}</p>}
             </div>
-            <div className='space-y-2'>
-              <label className='text-sm font-medium text-slate-700'>Email*</label>
-              <input type='email' value={formData.email} onChange={e => handleInputChange('email', e.target.value)} className='w-full h-12 rounded-xl border border-[#E5E6EF] bg-[#F8F9FC] px-4 text-sm text-slate-700 focus:border-[#C5CAE3] focus:outline-none focus:ring-2 focus:ring-[#C2C8E4]' />
-              {errors.email && (<p className='text-xs text-red-600'>{errors.email}</p>)}
+            <div className='space-y-1'>
+              <label className='text-xs font-medium text-slate-700'>Email*</label>
+              <input type='email' value={formData.email} onChange={e => handleInputChange('email', e.target.value)} className='w-full h-9 rounded-lg border border-[#E5E6EF] bg-[#F8F9FC] px-3 text-xs text-slate-700 focus:border-[#C5CAE3] focus:outline-none focus:ring-2 focus:ring-[#C2C8E4]' />
+              {errors.email && <p className='text-xs text-red-600'>{errors.email}</p>}
             </div>
-            <div className='space-y-2'>
-              <label className='text-sm font-medium text-slate-700'>Password*</label>
-              <input type='password' value={formData.password} onChange={e => handleInputChange('password', e.target.value)} className='w-full h-12 rounded-xl border border-[#E5E6EF] bg-[#F8F9FC] px-4 text-sm text-slate-700 focus:border-[#C5CAE3] focus:outline-none focus:ring-2 focus:ring-[#C2C8E4]' />
-              {errors.password && (<p className='text-xs text-red-600'>{errors.password}</p>)}
+            <div className='space-y-1'>
+              <label className='text-xs font-medium text-slate-700'>Password*</label>
+              <input type='password' value={formData.password} onChange={e => handleInputChange('password', e.target.value)} className='w-full h-9 rounded-lg border border-[#E5E6EF] bg-[#F8F9FC] px-3 text-xs text-slate-700 focus:border-[#C5CAE3] focus:outline-none focus:ring-2 focus:ring-[#C2C8E4]' />
+              {errors.password && <p className='text-xs text-red-600'>{errors.password}</p>}
             </div>
-            <div className='space-y-2'>
-              <label className='text-sm font-medium text-slate-700'>Phone Number*</label>
-              <input type='text' value={formData.phoneNumber} onChange={e => handleInputChange('phoneNumber', e.target.value)} className='w-full h-12 rounded-xl border border-[#E5E6EF] bg-[#F8F9FC] px-4 text-sm text-slate-700 focus:border-[#C5CAE3] focus:outline-none focus:ring-2 focus:ring-[#C2C8E4]' />
-              {errors.phoneNumber && (<p className='text-xs text-red-600'>{errors.phoneNumber}</p>)}
+            <div className='space-y-1'>
+              <label className='text-xs font-medium text-slate-700'>Phone Number*</label>
+              <input type='text' value={formData.phoneNumber} onChange={e => handleInputChange('phoneNumber', e.target.value)} className='w-full h-9 rounded-lg border border-[#E5E6EF] bg-[#F8F9FC] px-3 text-xs text-slate-700 focus:border-[#C5CAE3] focus:outline-none focus:ring-2 focus:ring-[#C2C8E4]' />
+              {errors.phoneNumber && <p className='text-xs text-red-600'>{errors.phoneNumber}</p>}
             </div>
-            <div className='space-y-2'>
-              <label className='text-sm font-medium text-slate-700'>Business Name*</label>
-              <input type='text' value={formData.businessName} onChange={e => handleInputChange('businessName', e.target.value)} className='w-full h-12 rounded-xl border border-[#E5E6EF] bg-[#F8F9FC] px-4 text-sm text-slate-700 focus:border-[#C5CAE3] focus:outline-none focus:ring-2 focus:ring-[#C2C8E4]' />
-              {errors.businessName && (<p className='text-xs text-red-600'>{errors.businessName}</p>)}
+            <div className='space-y-1'>
+              <label className='text-xs font-medium text-slate-700'>Business Name*</label>
+              <input type='text' value={formData.businessName} onChange={e => handleInputChange('businessName', e.target.value)} className='w-full h-9 rounded-lg border border-[#E5E6EF] bg-[#F8F9FC] px-3 text-xs text-slate-700 focus:border-[#C5CAE3] focus:outline-none focus:ring-2 focus:ring-[#C2C8E4]' />
+              {errors.businessName && <p className='text-xs text-red-600'>{errors.businessName}</p>}
             </div>
           </div>
-
-         
         </div>
       </form>
 
-      <div className='rounded-[30px] border border-[#E1E6F7] bg-white p-6 shadow-[0_24px_60px_-40px_rgba(15,23,42,0.55)]'>
-        <div className='mb-6 flex items-center justify-between'>
-          <h2 className='text-lg font-semibold text-slate-900'>Vendors List</h2>
-          <div className='flex flex-wrap items-center gap-3 md:justify-end'>
+      <div className='rounded-2xl border border-[#E1E6F7] bg-white p-4 shadow-[0_24px_60px_-40px_rgba(15,23,42,0.55)]'>
+        <div className='mb-4 flex items-center justify-between'>
+          <h2 className='text-sm font-semibold text-slate-900'>Vendors List</h2>
+          <div className='flex items-center gap-2'>
             {loading && (
-              <span className='flex items-center gap-2 text-sm text-[#5E6582]'>
-                <Loader2 className='h-4 w-4 animate-spin' /> Loading...
+              <span className='flex items-center gap-1 text-xs text-[#5E6582]'>
+                <Loader2 className='h-3.5 w-3.5 animate-spin' /> Loading...
               </span>
             )}
             <div className='relative flex items-center'>
@@ -322,22 +296,15 @@ export default function VendorMaster () {
                 type='text'
                 placeholder='Search'
                 value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
-              className='h-10 rounded-xl border border-[#E5E6EF] bg-[#F8F9FC] pl-10 pr-4 text-sm text-slate-700 placeholder:text-[#B0B7D0] focus:border-[#C5CAE3] focus:outline-none focus:ring-2 focus:ring-[#C2C8E4]'
-            />
-            <Search className='absolute left-3 h-4 w-4 text-[#A6AEC7]' />
+                onChange={e => setSearchTerm(e.target.value)}
+                className='h-8 rounded-lg border border-[#E5E6EF] bg-[#F8F9FC] pl-8 pr-3 text-xs text-slate-700 placeholder:text-[#B0B7D0] focus:border-[#C5CAE3] focus:outline-none focus:ring-2 focus:ring-[#C2C8E4]'
+              />
+              <Search className='absolute left-2.5 h-3.5 w-3.5 text-[#A6AEC7]' />
+            </div>
           </div>
-          {/* <button className='flex h-10 items-center gap-2 rounded-xl border border-[#E5E6EF] bg-white px-4 text-sm font-medium text-[#2D3658] transition hover:bg-[#F6F7FD]'>
-            <IoFilterSharp className='h-4 w-4 text-[#8B93AF]' />
-            Filters
-          </button>
-          <button className='flex h-10 items-center gap-2 rounded-xl border border-[#E5E6EF] bg-white px-4 text-sm font-medium text-[#2D3658] transition hover:bg-[#F6F7FD]'>
-            <Download className='h-4 w-4 text-[#8B93AF]' />
-          </button> */}
         </div>
-        </div>
-        <div className='overflow-visible rounded-2xl border border-[#E5E8F5]'>
-          <div className='grid grid-cols-12 gap-4 bg-[#F7F9FD] px-6 py-4'>
+        <div className='overflow-visible rounded-xl border border-[#E5E8F5]'>
+          <div className='grid grid-cols-12 gap-4 bg-[#F7F9FD] px-4 py-3'>
             <div className='col-span-3'><TableHeaderCell onClick={() => toggleSort('name')} active={sortKey === 'name'} order={sortOrder}>Name</TableHeaderCell></div>
             <div className='col-span-3'><TableHeaderCell onClick={() => toggleSort('email')} active={sortKey === 'email'} order={sortOrder}>Email</TableHeaderCell></div>
             <div className='col-span-3'><TableHeaderCell onClick={() => toggleSort('phone')} active={sortKey === 'phone'} order={sortOrder}>Phone</TableHeaderCell></div>
@@ -346,36 +313,34 @@ export default function VendorMaster () {
           </div>
           <div className='divide-y divide-[#EEF1FA] bg-white'>
             {sorted.map(v => (
-              <div key={v._id} className='grid grid-cols-12 gap-4 px-6 py-5 hover:bg-[#F9FAFD]'>
-                <div className='col-span-3 self-center text-sm font-medium text-slate-900'>{v.name}</div>
-                <div className='col-span-3 self-center text-sm text-[#5E6582]'>{v.email}</div>
-                <div className='col-span-3 self-center text-sm text-[#5E6582]'>{v.phoneNumber}</div>
-                <div className='col-span-2 self-center text-sm text-[#5E6582]'>{v.businessName}</div>
-                <div className='col-span-1 flex items-center justify-end gap-2'>
-                  <button 
-                    data-menu-button 
-                    onClick={() => setMenuOpenId(menuOpenId === v._id ? null : v._id)} 
-                    className='rounded-full border border-transparent p-2 text-[#8C93AF] transition hover:border-[#E5E8F6] hover:bg-[#F5F7FD] hover:text-[#2D3658]'
-                  >
-                    <MoreVertical className='h-4 w-4' />
-                  </button>
-                  {menuOpenId === v._id && (
-                    <div data-menu-content className='absolute right-6 mt-10 w-44 rounded-md shadow-lg bg-white z-50 border border-gray-200'>
-                      <div className='py-1'>
-                        <button onClick={() => startEdit(v._id)} className='flex w-full items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100'>
-                          <Pencil className='h-4 w-4' /> Edit
-                        </button>
-                        <button onClick={() => confirmDelete(v._id)} className='flex w-full items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50'>
-                          <Trash2 className='h-4 w-4' /> Delete
-                        </button>
+              <div key={v._id} className='grid grid-cols-12 gap-4 px-4 py-3 hover:bg-[#F9FAFD]'>
+                <div className='col-span-3 self-center text-xs font-medium text-slate-900'>{v.name}</div>
+                <div className='col-span-3 self-center text-xs text-[#5E6582]'>{v.email}</div>
+                <div className='col-span-3 self-center text-xs text-[#5E6582]'>{v.phoneNumber}</div>
+                <div className='col-span-2 self-center text-xs text-[#5E6582]'>{v.businessName}</div>
+                <div className='col-span-1 flex items-center justify-end'>
+                  <div className='relative'>
+                    <button data-menu-button onClick={() => setMenuOpenId(menuOpenId === v._id ? null : v._id)} className='rounded-full border border-transparent p-1.5 text-[#8C93AF] transition hover:border-[#E5E8F6] hover:bg-[#F5F7FD] hover:text-[#2D3658]'>
+                      <MoreVertical className='h-4 w-4' />
+                    </button>
+                    {menuOpenId === v._id && (
+                      <div data-menu-content className='absolute right-0 top-full mt-1 w-36 rounded-md shadow-lg bg-white z-50 border border-gray-200'>
+                        <div className='py-1'>
+                          <button onClick={() => startEdit(v._id)} className='flex w-full items-center gap-2 px-3 py-1.5 text-xs text-gray-700 hover:bg-gray-100'>
+                            <Pencil className='h-3.5 w-3.5' /> Edit
+                          </button>
+                          <button onClick={() => confirmDelete(v._id)} className='flex w-full items-center gap-2 px-3 py-1.5 text-xs text-red-600 hover:bg-red-50'>
+                            <Trash2 className='h-3.5 w-3.5' /> Delete
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
               </div>
             ))}
             {filtered.length === 0 && !loading && (
-              <div className='px-6 py-8 text-center text-sm text-[#5E6582]'>No vendors found</div>
+              <div className='px-4 py-6 text-center text-xs text-[#5E6582]'>No vendors found</div>
             )}
           </div>
         </div>

@@ -376,94 +376,94 @@ export default function CookieSettingsForm() {
         position="top-right"
       />
       {/* Header */}
-      <div className="mb-4 sm:mb-4">
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Cookie Settings</h1>
-        <p className="text-xs sm:text-sm text-gray-500 mt-1">Dashboard / CMS</p>
+      <div className="mb-3">
+        <h1 className="text-xl font-bold text-gray-900">Cookie Settings</h1>
+        <p className="text-xs text-gray-500 mt-0.5">Dashboard / CMS</p>
       </div>
 
-      <div className="bg-gray-200 p-3 sm:p-4 lg:p-6 rounded-xl">
+      <div className="bg-gray-100 p-3 rounded-xl">
         {/* Cookie Settings Details Card */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3">
           {/* Card Header with Save Button */}
-          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 sm:gap-0 mb-4 sm:mb-4">
-            <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Cookie Settings Details</h2>
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-3 border-b pb-2 border-gray-200">
+            <h2 className="text-base font-semibold text-gray-900">Cookie Settings Details</h2>
             <button
               onClick={handleSave}
               disabled={saving}
-              className="px-4 sm:px-6 py-2 sm:py-2.5 bg-orange-600 hover:bg-orange-700 text-white text-sm sm:text-base font-medium rounded-lg transition-colors cursor-pointer w-full sm:w-auto disabled:opacity-60 disabled:cursor-not-allowed"
+              className="px-4 py-1.5 bg-orange-600 hover:bg-orange-700 text-white text-sm font-medium rounded-lg transition-colors cursor-pointer w-full sm:w-auto disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {saving ? 'Saving...' : 'Save Changes'}
             </button>
           </div>
 
           {/* Rich Text Editors */}
-          <div className="space-y-6">
+          <div className="space-y-4">
             {/* Cookie Settings */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-xs font-medium text-gray-700 mb-1">
                 Cookie Settings<span className="text-red-500">*</span>
               </label>
               <div className={`tiptap-editor-wrapper border border-gray-300 rounded-lg overflow-hidden ${isFullscreen.cookiesetting ? 'fixed inset-0 z-50 bg-white' : ''}`}>
                 {renderToolbar(cookieSettingEditor, 'cookiesetting')}
                 <EditorContent 
                   editor={cookieSettingEditor} 
-                  className="prose prose-sm max-w-none w-full p-3 sm:p-4 min-h-[200px] text-gray-900 bg-white overflow-y-auto [&_.ProseMirror]:outline-none [&_.ProseMirror]:border-none" 
+                  className="prose prose-sm max-w-none w-full p-3 min-h-[150px] text-gray-900 bg-white overflow-y-auto [&_.ProseMirror]:outline-none [&_.ProseMirror]:border-none" 
                 />
               </div>
             </div>
 
             {/* Necessary Cookie */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-xs font-medium text-gray-700 mb-1">
                 Necessary Cookie<span className="text-red-500">*</span>
               </label>
               <div className={`tiptap-editor-wrapper border border-gray-300 rounded-lg overflow-hidden ${isFullscreen.necessarycookie ? 'fixed inset-0 z-50 bg-white' : ''}`}>
                 {renderToolbar(necessaryCookieEditor, 'necessarycookie')}
                 <EditorContent 
                   editor={necessaryCookieEditor} 
-                  className="prose prose-sm max-w-none w-full p-3 sm:p-4 min-h-[200px] text-gray-900 bg-white overflow-y-auto [&_.ProseMirror]:outline-none [&_.ProseMirror]:border-none" 
+                  className="prose prose-sm max-w-none w-full p-3 min-h-[150px] text-gray-900 bg-white overflow-y-auto [&_.ProseMirror]:outline-none [&_.ProseMirror]:border-none" 
                 />
               </div>
             </div>
 
             {/* Functional Cookie */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-xs font-medium text-gray-700 mb-1">
                 Functional Cookie<span className="text-red-500">*</span>
               </label>
               <div className={`tiptap-editor-wrapper border border-gray-300 rounded-lg overflow-hidden ${isFullscreen.functionalcookie ? 'fixed inset-0 z-50 bg-white' : ''}`}>
                 {renderToolbar(functionalCookieEditor, 'functionalcookie')}
                 <EditorContent 
                   editor={functionalCookieEditor} 
-                  className="prose prose-sm max-w-none w-full p-3 sm:p-4 min-h-[200px] text-gray-900 bg-white overflow-y-auto [&_.ProseMirror]:outline-none [&_.ProseMirror]:border-none" 
+                  className="prose prose-sm max-w-none w-full p-3 min-h-[150px] text-gray-900 bg-white overflow-y-auto [&_.ProseMirror]:outline-none [&_.ProseMirror]:border-none" 
                 />
               </div>
             </div>
 
             {/* Performance & Analytics Cookies */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-xs font-medium text-gray-700 mb-1">
                 Performance & Analytics Cookies<span className="text-red-500">*</span>
               </label>
               <div className={`tiptap-editor-wrapper border border-gray-300 rounded-lg overflow-hidden ${isFullscreen.analyticscookie ? 'fixed inset-0 z-50 bg-white' : ''}`}>
                 {renderToolbar(analyticsCookieEditor, 'analyticscookie')}
                 <EditorContent 
                   editor={analyticsCookieEditor} 
-                  className="prose prose-sm max-w-none w-full p-3 sm:p-4 min-h-[200px] text-gray-900 bg-white overflow-y-auto [&_.ProseMirror]:outline-none [&_.ProseMirror]:border-none" 
+                  className="prose prose-sm max-w-none w-full p-3 min-h-[150px] text-gray-900 bg-white overflow-y-auto [&_.ProseMirror]:outline-none [&_.ProseMirror]:border-none" 
                 />
               </div>
             </div>
 
             {/* Advertising Cookies */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-xs font-medium text-gray-700 mb-1">
                 Advertising Cookies<span className="text-red-500">*</span>
               </label>
               <div className={`tiptap-editor-wrapper border border-gray-300 rounded-lg overflow-hidden ${isFullscreen.advertisingcookie ? 'fixed inset-0 z-50 bg-white' : ''}`}>
                 {renderToolbar(advertisingCookieEditor, 'advertisingcookie')}
                 <EditorContent 
                   editor={advertisingCookieEditor} 
-                  className="prose prose-sm max-w-none w-full p-3 sm:p-4 min-h-[200px] text-gray-900 bg-white overflow-y-auto [&_.ProseMirror]:outline-none [&_.ProseMirror]:border-none" 
+                  className="prose prose-sm max-w-none w-full p-3 min-h-[150px] text-gray-900 bg-white overflow-y-auto [&_.ProseMirror]:outline-none [&_.ProseMirror]:border-none" 
                 />
               </div>
             </div>
