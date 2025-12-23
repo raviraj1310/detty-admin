@@ -1,14 +1,15 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
-import {
-  Download,
-  User,
-  Loader2
-} from 'lucide-react'
+import { Download, User, Loader2, X } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { downloadExcel } from '@/utils/excelExport'
-import { TbCaretUpDownFilled, TbTicket, TbTrendingUp, TbTrendingDown } from 'react-icons/tb'
+import {
+  TbCaretUpDownFilled,
+  TbTicket,
+  TbTrendingUp,
+  TbTrendingDown
+} from 'react-icons/tb'
 import { FaChartColumn } from 'react-icons/fa6'
 import CustomerDetailsModal from '@/components/common/CustomerDetailsModal'
 import {
@@ -217,6 +218,7 @@ const filterTabs = [
 
 export default function MerchandisePage () {
   const [searchTerm, setSearchTerm] = useState('')
+  const [dateRange, setDateRange] = useState({ start: '', end: '' })
   const [activeTab, setActiveTab] = useState('merchandise')
   const [showOrderDetails, setShowOrderDetails] = useState(false)
   const [selectedOrder, setSelectedOrder] = useState(null)
@@ -525,7 +527,22 @@ export default function MerchandisePage () {
     const term = String(searchTerm || '')
       .trim()
       .toLowerCase()
-    if (!term) return true
+
+    // Date Range Filtering
+    const bookingTime = new Date(merchandise.rawOrder?.createdAt).getTime()
+    const startTime = dateRange.start
+      ? new Date(dateRange.start).setHours(0, 0, 0, 0)
+      : null
+    const endTime = dateRange.end
+      ? new Date(dateRange.end).setHours(23, 59, 59, 999)
+      : null
+
+    const matchesDate =
+      (!startTime || bookingTime >= startTime) &&
+      (!endTime || bookingTime <= endTime)
+
+    if (!term) return matchesDate
+
     const termDigits = term.replace(/[^0-9]/g, '')
     const name = String(merchandise.merchandiseName || '').toLowerCase()
     const customerName = String(merchandise.customerName || '').toLowerCase()
@@ -541,7 +558,7 @@ export default function MerchandisePage () {
       customerName.includes(term) ||
       dateStr.includes(term)
     const matchesDigits = termDigits && dateDigits.includes(termDigits)
-    return matchesText || matchesDigits
+    return matchesDate && (matchesText || matchesDigits)
   })
 
   const getActivityStatusColor = status => {
@@ -655,13 +672,55 @@ export default function MerchandisePage () {
   return (
     <div className='p-4 min-h-screen bg-white'>
       {/* Title and Breadcrumb */}
-      <div className='mb-4'>
-        <h1 className='text-xl font-bold text-gray-900 mb-1'>
-          Gross Transaction Value
-        </h1>
-        <nav className='text-sm text-gray-500'>
-          <span>Dashboard</span> / <span>Gross Transaction Value</span>
-        </nav>
+      <div className='flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6'>
+        <div>
+          <h1 className='text-xl font-bold text-gray-900 mb-1'>
+            Gross Transaction Value
+          </h1>
+          <nav className='text-sm text-gray-500'>
+            <span>Dashboard</span> / <span>Gross Transaction Value</span>
+          </nav>
+        </div>
+        <div className='flex items-center gap-2'>
+          <div className='flex items-center gap-2'>
+            <div className='flex flex-col'>
+              <label className='text-[10px] text-gray-500 font-medium ml-1'>
+                Start Date
+              </label>
+              <input
+                type='date'
+                value={dateRange.start}
+                onChange={e =>
+                  setDateRange(prev => ({ ...prev, start: e.target.value }))
+                }
+                className='h-9 px-3 border border-gray-300 rounded-lg text-xs text-gray-700 focus:outline-none focus:border-indigo-500'
+              />
+            </div>
+            <span className='text-gray-400 mt-4'>-</span>
+            <div className='flex flex-col'>
+              <label className='text-[10px] text-gray-500 font-medium ml-1'>
+                End Date
+              </label>
+              <input
+                type='date'
+                value={dateRange.end}
+                onChange={e =>
+                  setDateRange(prev => ({ ...prev, end: e.target.value }))
+                }
+                className='h-9 px-3 border border-gray-300 rounded-lg text-xs text-gray-700 focus:outline-none focus:border-indigo-500'
+              />
+            </div>
+          </div>
+          {(dateRange.start || dateRange.end) && (
+            <button
+              onClick={() => setDateRange({ start: '', end: '' })}
+              className='mt-4 p-2 text-gray-500 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors'
+              title='Clear Date Filter'
+            >
+              <X size={16} />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Stats Cards */}
@@ -796,7 +855,9 @@ export default function MerchandisePage () {
                       d='M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 01-.659 1.591l-5.432 5.432a2.25 2.25 0 00-.659 1.591v2.927a2.25 2.25 0 01-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 00-.659-1.591L3.659 7.409A2.25 2.25 0 013 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0112 3z'
                     />
                   </svg>
-                  <span className='text-xs text-gray-700 font-medium'>Filters</span>
+                  <span className='text-xs text-gray-700 font-medium'>
+                    Filters
+                  </span>
                 </button>
 
                 {/* Download */}
@@ -817,7 +878,9 @@ export default function MerchandisePage () {
                       d='M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3'
                     />
                   </svg>
-                  <span className='ml-2 text-xs text-gray-700 font-medium'>Export</span>
+                  <span className='ml-2 text-xs text-gray-700 font-medium'>
+                    Export
+                  </span>
                 </button>
               </div>
             </div>

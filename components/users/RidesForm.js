@@ -1,12 +1,15 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import {
-  Download
-} from 'lucide-react'
+import { Download } from 'lucide-react'
 import { downloadExcel } from '@/utils/excelExport'
-import { TbCaretUpDownFilled, TbTicket, TbTrendingUp, TbTrendingDown } from 'react-icons/tb'
+import {
+  TbCaretUpDownFilled,
+  TbTicket,
+  TbTrendingUp,
+  TbTrendingDown
+} from 'react-icons/tb'
 import { FaChartColumn } from 'react-icons/fa6'
 import Modal from '@/components/ui/Modal'
 import { getAllRideBookings } from '@/services/rides/ride.service'
@@ -115,7 +118,7 @@ const filterTabs = [
   // { id: 'diy', label: 'DIY', active: false },
 ]
 
-export default function RidesForm () {
+export default function RidesForm ({ dateRange = { start: '', end: '' } }) {
   const [searchTerm, setSearchTerm] = useState('')
   const [activeTab, setActiveTab] = useState('rides')
   const router = useRouter()
@@ -212,33 +215,50 @@ export default function RidesForm () {
     fetchData()
   }, [])
 
-  const filteredRides = rides
-    .filter(ride => {
-      const term = searchTerm.toLowerCase().trim()
-      if (!term) return true
+  const filteredRides = useMemo(() => {
+    return rides
+      .filter(ride => {
+        const term = searchTerm.toLowerCase().trim()
 
-      return (
-        ride.name?.toLowerCase().includes(term) ||
-        String(ride.price).includes(term) ||
-        String(ride.seats).includes(term)
-      )
-    })
-    .sort((a, b) => {
-      const dir = sortDir === 'asc' ? 1 : -1
+        // Date Range Filtering
+        const bookingTime = new Date(ride.created_at).getTime()
+        const startTime = dateRange.start
+          ? new Date(dateRange.start).setHours(0, 0, 0, 0)
+          : null
+        const endTime = dateRange.end
+          ? new Date(dateRange.end).setHours(23, 59, 59, 999)
+          : null
 
-      switch (sortKey) {
-        case 'name':
-          return dir * a.name.localeCompare(b.name)
-        case 'price':
-          return dir * (Number(a.price) - Number(b.price))
-        case 'seats':
-          return dir * (Number(a.seats) - Number(b.seats))
-        case 'quantity':
-          return dir * (Number(a.quantity) - Number(b.quantity))
-        default:
-          return 0
-      }
-    })
+        const matchesDate =
+          (!startTime || bookingTime >= startTime) &&
+          (!endTime || bookingTime <= endTime)
+
+        if (!term) return matchesDate
+
+        const matchesTerm =
+          ride.name?.toLowerCase().includes(term) ||
+          String(ride.price).includes(term) ||
+          String(ride.seats).includes(term)
+
+        return matchesDate && matchesTerm
+      })
+      .sort((a, b) => {
+        const dir = sortDir === 'asc' ? 1 : -1
+
+        switch (sortKey) {
+          case 'name':
+            return dir * a.name.localeCompare(b.name)
+          case 'price':
+            return dir * (Number(a.price) - Number(b.price))
+          case 'seats':
+            return dir * (Number(a.seats) - Number(b.seats))
+          case 'quantity':
+            return dir * (Number(a.quantity) - Number(b.quantity))
+          default:
+            return 0
+        }
+      })
+  }, [rides, searchTerm, sortKey, sortDir, dateRange])
 
   const toggleSort = key => {
     if (sortKey === key) {

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { X } from 'lucide-react'
 import { TbTicket, TbTrendingUp, TbTrendingDown } from 'react-icons/tb'
 import { FaChartColumn } from 'react-icons/fa6'
 import { downloadExcel } from '@/utils/excelExport'
@@ -221,6 +222,7 @@ const filterTabs = [
 
 export default function AccommodationPage () {
   const [searchTerm, setSearchTerm] = useState('')
+  const [dateRange, setDateRange] = useState({ start: '', end: '' })
   const [activeTab, setActiveTab] = useState('accommodation')
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(false)
@@ -332,7 +334,22 @@ export default function AccommodationPage () {
         const term = String(searchTerm || '')
           .trim()
           .toLowerCase()
-        if (!term) return true
+
+        // Date Range Filtering
+        const bookingTime = new Date(accommodation.raw?.createdAt).getTime()
+        const startTime = dateRange.start
+          ? new Date(dateRange.start).setHours(0, 0, 0, 0)
+          : null
+        const endTime = dateRange.end
+          ? new Date(dateRange.end).setHours(23, 59, 59, 999)
+          : null
+
+        const matchesDate =
+          (!startTime || bookingTime >= startTime) &&
+          (!endTime || bookingTime <= endTime)
+
+        if (!term) return matchesDate
+
         const termDigits = term.replace(/[^0-9]/g, '')
         const name = String(accommodation.propertyName || '').toLowerCase()
         const type = String(accommodation.propertyType || '').toLowerCase()
@@ -344,9 +361,9 @@ export default function AccommodationPage () {
         const matchesText =
           name.includes(term) || type.includes(term) || addedStr.includes(term)
         const matchesDigits = termDigits && addedDigits.includes(termDigits)
-        return matchesText || matchesDigits
+        return matchesDate && (matchesText || matchesDigits)
       }),
-    [rows, searchTerm]
+    [rows, searchTerm, dateRange]
   )
 
   const openCustomer = async row => {
@@ -444,15 +461,57 @@ export default function AccommodationPage () {
   }
 
   return (
-    <div className='p-4 h-screen bg-white overflow-hidden'>
+    <div className='p-4 min-h-screen bg-white overflow-x-hidden'>
       {/* Title and Breadcrumb */}
-      <div className='mb-4'>
-        <h1 className='text-xl font-bold text-gray-900 mb-1'>
-          Gross Transaction Value
-        </h1>
-        <nav className='text-sm text-gray-500'>
-          <span>Dashboard</span> / <span>Gross Transaction Value</span>
-        </nav>
+      <div className='flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6'>
+        <div>
+          <h1 className='text-xl font-bold text-gray-900 mb-1'>
+            Gross Transaction Value
+          </h1>
+          <nav className='text-sm text-gray-500'>
+            <span>Dashboard</span> / <span>Gross Transaction Value</span>
+          </nav>
+        </div>
+        <div className='flex items-center gap-2'>
+          <div className='flex items-center gap-2'>
+            <div className='flex flex-col'>
+              <label className='text-[10px] text-gray-500 font-medium ml-1'>
+                Start Date
+              </label>
+              <input
+                type='date'
+                value={dateRange.start}
+                onChange={e =>
+                  setDateRange(prev => ({ ...prev, start: e.target.value }))
+                }
+                className='h-9 px-3 border border-gray-300 rounded-lg text-xs text-gray-700 focus:outline-none focus:border-indigo-500'
+              />
+            </div>
+            <span className='text-gray-400 mt-4'>-</span>
+            <div className='flex flex-col'>
+              <label className='text-[10px] text-gray-500 font-medium ml-1'>
+                End Date
+              </label>
+              <input
+                type='date'
+                value={dateRange.end}
+                onChange={e =>
+                  setDateRange(prev => ({ ...prev, end: e.target.value }))
+                }
+                className='h-9 px-3 border border-gray-300 rounded-lg text-xs text-gray-700 focus:outline-none focus:border-indigo-500'
+              />
+            </div>
+          </div>
+          {(dateRange.start || dateRange.end) && (
+            <button
+              onClick={() => setDateRange({ start: '', end: '' })}
+              className='mt-4 p-2 text-gray-500 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors'
+              title='Clear Date Filter'
+            >
+              <X size={16} />
+            </button>
+          )}
+        </div>
       </div>
 
       <div className='grid grid-cols-1 md:grid-cols-3 gap-4 mb-6'>

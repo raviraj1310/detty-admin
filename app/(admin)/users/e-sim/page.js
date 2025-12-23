@@ -2,7 +2,13 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { TbCaretUpDownFilled, TbTicket, TbTrendingUp, TbTrendingDown } from 'react-icons/tb'
+import { X } from 'lucide-react'
+import {
+  TbCaretUpDownFilled,
+  TbTicket,
+  TbTrendingUp,
+  TbTrendingDown
+} from 'react-icons/tb'
 import { FaChartColumn } from 'react-icons/fa6'
 import { getAllEsimBookingList } from '@/services/booking/booking.service'
 import { downloadExcel } from '@/utils/excelExport'
@@ -55,6 +61,7 @@ const filterTabs = [
 
 export default function EsimUsersPage () {
   const [searchTerm, setSearchTerm] = useState('')
+  const [dateRange, setDateRange] = useState({ start: '', end: '' })
   const [activeTab, setActiveTab] = useState('e-sim')
   const [rowsRaw, setRowsRaw] = useState([])
   const [detailOpen, setDetailOpen] = useState(false)
@@ -303,7 +310,22 @@ export default function EsimUsersPage () {
     const term = String(searchTerm || '')
       .trim()
       .toLowerCase()
-    if (!term) return true
+
+    // Date Range Filtering
+    const bookingTime = new Date(row.raw?.createdAt).getTime()
+    const startTime = dateRange.start
+      ? new Date(dateRange.start).setHours(0, 0, 0, 0)
+      : null
+    const endTime = dateRange.end
+      ? new Date(dateRange.end).setHours(23, 59, 59, 999)
+      : null
+
+    const matchesDate =
+      (!startTime || bookingTime >= startTime) &&
+      (!endTime || bookingTime <= endTime)
+
+    if (!term) return matchesDate
+
     const tDigits = term.replace(/[^0-9]/g, '')
     const orderId = String(row.orderId || '').toLowerCase()
     const dateStr = String(row.eventDate || '').toLowerCase()
@@ -318,7 +340,7 @@ export default function EsimUsersPage () {
       payment.includes(term)
     const dateDigits = String(row.eventDate || '').replace(/[^0-9]/g, '')
     const matchesDigits = tDigits && dateDigits.includes(tDigits)
-    return matchesText || matchesDigits
+    return matchesDate && (matchesText || matchesDigits)
   })
 
   const handleDownloadExcel = () => {
@@ -529,17 +551,57 @@ export default function EsimUsersPage () {
   }
 
   return (
-    <div className='p-4 h-full flex flex-col bg-white'>
-      <div className='mb-4'>
-        <h1 className='text-xl font-bold text-gray-900 mb-1'>
-          Gross Transaction Value
-        </h1>
-        <nav className='text-sm text-gray-500'>
-          <span>Dashboard</span> /{' '}
-          <span className='text-gray-900 font-medium'>
+    <div className='p-4 min-h-screen bg-white'>
+      {/* Title and Breadcrumb */}
+      <div className='flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6'>
+        <div>
+          <h1 className='text-xl font-bold text-gray-900 mb-1'>
             Gross Transaction Value
-          </span>
-        </nav>
+          </h1>
+          <nav className='text-sm text-gray-500'>
+            <span>Dashboard</span> / <span>Gross Transaction Value</span>
+          </nav>
+        </div>
+        <div className='flex items-center gap-2'>
+          <div className='flex items-center gap-2'>
+            <div className='flex flex-col'>
+              <label className='text-[10px] text-gray-500 font-medium ml-1'>
+                Start Date
+              </label>
+              <input
+                type='date'
+                value={dateRange.start}
+                onChange={e =>
+                  setDateRange(prev => ({ ...prev, start: e.target.value }))
+                }
+                className='h-9 px-3 border border-gray-300 rounded-lg text-xs text-gray-700 focus:outline-none focus:border-indigo-500'
+              />
+            </div>
+            <span className='text-gray-400 mt-4'>-</span>
+            <div className='flex flex-col'>
+              <label className='text-[10px] text-gray-500 font-medium ml-1'>
+                End Date
+              </label>
+              <input
+                type='date'
+                value={dateRange.end}
+                onChange={e =>
+                  setDateRange(prev => ({ ...prev, end: e.target.value }))
+                }
+                className='h-9 px-3 border border-gray-300 rounded-lg text-xs text-gray-700 focus:outline-none focus:border-indigo-500'
+              />
+            </div>
+          </div>
+          {(dateRange.start || dateRange.end) && (
+            <button
+              onClick={() => setDateRange({ start: '', end: '' })}
+              className='mt-4 p-2 text-gray-500 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors'
+              title='Clear Date Filter'
+            >
+              <X size={16} />
+            </button>
+          )}
+        </div>
       </div>
 
       <div className='grid grid-cols-1 md:grid-cols-3 gap-4 mb-6'>
@@ -668,7 +730,9 @@ export default function EsimUsersPage () {
                       d='M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3'
                     />
                   </svg>
-                  <span className='ml-2 text-xs text-gray-700 font-medium'>Export</span>
+                  <span className='ml-2 text-xs text-gray-700 font-medium'>
+                    Export
+                  </span>
                 </button>
               </div>
             </div>

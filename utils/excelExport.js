@@ -16,3 +16,4 @@ export const formatEventDate = (isoDate) => {
   };
   return date.toLocaleString("en-US", options);
 };
+// End of file
