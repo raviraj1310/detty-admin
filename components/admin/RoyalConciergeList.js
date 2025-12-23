@@ -8,7 +8,11 @@ import {
   Mail,
   PlusCircle,
   AlertCircle,
-  CheckCircle
+  CheckCircle,
+  Ticket,
+  TrendingUp,
+  TrendingDown,
+  BarChart2
 } from 'lucide-react'
 import { TbCaretUpDownFilled } from 'react-icons/tb'
 import { getRoyalBookingList } from '@/services/royal-concierge/royal.service'
@@ -57,6 +61,14 @@ export default function RoyalConciergeList () {
   const [sortDir, setSortDir] = useState('desc')
   const [detailOpen, setDetailOpen] = useState(false)
   const [selected, setSelected] = useState(null)
+  const [stats, setStats] = useState({
+    yesterdayCount: 0,
+    yesterdayDateStr: '',
+    avgGrowthCount: 0,
+    isCountIncreasing: false,
+    avgGrowthPercent: '0%',
+    isPctIncreasing: false
+  })
 
   useEffect(() => {
     const load = async () => {
@@ -64,6 +76,36 @@ export default function RoyalConciergeList () {
       setError('')
       try {
         const res = await getRoyalBookingList()
+
+        const d = res
+        const yesterdayCount = Number(d.totalPurchasingYesterday || 0)
+
+        const yesterday = new Date()
+        yesterday.setDate(yesterday.getDate() - 1)
+        const yesterdayDateStr = yesterday.toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric'
+        })
+
+        const avgGrowthCount = Number(
+          d.growthCount ?? d.avgDailyGrowthCount ?? 0
+        )
+        const gp = d.growthPercent ?? d.avgDailyGrowthPercent ?? '0%'
+        const avgGrowthPercentStr =
+          typeof gp === 'number' ? `${gp}%` : String(gp)
+        const avgGrowthPercentVal = parseFloat(
+          avgGrowthPercentStr.replace('%', '')
+        )
+
+        setStats({
+          yesterdayCount,
+          yesterdayDateStr,
+          avgGrowthCount,
+          isCountIncreasing: avgGrowthCount >= 0,
+          avgGrowthPercent: avgGrowthPercentStr,
+          isPctIncreasing: avgGrowthPercentVal >= 0
+        })
+
         const raw = Array.isArray(res?.data)
           ? res.data
           : Array.isArray(res)
@@ -257,6 +299,83 @@ export default function RoyalConciergeList () {
         </nav>
       </div>
 
+      <div className='grid grid-cols-1 md:grid-cols-3 gap-4 mb-6'>
+        <div className='bg-indigo-300 text-white p-4 rounded-lg'>
+          <div className='flex items-center'>
+            <div className='bg-white p-2 rounded-lg mr-3'>
+              <Ticket className='w-6 h-6 text-indigo-600' />
+            </div>
+            <div>
+              <p className='text-xs text-black opacity-90'>
+                Total purchasing Yesterday{' '}
+                <span className='text-[10px] opacity-75'>
+                  ({stats.yesterdayDateStr})
+                </span>
+              </p>
+              <p className='text-2xl text-black font-bold'>
+                {stats.yesterdayCount}
+              </p>
+            </div>
+          </div>
+        </div>
+        <div className='bg-purple-300 text-white p-4 rounded-lg'>
+          <div className='flex items-center'>
+            <div className='bg-white p-2 rounded-lg mr-3'>
+              <TrendingUp className='w-6 h-6 text-purple-600' />
+            </div>
+            <div>
+              <p className='text-xs text-black opacity-90'>
+                Avg Daily Growth (Count)
+              </p>
+              <div className='flex items-end gap-2'>
+                <p className='text-2xl text-black font-bold'>
+                  {stats.avgGrowthCount}
+                </p>
+                {stats.isCountIncreasing ? (
+                  <span className='text-xs flex items-center mb-1 text-green-500'>
+                    <TrendingUp className='w-3 h-3 mr-0.5' />
+                    Increasing
+                  </span>
+                ) : (
+                  <span className='text-xs flex items-center mb-1 text-red-500'>
+                    <TrendingDown className='w-3 h-3 mr-0.5' />
+                    Decreasing
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className='bg-teal-300 text-white p-4 rounded-lg'>
+          <div className='flex items-center'>
+            <div className='bg-white p-2 rounded-lg mr-3'>
+              <BarChart2 className='w-6 h-6 text-teal-600' />
+            </div>
+            <div>
+              <p className='text-xs text-black opacity-90'>
+                Avg Daily Growth (%)
+              </p>
+              <div className='flex items-end gap-2'>
+                <p className='text-2xl text-black font-bold'>
+                  {stats.avgGrowthPercent}
+                </p>
+                {stats.isPctIncreasing ? (
+                  <span className='text-xs flex items-center mb-1 text-green-500'>
+                    <TrendingUp className='w-3 h-3 mr-0.5' />
+                    Increasing
+                  </span>
+                ) : (
+                  <span className='text-xs flex items-center mb-1 text-red-500'>
+                    <TrendingDown className='w-3 h-3 mr-0.5' />
+                    Decreasing
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div className='bg-gray-200 p-5 rounded-xl flex-1 flex flex-col min-h-0'>
         <div className='bg-white rounded-lg shadow-sm border border-gray-200 flex-1 flex flex-col min-h-0'>
           <div className='p-4 border-b border-gray-200 flex-shrink-0'>
@@ -302,7 +421,9 @@ export default function RoyalConciergeList () {
                       d='M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 01-.659 1.591l-5.432 5.432a2.25 2.25 0 00-.659 1.591v2.927a2.25 2.25 0 01-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 00-.659 1.591L3.659 7.409A2.25 2.25 0 013 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0112 3z'
                     />
                   </svg>
-                  <span className='text-xs text-gray-700 font-medium'>Filters</span>
+                  <span className='text-xs text-gray-700 font-medium'>
+                    Filters
+                  </span>
                 </button>
 
                 <button
@@ -322,7 +443,9 @@ export default function RoyalConciergeList () {
                       d='M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3'
                     />
                   </svg>
-                  <span className='ml-2 text-xs text-gray-700 font-medium'>Export</span>
+                  <span className='ml-2 text-xs text-gray-700 font-medium'>
+                    Export
+                  </span>
                 </button>
               </div>
             </div>

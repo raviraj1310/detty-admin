@@ -71,7 +71,9 @@ const mapUser = d => {
     createdOn,
     createdTs,
     status,
-    avatar: d?.avatar || '/images/backend/side_menu/side_menu (1).svg'
+    avatar: d?.avatar || '/images/backend/side_menu/side_menu (1).svg',
+    bookingCounts: Number(d?.bookingCounts || 0),
+    bookingTotalAmount: Number(d?.bookingValues?.totalAmount || 0)
   }
 }
 
@@ -1280,19 +1282,27 @@ export default function UsersForm () {
                 Avg Daily Growth (Count)
               </p>
               <div className='flex items-end gap-2'>
-                <p className='text-2xl text-black font-bold'>
-                  {globalStats.avgGrowthCount}
-                </p>
                 {globalStats.isCountIncreasing ? (
-                  <span className='text-xs flex items-center mb-1 text-green-600'>
-                    <TrendingUp className='w-3 h-3 mr-0.5' />
-                    Increasing
-                  </span>
+                  <>
+                    <p className='text-2xl text-green-600 font-bold'>
+                      {globalStats.avgGrowthCount}
+                    </p>
+                    <span className='text-xs flex items-center mb-1 text-green-600'>
+                      <TrendingUp className='w-3 h-3 mr-0.5' />
+                      Increasing
+                    </span>
+                  </>
                 ) : (
-                  <span className='text-xs flex items-center mb-1 text-red-600'>
-                    <TrendingDown className='w-3 h-3 mr-0.5' />
-                    Decreasing
-                  </span>
+                  <>
+                    <p className='text-2xl text-black font-bold'>
+                      {globalStats.avgGrowthCount}
+                    </p>
+
+                    <span className='text-xs flex items-center mb-1 text-red-600'>
+                      <TrendingDown className='w-3 h-3 mr-0.5' />
+                      Decreasing
+                    </span>
+                  </>
                 )}
               </div>
             </div>
@@ -1310,19 +1320,27 @@ export default function UsersForm () {
                 Avg Daily Growth (%)
               </p>
               <div className='flex items-end gap-2'>
-                <p className='text-2xl text-black font-bold'>
-                  {globalStats.avgGrowthPercent}
-                </p>
                 {globalStats.isPctIncreasing ? (
-                  <span className='text-xs flex items-center mb-1 text-green-600'>
-                    <TrendingUp className='w-3 h-3 mr-0.5' />
-                    Increasing
-                  </span>
+                  <>
+                    <p className='text-2xl text-green-600 font-bold'>
+                      {globalStats.avgGrowthPercent}
+                    </p>
+                    <span className='text-xs flex items-center mb-1 text-green-600'>
+                      <TrendingUp className='w-3 h-3 mr-0.5' />
+                      Increasing
+                    </span>
+                  </>
                 ) : (
-                  <span className='text-xs flex items-center mb-1 text-red-600'>
-                    <TrendingDown className='w-3 h-3 mr-0.5' />
-                    Decreasing
-                  </span>
+                  <>
+                    <p className='text-2xl text-red-600 font-bold'>
+                      {globalStats.avgGrowthPercent}
+                    </p>
+
+                    <span className='text-xs flex items-center mb-1 text-red-600'>
+                      <TrendingDown className='w-3 h-3 mr-0.5' />
+                      Decreasing
+                    </span>
+                  </>
                 )}
               </div>
             </div>
@@ -1596,9 +1614,14 @@ export default function UsersForm () {
                               `/users/view-booked-tickets/${id}?${qs}`
                             )
                           }}
-                          className='text-blue-600 underline hover:text-blue-800 transition-colors text-xs'
+                          className='text-blue-800 font-bold underline hover:text-blue-800 transition-colors text-xs'
+                          title='total bookings and total amount spent'
                         >
-                          View Bookings
+                          {typeof user.bookingCounts === 'number'
+                            ? `${user.bookingCounts} (₦${Number(
+                                user.bookingTotalAmount || 0
+                              ).toLocaleString()})`
+                            : 'View Bookings'}
                         </button>
                       </td>
                       <td className='px-3 py-4'>
