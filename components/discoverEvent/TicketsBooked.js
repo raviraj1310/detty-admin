@@ -340,23 +340,45 @@ export default function TicketsBooked () {
       return
     }
 
+    const toLocal = v => {
+      if (!v) return '-'
+      const x = typeof v === 'object' && v.$date ? v.$date : v
+      const t = Date.parse(x)
+      return Number.isFinite(t) ? new Date(x).toLocaleString() : String(v)
+    }
+
     const dataToExport = bookings.map(b => ({
-      'Booking ID': b.bookingId || b.id,
-      'Booked On': (() => {
-        const d = b.bookedOn || b.createdAt
-        return d ? new Date(d).toLocaleString() : '-'
-      })(),
-      'Event Name': b.event?.eventName || summary?.eventName || '-',
-      Location: b.event?.location || '-',
-      'User Name': b.buyer?.fullName || b.userName || '-',
-      Email: b.buyer?.email || b.email || '-',
-      Phone: b.buyer?.phone || b.phoneNumber || '-',
-      'Ticket Name': b.ticketName || '-',
-      Quantity: b.quantity || 1,
-      'Price Per Ticket': b.ticketId?.perTicketPrice || b.perTicketPrice || 0,
-      'Total Price': b.totalPrice || b.amount || 0,
+      'Booking ID': b.bookingId || b.id || '',
+      'Booked On': toLocal(b.bookedOn || b.createdAt || b.updatedAt),
       'Payment Status': b.paymentStatus || '-',
       Status: b.status || '-',
+      'Event ID': (b.event && (b.event._id || b.event.id)) || '',
+      'Event Name': (b.event && b.event.eventName) || summary?.eventName || '-',
+      'Event Slug': (b.event && b.event.slug) || '-',
+      Location: (b.event && b.event.location) || '-',
+      'Event Start Date': toLocal(b.event && b.event.eventStartDate),
+      'Event End Date': toLocal(b.event && b.event.eventEndDate),
+      Image: (b.event && b.event.image) || '-',
+      'Buyer Name': (b.buyer && b.buyer.fullName) || b.userName || '-',
+      'Buyer Email': (b.buyer && b.buyer.email) || b.email || '-',
+      'Buyer Country': (b.buyer && b.buyer.country) || '-',
+      'Buyer City': (b.buyer && b.buyer.city) || '-',
+      'Buyer Phone': (b.buyer && b.buyer.phone) || b.phoneNumber || '-',
+      'User Name': (b.user && (b.user.name || b.user.fullName)) || '-',
+      'User Email': (b.user && b.user.email) || '-',
+      'Ticket Name': b.ticketName || '-',
+      'Ticket Type': b.ticketType || '-',
+      Quantity: typeof b.quantity === 'number' ? b.quantity : 0,
+      'Price Per Ticket':
+        (b.ticketId && b.ticketId.perTicketPrice) ||
+        (typeof b.perTicketPrice === 'number' ? b.perTicketPrice : 0),
+      'Total Price':
+        typeof b.totalPrice === 'number'
+          ? b.totalPrice
+          : typeof b.amount === 'number'
+          ? b.amount
+          : 0,
+      'Arrival Date': toLocal(b.arrivalDate),
       Attendees: Array.isArray(b.attendees)
         ? b.attendees.map(a => a.fullName).join(', ')
         : '-'
@@ -366,7 +388,12 @@ export default function TicketsBooked () {
     const wb = XLSX.utils.book_new()
     XLSX.utils.book_append_sheet(wb, ws, 'Bookings')
 
-    const filename = `${summary?.eventName || 'Event_Bookings'}.xlsx`
+    const nameForFile = (
+      bookings[0]?.event?.eventName ||
+      summary?.eventName ||
+      'Event Bookings'
+    ).replace(/[\\/:*?"<>|]+/g, '-')
+    const filename = `${nameForFile}.xlsx`
     XLSX.writeFile(wb, filename)
   }
 
