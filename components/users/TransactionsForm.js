@@ -758,40 +758,44 @@ export default function TransactionsForm () {
       {/* Stats Cards */}
       <div className='grid grid-cols-1 md:grid-cols-3 gap-4 mb-6'>
         {/* Total Bookings Yesterday */}
-        <div className='bg-indigo-600 text-white p-4 rounded-lg'>
+        <div className='bg-indigo-300 text-white p-4 rounded-lg'>
           <div className='flex items-center'>
             <div className='bg-white p-2 rounded-lg mr-3'>
               <Ticket className='w-6 h-6 text-indigo-600' />
             </div>
             <div>
-              <p className='text-xs opacity-90'>
+              <p className='text-xs text-black opacity-90'>
                 Total Bookings Yesterday{' '}
                 <span className='text-[10px] opacity-75'>
                   ({stats.yesterdayDateStr})
                 </span>
               </p>
-              <p className='text-2xl font-bold'>{stats.yesterdayCount}</p>
+              <p className='text-2xl text-black font-bold'>{stats.yesterdayCount}</p>
             </div>
           </div>
         </div>
 
         {/* Avg Daily Growth (Count) */}
-        <div className='bg-purple-600 text-white p-4 rounded-lg'>
+        <div className='bg-purple-300 text-white p-4 rounded-lg'>
           <div className='flex items-center'>
             <div className='bg-white p-2 rounded-lg mr-3'>
               <TrendingUp className='w-6 h-6 text-purple-600' />
             </div>
             <div>
-              <p className='text-xs opacity-90'>Avg Daily Growth (Count)</p>
+              <p className='text-xs text-black opacity-90'>
+                Avg Daily Growth (Count)
+              </p>
               <div className='flex items-end gap-2'>
-                <p className='text-2xl font-bold'>{stats.avgGrowthCount}</p>
+                <p className='text-2xl text-black font-bold'>
+                  {stats.avgGrowthCount}
+                </p>
                 {stats.isCountIncreasing ? (
-                  <span className='text-xs flex items-center mb-1 text-green-200'>
+                  <span className='text-xs flex items-center mb-1 text-green-500'>
                     <TrendingUp className='w-3 h-3 mr-0.5' />
                     Increasing
                   </span>
                 ) : (
-                  <span className='text-xs flex items-center mb-1 text-red-200'>
+                  <span className='text-xs flex items-center mb-1 text-red-500'>
                     <TrendingDown className='w-3 h-3 mr-0.5' />
                     Decreasing
                   </span>
@@ -802,22 +806,26 @@ export default function TransactionsForm () {
         </div>
 
         {/* Avg Daily Growth (%) */}
-        <div className='bg-teal-600 text-white p-4 rounded-lg'>
+        <div className='bg-teal-300 text-white p-4 rounded-lg'>
           <div className='flex items-center'>
             <div className='bg-white p-2 rounded-lg mr-3'>
-              <BarChart2 className='w-6 h-6 text-teal-600' />
+              <BarChart2 className='w-6 h-6 text-teal-900' />
             </div>
             <div>
-              <p className='text-xs opacity-90'>Avg Daily Growth (%)</p>
+              <p className='text-xs text-black opacity-90'>
+                Avg Daily Growth (%)
+              </p>
               <div className='flex items-end gap-2'>
-                <p className='text-2xl font-bold'>{stats.avgGrowthPercent}</p>
+                <p className='text-2xl text-black font-bold'>
+                  {stats.avgGrowthPercent}
+                </p>
                 {stats.isPctIncreasing ? (
-                  <span className='text-xs flex items-center mb-1 text-green-200'>
+                  <span className='text-xs flex items-center mb-1 text-green-500'>
                     <TrendingUp className='w-3 h-3 mr-0.5' />
                     Increasing
                   </span>
                 ) : (
-                  <span className='text-xs flex items-center mb-1 text-red-200'>
+                  <span className='text-xs flex items-center mb-1 text-red-500'>
                     <TrendingDown className='w-3 h-3 mr-0.5' />
                     Decreasing
                   </span>

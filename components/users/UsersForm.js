@@ -1189,7 +1189,7 @@ export default function UsersForm () {
       />
       {/* Stats Cards */}
       <div className='grid grid-cols-1 md:grid-cols-3 gap-4 mb-6'>
-        <div className='bg-blue-600 text-white p-4 rounded-lg'>
+        <div className='bg-blue-200 text-white p-4 rounded-lg'>
           <div className='flex items-center'>
             <div className='bg-white bg-opacity-20 p-2 rounded-lg mr-3'>
               <Image
@@ -1201,13 +1201,15 @@ export default function UsersForm () {
               />
             </div>
             <div>
-              <p className='text-xs opacity-90'>Total Users</p>
-              <p className='text-2xl font-bold'>{globalStats.total}</p>
+              <p className='text-xs text-black opacity-90'>Total Users</p>
+              <p className='text-2xl text-black font-bold'>
+                {globalStats.total}
+              </p>
             </div>
           </div>
         </div>
 
-        <div className='bg-green-600 text-white p-4 rounded-lg'>
+        <div className='bg-green-100 text-white p-4 rounded-lg'>
           <div className='flex items-center'>
             <div className='bg-white bg-opacity-20 p-2 rounded-lg mr-3'>
               <Image
@@ -1219,13 +1221,15 @@ export default function UsersForm () {
               />
             </div>
             <div>
-              <p className='text-xs opacity-90'>Active Users</p>
-              <p className='text-2xl font-bold'>{globalStats.active}</p>
+              <p className='text-xs text-black opacity-90'>Active Users</p>
+              <p className='text-2xl text-black font-bold'>
+                {globalStats.active}
+              </p>
             </div>
           </div>
         </div>
 
-        <div className='bg-red-600 text-white p-4 rounded-lg'>
+        <div className='bg-red-100 text-white p-4 rounded-lg'>
           <div className='flex items-center'>
             <div className='bg-white bg-opacity-20 p-2 rounded-lg mr-3'>
               <Image
@@ -1237,49 +1241,55 @@ export default function UsersForm () {
               />
             </div>
             <div>
-              <p className='text-xs opacity-90'>Inactive Users</p>
-              <p className='text-2xl font-bold'>{globalStats.inactive}</p>
+              <p className='text-xs text-black opacity-90'>Inactive Users</p>
+              <p className='text-2xl text-black font-bold'>
+                {globalStats.inactive}
+              </p>
             </div>
           </div>
         </div>
 
         {/* Total Bookings Yesterday */}
-        <div className='bg-indigo-600 text-white p-4 rounded-lg'>
+        <div className='bg-indigo-100 text-white p-4 rounded-lg'>
           <div className='flex items-center'>
             <div className='bg-white p-2 rounded-lg mr-3'>
               <UserPlus className='w-6 h-6 text-indigo-600' />
             </div>
             <div>
-              <p className='text-xs opacity-90'>
+              <p className='text-xs text-black opacity-90'>
                 New Registrations Yesterday{' '}
-                <span className='text-[10px] opacity-75'>
+                <span className='text-[10px] text-black opacity-75'>
                   ({globalStats.yesterdayDateStr})
                 </span>
               </p>
-              <p className='text-2xl font-bold'>{globalStats.yesterdayCount}</p>
+              <p className='text-2xl text-black font-bold'>
+                {globalStats.yesterdayCount}
+              </p>
             </div>
           </div>
         </div>
 
         {/* Avg Daily Growth (Count) */}
-        <div className='bg-purple-600 text-white p-4 rounded-lg'>
+        <div className='bg-purple-200 text-white p-4 rounded-lg'>
           <div className='flex items-center'>
             <div className='bg-white p-2 rounded-lg mr-3'>
               <TrendingUp className='w-6 h-6 text-purple-600' />
             </div>
             <div>
-              <p className='text-xs opacity-90'>Avg Daily Growth (Count)</p>
+              <p className='text-xs text-black opacity-90'>
+                Avg Daily Growth (Count)
+              </p>
               <div className='flex items-end gap-2'>
-                <p className='text-2xl font-bold'>
+                <p className='text-2xl text-black font-bold'>
                   {globalStats.avgGrowthCount}
                 </p>
                 {globalStats.isCountIncreasing ? (
-                  <span className='text-xs flex items-center mb-1 text-green-200'>
+                  <span className='text-xs flex items-center mb-1 text-green-600'>
                     <TrendingUp className='w-3 h-3 mr-0.5' />
                     Increasing
                   </span>
                 ) : (
-                  <span className='text-xs flex items-center mb-1 text-red-200'>
+                  <span className='text-xs flex items-center mb-1 text-red-600'>
                     <TrendingDown className='w-3 h-3 mr-0.5' />
                     Decreasing
                   </span>
@@ -1290,24 +1300,26 @@ export default function UsersForm () {
         </div>
 
         {/* Avg Daily Growth (%) */}
-        <div className='bg-teal-600 text-white p-4 rounded-lg'>
+        <div className='bg-teal-200 text-white p-4 rounded-lg'>
           <div className='flex items-center'>
             <div className='bg-white p-2 rounded-lg mr-3'>
               <BarChart2 className='w-6 h-6 text-teal-600' />
             </div>
             <div>
-              <p className='text-xs opacity-90'>Avg Daily Growth (%)</p>
+              <p className='text-xs text-black opacity-90'>
+                Avg Daily Growth (%)
+              </p>
               <div className='flex items-end gap-2'>
-                <p className='text-2xl font-bold'>
+                <p className='text-2xl text-black font-bold'>
                   {globalStats.avgGrowthPercent}
                 </p>
                 {globalStats.isPctIncreasing ? (
-                  <span className='text-xs flex items-center mb-1 text-green-200'>
+                  <span className='text-xs flex items-center mb-1 text-green-600'>
                     <TrendingUp className='w-3 h-3 mr-0.5' />
                     Increasing
                   </span>
                 ) : (
-                  <span className='text-xs flex items-center mb-1 text-red-200'>
+                  <span className='text-xs flex items-center mb-1 text-red-600'>
                     <TrendingDown className='w-3 h-3 mr-0.5' />
                     Decreasing
                   </span>
