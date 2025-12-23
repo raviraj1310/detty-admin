@@ -577,8 +577,8 @@ export default function MerchandiseList () {
           </div>
         </div>
 
-        <div className='overflow-visible rounded-xl border border-[#E5E8F5]'>
-          <div className='grid grid-cols-[13%_20%_10%_10%_10%_10%_10%_9%_8%] bg-[#F7F9FD] px-3 py-2.5'>
+        <div className='rounded-xl border border-[#E5E8F5]'>
+          <div className='grid grid-cols-[14%_20%_10%_9%_9%_9%_9%_10%_10%] gap-1 bg-[#F7F9FD] px-3 py-2.5'>
             <div>
               <TableHeaderCell
                 onClick={() => handleSort('addedOn')}
@@ -655,7 +655,7 @@ export default function MerchandiseList () {
                 Status
               </TableHeaderCell>
             </div>
-            <div className='flex justify-end'>
+            <div className='flex justify-center'>
               <TableHeaderCell align='right'>Action</TableHeaderCell>
             </div>
           </div>
@@ -664,7 +664,7 @@ export default function MerchandiseList () {
             {filteredRows.map(item => (
               <div
                 key={item.rowKey}
-                className='grid grid-cols-[13%_20%_10%_10%_10%_10%_10%_9%_8%] px-3 py-2.5 hover:bg-[#F9FAFD] relative'
+                className='grid grid-cols-[14%_20%_10%_9%_9%_9%_9%_10%_10%] gap-1 px-3 py-2.5 hover:bg-[#F9FAFD] relative'
               >
                 <div className='self-center text-xs text-[#5E6582] line-clamp-2'>
                   {item.addedOn}
@@ -725,7 +725,7 @@ export default function MerchandiseList () {
                     {item.status}
                   </span>
                 </div>
-                <div className='relative flex items-center justify-end gap-1 z-10'>
+                <div className='relative flex items-center justify-center gap-1 z-10'>
                   <span className='relative z-10'>
                     <button
                       onClick={() =>
@@ -746,7 +746,7 @@ export default function MerchandiseList () {
                     {activeDropdown === item.rowKey && (
                       <div
                         ref={dropdownRef}
-                        className='absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white z-[100]'
+                        className='absolute right-full top-0 mr-2 w-48 rounded-md shadow-lg bg-white z-[100]'
                       >
                         <div className='py-1'>
                           <Link

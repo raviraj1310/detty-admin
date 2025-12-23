@@ -387,17 +387,17 @@ export default function EsimUsersPage () {
               <h2 className='text-lg font-semibold text-gray-900'>
                 Internet Connectivity
               </h2>
-              <div className='flex items-center space-x-4'>
+              <div className='flex items-center space-x-3'>
                 <div className='relative'>
                   <input
                     type='text'
                     placeholder='Search'
                     value={searchTerm}
                     onChange={e => setSearchTerm(e.target.value)}
-                    className='pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500'
+                    className='h-9 pl-10 pr-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs text-gray-900 placeholder-gray-500'
                   />
                   <svg
-                    className='w-5 h-5 text-gray-600 absolute left-3 top-2.5'
+                    className='w-4 h-4 text-gray-600 absolute left-3 top-2.5'
                     fill='none'
                     stroke='currentColor'
                     viewBox='0 0 24 24'
@@ -414,7 +414,7 @@ export default function EsimUsersPage () {
                 {/* Download */}
                 <button
                   onClick={handleDownloadExcel}
-                  className='flex items-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 bg-white'
+                  className='h-9 flex items-center px-4 border border-gray-300 rounded-lg hover:bg-gray-50 bg-white'
                 >
                   <svg
                     className='w-4 h-4 text-gray-600'
@@ -429,16 +429,16 @@ export default function EsimUsersPage () {
                       d='M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3'
                     />
                   </svg>
-                  <span className='ml-2 text-gray-700 font-medium'>Export</span>
+                  <span className='ml-2 text-xs text-gray-700 font-medium'>Export</span>
                 </button>
               </div>
             </div>
-            <div className='flex space-x-2'>
+            <div className='flex flex-wrap gap-1.5'>
               {filterTabs.map(tab => (
                 <button
                   key={tab.id}
                   onClick={() => handleTabClick(tab.id)}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors border ${
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border whitespace-nowrap ${
                     tab.id === activeTab
                       ? 'bg-orange-500 text-white border-orange-500'
                       : 'bg-white text-gray-700 hover:bg-gray-50 border-gray-300'

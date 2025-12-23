@@ -470,19 +470,19 @@ export default function DiscoverEvents() {
         })}
       </div>
 
-      <div className="rounded-[30px] border border-[#E1E6F7] bg-white p-6 shadow-[0_24px_60px_-40px_rgba(15,23,42,0.55)]">
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-          <h2 className="text-lg font-semibold text-slate-900">Events List</h2>
-          <div className="flex flex-wrap items-center gap-3">
+      <div className="rounded-2xl border border-[#E1E6F7] bg-white p-4 shadow-[0_24px_60px_-40px_rgba(15,23,42,0.55)]">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-base font-semibold text-slate-900">Events List</h2>
+          <div className="flex flex-wrap items-center gap-2">
             <div className="relative flex items-center">
               <input
                 type="text"
                 placeholder="Search"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="h-10 rounded-xl border border-[#E5E6EF] bg-[#F8F9FC] pl-10 pr-4 text-sm text-slate-700 placeholder:text-[#B0B7D0] focus:border-[#C5CAE3] focus:outline-none focus:ring-2 focus:ring-[#C2C8E4]"
+                className="h-8 rounded-lg border border-[#E5E6EF] bg-[#F8F9FC] pl-8 pr-3 text-xs text-slate-700 placeholder:text-[#B0B7D0] focus:border-[#C5CAE3] focus:outline-none focus:ring-2 focus:ring-[#C2C8E4]"
               />
-              <Search className="absolute left-3 h-4 w-4 text-[#A6AEC7]" />
+              <Search className="absolute left-2.5 h-3.5 w-3.5 text-[#A6AEC7]" />
             </div>
             {filtersOpen && (
               <>
@@ -490,7 +490,7 @@ export default function DiscoverEvents() {
                   <select
                     value={typeFilter}
                     onChange={(e) => setTypeFilter(e.target.value)}
-                    className="h-10 rounded-xl border border-[#E5E6EF] bg-white px-3 text-sm text-slate-700 focus:border-[#C5CAE3] focus:outline-none"
+                    className="h-8 rounded-lg border border-[#E5E6EF] bg-white px-2 text-xs text-slate-700 focus:border-[#C5CAE3] focus:outline-none"
                   >
                     <option value="">All Types</option>
                     {typeOptions.map((t) => (
@@ -506,7 +506,7 @@ export default function DiscoverEvents() {
                     placeholder="Location"
                     value={locationFilter}
                     onChange={(e) => setLocationFilter(e.target.value)}
-                    className="h-10 rounded-xl border border-[#E5E6EF] bg-[#F8F9FC] px-3 text-sm text-slate-700 placeholder:text-[#B0B7D0] focus:border-[#C5CAE3] focus:outline-none"
+                    className="h-8 rounded-lg border border-[#E5E6EF] bg-[#F8F9FC] px-2 text-xs text-slate-700 placeholder:text-[#B0B7D0] focus:border-[#C5CAE3] focus:outline-none"
                   />
                 </div>
               </>
@@ -514,20 +514,20 @@ export default function DiscoverEvents() {
             <button
               onClick={() => setFiltersOpen((prev) => !prev)}
               aria-expanded={filtersOpen}
-              className="flex h-10 items-center gap-2 rounded-xl border border-[#E5E6EF] bg-white px-4 text-sm font-medium text-[#2D3658] transition hover:bg-[#F6F7FD]"
+              className="flex h-8 items-center gap-1.5 rounded-lg border border-[#E5E6EF] bg-white px-3 text-xs font-medium text-[#2D3658] transition hover:bg-[#F6F7FD]"
             >
-              <IoFilterSharp className="h-4 w-4 text-[#8B93AF]" />
+              <IoFilterSharp className="h-3.5 w-3.5 text-[#8B93AF]" />
               {filtersOpen ? "Hide Filters" : "Filters"}
             </button>
-            <button className="flex h-10 items-center gap-2 rounded-xl border border-[#E5E6EF] bg-white px-4 text-sm font-medium text-[#2D3658] transition hover:bg-[#F6F7FD]">
-              <Download className="h-4 w-4 text-[#8B93AF]" />
+            <button className="flex h-8 items-center gap-1.5 rounded-lg border border-[#E5E6EF] bg-white px-3 text-xs font-medium text-[#2D3658] transition hover:bg-[#F6F7FD]">
+              <Download className="h-3.5 w-3.5 text-[#8B93AF]" />
             </button>
           </div>
         </div>
 
-        <div className="overflow-x-auto rounded-2xl border border-[#E5E8F5]">
-          <div className="w-full min-w-[900px]">
-            <div className="grid grid-cols-[14%_22%_12%_10%_16%_10%_8%_8%] gap-1 bg-[#F7F9FD] px-3 py-3">
+        <div className="rounded-xl border border-[#E5E8F5] overflow-hidden">
+          <div className="w-full">
+            <div className="grid grid-cols-[13%_21%_11%_8%_17%_13%_9%_8%] bg-[#F7F9FD] px-2 py-3">
               <div>
                 <TableHeaderCell
                   onClick={() => handleSort("eventDate")}
@@ -573,7 +573,7 @@ export default function DiscoverEvents() {
                   Location
                 </TableHeaderCell>
               </div>
-              <div>
+              <div className="flex justify-center">
                 <TableHeaderCell
                   onClick={() => handleSort("ticketsBooked")}
                   active={sortBy === "ticketsBooked"}
@@ -582,7 +582,7 @@ export default function DiscoverEvents() {
                   Tickets Booked
                 </TableHeaderCell>
               </div>
-              <div>
+              <div className="flex justify-center">
                 <TableHeaderCell
                   onClick={() => handleSort("status")}
                   active={sortBy === "status"}
@@ -600,7 +600,7 @@ export default function DiscoverEvents() {
               {filteredRows.map((event) => (
                 <div
                   key={event.rowKey}
-                  className="grid grid-cols-[14%_22%_12%_10%_16%_10%_8%_8%] gap-1 px-3 py-3 hover:bg-[#F9FAFD]"
+                  className="grid grid-cols-[13%_21%_11%_8%_17%_13%_9%_8%] px-2 py-3 hover:bg-[#F9FAFD]"
                 >
                   <div className="self-center text-xs text-[#5E6582] line-clamp-2">
                     {event.eventDate}
@@ -640,7 +640,7 @@ export default function DiscoverEvents() {
                   <div className="self-center text-xs text-[#5E6582] line-clamp-2">
                     {event.location}
                   </div>
-                  <div className="flex items-center self-center text-xs font-semibold">
+                  <div className="flex items-center justify-center self-center text-xs font-semibold">
                     <Link
                       href={
                         event.id
@@ -655,31 +655,32 @@ export default function DiscoverEvents() {
                       View List
                     </Link>
                   </div>
-                  <div className="flex items-center">
+                  <div className="flex items-center justify-center self-center">
                     <span
-                      className={`rounded-full px-2 py-0.5 text-xs font-semibold ${event.statusClass}`}
+                      className={`rounded-full px-2 py-0.5 text-xs font-semibold whitespace-nowrap ${event.statusClass}`}
                     >
                       {event.status}
                     </span>
                   </div>
-                  <div className="relative flex items-center justify-end">
-                    <button
-                      onClick={() =>
-                        setActiveDropdown(
-                          activeDropdown === event.rowKey
-                            ? null
-                            : event.rowKey
-                        )
-                      }
-                      className="rounded-full border border-transparent p-1 text-[#8C93AF] transition hover:border-[#E5E8F6] hover:bg-[#F5F7FD] hover:text-[#2D3658]"
-                    >
-                      <MoreVertical className="h-4 w-4" />
-                    </button>
-                    {activeDropdown === event.rowKey && (
-                      <div
-                        ref={dropdownRef}
-                        className="absolute right-0 top-full mt-1 w-48 rounded-md shadow-lg bg-white z-50"
+                  <div className="flex items-center justify-end self-center">
+                    <div className="relative">
+                      <button
+                        onClick={() =>
+                          setActiveDropdown(
+                            activeDropdown === event.rowKey
+                              ? null
+                              : event.rowKey
+                          )
+                        }
+                        className="rounded-full border border-transparent p-1 text-[#8C93AF] transition hover:border-[#E5E8F6] hover:bg-[#F5F7FD] hover:text-[#2D3658]"
                       >
+                        <MoreVertical className="h-4 w-4" />
+                      </button>
+                      {activeDropdown === event.rowKey && (
+                        <div
+                          ref={dropdownRef}
+                          className="absolute right-0 top-full mt-1 w-48 rounded-md shadow-lg bg-white z-[100] border border-gray-200"
+                        >
                         <div className="py-1">
                           <Link
                             href={
@@ -719,8 +720,9 @@ export default function DiscoverEvents() {
                             Copy Event
                           </button>
                         </div>
-                      </div>
-                    )}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))}

@@ -378,12 +378,12 @@ export default function DIYPage () {
             </div>
 
             {/* Filter Tabs */}
-            <div className='flex space-x-2 mt-3'>
+            <div className='flex flex-wrap gap-2 mt-3'>
               {filterTabs.map(tab => (
                 <button
                   key={tab.id}
                   onClick={() => handleTabClick(tab.id)}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors border ${
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border whitespace-nowrap ${
                     tab.id === activeTab
                       ? 'bg-orange-500 text-white border-orange-500'
                       : 'bg-white text-gray-700 hover:bg-gray-50 border-gray-300'

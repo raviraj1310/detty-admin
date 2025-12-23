@@ -202,10 +202,10 @@ export default function InquiryList () {
 
   return (
     <div className='space-y-7 py-2 px-2'>
-      <div className='flex flex-col gap-4 md:flex-row md:items-start md:justify-between'>
-        <div className='flex flex-col gap-2'>
-          <h1 className='text-2xl font-semibold text-slate-900'>Inquiries</h1>
-          <p className='text-sm text-[#99A1BC]'>Dashboard / Inquiries</p>
+      <div className='flex flex-col gap-2 md:flex-row md:items-start md:justify-between'>
+        <div className='flex flex-col gap-1'>
+          <h1 className='text-xl font-semibold text-slate-900'>Inquiries</h1>
+          <p className='text-xs text-[#99A1BC]'>Dashboard / Inquiries</p>
         </div>
       </div>
 
@@ -238,33 +238,33 @@ export default function InquiryList () {
         ))}
       </div>
 
-      <div className='rounded-[30px] border border-[#E1E6F7] bg-white p-6 shadow-[0_24px_60px_-40px_rgba(15,23,42,0.55)]'>
-        <div className='mb-6 flex flex-wrap items-center justify-between gap-4'>
-          <h2 className='text-lg font-semibold text-slate-900'>Inquiry List</h2>
-          <div className='flex flex-wrap items-center gap-3'>
+      <div className='rounded-2xl border border-[#E1E6F7] bg-white p-4 shadow-[0_24px_60px_-40px_rgba(15,23,42,0.55)]'>
+        <div className='mb-4 flex flex-wrap items-center justify-between gap-3'>
+          <h2 className='text-sm font-semibold text-slate-900'>Inquiry List</h2>
+          <div className='flex flex-wrap items-center gap-2'>
             <div className='relative flex items-center'>
               <input
                 type='text'
                 placeholder='Search'
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
-                className='h-10 rounded-xl border border-[#E5E6EF] bg-[#F8F9FC] pl-10 pr-4 text-sm text-slate-700 placeholder:text-[#B0B7D0] focus:border-[#C5CAE3] focus:outline-none focus:ring-2 focus:ring-[#C2C8E4]'
+                className='h-8 rounded-lg border border-[#E5E6EF] bg-[#F8F9FC] pl-8 pr-3 text-xs text-slate-700 placeholder:text-[#B0B7D0] focus:border-[#C5CAE3] focus:outline-none focus:ring-2 focus:ring-[#C2C8E4]'
               />
-              <Search className='absolute left-3 h-4 w-4 text-[#A6AEC7]' />
+              <Search className='absolute left-2.5 h-3.5 w-3.5 text-[#A6AEC7]' />
             </div>
             <button
-              className='flex h-10 items-center gap-2 rounded-xl border border-[#E5E6EF] bg-white px-4 text-sm font-medium text-[#2D3658] transition hover:bg-[#F6F7FD]'
+              className='flex h-8 items-center gap-1.5 rounded-lg border border-[#E5E6EF] bg-white px-3 text-xs font-medium text-[#2D3658] transition hover:bg-[#F6F7FD]'
               onClick={downloadCsv}
             >
-              <Download className='h-4 w-4 text-[#8B93AF]' />
+              <Download className='h-3.5 w-3.5 text-[#8B93AF]' />
             </button>
-            <div className='flex items-center gap-3'>
-              <label className='text-sm text-[#2D3658]'>
+            <div className='flex items-center gap-2'>
+              <label className='flex items-center gap-1.5 text-xs text-[#2D3658]'>
                 Show
                 <select
                   value={limit}
                   onChange={e => setLimit(Number(e.target.value) || 20)}
-                  className='ml-2 px-2 py-1 border border-[#E5E6EF] rounded'
+                  className='h-8 px-2 border border-[#E5E6EF] rounded-lg text-xs'
                 >
                   <option value={10}>10</option>
                   <option value={20}>20</option>
@@ -276,17 +276,17 @@ export default function InquiryList () {
                 <button
                   onClick={() => setPage(p => Math.max(1, p - 1))}
                   disabled={page <= 1 || loading}
-                  className='h-10 px-3 py-1.5 border border-[#E5E6EF] rounded bg-white disabled:opacity-50'
+                  className='h-8 px-3 py-1.5 border border-[#E5E6EF] rounded-lg bg-white text-xs font-medium text-[#2D3658] disabled:opacity-50 hover:bg-[#F6F7FD]'
                 >
                   Prev
                 </button>
-                <span className='text-sm text-[#2D3658]'>
+                <span className='text-xs text-[#2D3658]'>
                   Page {page} of {pageCount}
                 </span>
                 <button
                   onClick={() => setPage(p => Math.min(pageCount, p + 1))}
                   disabled={page >= pageCount || loading}
-                  className='h-10 px-3 py-1.5 border border-[#E5E6EF] rounded bg-white disabled:opacity-50'
+                  className='h-8 px-3 py-1.5 border border-[#E5E6EF] rounded-lg bg-white text-xs font-medium text-[#2D3658] disabled:opacity-50 hover:bg-[#F6F7FD]'
                 >
                   Next
                 </button>
@@ -295,96 +295,111 @@ export default function InquiryList () {
           </div>
         </div>
 
-        <div className='overflow-visible rounded-2xl border border-[#E5E8F5]'>
-          <div className='grid grid-cols-[1.2fr_1.8fr_1.6fr_1.4fr_1.8fr_1.2fr_2fr] gap-2 bg-[#F7F9FD] px-4 py-3'>
-            <div>
-              <TableHeaderCell onClick={() => toggleSort('date')}>
-                Submitted On
-              </TableHeaderCell>
-            </div>
-            <div>
-              <TableHeaderCell onClick={() => toggleSort('name')}>
-                Name
-              </TableHeaderCell>
-            </div>
-            <div>
-              <TableHeaderCell onClick={() => toggleSort('email')}>
-                Email
-              </TableHeaderCell>
-            </div>
-            <div>
-              <TableHeaderCell onClick={() => toggleSort('contactNumber')}>
-                Contact Number
-              </TableHeaderCell>
-            </div>
-            <div>
-              <TableHeaderCell onClick={() => toggleSort('relatedName')}>
-                Event/Activity
-              </TableHeaderCell>
-            </div>
-            <div>
-              <TableHeaderCell onClick={() => toggleSort('inquiryType')}>
-                Inquiry Type
-              </TableHeaderCell>
-            </div>
-            <div>
-              <TableHeaderCell>Message</TableHeaderCell>
-            </div>
-          </div>
-
-          <div className='divide-y divide-[#EEF1FA] bg-white'>
-            {loading && (
-              <div className='px-4 py-3 text-sm text-[#5E6582]'>Loading...</div>
-            )}
-            {error && !loading && (
-              <div className='px-4 py-3 text-sm text-red-600'>{error}</div>
-            )}
-            {!loading &&
-              !error &&
-              sorted.map((s, idx) => (
-                <div
-                  key={s.id || idx}
-                  className='grid grid-cols-[1.2fr_1.8fr_1.6fr_1.4fr_1.8fr_1.2fr_2fr] gap-2 px-4 py-3 hover:bg-[#F9FAFD]'
-                >
-                  <div className='self-center text-sm text-[#5E6582]'>
-                    {(() => {
-                      const d = s.createdOn
-                      if (!d || d === '-') return '-'
-                      const date = new Date(d)
-                      return date.toLocaleString(undefined, {
-                        weekday: 'short',
-                        day: '2-digit',
-                        month: 'long',
-                        year: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })
-                    })()}
-                  </div>
-                  <div className='self-center text-sm text-[#5E6582] truncate'>
-                    {s.name || '-'}
-                  </div>
-                  <div className='self-center text-sm text-[#5E6582] truncate'>
-                    {s.email || '-'}
-                  </div>
-                  <div className='self-center text-sm text-[#5E6582] truncate'>
-                    {s.contactNumber || '-'}
-                  </div>
-                  <div className='self-center text-sm text-[#5E6582] truncate'>
-                    {s.relatedName || '-'}
-                  </div>
-                  <div className='self-center text-sm text-[#5E6582] truncate'>
-                    {s.inquiryType || '-'}
-                  </div>
-                  <div
-                    className='self-center text-sm text-[#5E6582] truncate cursor-pointer'
-                    title={String(s.message || '')}
-                  >
-                    {s.message || '-'}
-                  </div>
-                </div>
-              ))}
-          </div>
+        <div className='overflow-x-auto rounded-lg border border-gray-200'>
+          <table className='w-full'>
+            <thead className='bg-gray-50'>
+              <tr>
+                <th className='px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase'>
+                  <TableHeaderCell onClick={() => toggleSort('date')}>
+                    Submitted On
+                  </TableHeaderCell>
+                </th>
+                <th className='px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase'>
+                  <TableHeaderCell onClick={() => toggleSort('name')}>
+                    Name
+                  </TableHeaderCell>
+                </th>
+                <th className='px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase'>
+                  <TableHeaderCell onClick={() => toggleSort('email')}>
+                    Email
+                  </TableHeaderCell>
+                </th>
+                <th className='px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase'>
+                  <TableHeaderCell onClick={() => toggleSort('contactNumber')}>
+                    Contact Number
+                  </TableHeaderCell>
+                </th>
+                <th className='px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase'>
+                  <TableHeaderCell onClick={() => toggleSort('relatedName')}>
+                    Event/Activity
+                  </TableHeaderCell>
+                </th>
+                <th className='px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase'>
+                  <TableHeaderCell onClick={() => toggleSort('inquiryType')}>
+                    Inquiry Type
+                  </TableHeaderCell>
+                </th>
+                <th className='px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase'>
+                  <TableHeaderCell>Message</TableHeaderCell>
+                </th>
+              </tr>
+            </thead>
+            <tbody className='bg-white divide-y divide-gray-200'>
+              {loading && (
+                <tr>
+                  <td colSpan={7} className='px-4 py-4 text-sm text-gray-500 text-center'>
+                    Loading...
+                  </td>
+                </tr>
+              )}
+              {error && !loading && (
+                <tr>
+                  <td colSpan={7} className='px-4 py-4 text-sm text-red-600 text-center'>
+                    {error}
+                  </td>
+                </tr>
+              )}
+              {!loading && !error && sorted.length === 0 && (
+                <tr>
+                  <td colSpan={7} className='px-4 py-4 text-sm text-gray-500 text-center'>
+                    No inquiries found.
+                  </td>
+                </tr>
+              )}
+              {!loading &&
+                !error &&
+                sorted.map((s, idx) => (
+                  <tr key={s.id || idx} className='hover:bg-gray-50'>
+                    <td className='px-4 py-4 whitespace-nowrap text-sm text-gray-500'>
+                      {(() => {
+                        const d = s.createdOn
+                        if (!d || d === '-') return '-'
+                        const date = new Date(d)
+                        return date.toLocaleString(undefined, {
+                          weekday: 'short',
+                          day: '2-digit',
+                          month: 'long',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })
+                      })()}
+                    </td>
+                    <td className='px-4 py-4 whitespace-nowrap text-sm text-gray-900'>
+                      {s.name || '-'}
+                    </td>
+                    <td className='px-4 py-4 whitespace-nowrap text-sm text-gray-500'>
+                      {s.email || '-'}
+                    </td>
+                    <td className='px-4 py-4 whitespace-nowrap text-sm text-gray-500'>
+                      {s.contactNumber || '-'}
+                    </td>
+                    <td className='px-4 py-4 whitespace-nowrap text-sm text-gray-500'>
+                      {s.relatedName || '-'}
+                    </td>
+                    <td className='px-4 py-4 whitespace-nowrap text-sm text-gray-500'>
+                      {s.inquiryType || '-'}
+                    </td>
+                    <td
+                      className='px-4 py-4 text-sm text-gray-500 max-w-xs truncate cursor-pointer'
+                      title={String(s.message || '')}
+                    >
+                      {s.message || '-'}
+                    </td>
+                  </tr>
+                ))}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>

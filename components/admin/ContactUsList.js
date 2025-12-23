@@ -8,10 +8,25 @@ import {
   downloadContactsCSV
 } from '@/services/contact-us/contact.service'
 
-const cardDefs = [
-  { id: 'total', title: 'Total Messages', bg: 'bg-[#1F57D6]', Icon: Mail },
-  { id: 'new', title: 'New Today', bg: 'bg-[#15803D]', Icon: PlusCircle },
-  { id: 'resolved', title: 'Resolved', bg: 'bg-[#B91C1C]', Icon: AlertCircle }
+const metricCards = [
+  {
+    id: 'total',
+    title: 'Total Messages',
+    iconSrc: '/images/backend/icons/icons (3).svg',
+    bg: 'bg-[#4F46E5]'
+  },
+  {
+    id: 'new',
+    title: 'New Today',
+    iconSrc: '/images/backend/icons/icons (5).svg',
+    bg: 'bg-[#059669]'
+  },
+  {
+    id: 'resolved',
+    title: 'Resolved',
+    iconSrc: '/images/backend/icons/icons (4).svg',
+    bg: 'bg-[#DC2626]'
+  }
 ]
 
 const TableHeaderCell = ({ children, onClick }) => (
@@ -25,7 +40,7 @@ const TableHeaderCell = ({ children, onClick }) => (
   </button>
 )
 
-export default function ContactUsList () {
+export default function ContactUsList() {
   const [searchTerm, setSearchTerm] = useState('')
   const [contacts, setContacts] = useState([])
   const [metrics, setMetrics] = useState({ total: 0, new: 0, resolved: 0 })
@@ -43,8 +58,8 @@ export default function ContactUsList () {
         const list = Array.isArray(res?.data)
           ? res.data
           : Array.isArray(res)
-          ? res
-          : []
+            ? res
+            : []
         const mapped = list.map(d => {
           const created = d?.createdAt || ''
           const createdTs = created ? new Date(created).getTime() : 0
@@ -86,9 +101,7 @@ export default function ContactUsList () {
   }, [])
 
   const filtered = useMemo(() => {
-    const term = String(searchTerm || '')
-      .trim()
-      .toLowerCase()
+    const term = String(searchTerm || '').trim().toLowerCase()
     if (!term) return contacts
     const termDigits = term.replace(/[^0-9]/g, '')
     return contacts.filter(s => {
@@ -136,24 +149,13 @@ export default function ContactUsList () {
         case 'date':
           return (a.createdTs - b.createdTs) * dir
         case 'firstName':
-          return (
-            String(a.firstName || '').localeCompare(String(b.firstName || '')) *
-            dir
-          )
+          return String(a.firstName || '').localeCompare(String(b.firstName || '')) * dir
         case 'lastName':
-          return (
-            String(a.lastName || '').localeCompare(String(b.lastName || '')) *
-            dir
-          )
+          return String(a.lastName || '').localeCompare(String(b.lastName || '')) * dir
         case 'email':
-          return (
-            String(a.email || '').localeCompare(String(b.email || '')) * dir
-          )
+          return String(a.email || '').localeCompare(String(b.email || '')) * dir
         case 'subject':
-          return (
-            String(a.subject || '').localeCompare(String(b.subject || '')) * dir
-          )
-
+          return String(a.subject || '').localeCompare(String(b.subject || '')) * dir
         default:
           return 0
       }
@@ -172,55 +174,54 @@ export default function ContactUsList () {
       document.body.removeChild(a)
       URL.revokeObjectURL(url)
     } catch (e) {
-      const msg =
-        e?.response?.data?.message || e?.message || 'Failed to download CSV'
+      const msg = e?.response?.data?.message || e?.message || 'Failed to download CSV'
       setError(msg)
     }
   }
 
   return (
-    <div className='space-y-4 py-6 px-6'>
-      <div className='flex flex-col gap-1 md:flex-row md:items-start md:justify-between'>
+    <div className='space-y-4 py-4 px-6'>
+      <div className='flex flex-col gap-2 md:flex-row md:items-start md:justify-between'>
         <div className='flex flex-col gap-1'>
-          <h1 className='text-2xl font-semibold text-slate-900'>Contact Us</h1>
-          <p className='text-sm text-[#99A1BC]'>Dashboard / Contact Us</p>
+          <h1 className='text-xl font-semibold text-slate-900'>Contact Us</h1>
+          <p className='text-xs text-[#99A1BC]'>Dashboard / Contact Us</p>
         </div>
       </div>
 
-      <div className='grid grid-cols-1 md:grid-cols-3 gap-3 mb-4'>
-        {cardDefs.map(card => (
-          <div
-            key={card.id}
-            className={`${card.bg} rounded-xl p-3 text-white relative overflow-hidden`}
-          >
-            <div className='flex items-center justify-between'>
-              <div className='bg-white/10 p-2.5 rounded-xl flex-shrink-0'>
-                <card.Icon className='h-6 w-6 text-white' />
-              </div>
-              <div className='text-right'>
-                <p className='text-white/90 text-xs font-medium mb-1'>
-                  {card.title}
-                </p>
-                <p className='text-2xl font-bold text-white'>
-                  {String(
-                    card.id === 'total'
-                      ? metrics.total
-                      : card.id === 'new'
-                      ? metrics.new
-                      : metrics.resolved
-                  )}
-                </p>
+      <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-4'>
+        {metricCards.map(card => {
+          const value =
+            card.id === 'total'
+              ? metrics.total
+              : card.id === 'new'
+                ? metrics.new
+                : metrics.resolved
+          return (
+            <div
+              key={card.id}
+              className={`${card.bg} rounded-xl p-3 text-white relative overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300`}
+            >
+              <div className='flex items-center justify-between gap-2'>
+                <div className='bg-white/95 p-2.5 rounded-lg flex-shrink-0 shadow-sm'>
+                  <img src={card.iconSrc} alt={card.title} className='w-7 h-7' />
+                </div>
+                <div className='text-right flex-1 min-w-0'>
+                  <p className='text-white/95 text-xs font-medium mb-0.5 leading-tight'>
+                    {card.title}
+                  </p>
+                  <p className='text-2xl font-bold text-white tracking-tight'>
+                    {String(value)}
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          )
+        })}
       </div>
 
-      <div className='rounded-xl border border-[#E1E6F7] bg-white p-4 shadow-[0_24px_60px_-40px_rgba(15,23,42,0.55)]'>
-        <div className='mb-3 flex flex-wrap items-center justify-between gap-2'>
-          <h2 className='text-sm font-semibold text-slate-900'>
-            Contact us Enquiries
-          </h2>
+      <div className='rounded-2xl border border-[#E1E6F7] bg-white p-4 shadow-[0_24px_60px_-40px_rgba(15,23,42,0.55)]'>
+        <div className='mb-4 flex flex-wrap items-center justify-between gap-3'>
+          <h2 className='text-base font-semibold text-slate-900'>Contact Us Enquiries</h2>
           <div className='flex flex-wrap items-center gap-2'>
             <div className='relative flex items-center'>
               <input
@@ -241,84 +242,94 @@ export default function ContactUsList () {
           </div>
         </div>
 
-        <div className='overflow-visible rounded-lg border border-[#E5E8F5]'>
-          <div className='grid grid-cols-[1.2fr_1fr_1fr_1.8fr_1.6fr_2fr] gap-2 bg-[#F7F9FD] px-4 py-2.5'>
-            <div>
-              <TableHeaderCell onClick={() => toggleSort('date')}>
-                Submitted On
-              </TableHeaderCell>
+        <div className='rounded-xl border border-[#E5E8F5] overflow-hidden'>
+          <div className='w-full overflow-hidden'>
+            <div className='grid grid-cols-[14%_11%_11%_18%_14%_1fr] gap-3 bg-[#F7F9FD] px-4 py-3'>
+              <div>
+                <TableHeaderCell onClick={() => toggleSort('date')}>
+                  Submitted On
+                </TableHeaderCell>
+              </div>
+              <div>
+                <TableHeaderCell onClick={() => toggleSort('firstName')}>
+                  First Name
+                </TableHeaderCell>
+              </div>
+              <div>
+                <TableHeaderCell onClick={() => toggleSort('lastName')}>
+                  Last Name
+                </TableHeaderCell>
+              </div>
+              <div>
+                <TableHeaderCell onClick={() => toggleSort('email')}>
+                  Email
+                </TableHeaderCell>
+              </div>
+              <div>
+                <TableHeaderCell onClick={() => toggleSort('subject')}>
+                  Subject
+                </TableHeaderCell>
+              </div>
+              <div>
+                <TableHeaderCell>Message</TableHeaderCell>
+              </div>
             </div>
-            <div>
-              <TableHeaderCell onClick={() => toggleSort('firstName')}>
-                First Name
-              </TableHeaderCell>
-            </div>
-            <div>
-              <TableHeaderCell onClick={() => toggleSort('lastName')}>
-                Last Name
-              </TableHeaderCell>
-            </div>
-            <div>
-              <TableHeaderCell onClick={() => toggleSort('email')}>
-                Email
-              </TableHeaderCell>
-            </div>
-            <div>
-              <TableHeaderCell onClick={() => toggleSort('subject')}>
-                Subject
-              </TableHeaderCell>
-            </div>
-            <div>
-              <TableHeaderCell>Message</TableHeaderCell>
-            </div>
-          </div>
 
-          <div className='divide-y divide-[#EEF1FA] bg-white'>
-            {loading && (
-              <div className='px-4 py-3 text-sm text-[#5E6582]'>Loading...</div>
-            )}
-            {error && !loading && (
-              <div className='px-4 py-3 text-sm text-red-600'>{error}</div>
-            )}
-            {!loading &&
-              !error &&
-              sorted.map((s, idx) => (
-                <div
-                  key={s.id || idx}
-                  className='grid grid-cols-[1.2fr_1fr_1fr_1.8fr_1.6fr_2fr] gap-2 px-4 py-3 hover:bg-[#F9FAFD]'
-                >
-                  <div className='self-center text-sm text-[#5E6582]'>
-                    {(() => {
-                      const d = s.createdOn
-                      if (!d || d === '-') return '-'
-                      const date = new Date(d)
-                      return date.toLocaleString(undefined, {
-                        weekday: 'short',
-                        day: '2-digit',
-                        month: 'long',
-                        year: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })
-                    })()}
+            <div className='divide-y divide-[#EEF1FA] bg-white'>
+              {loading && (
+                <div className='px-4 py-3 text-xs text-[#5E6582]'>Loading...</div>
+              )}
+              {error && !loading && (
+                <div className='px-4 py-3 text-xs text-red-600'>{error}</div>
+              )}
+              {!loading &&
+                !error &&
+                sorted.map((s, idx) => (
+                  <div
+                    key={s.id || idx}
+                    className='grid grid-cols-[14%_11%_11%_18%_14%_1fr] gap-3 px-4 py-3 hover:bg-[#F9FAFD]'
+                  >
+                    <div className='self-center text-xs text-[#5E6582] line-clamp-2'>
+                      {(() => {
+                        const d = s.createdOn
+                        if (!d || d === '-') return '-'
+                        const date = new Date(d)
+                        return date.toLocaleString(undefined, {
+                          weekday: 'short',
+                          day: '2-digit',
+                          month: 'long',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })
+                      })()}
+                    </div>
+                    <div className='self-center text-xs font-semibold text-slate-900 line-clamp-2'>
+                      {s.firstName || '-'}
+                    </div>
+                    <div className='self-center text-xs font-semibold text-slate-900 line-clamp-2'>
+                      {s.lastName || '-'}
+                    </div>
+                    <div className='self-center text-xs text-[#5E6582] line-clamp-2'>
+                      {s.email || '-'}
+                    </div>
+                    <div className='self-center text-xs text-[#5E6582] line-clamp-2'>
+                      {s.subject || '-'}
+                    </div>
+                    <div
+                      className='self-center text-xs text-[#5E6582] line-clamp-2 cursor-pointer'
+                      title={String(s.message || '')}
+                    >
+                      {s.message || '-'}
+                    </div>
                   </div>
-                  <div className='self-center text-sm text-[#5E6582] truncate'>
-                    {s.firstName || '-'}
-                  </div>
-                  <div className='self-center text-sm text-[#5E6582] truncate'>
-                    {s.lastName || '-'}
-                  </div>
-                  <div className='self-center text-sm text-[#5E6582] truncate'>
-                    {s.email || '-'}
-                  </div>
-                  <div className='self-center text-sm text-[#5E6582] truncate'>
-                    {s.subject || '-'}
-                  </div>
-                  <div className='self-center text-sm text-[#5E6582] truncate'>
-                    {s.message || '-'}
-                  </div>
+                ))}
+              {!loading && !error && filtered.length === 0 && (
+                <div className='px-4 py-3 text-xs text-[#5E6582]'>
+                  No contacts found
                 </div>
-              ))}
+              )}
+            </div>
           </div>
         </div>
       </div>
