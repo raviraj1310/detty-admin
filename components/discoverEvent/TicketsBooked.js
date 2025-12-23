@@ -134,12 +134,15 @@ export default function TicketsBooked () {
           })
           const rawList = Array.isArray(bookingsRes?.data?.tickets)
             ? bookingsRes.data.tickets
+            : Array.isArray(bookingsRes?.tickets)
+            ? bookingsRes.tickets
             : Array.isArray(bookingsRes?.data)
             ? bookingsRes.data
             : []
           const list = rawList.map((b, idx) => ({
             ...b,
             id: b.bookingId || b._id || `booking-${idx}`,
+            arrivalDate: b.arrivalDate || null,
             bookedOn: b.createdAt || '-',
             userName: b.buyer && b.buyer.fullName ? b.buyer.fullName : '-',
             email: b.buyer && b.buyer.email ? b.buyer.email : '-',
@@ -150,15 +153,68 @@ export default function TicketsBooked () {
             amount: typeof b.totalPrice === 'number' ? b.totalPrice : '-',
             paymentStatus: String(b.paymentStatus || 'Pending'),
             status: String(b.status || 'Pending'),
-            attendees: Array.isArray(b.attendees) ? b.attendees : []
+            attendees: Array.isArray(b.attendees) ? b.attendees : [],
+            ticketId: b.ticketId
           }))
+
+          // Calculate stats from unique ticket types in the list
+          const uniqueTickets = new Map()
+          list.forEach(b => {
+            if (b.ticketId && b.ticketId._id) {
+              uniqueTickets.set(b.ticketId._id, b.ticketId)
+            }
+          })
+
+          let totalSold = 0
+          let totalLeft = 0
+
+          uniqueTickets.forEach(t => {
+            totalSold += Number(t.ticketCount || 0)
+            totalLeft += Number(t.ticketLeft || 0)
+          })
+
+          const calculatedBooked = list.reduce(
+            (acc, curr) => acc + (Number(curr.quantity) || 0),
+            0
+          )
+
+          setSummary({
+            total:
+              totalSold > 0
+                ? totalSold + totalLeft
+                : Number(s.totalTicket) || 0,
+            booked:
+              totalSold > 0
+                ? totalSold
+                : Number(s.totalBooked) || calculatedBooked,
+            unbooked:
+              totalLeft > 0
+                ? totalLeft
+                : Number(s.totalAvailableTicket) ||
+                  Math.max(
+                    0,
+                    (Number(s.totalTicket) || 0) -
+                      (Number(s.totalBooked) || calculatedBooked)
+                  ),
+            totalAmount: '-',
+            bookedAmount: '-',
+            unbookedAmount: '-',
+            eventName: s.eventName || 'Event'
+          })
+
           const sorted = [...list].sort(
             (a, b) => toTime(b.bookedOn) - toTime(a.bookedOn)
           )
           setBookings(sorted)
         } else {
           const res = await getEventBookedTicket()
-          const raw = Array.isArray(res?.data) ? res.data : []
+          const raw = Array.isArray(res?.data?.tickets)
+            ? res.data.tickets
+            : Array.isArray(res?.tickets)
+            ? res.tickets
+            : Array.isArray(res?.data)
+            ? res.data
+            : []
           const list = raw.map((b, idx) => ({
             id: b.bookingId || b._id || `booking-${idx}`,
             bookedOn: b.createdAt || '-',
@@ -173,12 +229,37 @@ export default function TicketsBooked () {
             status: String(b.status || 'Pending'),
             attendees: Array.isArray(b.attendees) ? b.attendees : [],
             buyer: b.buyer || null,
-            event: b.event || null
+            event: b.event || null,
+            arrivalDate: b.arrivalDate || null,
+            quantity: b.quantity,
+            ticketId: b.ticketId
           }))
+
+          // Calculate stats from unique ticket types in the list
+          const uniqueTickets = new Map()
+          list.forEach(b => {
+            if (b.ticketId && b.ticketId._id) {
+              uniqueTickets.set(b.ticketId._id, b.ticketId)
+            }
+          })
+
+          let totalSold = 0
+          let totalLeft = 0
+
+          uniqueTickets.forEach(t => {
+            totalSold += Number(t.ticketCount || 0)
+            totalLeft += Number(t.ticketLeft || 0)
+          })
+
+          const calculatedBooked = list.reduce(
+            (acc, curr) => acc + (Number(curr.quantity) || 0),
+            0
+          )
+
           setSummary({
-            total: 0,
-            booked: 0,
-            unbooked: 0,
+            total: totalSold > 0 ? totalSold + totalLeft : 0,
+            booked: totalSold > 0 ? totalSold : calculatedBooked,
+            unbooked: totalLeft > 0 ? totalLeft : 0,
             totalAmount: '-',
             bookedAmount: '-',
             unbookedAmount: '-'
@@ -398,7 +479,9 @@ export default function TicketsBooked () {
   }
 
   const formatEventDateWthOutTime = isoDate => {
+    if (!isoDate) return '-'
     const date = new Date(isoDate)
+    if (isNaN(date.getTime())) return '-'
     const options = {
       weekday: 'long',
       month: 'short',
