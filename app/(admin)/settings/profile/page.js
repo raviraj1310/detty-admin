@@ -150,21 +150,21 @@ export default function ProfilePage () {
   }, [])
 
   return (
-    <div className='p-4 sm:p-6 lg:p-8 pt-16 lg:pt-8 min-h-screen bg-white'>
-      <div className='mb-6'>
-        <h1 className='text-2xl sm:text-3xl font-bold text-[#1A1F3F]'>
+    <div className='p-4 sm:p-6 lg:p-8 xl:p-5 pt-16 lg:pt-8 xl:pt-5 min-h-screen bg-white'>
+      <div className='mb-6 xl:mb-4'>
+        <h1 className='text-2xl sm:text-3xl xl:text-xl font-bold text-[#1A1F3F]'>
           My Profile
         </h1>
       </div>
 
-      <div className='bg-gray-200 p-3 sm:p-4 lg:p-6 rounded-xl mb-6'>
-        <div className='rounded-xl border border-[#E1E6F7] bg-white p-4 sm:p-6'>
-          <div className='flex gap-2 sm:gap-3'>
+      <div className='bg-gray-200 p-3 sm:p-4 lg:p-6 xl:p-2 rounded-xl mb-6 xl:mb-4'>
+        <div className='rounded-xl border border-[#E1E6F7] bg-white p-4 sm:p-6 xl:p-3'>
+          <div className='flex gap-2 sm:gap-3 xl:gap-2'>
             {tabs.map(t => (
               <button
                 key={t.id}
                 onClick={() => go(t.href)}
-                className={`px-4 sm:px-6 py-2.5 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
+                className={`px-4 sm:px-6 xl:px-4 py-2.5 xl:py-2 rounded-lg text-sm xl:text-xs font-medium transition-colors cursor-pointer ${
                   isActive(t.href)
                     ? 'bg-orange-600 text-white shadow-sm'
                     : 'bg-white text-[#1A1F3F] border border-[#E5E6EF] hover:bg-[#F9FAFD]'
@@ -177,10 +177,10 @@ export default function ProfilePage () {
         </div>
       </div>
 
-      <div className='flex items-center gap-5 mb-8'>
+      <div className='flex items-center gap-5 xl:gap-3 mb-8 xl:mb-5'>
        
         <div className='flex flex-col'>
-          <div className='text-xl sm:text-2xl font-semibold text-[#172041]'>
+          <div className='text-xl sm:text-2xl xl:text-lg font-semibold text-[#172041]'>
             {loading ? (
               <span className='inline-flex items-center gap-2'>
                 <Loader2 className='h-4 w-4 animate-spin' /> Loading...
@@ -189,20 +189,20 @@ export default function ProfilePage () {
               profile.name
             )}
           </div>
-          <div className='text-sm text-[#7A819D]'>
+          <div className='text-sm xl:text-xs text-[#7A819D]'>
             {loading ? '' : profile.email}
           </div>
         </div>
       </div>
 
-      <div className='bg-gray-200 p-4 rounded-xl'>
-        <div className='rounded-xl border border-[#E1E6F7] bg-white p-6'>
-          <div className='text-lg font-semibold text-[#172041] mb-4'>
+      <div className='bg-gray-200 p-4 xl:p-2 rounded-xl'>
+        <div className='rounded-xl border border-[#E1E6F7] bg-white p-6 xl:p-4'>
+          <div className='text-lg xl:text-sm font-semibold text-[#172041] mb-4 xl:mb-3'>
             Update Profile
           </div>
-          <div className='grid grid-cols-1 md:grid-cols-2 gap-4 mb-4'>
-            <div className='space-y-2'>
-              <label className='text-sm font-medium text-[#2D3658]'>
+          <div className='grid grid-cols-1 md:grid-cols-2 gap-4 xl:gap-3 mb-4 xl:mb-3'>
+            <div className='space-y-2 xl:space-y-1'>
+              <label className='text-sm xl:text-xs font-medium text-[#2D3658]'>
                 Full Name
               </label>
               <input
@@ -211,15 +211,15 @@ export default function ProfilePage () {
                 onChange={e =>
                   setFormData(prev => ({ ...prev, name: e.target.value }))
                 }
-                className='w-full rounded-lg border border-[#E5E6EF] bg-white px-4 py-2.5 text-sm text-[#2D3658] shadow-sm outline-none focus:ring-2 focus:ring-orange-500'
+                className='w-full rounded-lg border border-[#E5E6EF] bg-white px-4 xl:px-3 py-2.5 xl:py-2 text-sm xl:text-xs text-[#2D3658] shadow-sm outline-none focus:ring-2 focus:ring-orange-500'
                 placeholder='Enter full name'
               />
               {errors.name && (
                 <div className='text-xs text-red-600'>{errors.name}</div>
               )}
             </div>
-            <div className='space-y-2'>
-              <label className='text-sm font-medium text-[#2D3658]'>
+            <div className='space-y-2 xl:space-y-1'>
+              <label className='text-sm xl:text-xs font-medium text-[#2D3658]'>
                 Email
               </label>
               <input
@@ -228,7 +228,7 @@ export default function ProfilePage () {
                 onChange={e =>
                   setFormData(prev => ({ ...prev, email: e.target.value }))
                 }
-                className='w-full rounded-lg border border-[#E5E6EF] bg-white px-4 py-2.5 text-sm text-[#2D3658] shadow-sm outline-none focus:ring-2 focus:ring-orange-500'
+                className='w-full rounded-lg border border-[#E5E6EF] bg-white px-4 xl:px-3 py-2.5 xl:py-2 text-sm xl:text-xs text-[#2D3658] shadow-sm outline-none focus:ring-2 focus:ring-orange-500'
                 placeholder='Enter email address'
               />
               {errors.email && (
@@ -236,9 +236,9 @@ export default function ProfilePage () {
               )}
             </div>
           </div>
-          <div className='grid grid-cols-1 md:grid-cols-2 gap-4 mb-4'>
-            <div className='space-y-2'>
-              <label className='text-sm font-medium text-[#2D3658]'>
+          <div className='grid grid-cols-1 md:grid-cols-2 gap-4 xl:gap-3 mb-4 xl:mb-3'>
+            <div className='space-y-2 xl:space-y-1'>
+              <label className='text-sm xl:text-xs font-medium text-[#2D3658]'>
                 Phone
               </label>
               <input
@@ -247,20 +247,20 @@ export default function ProfilePage () {
                 onChange={e =>
                   setFormData(prev => ({ ...prev, phone: e.target.value }))
                 }
-                className='w-full rounded-lg border border-[#E5E6EF] bg-white px-4 py-2.5 text-sm text-[#2D3658] shadow-sm outline-none focus:ring-2 focus:ring-orange-500'
+                className='w-full rounded-lg border border-[#E5E6EF] bg-white px-4 xl:px-3 py-2.5 xl:py-2 text-sm xl:text-xs text-[#2D3658] shadow-sm outline-none focus:ring-2 focus:ring-orange-500'
                 placeholder='Enter phone number'
               />
             </div>
           </div>
-          <div className='mt-6'>
+          <div className='mt-6 xl:mt-4'>
             <button
               onClick={handleSubmit}
               disabled={saving}
-              className='px-6 py-2.5 rounded-lg bg-orange-600 text-white text-sm font-semibold shadow-sm hover:bg-orange-700 disabled:opacity-60 disabled:cursor-not-allowed'
+              className='px-6 xl:px-4 py-2.5 xl:py-2 rounded-lg bg-orange-600 text-white text-sm xl:text-xs font-semibold shadow-sm hover:bg-orange-700 disabled:opacity-60 disabled:cursor-not-allowed'
             >
               {saving ? (
                 <span className='flex items-center gap-2'>
-                  <Loader2 className='h-4 w-4 animate-spin' /> Saving...
+                  <Loader2 className='h-4 w-4 xl:h-3.5 xl:w-3.5 animate-spin' /> Saving...
                 </span>
               ) : (
                 'Save Changes'

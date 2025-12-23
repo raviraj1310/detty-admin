@@ -37,7 +37,7 @@ import {
 
 const TableHeaderCell = ({ children, align = 'left' }) => (
   <div
-    className={`flex items-center gap-1 text-xs font-medium uppercase tracking-[0.12em] text-[#8A92AC] ${
+    className={`flex items-center gap-1 text-xs font-medium capitalize tracking-wide text-[#8A92AC] whitespace-nowrap ${
       align === 'right' ? 'justify-end' : 'justify-start'
     }`}
   >
@@ -767,25 +767,25 @@ export default function DiscountMaster () {
         duration={2500}
         position='top-right'
       />
-      <div className='flex flex-col gap-4 md:flex-row md:items-start md:justify-between'>
-        <div className='flex flex-col gap-2'>
-          <h1 className='text-2xl font-semibold text-slate-900'>
+      <div className='flex flex-col gap-2 md:flex-row md:items-start md:justify-between'>
+        <div className='flex flex-col gap-1'>
+          <h1 className='text-xl font-semibold text-slate-900'>
             Discount Masters
           </h1>
-          <p className='text-sm text-[#99A1BC]'>Dashboard / Masters</p>
+          <p className='text-xs text-[#99A1BC]'>Dashboard / Masters</p>
         </div>
       </div>
 
-      <div className='bg-gray-200 p-3 rounded-xl p-4'>
-        <div className='rounded-xl border border-[#E1E6F7] bg-white p-8 shadow-[0_24px_60px_-40px_rgba(15,23,42,0.55)]'>
-          <div className='flex items-center justify-between mb-6'>
-            <h2 className='text-lg font-semibold text-slate-900'>
+      <div className='bg-gray-100 p-3 rounded-xl'>
+        <div className='rounded-xl border border-[#E1E6F7] bg-white p-4 shadow-[0_24px_60px_-40px_rgba(15,23,42,0.55)]'>
+          <div className='flex items-center justify-between mb-4 border-b pb-2 border-gray-200'>
+            <h2 className='text-base font-semibold text-slate-900'>
               Discount Details
             </h2>
             <button
               onClick={handleSubmit}
               disabled={submitting}
-              className='rounded-xl bg-[#FF5B2C] px-6 py-2.5 text-sm font-semibold text-white shadow-[0_14px_30px_-20px_rgba(248,113,72,0.65)] transition hover:bg-[#F0481A] disabled:opacity-60 disabled:cursor-not-allowed'
+              className='rounded-lg bg-[#FF5B2C] px-4 py-1.5 text-sm font-semibold text-white shadow-[0_14px_30px_-20px_rgba(248,113,72,0.65)] transition hover:bg-[#F0481A] disabled:opacity-60 disabled:cursor-not-allowed'
             >
               {submitting ? (
                 <span className='flex items-center gap-2'>
@@ -800,10 +800,10 @@ export default function DiscountMaster () {
             </button>
           </div>
 
-          <div className='mb-6 flex gap-2'>
+          <div className='mb-4 flex gap-2'>
             <button
               onClick={() => setActiveTab('event')}
-              className={`rounded-xl px-4 py-2 text-sm font-medium border ${
+              className={`rounded-lg px-3 py-1.5 text-sm font-medium border ${
                 activeTab === 'event'
                   ? 'bg-[#1A1F3F] text-white border-[#1A1F3F]'
                   : 'bg-white text-[#2D3658] border-[#E5E6EF]'
@@ -813,7 +813,7 @@ export default function DiscountMaster () {
             </button>
             <button
               onClick={() => setActiveTab('activity')}
-              className={`rounded-xl px-4 py-2 text-sm font-medium border ${
+              className={`rounded-lg px-3 py-1.5 text-sm font-medium border ${
                 activeTab === 'activity'
                   ? 'bg-[#1A1F3F] text-white border-[#1A1F3F]'
                   : 'bg-white text-[#2D3658] border-[#E5E6EF]'
@@ -824,17 +824,17 @@ export default function DiscountMaster () {
           </div>
 
           <form onSubmit={handleSubmit} ref={formSectionRef}>
-            <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+            <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
               {activeTab === 'event' ? (
-                <div className='space-y-2'>
-                  <label className='text-sm font-medium text-slate-700'>
+                <div className='space-y-1'>
+                  <label className='text-xs font-medium text-slate-700'>
                     Event
                   </label>
                   <div className='relative' ref={formEventContainerRef}>
                     <button
                       type='button'
                       onClick={() => setFormEventOpen(v => !v)}
-                      className='w-full h-12 rounded-xl border border-[#E5E6EF] bg-[#F8F9FC] px-4 text-sm text-slate-700 flex items-center justify-between'
+                      className='w-full h-9 rounded-lg border border-[#E5E6EF] bg-[#F8F9FC] px-3 text-sm text-slate-700 flex items-center justify-between'
                     >
                       <span>
                         {(() => {
@@ -861,7 +861,7 @@ export default function DiscountMaster () {
                       </svg>
                     </button>
                     {formEventOpen && (
-                      <div className='absolute z-50 mt-2 w-full rounded-xl border border-[#E5E6F7] bg-white shadow-[0_14px_30px_-20px_rgba(15,23,42,0.25)] p-3'>
+                      <div className='absolute z-50 mt-1 w-full rounded-lg border border-[#E5E6F7] bg-white shadow-[0_14px_30px_-20px_rgba(15,23,42,0.25)] p-2'>
                         {!editingId && (
                           <label className='flex items-center gap-2 text-sm text-[#2D3658] mb-2'>
                             <input
@@ -886,7 +886,7 @@ export default function DiscountMaster () {
                             <span>Select All</span>
                           </label>
                         )}
-                        <div className='max-h-48 overflow-auto space-y-2'>
+                        <div className='max-h-48 overflow-auto space-y-1'>
                           {events.map(ev => {
                             const id = String(ev.id)
                             const checked = formSelectedEventIds.includes(id)
@@ -944,15 +944,15 @@ export default function DiscountMaster () {
                   </div>
                 </div>
               ) : (
-                <div className='space-y-2'>
-                  <label className='text-sm font-medium text-slate-700'>
+                <div className='space-y-1'>
+                  <label className='text-xs font-medium text-slate-700'>
                     Activity
                   </label>
                   <div className='relative' ref={formActivityContainerRef}>
                     <button
                       type='button'
                       onClick={() => setFormActivityOpen(v => !v)}
-                      className='w-full h-12 rounded-xl border border-[#E5E6EF] bg-[#F8F9FC] px-4 text-sm text-slate-700 flex items-center justify-between'
+                      className='w-full h-9 rounded-lg border border-[#E5E6EF] bg-[#F8F9FC] px-4 text-sm text-slate-700 flex items-center justify-between'
                     >
                       <span>
                         {(() => {
@@ -1005,7 +1005,7 @@ export default function DiscountMaster () {
                             <span>Select All</span>
                           </label>
                         )}
-                        <div className='max-h-48 overflow-auto space-y-2'>
+                        <div className='max-h-48 overflow-auto space-y-1'>
                           {activities.map(ac => {
                             const id = String(ac.id)
                             const checked = formSelectedActivityIds.includes(id)
@@ -1064,8 +1064,8 @@ export default function DiscountMaster () {
                 </div>
               )}
 
-              <div className='space-y-2'>
-                <label className='text-sm font-medium text-slate-700'>
+              <div className='space-y-1'>
+                <label className='text-xs font-medium text-slate-700'>
                   Coupon Code
                 </label>
                 <input
@@ -1075,7 +1075,7 @@ export default function DiscountMaster () {
                   onChange={e =>
                     handleInputChange('couponCode', e.target.value)
                   }
-                  className='w-full h-12 rounded-xl border text-transform: uppercase border-[#E5E6EF] bg-[#F8F9FC] px-4 text-sm text-slate-700 placeholder:text-[#B0B7D0] focus:border-[#C5CAE3] focus:outline-none focus:ring-2 focus:ring-[#C2C8E4]'
+                  className='w-full h-9 rounded-lg border text-transform: uppercase border-[#E5E6EF] bg-[#F8F9FC] px-4 text-sm text-slate-700 placeholder:text-[#B0B7D0] focus:border-[#C5CAE3] focus:outline-none focus:ring-2 focus:ring-[#C2C8E4]'
                   placeholder='Enter coupon code'
                 />
                 {errors.couponCode && (
@@ -1083,8 +1083,8 @@ export default function DiscountMaster () {
                 )}
               </div>
 
-              <div className='space-y-2'>
-                <label className='text-sm font-medium text-slate-700'>
+              <div className='space-y-1'>
+                <label className='text-xs font-medium text-slate-700'>
                   Discount Type
                 </label>
                 <div className='relative'>
@@ -1121,8 +1121,8 @@ export default function DiscountMaster () {
                 </div>
               </div>
 
-              <div className='space-y-2'>
-                <label className='text-sm font-medium text-slate-700'>
+              <div className='space-y-1'>
+                <label className='text-xs font-medium text-slate-700'>
                   Discount Value
                 </label>
                 <input
@@ -1131,7 +1131,7 @@ export default function DiscountMaster () {
                   onChange={e =>
                     handleInputChange('discountValue', e.target.value)
                   }
-                  className='w-full h-12 rounded-xl border border-[#E5E6EF] bg-[#F8F9FC] px-4 text-sm text-slate-700 placeholder:text-[#B0B7D0] focus:border-[#C5CAE3] focus:outline-none focus:ring-2 focus:ring-[#C2C8E4]'
+                  className='w-full h-9 rounded-lg border border-[#E5E6EF] bg-[#F8F9FC] px-4 text-sm text-slate-700 placeholder:text-[#B0B7D0] focus:border-[#C5CAE3] focus:outline-none focus:ring-2 focus:ring-[#C2C8E4]'
                   placeholder='Enter discount value'
                 />
                 {errors.discountValue && (
@@ -1139,15 +1139,15 @@ export default function DiscountMaster () {
                 )}
               </div>
 
-              <div className='space-y-2'>
-                <label className='text-sm font-medium text-slate-700'>
+              <div className='space-y-1'>
+                <label className='text-xs font-medium text-slate-700'>
                   Valid Up To
                 </label>
                 <input
                   type='date'
                   value={formData.validUpTo}
                   onChange={e => handleInputChange('validUpTo', e.target.value)}
-                  className='w-full h-12 rounded-xl border border-[#E5E6EF] bg-[#F8F9FC] px-4 text-sm text-slate-700 placeholder:text-[#B0B7D0] focus:border-[#C5CAE3] focus:outline-none focus:ring-2 focus:ring-[#C2C8E4]'
+                  className='w-full h-9 rounded-lg border border-[#E5E6EF] bg-[#F8F9FC] px-4 text-sm text-slate-700 placeholder:text-[#B0B7D0] focus:border-[#C5CAE3] focus:outline-none focus:ring-2 focus:ring-[#C2C8E4]'
                 />
                 {errors.validUpTo && (
                   <p className='text-xs text-red-600'>{errors.validUpTo}</p>
@@ -1271,7 +1271,7 @@ export default function DiscountMaster () {
           )}
 
           <div className='overflow-visible rounded-2xl border border-[#E5E8F5]'>
-            <div className='grid grid-cols-12 gap-6 bg-[#F7F9FD] px-6 py-4'>
+            <div className='grid grid-cols-12 gap-4 bg-[#F7F9FD] px-4 py-3'>
               <div className='col-span-2'>
                 <TableHeaderCell>Added On</TableHeaderCell>
               </div>
@@ -1318,14 +1318,14 @@ export default function DiscountMaster () {
                 sortedDiscounts.map((d, idx) => (
                   <div
                     key={d._id || idx}
-                    className='grid grid-cols-12 gap-6 px-6 py-5 hover:bg-[#F9FAFD]'
+                    className='grid grid-cols-12 gap-4 px-4 py-3 hover:bg-[#F9FAFD]'
                   >
-                    <div className='col-span-2 self-center text-sm text-[#5E6582]'>
+                    <div className='col-span-2 self-center text-xs text-[#5E6582]'>
                       {d.createdAt
                         ? new Date(d.createdAt).toLocaleString(undefined, {
                             weekday: 'short',
                             day: '2-digit',
-                            month: 'long',
+                            month: 'short',
                             year: 'numeric',
                             hour: '2-digit',
                             minute: '2-digit'
@@ -1333,27 +1333,27 @@ export default function DiscountMaster () {
                         : '-'}
                     </div>
                     {activeTab === 'event' ? (
-                      <div className='col-span-2 self-center text-sm text-[#5E6582]'>
+                      <div className='col-span-2 self-center text-xs text-[#5E6582]'>
                         {eventNameOf(d)}
                       </div>
                     ) : (
-                      <div className='col-span-2 self-center text-sm text-[#5E6582]'>
+                      <div className='col-span-2 self-center text-xs text-[#5E6582]'>
                         {activityNameOf(d)}
                       </div>
                     )}
-                    <div className='col-span-2 self-center text-sm font-semibold text-slate-900'>
+                    <div className='col-span-2 self-center text-xs font-semibold text-slate-900'>
                       {d.couponCode || '-'}
                     </div>
-                    <div className='col-span-2 self-center text-sm text-[#5E6582]'>
+                    <div className='col-span-2 self-center text-xs text-[#5E6582]'>
                       {formatShortDate(d.validUpTo)}
                     </div>
-                    <div className='col-span-1 self-center text-sm text-[#5E6582]'>
+                    <div className='col-span-1 self-center text-xs text-[#5E6582]'>
                       {String(d.discountType || 'percentage').toLowerCase() ===
                       'percentage'
                         ? 'Percentage'
                         : 'Fixed'}
                     </div>
-                    <div className='col-span-1 self-center text-sm text-[#5E6582]'>
+                    <div className='col-span-1 self-center text-xs text-[#5E6582]'>
                       {String(d.discountType || 'percentage').toLowerCase() ===
                       'percentage'
                         ? `${d.discountValue ?? '-'}%`
@@ -1527,32 +1527,32 @@ export default function DiscountMaster () {
               )}
               <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
                 {activeTab === 'event' ? (
-                  <div className='space-y-2 md:col-span-2'>
-                    <label className='text-sm font-medium text-slate-700'>
+                  <div className='space-y-1 md:col-span-2'>
+                    <label className='text-xs font-medium text-slate-700'>
                       Event ID
                     </label>
                     <input
                       type='text'
                       value={editModalData.eventId}
                       disabled
-                      className='w-full h-12 rounded-xl border border-[#E5E6EF] bg-[#F8F9FC] px-4 text-sm text-slate-700'
+                      className='w-full h-9 rounded-lg border border-[#E5E6EF] bg-[#F8F9FC] px-4 text-sm text-slate-700'
                     />
                   </div>
                 ) : (
-                  <div className='space-y-2 md:col-span-2'>
-                    <label className='text-sm font-medium text-slate-700'>
+                  <div className='space-y-1 md:col-span-2'>
+                    <label className='text-xs font-medium text-slate-700'>
                       Activity ID
                     </label>
                     <input
                       type='text'
                       value={editModalData.activityId}
                       disabled
-                      className='w-full h-12 rounded-xl border border-[#E5E6EF] bg-[#F8F9FC] px-4 text-sm text-slate-700'
+                      className='w-full h-9 rounded-lg border border-[#E5E6EF] bg-[#F8F9FC] px-4 text-sm text-slate-700'
                     />
                   </div>
                 )}
-                <div className='space-y-2'>
-                  <label className='text-sm font-medium text-slate-700'>
+                <div className='space-y-1'>
+                  <label className='text-xs font-medium text-slate-700'>
                     Coupon Code
                   </label>
                   <input
@@ -1565,11 +1565,11 @@ export default function DiscountMaster () {
                       }))
                     }
                     disabled={editModalFetching}
-                    className='w-full h-12 rounded-xl border border-[#E5E6EF] bg-[#F8F9FC] px-4 text-sm text-slate-700'
+                    className='w-full h-9 rounded-lg border border-[#E5E6EF] bg-[#F8F9FC] px-4 text-sm text-slate-700'
                   />
                 </div>
-                <div className='space-y-2'>
-                  <label className='text-sm font-medium text-slate-700'>
+                <div className='space-y-1'>
+                  <label className='text-xs font-medium text-slate-700'>
                     Discount Type
                   </label>
                   <select
@@ -1581,14 +1581,14 @@ export default function DiscountMaster () {
                       }))
                     }
                     disabled={editModalFetching}
-                    className='w-full h-12 rounded-xl border border-[#E5E6EF] bg-[#F8F9FC] px-4 text-sm text-slate-700'
+                    className='w-full h-9 rounded-lg border border-[#E5E6EF] bg-[#F8F9FC] px-4 text-sm text-slate-700'
                   >
                     <option value='percentage'>Percentage</option>
                     <option value='fixed'>Fixed</option>
                   </select>
                 </div>
-                <div className='space-y-2'>
-                  <label className='text-sm font-medium text-slate-700'>
+                <div className='space-y-1'>
+                  <label className='text-xs font-medium text-slate-700'>
                     Discount Value
                   </label>
                   <input
@@ -1601,11 +1601,11 @@ export default function DiscountMaster () {
                       }))
                     }
                     disabled={editModalFetching}
-                    className='w-full h-12 rounded-xl border border-[#E5E6EF] bg-[#F8F9FC] px-4 text-sm text-slate-700'
+                    className='w-full h-9 rounded-lg border border-[#E5E6EF] bg-[#F8F9FC] px-4 text-sm text-slate-700'
                   />
                 </div>
-                <div className='space-y-2'>
-                  <label className='text-sm font-medium text-slate-700'>
+                <div className='space-y-1'>
+                  <label className='text-xs font-medium text-slate-700'>
                     Valid Up To
                   </label>
                   <input
@@ -1618,7 +1618,7 @@ export default function DiscountMaster () {
                       }))
                     }
                     disabled={editModalFetching}
-                    className='w-full h-12 rounded-xl border border-[#E5E6EF] bg-[#F8F9FC] px-4 text-sm text-slate-700'
+                    className='w-full h-9 rounded-lg border border-[#E5E6EF] bg-[#F8F9FC] px-4 text-sm text-slate-700'
                   />
                 </div>
               </div>

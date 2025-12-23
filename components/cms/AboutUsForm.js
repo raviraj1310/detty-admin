@@ -750,7 +750,7 @@ export default function AboutUsForm() {
     
     return (
       <div key={name} className={type === 'file' ? 'max-w-md' : ''}>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-xs font-medium text-gray-700 mb-1">
           {label}{required && <span className="text-red-500">*</span>}
         </label>
         {type === 'richtext' ? renderRichTextEditor(name, rows) :
@@ -759,15 +759,15 @@ export default function AboutUsForm() {
             value={String(formData[name] ?? '')}
             onChange={(e) => handleChange(name, e.target.value)}
             rows={rows}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none resize-none text-gray-900"
+            className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none resize-none text-gray-900"
           />
          ) : type === 'file' ? (
          <> 
             <div
-              className="flex h-12 items-stretch overflow-hidden rounded-xl border border-[#E5E6EF]"
+              className="flex h-9 items-stretch overflow-hidden rounded-lg border border-[#E5E6EF]"
               onClick={() => fileRefs.current[name]?.click()}
             >
-              <div className="flex-1 bg-[#F8F9FC] px-4 text-sm text-slate-700 flex items-center justify-between cursor-pointer">
+              <div className="flex-1 bg-[#F8F9FC] px-3 text-xs text-slate-700 flex items-center justify-between cursor-pointer">
                 <span className="truncate" title={String(formData[name] ?? '')}>
                   {String(formData[name] ?? '') || (isImageField ? 'Image.jpg' : 'File')}
                 </span>
@@ -775,7 +775,7 @@ export default function AboutUsForm() {
               <button
                 type="button"
                 onClick={() => fileRefs.current[name]?.click()}
-                className="px-6 text-sm font-medium text-[#2D3658] bg-white transition hover:bg-[#F6F7FD]"
+                className="px-4 text-xs font-medium text-[#2D3658] bg-white transition hover:bg-[#F6F7FD]"
               >
                 Browse
               </button>
@@ -788,14 +788,14 @@ export default function AboutUsForm() {
               onChange={(e) => isImageField ? handleImageChange(name, e) : handleChange(name, e.target.files[0]?.name || '')}
             />
             {errors[name] && (
-              <p className="text-red-500 text-sm mt-1">{errors[name]}</p>
+              <p className="text-red-500 text-xs mt-1">{errors[name]}</p>
             )}
             {isImageField && (
-              <p className="text-gray-500 text-xs mt-1">Max size: 2MB. Allowed: JPG, JPEG, PNG, WEBP, AVIF</p>
+              <p className="text-gray-500 text-[10px] mt-1">Max size: 2MB. Allowed: JPG, JPEG, PNG, WEBP, AVIF</p>
             )}
             {isImageField && imagePreviewUrls[name] && (
               <div className="mt-2">
-                <img src={imagePreviewUrls[name]} alt={`${label} preview`} className="w-28 h-28 object-cover rounded border border-gray-300" />
+                <img src={imagePreviewUrls[name]} alt={`${label} preview`} className="w-20 h-20 object-cover rounded border border-gray-300" />
               </div>
             )}
           </>
@@ -804,7 +804,7 @@ export default function AboutUsForm() {
             type="text"
             value={String(formData[name] ?? '')}
             onChange={(e) => handleChange(name, e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none text-gray-900"
+            className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none text-gray-900"
           />
          )}
       </div>
@@ -818,65 +818,65 @@ export default function AboutUsForm() {
     
     return (
       <div key={section.id} className="mb-1 pt-1 pb-1">
-        <div className="bg-gray-900 text-white px-4 py-2 rounded-t-lg inline-flex items-center gap-2 mb-4">
-          {Icon && <Icon className="w-4 h-4 text-orange-400" />}
-          <h3 className="font-medium text-white">{section.title}</h3>
+        <div className="bg-gray-900 text-white px-3 py-1.5 rounded-t-lg inline-flex items-center gap-2 mb-3">
+          {Icon && <Icon className="w-3.5 h-3.5 text-orange-400" />}
+          <h3 className="font-medium text-sm text-white">{section.title}</h3>
         </div>
         
         {isWhyLagos ? (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
               {section.fields.slice(0, 2).map(renderField)}
             </div>
-            <div className="mb-4">
+            <div className="mb-3">
               {renderField(section.fields[2])}
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
               {section.fields.slice(3, 6).map(renderField)}
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
               {renderField(section.fields[6])}
             </div>
           </>
         ) : section.id === 'banner' ? (
           <>
-            <div className="mb-4">
+            <div className="mb-3">
               {renderField(section.fields[0])}
             </div>
-            <div className="mb-4">
+            <div className="mb-3">
               {renderField(section.fields[1])}
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
               {section.fields.slice(2).map(renderField)}
             </div>
           </>
         ) : isPromo ? (
           <>
-            <div className="mb-4">
+            <div className="mb-3">
               {renderField(section.fields[0])}
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
               {section.fields.slice(1).map(renderField)}
             </div>
           </>
         ) : section.fields.length > 3 ? (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
               {section.fields.slice(0, 2).map(renderField)}
             </div>
-            <div className="mb-4">
+            <div className="mb-3">
               {renderField(section.fields[2])}
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
               {section.fields.slice(3).map(renderField)}
             </div>
           </>
         ) : (
           <>
-            <div className="mb-4">
+            <div className="mb-3">
               {renderField(section.fields[0])}
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
               {section.fields.slice(1).map(renderField)}
             </div>
           </>
@@ -886,26 +886,26 @@ export default function AboutUsForm() {
   };
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 bg-white">
+    <div className="p-3 sm:p-4 lg:p-6 bg-white">
       {/* Header */}
-      <div className="mb-4">
-        <h1 className="text-3xl font-bold text-gray-900">About Us</h1>
-        <p className="text-sm text-gray-500 mt-1">Dashboard / CMS</p>
+      <div className="mb-3">
+        <h1 className="text-xl font-bold text-gray-900">About Us</h1>
+        <p className="text-xs text-gray-500 mt-0.5">Dashboard / CMS</p>
       </div>
-      <div className='bg-gray-200 p-4 rounded-xl'>
+      <div className='bg-gray-100 p-3 rounded-xl'>
         {/* Form Card */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-          <div className="p-4">
+          <div className="p-3">
             {/* Header with Save Button */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 border-b p-2 border-gray-300 gap-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3 border-b pb-2 border-gray-200 gap-3">
               <div>
-                <h2 className="text-xl font-semibold text-gray-900">About Us Details</h2>
-                <p className="text-sm text-gray-500">Edit and manage the about us page content</p>
+                <h2 className="text-base font-semibold text-gray-900">About Us Details</h2>
+                <p className="text-xs text-gray-500">Edit and manage the about us page content</p>
               </div>
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="px-6 py-2 bg-orange-600 hover:bg-orange-700 text-white font-medium rounded-lg transition-colors cursor-pointer shadow-sm hover:shadow-md disabled:opacity-60 disabled:cursor-not-allowed"
+                className="px-4 py-1.5 text-sm bg-orange-600 hover:bg-orange-700 text-white font-medium rounded-lg transition-colors cursor-pointer shadow-sm hover:shadow-md disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {saving ? 'Saving...' : 'Save Changes'}
               </button>

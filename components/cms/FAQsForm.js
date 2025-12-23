@@ -98,52 +98,52 @@ export default function FAQsForm() {
     };
 
     return (
-        <div className="p-4 sm:p-6 lg:p-8 pt-16 lg:pt-8 bg-white min-h-screen">
+        <div className="p-3 sm:p-4 lg:p-6 pt-16 lg:pt-6 bg-white min-h-screen">
             {/* Header */}
-            <div className="flex justify-between items-start mb-4">
+            <div className="flex justify-between items-start mb-3">
                 <div>
-                    <h1 className="text-3xl font-bold text-gray-900">FAQs</h1>
-                    <p className="text-sm text-gray-500 mt-1">Dashboard / CMS</p>
+                    <h1 className="text-xl font-bold text-gray-900">FAQs</h1>
+                    <p className="text-xs text-gray-500 mt-0.5">Dashboard / CMS</p>
                 </div>
                 <button
                     onClick={handleAddNew}
-                    className="px-6 py-2.5 bg-orange-600 hover:bg-orange-700 text-white font-medium rounded-lg transition-colors cursor-pointer"
+                    className="px-4 py-1.5 text-sm bg-orange-600 hover:bg-orange-700 text-white font-medium rounded-lg transition-colors cursor-pointer"
                 >
                     Add New
                 </button>
             </div>
 
-                <div className='bg-gray-200 p-6 rounded-xl'>
+                <div className='bg-gray-100 p-3 rounded-xl'>
                     {/* FAQ List Card */}
                     <div className="bg-white rounded-lg shadow-sm border border-gray-200">
                         {/* Card Header */}
-                        <div className="p-6 border-b border-gray-200">
-                            <h2 className="text-xl font-semibold text-gray-900">FAQ List</h2>
+                        <div className="p-3 border-b border-gray-200">
+                            <h2 className="text-base font-semibold text-gray-900">FAQ List</h2>
                         </div>
                         {/* Search and Filters Bar */}
-                        <div className="p-6 border-b border-gray-200">
-                            <div className="flex items-center gap-4">
+                        <div className="p-3 border-b border-gray-200">
+                            <div className="flex items-center gap-3">
                                 {/* Search */}
                                 <div className="flex-1 relative">
-                                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                                     <input
                                         type="text"
                                         placeholder="Search"
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
-                                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                                        className="w-full pl-9 pr-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
                                     />
                                 </div>
 
                                 {/* Filters Button */}
-                                <button className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer">
-                                    <SlidersHorizontal className="w-5 h-5 text-gray-600" />
+                                <button className="flex items-center gap-1.5 px-3 py-1.5 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer">
+                                    <SlidersHorizontal className="w-4 h-4 text-gray-600" />
                                     <span className="text-gray-700 font-medium">Filters</span>
                                 </button>
 
                                 {/* Download Button */}
-                                <button className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer">
-                                    <Download className="w-5 h-5 text-gray-600" />
+                                <button className="p-1.5 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer">
+                                    <Download className="w-4 h-4 text-gray-600" />
                                 </button>
                             </div>
                         </div>
@@ -153,31 +153,31 @@ export default function FAQsForm() {
                             <table className="w-full">
                                 <thead className="bg-gray-50 border-b border-gray-200">
                                     <tr>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            <div className="flex items-center gap-2">
+                                        <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 capitalize tracking-wider">
+                                            <div className="flex items-center gap-1.5">
                                                 Added On
-                                                <RiExpandUpDownFill className="w-4 h-4" />
+                                                <RiExpandUpDownFill className="w-3.5 h-3.5" />
                                             </div>
                                         </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            <div className="flex items-center gap-2">
+                                        <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 capitalize tracking-wider">
+                                            <div className="flex items-center gap-1.5">
                                                 FAQs Category
-                                                <RiExpandUpDownFill className="w-4 h-4" />
+                                                <RiExpandUpDownFill className="w-3.5 h-3.5" />
                                             </div>
                                         </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            <div className="flex items-center gap-2">
+                                        <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 capitalize tracking-wider">
+                                            <div className="flex items-center gap-1.5">
                                                 FAQ Question
-                                                <RiExpandUpDownFill className="w-4 h-4" />
+                                                <RiExpandUpDownFill className="w-3.5 h-3.5" />
                                             </div>
                                         </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            <div className="flex items-center gap-2">
+                                        <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 capitalize tracking-wider">
+                                            <div className="flex items-center gap-1.5">
                                                 Status
-                                                <RiExpandUpDownFill className="w-4 h-4" />
+                                                <RiExpandUpDownFill className="w-3.5 h-3.5" />
                                             </div>
                                         </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 capitalize tracking-wider">
                                             {/* Actions column */}
                                         </th>
                                     </tr>
@@ -185,71 +185,71 @@ export default function FAQsForm() {
                                 <tbody className="bg-white divide-y divide-gray-200">
                                     {error && (
                                         <tr>
-                                            <td colSpan={5} className="px-6 py-4 text-sm text-red-600">{error}</td>
+                                            <td colSpan={5} className="px-4 py-3 text-sm text-red-600">{error}</td>
                                         </tr>
                                     )}
                                     {loading && !error && (
                                         <tr>
-                                            <td colSpan={5} className="px-6 py-4 text-sm text-gray-600">
+                                            <td colSpan={5} className="px-4 py-3 text-sm text-gray-600">
                                                 <span className="inline-flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" /> Loading FAQs...</span>
                                             </td>
                                         </tr>
                                     )}
                                     {!loading && !error && filteredFaqs.length === 0 && (
                                         <tr>
-                                            <td colSpan={5} className="px-6 py-4 text-sm text-gray-600">No FAQs found.</td>
+                                            <td colSpan={5} className="px-4 py-3 text-sm text-gray-600">No FAQs found.</td>
                                         </tr>
                                     )}
                                     {filteredFaqs.map((faq) => (
                                         <tr key={faq.id} className="hover:bg-gray-50">
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
                                                 {faq.addedOn}
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
                                                 {faq.category}
                                             </td>
-                                            <td className="px-6 py-4 text-sm text-gray-900">
+                                            <td className="px-4 py-3 text-sm text-gray-900">
                                                 {faq.question}
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
+                                            <td className="px-4 py-3 whitespace-nowrap">
                                                 <span
-                                                    className={`inline-flex items-center px-3 py-1 rounded-lg text-sm font-medium ${faq.status == true
+                                                    className={`inline-flex items-center px-2.5 py-0.5 rounded-lg text-xs font-medium ${faq.status == true
                                                             ? 'bg-white text-gray-600 border border-gray-300'
                                                             : 'bg-white text-red-600 border border-red-300'
                                                         }`}
                                                 >
                                                     {faq.status === true && (
                                                         <>
-                                                            <span className="w-2 h-2 rounded-full bg-green-500 mr-2"></span>
+                                                            <span className="w-1.5 h-1.5 rounded-full bg-green-500 mr-1.5"></span>
                                                             <span>Active</span>
                                                         </>
                                                     )}
                                                     {faq.status === false && (
                                                         <>
-                                                            <span className="w-2 h-2 rounded-full bg-red-500 mr-2"></span>
+                                                            <span className="w-1.5 h-1.5 rounded-full bg-red-500 mr-1.5"></span>
                                                             <span>Inactive</span>
                                                         </>
                                                     )}
                                                 </span>
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm relative overflow-visible">
+                                            <td className="px-4 py-3 whitespace-nowrap text-right text-sm relative overflow-visible">
                                                 <button
                                                     onClick={() => setOpenMenuId(openMenuId === faq.id ? null : faq.id)}
                                                     className="text-gray-400 hover:text-gray-600 cursor-pointer"
                                                     data-faq-menu-trigger
                                                 >
-                                                    <MoreVertical className="w-5 h-5" />
+                                                    <MoreVertical className="w-4 h-4" />
                                                 </button>
                                                 {openMenuId === faq.id && (
                 
-                                                    <div className="absolute right-4 top-full mt-2 w-36 rounded-lg border border-gray-200 bg-white shadow-md z-50 flex flex-col py-1" data-faq-menu>
+                                                    <div className="absolute right-4 top-full mt-1 w-32 rounded-lg border border-gray-200 bg-white shadow-md z-50 flex flex-col py-1" data-faq-menu>
                                                         <button
                                                             onClick={() => {
                                                                 setOpenMenuId(null)
                                                                 const idStr = encodeURIComponent(String(faq.id || ''))
                                                                 if (idStr) router.push(`/cms/faqs/edit?id=${idStr}`)
                                                             }}
-                                                            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                                                            className="w-full text-left px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50"
                                                         >
                                                             Edit
                                                         </button>
@@ -258,7 +258,7 @@ export default function FAQsForm() {
                                                                 setOpenMenuId(null);
                                                                 openDeleteConfirm(faq.id);
                                                             }}
-                                                            className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                                                            className="w-full text-left px-3 py-1.5 text-sm text-red-600 hover:bg-red-50"
                                                             >
                                                             Delete
                                                         </button>

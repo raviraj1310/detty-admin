@@ -11,13 +11,10 @@ import {
 import Toast from '@/components/ui/Toast'
 import {
   ChevronUp,
-  ChevronDown,
-  UserPlus,
-  TrendingUp,
-  TrendingDown,
-  BarChart2
+  ChevronDown
 } from 'lucide-react'
-import { TbCaretUpDownFilled } from 'react-icons/tb'
+import { TbCaretUpDownFilled, TbTrendingUp, TbTrendingDown } from 'react-icons/tb'
+import { FaUserPlus, FaChartColumn } from 'react-icons/fa6'
 import { downloadExcel } from '@/utils/excelExport'
 
 const mapUser = d => {
@@ -1253,7 +1250,7 @@ export default function UsersForm () {
         <div className='bg-indigo-100 text-white p-4 rounded-lg'>
           <div className='flex items-center'>
             <div className='bg-white p-2 rounded-lg mr-3'>
-              <UserPlus className='w-6 h-6 text-indigo-600' />
+              <FaUserPlus className='w-6 h-6 text-indigo-600' />
             </div>
             <div>
               <p className='text-xs text-black opacity-90'>
@@ -1273,7 +1270,7 @@ export default function UsersForm () {
         <div className='bg-purple-200 text-white p-4 rounded-lg'>
           <div className='flex items-center'>
             <div className='bg-white p-2 rounded-lg mr-3'>
-              <TrendingUp className='w-6 h-6 text-purple-600' />
+              <TbTrendingUp className='w-6 h-6 text-purple-600' />
             </div>
             <div>
               <p className='text-xs text-black opacity-90'>
@@ -1285,12 +1282,12 @@ export default function UsersForm () {
                 </p>
                 {globalStats.isCountIncreasing ? (
                   <span className='text-xs flex items-center mb-1 text-green-600'>
-                    <TrendingUp className='w-3 h-3 mr-0.5' />
+                    <TbTrendingUp className='w-3 h-3 mr-0.5' />
                     Increasing
                   </span>
                 ) : (
                   <span className='text-xs flex items-center mb-1 text-red-600'>
-                    <TrendingDown className='w-3 h-3 mr-0.5' />
+                    <TbTrendingDown className='w-3 h-3 mr-0.5' />
                     Decreasing
                   </span>
                 )}
@@ -1303,7 +1300,7 @@ export default function UsersForm () {
         <div className='bg-teal-200 text-white p-4 rounded-lg'>
           <div className='flex items-center'>
             <div className='bg-white p-2 rounded-lg mr-3'>
-              <BarChart2 className='w-6 h-6 text-teal-600' />
+              <FaChartColumn className='w-6 h-6 text-teal-600' />
             </div>
             <div>
               <p className='text-xs text-black opacity-90'>
@@ -1315,12 +1312,12 @@ export default function UsersForm () {
                 </p>
                 {globalStats.isPctIncreasing ? (
                   <span className='text-xs flex items-center mb-1 text-green-600'>
-                    <TrendingUp className='w-3 h-3 mr-0.5' />
+                    <TbTrendingUp className='w-3 h-3 mr-0.5' />
                     Increasing
                   </span>
                 ) : (
                   <span className='text-xs flex items-center mb-1 text-red-600'>
-                    <TrendingDown className='w-3 h-3 mr-0.5' />
+                    <TbTrendingDown className='w-3 h-3 mr-0.5' />
                     Decreasing
                   </span>
                 )}

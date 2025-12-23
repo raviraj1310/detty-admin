@@ -54,7 +54,7 @@ const TableHeaderCell = ({ children, onClick }) => (
   <button
     type='button'
     onClick={onClick}
-    className='flex items-center gap-1 text-xs font-medium uppercase tracking-[0.12em] text-[#8A92AC] hover:text-[#2D3658]'
+    className='flex items-center gap-1 text-xs font-medium capitalize tracking-wider text-gray-500 hover:text-gray-700'
   >
     {children}
     <TbCaretUpDownFilled className='h-3.5 w-3.5 text-[#CBCFE2]' />
