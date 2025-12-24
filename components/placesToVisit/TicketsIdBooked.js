@@ -9,6 +9,10 @@ import Modal from '@/components/ui/Modal'
 
 const metricCardsBase = {
   total: {
+    id: "total",
+    title: "Total Tickets",
+    iconBg: "bg-[#4F46E5]",
+    iconColor: "text-[#4F46E5]",
     id: 'total',
     title: 'Total Tickets',
     bg: 'bg-gradient-to-r from-[#E8EEFF] to-[#C5D5FF]',
@@ -16,6 +20,8 @@ const metricCardsBase = {
     iconColor: 'text-indigo-600',
     textColor: 'text-indigo-600',
     icon: (
+      <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
+        <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z" />
       <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
         <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
       </svg>
@@ -47,7 +53,7 @@ const metricCardsBase = {
       </svg>
     ),
   },
-}
+};
 
 const statusClass = s => {
   const v = String(s || '').toLowerCase()
@@ -82,178 +88,353 @@ export default function TicketsIdBooked({ activityId }) {
   const [activeDropdown, setActiveDropdown] = useState(null);
   const dropdownRef = useRef(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [rows, setRows] = useState([]);
-  const [metrics, setMetrics] = useState({ totalTickets: 0, totalAmount: 0, bookedTickets: 0, bookedAmount: 0, unbookedTickets: 0, unbookedAmount: 0 });
-  const [headerName, setHeaderName] = useState('');
-  const [menuOpenId, setMenuOpenId] = useState(null)
-  const [menuPos, setMenuPos] = useState({ top: 0, left: 0 })
-  const [selectedBooking, setSelectedBooking] = useState(null)
-  const [ticketOpen, setTicketOpen] = useState(false)
-  const [customerOpen, setCustomerOpen] = useState(false)
-  const [downloadingId, setDownloadingId] = useState(null)
+  const [metrics, setMetrics] = useState({
+    totalTickets: 0,
+    totalAmount: 0,
+    bookedTickets: 0,
+    bookedAmount: 0,
+    unbookedTickets: 0,
+    unbookedAmount: 0,
+  });
+  const [headerName, setHeaderName] = useState("");
+  const [menuOpenId, setMenuOpenId] = useState(null);
+  const [menuPos, setMenuPos] = useState({ top: 0, left: 0 });
+  const [selectedBooking, setSelectedBooking] = useState(null);
+  const [ticketOpen, setTicketOpen] = useState(false);
+  const [customerOpen, setCustomerOpen] = useState(false);
+  const [downloadingId, setDownloadingId] = useState(null);
+  const [exporting, setExporting] = useState(false);
 
-  const fmtCurrency = n => `₦${Number(n || 0).toLocaleString('en-NG')}`
-  const fmtDate = d => {
-    if (!d) return '-'
-    const date = new Date(typeof d === 'object' && d.$date ? d.$date : d)
-    return date.toLocaleString(undefined, { weekday: 'short', day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })
-  }
-  const ticketsText = tList => {
-    if (!Array.isArray(tList)) return '-'
-    return tList.map(t => `${t.quantity} x ${t.ticketName} (${fmtCurrency(t.perTicketPrice)})`).join('\n')
-  }
-  const ticketsTotal = b => {
-    const list = Array.isArray(b?.tickets) ? b.tickets : []
-    return list.reduce((sum, t) => sum + (Number(t.totalPrice || ((Number(t.perTicketPrice) || 0) * (Number(t.quantity) || 0))) || 0), 0)
-  }
+  const fmtCurrency = (n) => `₦${Number(n || 0).toLocaleString("en-NG")}`;
+  const fmtDate = (d) => {
+    if (!d) return "-";
+    const date = new Date(typeof d === "object" && d.$date ? d.$date : d);
+    return date.toLocaleString(undefined, {
+      weekday: "short",
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+  const ticketsText = (tList) => {
+    if (!Array.isArray(tList)) return "-";
+    return tList
+      .map(
+        (t) =>
+          `${t.quantity} x ${t.ticketName} (${fmtCurrency(t.perTicketPrice)})`
+      )
+      .join("\n");
+  };
+  const ticketsTotal = (b) => {
+    const list = Array.isArray(b?.tickets) ? b.tickets : [];
+    return list.reduce(
+      (sum, t) =>
+        sum +
+        (Number(
+          t.totalPrice ||
+            (Number(t.perTicketPrice) || 0) * (Number(t.quantity) || 0)
+        ) || 0),
+      0
+    );
+  };
 
   useEffect(() => {
     const fetchBookings = async () => {
-      const idFromParams = params?.id
-      const pid = Array.isArray(idFromParams) ? idFromParams[0] : idFromParams
-      const aidRaw = activityId ?? pid
-      const aid = String(aidRaw || '').trim()
-      if (!aid) return
-      setLoading(true)
-      setError('')
+      const idFromParams = params?.id;
+      const pid = Array.isArray(idFromParams) ? idFromParams[0] : idFromParams;
+      const aidRaw = activityId ?? pid;
+      const aid = String(aidRaw || "").trim();
+      if (!aid) return;
+      setLoading(true);
+      setError("");
       try {
-        const res = await getIdWiseActivityBookings(aid)
-        const data = Array.isArray(res?.data) ? res.data : []
-        const mapped = data.map(b => ({
+        const res = await getIdWiseActivityBookings(aid);
+        const data = Array.isArray(res?.data) ? res.data : [];
+        const mapped = data.map((b) => ({
           id: b._id || b.id,
           bookedOn: fmtDate(b.createdAt || b.updatedAt),
-          userName: String(b?.buyer?.fullName || '-'),
-          email: String(b?.buyer?.email || '-'),
-          phoneNumber: String(b?.buyer?.phone || '-'),
+          userName: String(b?.buyer?.fullName || "-"),
+          email: String(b?.buyer?.email || "-"),
+          phoneNumber: String(b?.buyer?.phone || "-"),
           ticketsBooked: ticketsText(b?.tickets),
           amount: fmtCurrency(ticketsTotal(b)),
           arrivalDate: fmtDate(b?.arrivalDate),
-          paymentStatus: String(b?.paymentStatus || '-').toLowerCase() === 'paid' ? 'Paid' : String(b?.paymentStatus || '-'),
+          paymentStatus:
+            String(b?.paymentStatus || "-").toLowerCase() === "paid"
+              ? "Paid"
+              : String(b?.paymentStatus || "-"),
           statusClass: statusClass(b?.paymentStatus),
-          status: String(b?.status || b?.bookingStatus || 'Pending'),
-          activityStatusClass: statusActivityClass(b?.status || b?.bookingStatus),
-          raw: b
-        }))
-        setRows(mapped)
-        setHeaderName(String(data?.[0]?.activityId?.activityName || ''))
+          status: String(b?.status || b?.bookingStatus || "Pending"),
+          activityStatusClass: statusActivityClass(
+            b?.status || b?.bookingStatus
+          ),
+          raw: b,
+        }));
+        setRows(mapped);
+        setHeaderName(String(data?.[0]?.activityId?.activityName || ""));
         // Metrics
-        const sumQuantities = list => list.reduce((acc, b) => acc + (Array.isArray(b.tickets) ? b.tickets.reduce((s, t) => s + Number(t.quantity || 0), 0) : 0), 0)
-        const sumAmounts = list => list.reduce((acc, b) => acc + Number(b?.pricing?.total || 0), 0)
-        const paidList = data.filter(b => String(b?.paymentStatus || '').toLowerCase() === 'paid')
-        const totalTickets = sumQuantities(data)
-        const totalAmount = sumAmounts(data)
-        const bookedTickets = sumQuantities(paidList)
-        const bookedAmount = sumAmounts(paidList)
-        const unbookedTickets = totalTickets - bookedTickets
-        const unbookedAmount = totalAmount - bookedAmount
-        setMetrics({ totalTickets, totalAmount, bookedTickets, bookedAmount, unbookedTickets, unbookedAmount })
+        const sumQuantities = (list) =>
+          list.reduce(
+            (acc, b) =>
+              acc +
+              (Array.isArray(b.tickets)
+                ? b.tickets.reduce((s, t) => s + Number(t.quantity || 0), 0)
+                : 0),
+            0
+          );
+        const sumAmounts = (list) =>
+          list.reduce((acc, b) => acc + Number(b?.pricing?.total || 0), 0);
+        const paidList = data.filter(
+          (b) => String(b?.paymentStatus || "").toLowerCase() === "paid"
+        );
+        const totalTickets = sumQuantities(data);
+        const totalAmount = sumAmounts(data);
+        const bookedTickets = sumQuantities(paidList);
+        const bookedAmount = sumAmounts(paidList);
+        const unbookedTickets = totalTickets - bookedTickets;
+        const unbookedAmount = totalAmount - bookedAmount;
+        setMetrics({
+          totalTickets,
+          totalAmount,
+          bookedTickets,
+          bookedAmount,
+          unbookedTickets,
+          unbookedAmount,
+        });
       } catch (e) {
-        setError('Failed to load bookings')
-        setRows([])
-        setHeaderName('')
-        setMetrics({ totalTickets: 0, totalAmount: 0, bookedTickets: 0, bookedAmount: 0, unbookedTickets: 0, unbookedAmount: 0 })
+        setError("Failed to load bookings");
+        setRows([]);
+        setHeaderName("");
+        setMetrics({
+          totalTickets: 0,
+          totalAmount: 0,
+          bookedTickets: 0,
+          bookedAmount: 0,
+          unbookedTickets: 0,
+          unbookedAmount: 0,
+        });
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
-    fetchBookings()
-  }, [activityId])
+    };
+    fetchBookings();
+  }, [activityId]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setActiveDropdown(null);
-        setMenuOpenId(null)
+        setMenuOpenId(null);
       }
     };
+
+    document.addEventListener("mousedown", handleClickOutside);
     document.addEventListener('mousedown', handleClickOutside);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
 
-  const toIdString = v => {
-    if (!v) return ''
-    if (typeof v === 'string') return v
-    if (typeof v === 'object') {
-      if (v.$oid) return String(v.$oid)
-      if (v.$id) return String(v.$id)
-      if (v.oid) return String(v.oid)
-      if (v._id) return toIdString(v._id)
+  const toIdString = (v) => {
+    if (!v) return "";
+    if (typeof v === "string") return v;
+    if (typeof v === "object") {
+      if (v.$oid) return String(v.$oid);
+      if (v.$id) return String(v.$id);
+      if (v.oid) return String(v.oid);
+      if (v._id) return toIdString(v._id);
     }
-    return String(v)
-  }
+    return String(v);
+  };
 
-  const openTicket = booking => {
-    const b = booking?.raw || booking || {}
-    const id = toIdString(b._id || b.id || b.bookingId)
-    const aid = toIdString(b.activityId || (b.activity && b.activity._id) || params?.id)
-    const qs = aid ? `?activityId=${encodeURIComponent(String(aid))}` : ''
+  const openTicket = (booking) => {
+    const b = booking?.raw || booking || {};
+    const id = toIdString(b._id || b.id || b.bookingId);
+    const aid = toIdString(
+      b.activityId || (b.activity && b.activity._id) || params?.id
+    );
+    const qs = aid ? `?activityId=${encodeURIComponent(String(aid))}` : "";
     if (id) {
-      router.push(`/places-to-visit/tickets-booked/view/${encodeURIComponent(String(id))}${qs}`)
+      router.push(
+        `/places-to-visit/tickets-booked/view/${encodeURIComponent(
+          String(id)
+        )}${qs}`
+      );
     } else {
-      setSelectedBooking(b)
-      setTicketOpen(true)
+      setSelectedBooking(b);
+      setTicketOpen(true);
     }
-    setActiveDropdown(null)
-    setMenuOpenId(null)
-  }
+    setActiveDropdown(null);
+    setMenuOpenId(null);
+  };
 
-  const openCustomer = booking => {
-    const b = booking?.raw || booking || {}
-    setSelectedBooking(b)
-    setCustomerOpen(true)
-    setActiveDropdown(null)
-    setMenuOpenId(null)
-  }
+  const openCustomer = (booking) => {
+    const b = booking?.raw || booking || {};
+    setSelectedBooking(b);
+    setCustomerOpen(true);
+    setActiveDropdown(null);
+    setMenuOpenId(null);
+  };
 
-  const downloadReceipt = booking => {
-    const b = booking?.raw || booking || {}
-    const id = toIdString(b._id || b.id || b.bookingId)
-    const aid = toIdString(b.activityId || (b.activity && b.activity._id) || params?.id)
+  const downloadReceipt = (booking) => {
+    const b = booking?.raw || booking || {};
+    const id = toIdString(b._id || b.id || b.bookingId);
+    const aid = toIdString(
+      b.activityId || (b.activity && b.activity._id) || params?.id
+    );
     if (!id) {
-      alert('Invalid booking id')
-      return
+      alert("Invalid booking id");
+      return;
     }
-    if (!((b.buyer && b.buyer.fullName) || (Array.isArray(b.tickets) && b.tickets.some(t => Array.isArray(t.attendees) && t.attendees.length > 0)))) {
-      alert('Buyer or attendee details missing for this booking')
-      return
+    if (
+      !(
+        (b.buyer && b.buyer.fullName) ||
+        (Array.isArray(b.tickets) &&
+          b.tickets.some(
+            (t) => Array.isArray(t.attendees) && t.attendees.length > 0
+          ))
+      )
+    ) {
+      alert("Buyer or attendee details missing for this booking");
+      return;
     }
-    ;(async () => {
+    (async () => {
       try {
-        if (String(downloadingId || '') === String(id)) return
-        setDownloadingId(id)
-        const res = await downloadActivityBookedTicket(id, aid)
-        const pdfUrl = res?.data?.pdfUrl || res?.pdfUrl || ''
+        if (String(downloadingId || "") === String(id)) return;
+        setDownloadingId(id);
+        const res = await downloadActivityBookedTicket(id, aid);
+        const pdfUrl = res?.data?.pdfUrl || res?.pdfUrl || "";
         if (!pdfUrl) {
-          const msg = res?.message || 'Failed to download ticket'
-          throw new Error(msg)
+          const msg = res?.message || "Failed to download ticket";
+          throw new Error(msg);
         }
         try {
-          const r = await fetch(pdfUrl)
-          const blob = await r.blob()
-          const a = document.createElement('a')
-          const objectUrl = URL.createObjectURL(blob)
-          a.href = objectUrl
-          a.download = `ticket-${id}.pdf`
-          document.body.appendChild(a)
-          a.click()
-          document.body.removeChild(a)
-          URL.revokeObjectURL(objectUrl)
+          const r = await fetch(pdfUrl);
+          const blob = await r.blob();
+          const a = document.createElement("a");
+          const objectUrl = URL.createObjectURL(blob);
+          a.href = objectUrl;
+          a.download = `ticket-${id}.pdf`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(objectUrl);
         } catch {
-          window.open(pdfUrl, '_blank')
+          window.open(pdfUrl, "_blank");
         }
       } catch (e) {
-        const msg = e?.response?.data?.message || e?.message || 'Failed to download ticket'
-        alert(msg)
+        const msg =
+          e?.response?.data?.message ||
+          e?.message ||
+          "Failed to download ticket";
+        alert(msg);
       } finally {
-        setDownloadingId(null)
-        setActiveDropdown(null)
-        setMenuOpenId(null)
+        setDownloadingId(null);
+        setActiveDropdown(null);
+        setMenuOpenId(null);
       }
-    })()
-  }
+    })();
+  };
+  const safe = (v) => (v === undefined || v === null ? "" : v);
+
+  const joinArray = (arr, fn) =>
+    Array.isArray(arr) ? arr.map(fn).join(" | ") : "";
+
+  const handleDownloadBookingExcel = () => {
+    try {
+      setExporting(true);
+
+      if (!rows.length) return;
+
+      const dataToExport = rows.map((r) => {
+        const b = r.raw || {};
+
+        return {
+          /* ================= BOOKING ================= */
+          Booking_ID: b._id,
+          Order_ID: b.orderId,
+          Transaction_Ref: b.transactionRef,
+          Payment_Status: b.paymentStatus,
+          Discount_Code: b.discountCode,
+          Referral_Code: b.referralCode,
+          Final_Payable_Amount: b.finalPayableAmount,
+          Quantity: b.quantity,
+          Created_At: fmtDate(b.createdAt),
+          Updated_At: fmtDate(b.updatedAt),
+          Arrival_Date: fmtDate(b.arrivalDate),
+          Send_To_Different_Emails: b.sendToDifferentEmails,
+
+          /* ================= BUYER ================= */
+          Buyer_Full_Name: b?.buyer?.fullName,
+          Buyer_Email: b?.buyer?.email,
+          Buyer_Phone: b?.buyer?.phone,
+          Buyer_Country: b?.buyer?.country,
+          Buyer_City: b?.buyer?.city,
+
+          /* ================= USER ================= */
+          User_ID: b?.userId?._id,
+          User_Email: b?.userId?.email,
+
+          /* ================= ACTIVITY ================= */
+          Activity_ID: b?.activityId?._id,
+          Activity_Name: b?.activityId?.activityName,
+          Activity_Location: b?.activityId?.location,
+          Activity_Map_Location: b?.activityId?.mapLocation,
+          Activity_Days: joinArray(b?.activityId?.activityDays, (d) => d),
+          Activity_Opening_Hours: b?.activityId?.openingHours,
+          Activity_Duration: b?.activityId?.duration,
+          Activity_Status: b?.activityId?.status,
+          Activity_Start_Date: fmtDate(b?.activityId?.activityStartDate),
+          Activity_End_Date: fmtDate(b?.activityId?.activityEndDate),
+          Activity_Slug: b?.activityId?.slug,
+          Activity_About: b?.activityId?.about,
+          Activity_Important_Info: b?.activityId?.importantInfo,
+          Activity_Twitter: b?.activityId?.twitterLink,
+          Activity_Website: b?.activityId?.websiteLink,
+
+          /* ================= ACTIVITY TYPE ================= */
+          Activity_Type_ID: b?.activityId?.activityType?._id,
+          Activity_Type_Name: b?.activityId?.activityType?.activityTypeName,
+          Activity_Type_Slug: b?.activityId?.activityType?.slug,
+          Activity_Type_Title: b?.activityId?.activityType?.title,
+          Activity_Type_Description: b?.activityId?.activityType?.description,
+          Activity_Type_For: b?.activityId?.activityType?.activityFor,
+          Activity_Type_Status: b?.activityId?.activityType?.status,
+
+          /* ================= PRICING ================= */
+          Service_Fee: b?.pricing?.serviceFee,
+          Discount_Applied: b?.pricing?.discountApplied,
+
+          /* ================= TICKETS ================= */
+          Ticket_Names: joinArray(b?.tickets, (t) => t.ticketName),
+
+          Ticket_Types: joinArray(b?.tickets, (t) => t.ticketType),
+
+          Ticket_Quantities: joinArray(b?.tickets, (t) => t.quantity),
+
+          Ticket_Per_Price: joinArray(b?.tickets, (t) => t.perTicketPrice),
+
+          Ticket_Total_Price: joinArray(b?.tickets, (t) => t.totalPrice),
+
+          Ticket_Attendees: joinArray(b?.tickets, (t) =>
+            joinArray(t.attendees, (a) => `${a.fullName} (${a.email})`)
+          ),
+
+          Ticket_Price_Breakup: joinArray(b?.tickets, (t) =>
+            joinArray(t?.ticketId?.priceBreak, (p) => `${p.label}: ${p.price}`)
+          ),
+        };
+      });
+
+      downloadExcel(dataToExport, "Activity_Booking_Full_user_Data.xlsx");
+    } finally {
+      setExporting(false);
+    }
+  };
 
   return (
     <>

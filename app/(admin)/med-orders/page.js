@@ -2,10 +2,16 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { TbCaretUpDownFilled, TbTicket, TbTrendingUp, TbTrendingDown } from 'react-icons/tb'
+import { X } from 'lucide-react'
+import {
+  TbCaretUpDownFilled,
+  TbTicket,
+  TbTrendingUp,
+  TbTrendingDown
+} from 'react-icons/tb'
 import { FaChartColumn } from 'react-icons/fa6'
 import { getMedOrderList } from '@/services/med/med.service'
-import { downloadExcel } from '@/utils/excelExport'
+import { downloadExcel } from '../../../utils/excelExport'
 
 const filterTabs = [
   // { id: 'bundle-orders', label: 'Bundle Orders', active: false },
@@ -52,6 +58,7 @@ const formatDate = iso => {
 export default function MedOrdersPage () {
   const router = useRouter()
   const [searchTerm, setSearchTerm] = useState('')
+  const [dateRange, setDateRange] = useState({ start: '', end: '' })
   const [rowsRaw, setRowsRaw] = useState([])
   const [detailOpen, setDetailOpen] = useState(false)
   const [detailRow, setDetailRow] = useState(null)
@@ -67,7 +74,10 @@ export default function MedOrdersPage () {
   useEffect(() => {
     ;(async () => {
       try {
-        const res = await getMedOrderList()
+        const res = await getMedOrderList({
+          startDate: dateRange.start || undefined,
+          endDate: dateRange.end || undefined
+        })
 
         const d = res
         const yesterdayCount = Number(d.totalPurchasingYesterday || 0)
@@ -109,7 +119,7 @@ export default function MedOrdersPage () {
         setRowsRaw([])
       }
     })()
-  }, [])
+  }, [dateRange.start, dateRange.end])
 
   const rows = useMemo(() => {
     const list = Array.isArray(rowsRaw) ? rowsRaw : []
@@ -145,6 +155,7 @@ export default function MedOrdersPage () {
         orderId: String(r?._id || '-'),
         eventDate: formatDate(r?.createdAt || api?.created_at) || '-',
         amount: toCurrency(amount),
+        amountNum: amount,
         activityStatus,
         paymentStatus,
         raw: r
@@ -152,11 +163,167 @@ export default function MedOrdersPage () {
     })
   }, [rowsRaw])
 
+  // Calculate stats client-side if not loaded from API or if filtered
+  useEffect(() => {
+    if (!rows || rows.length === 0) return
+
+    // If a filter is active, we recalculate based on the filtered range.
+    const isFiltered = dateRange.start || dateRange.end
+
+    if (!isFiltered) return
+
+    const now = new Date()
+    const yesterday = new Date(now)
+    yesterday.setDate(yesterday.getDate() - 1)
+    yesterday.setHours(0, 0, 0, 0)
+    const yesterdayEnd = new Date(yesterday)
+    yesterdayEnd.setHours(23, 59, 59, 999)
+
+    const yesterdayDateStr = yesterday.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric'
+    })
+
+    const yesterdayCount = rows.filter(o => {
+      const d = new Date(
+        o.raw?.createdAt || o.raw?.api_response?.data?.created_at
+      )
+      return d >= yesterday && d <= yesterdayEnd
+    }).length
+
+    // 2. Avg Daily Growth Logic (Filter Aware)
+    let start, end, daysCount
+
+    if (dateRange.start) {
+      start = new Date(dateRange.start)
+      start.setHours(0, 0, 0, 0)
+    } else {
+      end = new Date(dateRange.end)
+      start = new Date(end)
+      start.setDate(start.getDate() - 29)
+      start.setHours(0, 0, 0, 0)
+    }
+
+    if (dateRange.end) {
+      end = new Date(dateRange.end)
+      end.setHours(23, 59, 59, 999)
+    } else {
+      end = new Date()
+      end.setHours(23, 59, 59, 999)
+    }
+
+    if (start > end) {
+      end = new Date()
+      start = new Date()
+      start.setDate(now.getDate() - 29)
+      start.setHours(0, 0, 0, 0)
+      end.setHours(23, 59, 59, 999)
+    }
+
+    const diffTime = Math.abs(end - start)
+    daysCount = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+    if (daysCount < 1) daysCount = 1
+
+    const bookingsByDate = {}
+    rows.forEach(o => {
+      const d = new Date(
+        o.raw?.createdAt || o.raw?.api_response?.data?.created_at
+      )
+      if (isNaN(d.getTime())) return
+      if (d >= start && d <= end) {
+        const dateKey = d.toISOString().split('T')[0]
+        bookingsByDate[dateKey] = (bookingsByDate[dateKey] || 0) + 1
+      }
+    })
+
+    const dailyData = []
+    for (let i = 0; i < daysCount; i++) {
+      const d = new Date(start)
+      d.setDate(d.getDate() + i)
+      const dateKey = d.toISOString().split('T')[0]
+      dailyData.push({ date: dateKey, count: bookingsByDate[dateKey] || 0 })
+    }
+
+    const totalCount = dailyData.reduce((acc, curr) => acc + curr.count, 0)
+    const avgGrowthCount = Math.round(totalCount / daysCount)
+
+    let isCountIncreasing = false
+    if (dailyData.length >= 2) {
+      const mid = Math.floor(dailyData.length / 2)
+      const firstHalf = dailyData.slice(0, mid)
+      const secondHalf = dailyData.slice(mid)
+      const avgFirst =
+        firstHalf.reduce((a, c) => a + c.count, 0) / firstHalf.length
+      const avgSecond =
+        secondHalf.reduce((a, c) => a + c.count, 0) / secondHalf.length
+      isCountIncreasing = avgSecond >= avgFirst
+    }
+
+    let totalPctChange = 0
+    let validDays = 0
+    const pctChanges = []
+
+    for (let i = 1; i < dailyData.length; i++) {
+      const prev = dailyData[i - 1].count
+      const curr = dailyData[i].count
+      let pct = 0
+      if (prev === 0) {
+        pct = curr > 0 ? 100 : 0
+      } else {
+        pct = ((curr - prev) / prev) * 100
+      }
+      pctChanges.push(pct)
+      totalPctChange += pct
+      validDays++
+    }
+
+    const avgGrowthPercentVal = validDays > 0 ? totalPctChange / validDays : 0
+    const finalGrowthPercent = Math.min(avgGrowthPercentVal, 100)
+    const avgGrowthPercent = `${finalGrowthPercent.toFixed(2)}%`
+
+    let isPctIncreasing = false
+    if (pctChanges.length >= 2) {
+      const mid = Math.floor(pctChanges.length / 2)
+      const firstHalf = pctChanges.slice(0, mid)
+      const secondHalf = pctChanges.slice(mid)
+      const avgFirst = firstHalf.reduce((a, c) => a + c, 0) / firstHalf.length
+      const avgSecond =
+        secondHalf.reduce((a, c) => a + c, 0) / secondHalf.length
+      isPctIncreasing = avgSecond >= avgFirst
+    }
+
+    setStats({
+      yesterdayCount,
+      yesterdayDateStr,
+      avgGrowthCount,
+      isCountIncreasing,
+      avgGrowthPercent,
+      isPctIncreasing
+    })
+  }, [rows, dateRange])
+
   const filteredRows = rows.filter(row => {
     const term = String(searchTerm || '')
       .trim()
       .toLowerCase()
-    if (!term) return true
+
+    // Date Range Filtering
+    const bookingTime = new Date(
+      row.raw?.createdAt || row.raw?.api_response?.data?.created_at
+    ).getTime()
+    const startTime = dateRange.start
+      ? new Date(dateRange.start).setHours(0, 0, 0, 0)
+      : null
+    const endTime = dateRange.end
+      ? new Date(dateRange.end).setHours(23, 59, 59, 999)
+      : null
+
+    const matchesDate =
+      (!startTime || bookingTime >= startTime) &&
+      (!endTime || bookingTime <= endTime)
+
+    if (!term) return matchesDate
+
     const tDigits = term.replace(/[^0-9]/g, '')
     const orderId = String(row.orderId || '').toLowerCase()
     const dateStr = String(row.eventDate || '').toLowerCase()
@@ -171,7 +338,7 @@ export default function MedOrdersPage () {
       payment.includes(term)
     const dateDigits = String(row.eventDate || '').replace(/[^0-9]/g, '')
     const matchesDigits = tDigits && dateDigits.includes(tDigits)
-    return matchesText || matchesDigits
+    return matchesDate && (matchesText || matchesDigits)
   })
 
   const handleDownloadExcel = () => {
@@ -643,15 +810,58 @@ export default function MedOrdersPage () {
   }
 
   return (
-    <div className='p-4 h-full flex flex-col bg-white'>
-      <div className='mb-4'>
-        <h1 className='text-xl font-bold text-gray-900 mb-1'>
-          Gross Transaction Value
-        </h1>
-        <nav className='text-sm text-gray-500'>
-          <span>Dashboard</span> /{' '}
-          <span className='text-gray-900 font-medium'>Users</span>
-        </nav>
+    <div className='p-4 min-h-screen bg-white'>
+      {/* Title and Breadcrumb */}
+      <div className='flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6'>
+        <div>
+          <h1 className='text-xl font-bold text-gray-900 mb-1'>
+            Gross Transaction Value
+          </h1>
+          <nav className='text-sm text-gray-500'>
+            <span>Dashboard</span> / <span>Gross Transaction Value</span>
+          </nav>
+        </div>
+        <div className='flex items-center gap-2'>
+          <div className='flex items-center gap-2'>
+            <div className='flex flex-col'>
+              <label className='text-[10px] text-gray-500 font-medium ml-1'>
+                Start Date
+              </label>
+              <input
+                type='date'
+                value={dateRange.start}
+                onChange={e =>
+                  setDateRange(prev => ({ ...prev, start: e.target.value }))
+                }
+                className='h-9 px-3 border border-gray-300 rounded-lg text-xs text-gray-700 focus:outline-none focus:border-indigo-500'
+              />
+            </div>
+            <span className='text-gray-400 mt-4'>-</span>
+            <div className='flex flex-col'>
+              <label className='text-[10px] text-gray-500 font-medium ml-1'>
+                End Date
+              </label>
+              <input
+                type='date'
+                max={new Date().toISOString().split('T')[0]}
+                value={dateRange.end}
+                onChange={e =>
+                  setDateRange(prev => ({ ...prev, end: e.target.value }))
+                }
+                className='h-9 px-3 border border-gray-300 rounded-lg text-xs text-gray-700 focus:outline-none focus:border-indigo-500'
+              />
+            </div>
+          </div>
+          {(dateRange.start || dateRange.end) && (
+            <button
+              onClick={() => setDateRange({ start: '', end: '' })}
+              className='mt-4 p-2 text-gray-500 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors'
+              title='Clear Date Filter'
+            >
+              <X size={16} />
+            </button>
+          )}
+        </div>
       </div>
 
       <div className='grid grid-cols-1 md:grid-cols-3 gap-4 mb-6'>
@@ -692,10 +902,15 @@ export default function MedOrdersPage () {
                     Increasing
                   </span>
                 ) : (
-                  <span className='text-xs flex items-center mb-1 text-red-500'>
-                    <TbTrendingDown className='w-3 h-3 mr-0.5' />
-                    Decreasing
-                  </span>
+                  <>
+                    <p className='text-2xl text-red-600 font-bold'>
+                      {stats.avgGrowthCount}
+                    </p>
+                    <span className='text-xs flex items-center mb-1 text-red-600'>
+                      <TbTrendingDown className='w-3 h-3 mr-0.5' />
+                      Decreasing
+                    </span>
+                  </>
                 )}
               </div>
             </div>
@@ -720,12 +935,81 @@ export default function MedOrdersPage () {
                     Increasing
                   </span>
                 ) : (
-                  <span className='text-xs flex items-center mb-1 text-red-500'>
-                    <TbTrendingDown className='w-3 h-3 mr-0.5' />
-                    Decreasing
-                  </span>
+                  <>
+                    <p className='text-2xl text-red-600 font-bold'>
+                      {stats.avgGrowthPercent}
+                    </p>
+                    <span className='text-xs flex items-center mb-1 text-red-600'>
+                      <TbTrendingDown className='w-3 h-3 mr-0.5' />
+                      Decreasing
+                    </span>
+                  </>
                 )}
               </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Additional Stats Cards (Filtered) */}
+      <div className='grid grid-cols-1 md:grid-cols-2 gap-4 mb-6'>
+        {/* Total MedPlus Bookings (Filtered) */}
+        <div className='bg-blue-300 text-white p-4 rounded-lg'>
+          <div className='flex items-center'>
+            <div className='bg-white p-2 rounded-lg mr-3'>
+              <TbTicket className='w-6 h-6 text-blue-600' />
+            </div>
+            <div>
+              <p className='text-xs text-black opacity-90'>
+                Total MedPlus Bookings
+              </p>
+              <p className='text-2xl text-black font-bold'>
+                {filteredRows.length}{' '}
+                <span className='text-lg font-semibold opacity-90'>
+                  (₦
+                  {filteredRows
+                    .reduce(
+                      (acc, curr) => acc + (Number(curr.amountNum) || 0),
+                      0
+                    )
+                    .toLocaleString()}
+                  )
+                </span>
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* New Bookings Today (Filtered) */}
+        <div className='bg-orange-300 text-white p-4 rounded-lg'>
+          <div className='flex items-center'>
+            <div className='bg-white p-2 rounded-lg mr-3'>
+              <TbTicket className='w-6 h-6 text-orange-600' />
+            </div>
+            <div>
+              <p className='text-xs text-black opacity-90'>
+                New Bookings Today
+              </p>
+              <p className='text-2xl text-black font-bold'>
+                {
+                  filteredRows.filter(b => {
+                    if (
+                      !b.raw?.createdAt &&
+                      !b.raw?.api_response?.data?.created_at
+                    )
+                      return false
+                    const d = new Date(
+                      b.raw.createdAt || b.raw.api_response.data.created_at
+                    )
+                    const today = new Date()
+                    return (
+                      d.getDate() === today.getDate() &&
+                      d.getMonth() === today.getMonth() &&
+                      d.getFullYear() === today.getFullYear()
+                    )
+                  }).length
+                }
+              </p>
             </div>
           </div>
         </div>

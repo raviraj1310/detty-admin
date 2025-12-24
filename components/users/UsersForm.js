@@ -9,11 +9,12 @@ import {
   getUserWithProfile
 } from '@/services/users/user.service'
 import Toast from '@/components/ui/Toast'
+import { ChevronUp, ChevronDown, X } from 'lucide-react'
 import {
-  ChevronUp,
-  ChevronDown
-} from 'lucide-react'
-import { TbCaretUpDownFilled, TbTrendingUp, TbTrendingDown } from 'react-icons/tb'
+  TbCaretUpDownFilled,
+  TbTrendingUp,
+  TbTrendingDown
+} from 'react-icons/tb'
 import { FaUserPlus, FaChartColumn } from 'react-icons/fa6'
 import { downloadExcel } from '@/utils/excelExport'
 
@@ -666,13 +667,18 @@ export default function UsersForm () {
     avgGrowthPercent: 0,
     isPctIncreasing: false
   })
+  const [dateRange, setDateRange] = useState({ start: '', end: '' })
   const [exporting, setExporting] = useState(false)
 
   const fetchStats = async () => {
     try {
       // Fetch all users to calculate accurate stats since backend total ignores filters
       const limit = 5000
-      const res = await getUsers({ limit })
+      const params = { limit }
+      if (dateRange.start) params.startDate = dateRange.start
+      if (dateRange.end) params.endDate = dateRange.end
+
+      const res = await getUsers(params)
       const payload = res?.data || res || {}
 
       let allUsers = []
@@ -691,7 +697,7 @@ export default function UsersForm () {
       if (pages > 1 && allUsers.length < total) {
         const requests = []
         for (let p = 2; p <= pages; p++) {
-          requests.push(getUsers({ limit, page: p }))
+          requests.push(getUsers({ ...params, page: p }))
         }
         const results = await Promise.all(requests)
         results.forEach(r => {
@@ -858,7 +864,13 @@ export default function UsersForm () {
   useEffect(() => {
     const load = async () => {
       // If we have cached users, use them for instant client-side search/filtering
-      if (allCachedUsers && allCachedUsers.length > 0) {
+      // BUT if date range is present, we must hit the API as caching doesn't account for it
+      if (
+        allCachedUsers &&
+        allCachedUsers.length > 0 &&
+        !dateRange.start &&
+        !dateRange.end
+      ) {
         setUsers(allCachedUsers)
         setLoading(false)
         return
@@ -872,8 +884,46 @@ export default function UsersForm () {
           const baseParams = { page: 1, limit: fetchLimit }
           baseParams.search = debouncedSearch
           if (statusFilter) baseParams.status = statusFilter
+          if (dateRange.start) baseParams.startDate = dateRange.start
+          if (dateRange.end) baseParams.endDate = dateRange.end
+
           const firstRes = await getUsers(baseParams)
           const firstPayload = firstRes?.data || firstRes || {}
+
+          // Update stats from API response if available
+          if (
+            typeof firstPayload?.activeUsers !== 'undefined' &&
+            typeof firstPayload?.newRegistrationYesterday !== 'undefined'
+          ) {
+            const apiAvgCount = Number(firstPayload.avgDailyGrowthCount || 0)
+            const apiAvgPctStr = String(
+              firstPayload.avgDailyGrowthPercent || '0'
+            )
+            const apiAvgPct = parseFloat(apiAvgPctStr.replace('%', ''))
+
+            const now = new Date()
+            const yesterday = new Date(now)
+            yesterday.setDate(yesterday.getDate() - 1)
+            const yesterdayDateStr = yesterday.toLocaleDateString('en-US', {
+              month: 'short',
+              day: 'numeric'
+            })
+
+            setGlobalStats({
+              total: Number(firstPayload.total || 0),
+              active: Number(firstPayload.activeUsers || 0),
+              inactive: Number(firstPayload.inactiveUsers || 0),
+              yesterdayCount: Number(
+                firstPayload.newRegistrationYesterday || 0
+              ),
+              yesterdayDateStr,
+              avgGrowthCount: apiAvgCount,
+              isCountIncreasing: apiAvgCount >= 0,
+              avgGrowthPercent: apiAvgPctStr,
+              isPctIncreasing: apiAvgPct >= 0
+            })
+          }
+
           const firstList = Array.isArray(firstPayload?.users)
             ? firstPayload.users
             : Array.isArray(firstRes?.data)
@@ -911,8 +961,42 @@ export default function UsersForm () {
         } else {
           const params = { page, limit }
           if (statusFilter) params.status = statusFilter
+          if (dateRange.start) params.startDate = dateRange.start
+          if (dateRange.end) params.endDate = dateRange.end
+
           const res = await getUsers(params)
           const payload = res?.data || res || {}
+
+          // Update stats from API response if available
+          if (
+            typeof payload?.activeUsers !== 'undefined' &&
+            typeof payload?.newRegistrationYesterday !== 'undefined'
+          ) {
+            const apiAvgCount = Number(payload.avgDailyGrowthCount || 0)
+            const apiAvgPctStr = String(payload.avgDailyGrowthPercent || '0')
+            const apiAvgPct = parseFloat(apiAvgPctStr.replace('%', ''))
+
+            const now = new Date()
+            const yesterday = new Date(now)
+            yesterday.setDate(yesterday.getDate() - 1)
+            const yesterdayDateStr = yesterday.toLocaleDateString('en-US', {
+              month: 'short',
+              day: 'numeric'
+            })
+
+            setGlobalStats({
+              total: Number(payload.total || 0),
+              active: Number(payload.activeUsers || 0),
+              inactive: Number(payload.inactiveUsers || 0),
+              yesterdayCount: Number(payload.newRegistrationYesterday || 0),
+              yesterdayDateStr,
+              avgGrowthCount: apiAvgCount,
+              isCountIncreasing: apiAvgCount >= 0,
+              avgGrowthPercent: apiAvgPctStr,
+              isPctIncreasing: apiAvgPct >= 0
+            })
+          }
+
           const list = Array.isArray(payload?.users)
             ? payload.users
             : Array.isArray(res?.data)
@@ -941,7 +1025,15 @@ export default function UsersForm () {
       }
     }
     load()
-  }, [page, limit, debouncedSearch, statusFilter, allCachedUsers])
+  }, [
+    page,
+    limit,
+    debouncedSearch,
+    statusFilter,
+    allCachedUsers,
+    dateRange.start,
+    dateRange.end
+  ])
 
   const handleStatusChange = async (userId, newStatus) => {
     try {
@@ -1004,6 +1096,7 @@ export default function UsersForm () {
     if (statusFilter) {
       base = base.filter(u => u.status === statusFilter)
     }
+    // Date range filtering is now handled by API
     return base
   }, [users, searchTerm, statusFilter])
 
@@ -1186,6 +1279,58 @@ export default function UsersForm () {
         userId={detailUserId}
         onClose={() => setDetailOpen(false)}
       />
+
+      {/* Header with Date Range */}
+      <div className='flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6'>
+        <div>
+          <h1 className='text-xl font-bold text-gray-900 mb-1'>Users</h1>
+          <nav className='text-sm text-gray-500'>
+            <span>Dashboard</span> /{' '}
+            <span className='text-gray-900 font-medium'>Users</span>
+          </nav>
+        </div>
+        <div className='flex items-center gap-2'>
+          <div className='flex items-center gap-2'>
+            <div className='flex flex-col'>
+              <label className='text-[10px] text-gray-500 font-medium ml-1'>
+                Start Date
+              </label>
+              <input
+                type='date'
+                value={dateRange.start}
+                onChange={e =>
+                  setDateRange(prev => ({ ...prev, start: e.target.value }))
+                }
+                className='h-9 px-3 border border-gray-300 rounded-lg text-xs text-gray-700 focus:outline-none focus:border-indigo-500'
+              />
+            </div>
+            <span className='text-gray-400 mt-4'>-</span>
+            <div className='flex flex-col'>
+              <label className='text-[10px] text-gray-500 font-medium ml-1'>
+                End Date
+              </label>
+              <input
+                type='date'
+                value={dateRange.end}
+                onChange={e =>
+                  setDateRange(prev => ({ ...prev, end: e.target.value }))
+                }
+                className='h-9 px-3 border border-gray-300 rounded-lg text-xs text-gray-700 focus:outline-none focus:border-indigo-500'
+              />
+            </div>
+          </div>
+          {(dateRange.start || dateRange.end) && (
+            <button
+              onClick={() => setDateRange({ start: '', end: '' })}
+              className='mt-4 p-2 text-gray-500 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors'
+              title='Clear Date Filter'
+            >
+              <X size={16} />
+            </button>
+          )}
+        </div>
+      </div>
+
       {/* Stats Cards */}
       <div className='grid grid-cols-1 md:grid-cols-3 gap-4 mb-6'>
         <div className='bg-gradient-to-r from-[#E8EEFF] to-[#C5D5FF] p-4 rounded-lg shadow-md'>
@@ -1279,19 +1424,26 @@ export default function UsersForm () {
                 Avg Daily Growth (Count)
               </p>
               <div className='flex items-end gap-2'>
-                <p className='text-2xl text-black font-bold'>
-                  {globalStats.avgGrowthCount}
-                </p>
                 {globalStats.isCountIncreasing ? (
-                  <span className='text-xs flex items-center mb-1 text-green-600'>
-                    <TbTrendingUp className='w-3 h-3 mr-0.5' />
-                    Increasing
-                  </span>
+                  <>
+                    <p className='text-2xl text-green-600 font-bold'>
+                      {globalStats.avgGrowthCount}
+                    </p>
+                    <span className='text-xs flex items-center mb-1 text-green-600'>
+                      <TbTrendingUp className='w-3 h-3 mr-0.5' />
+                      Increasing
+                    </span>
+                  </>
                 ) : (
-                  <span className='text-xs flex items-center mb-1 text-red-600'>
-                    <TbTrendingDown className='w-3 h-3 mr-0.5' />
-                    Decreasing
-                  </span>
+                  <>
+                    <p className='text-2xl text-red-600 font-bold'>
+                      {globalStats.avgGrowthCount}
+                    </p>
+                    <span className='text-xs flex items-center mb-1 text-red-600'>
+                      <TbTrendingDown className='w-3 h-3 mr-0.5' />
+                      Decreasing
+                    </span>
+                  </>
                 )}
               </div>
             </div>
@@ -1309,19 +1461,26 @@ export default function UsersForm () {
                 Avg Daily Growth (%)
               </p>
               <div className='flex items-end gap-2'>
-                <p className='text-2xl text-black font-bold'>
-                  {globalStats.avgGrowthPercent}
-                </p>
                 {globalStats.isPctIncreasing ? (
-                  <span className='text-xs flex items-center mb-1 text-green-600'>
-                    <TbTrendingUp className='w-3 h-3 mr-0.5' />
-                    Increasing
-                  </span>
+                  <>
+                    <p className='text-2xl text-green-600 font-bold'>
+                      {globalStats.avgGrowthPercent}
+                    </p>
+                    <span className='text-xs flex items-center mb-1 text-green-600'>
+                      <TbTrendingUp className='w-3 h-3 mr-0.5' />
+                      Increasing
+                    </span>
+                  </>
                 ) : (
-                  <span className='text-xs flex items-center mb-1 text-red-600'>
-                    <TbTrendingDown className='w-3 h-3 mr-0.5' />
-                    Decreasing
-                  </span>
+                  <>
+                    <p className='text-2xl text-red-600 font-bold'>
+                      {globalStats.avgGrowthPercent}
+                    </p>
+                    <span className='text-xs flex items-center mb-1 text-red-600'>
+                      <TbTrendingDown className='w-3 h-3 mr-0.5' />
+                      Decreasing
+                    </span>
+                  </>
                 )}
               </div>
             </div>

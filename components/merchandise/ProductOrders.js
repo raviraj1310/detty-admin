@@ -12,6 +12,7 @@ import {
   getOrderDetail,
 } from "@/services/merchandise/order.service";
 import { getProductById } from "@/services/merchandise/merchandise.service";
+import { downloadExcel } from "@/utils/excelExport";
 
 const toCurrency = (n) => {
   try {
@@ -43,6 +44,8 @@ export default function ProductOrders() {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [orderDetailLoading, setOrderDetailLoading] = useState(false);
   const [selectedSummary, setSelectedSummary] = useState(null);
+  const [exporting, setExporting] = useState(false);
+  const [rawData, setRawData] = useState([]);
 
   useEffect(() => {
     const handler = (e) => {
@@ -130,7 +133,10 @@ export default function ProductOrders() {
         // Fetch product details
         try {
           const productRes = await getProductById(productId);
+          setRawData(productRes?.message || productRes?.data || productRes);
+
           const p = productRes?.data || productRes?.message || productRes || {};
+
           setTitle(String(p?.title || p?.name || p?.productName || ""));
         } catch (e) {
           console.error("Failed to fetch product:", e);
@@ -138,7 +144,7 @@ export default function ProductOrders() {
 
         // Fetch orders by product ID
         const ordersRes = await getOrderByProductId(productId);
-
+        setRawData(ordersRes?.data);
         // Handle different response structures
         let ordersData = [];
         if (Array.isArray(ordersRes?.data)) {
@@ -370,7 +376,11 @@ export default function ProductOrders() {
               <IoFilterSharp className="h-4 w-4 text-[#8B93AF]" />
               {filtersOpen ? "Hide Filters" : "Filters"}
             </button>
-            <button className="flex h-10 items-center gap-2 rounded-xl border border-[#E5E6F7] bg-white px-4 text-sm font-medium text-[#2D3658] transition hover:bg-[#F6F7FD]">
+            <button
+              onClick={handleDownloadProductExcel}
+              disabled={exporting}
+              className="flex h-10 items-center gap-2 rounded-xl border border-[#E5E6F7] bg-white px-4 text-sm font-medium text-[#2D3658] transition hover:bg-[#F6F7FD]"
+            >
               <Download className="h-4 w-4 text-[#8B93AF]" />
             </button>
           </div>

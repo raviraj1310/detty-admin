@@ -2,7 +2,13 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { TbCaretUpDownFilled, TbTicket, TbTrendingUp, TbTrendingDown } from 'react-icons/tb'
+import { X } from 'lucide-react'
+import {
+  TbCaretUpDownFilled,
+  TbTicket,
+  TbTrendingUp,
+  TbTrendingDown
+} from 'react-icons/tb'
 import { FaChartColumn } from 'react-icons/fa6'
 import { getAllEsimBookingList } from '@/services/booking/booking.service'
 import { downloadExcel } from '@/utils/excelExport'
@@ -55,6 +61,7 @@ const filterTabs = [
 
 export default function EsimUsersPage () {
   const [searchTerm, setSearchTerm] = useState('')
+  const [dateRange, setDateRange] = useState({ start: '', end: '' })
   const [activeTab, setActiveTab] = useState('e-sim')
   const [rowsRaw, setRowsRaw] = useState([])
   const [detailOpen, setDetailOpen] = useState(false)
@@ -73,7 +80,10 @@ export default function EsimUsersPage () {
   useEffect(() => {
     ;(async () => {
       try {
-        const res = await getAllEsimBookingList()
+        const res = await getAllEsimBookingList({
+          startDate: dateRange.start || undefined,
+          endDate: dateRange.end || undefined
+        })
         let list = []
         let hasApiStats = false
 
@@ -93,13 +103,20 @@ export default function EsimUsersPage () {
           const avgGrowthPercentVal = parseFloat(
             avgGrowthPercentStr.replace('%', '')
           )
+
+          // Cap at 100%
+          const finalGrowthPercentVal = Math.min(avgGrowthPercentVal, 100)
+          const avgGrowthPercentStrCapped = `${finalGrowthPercentVal.toFixed(
+            2
+          )}%`
+
           setStats({
             yesterdayCount,
             yesterdayDateStr,
             avgGrowthCount,
             isCountIncreasing: avgGrowthCount >= 0,
-            avgGrowthPercent: avgGrowthPercentStr,
-            isPctIncreasing: avgGrowthPercentVal >= 0
+            avgGrowthPercent: avgGrowthPercentStrCapped,
+            isPctIncreasing: finalGrowthPercentVal >= 0
           })
           setStatsLoadedFromApi(true)
           hasApiStats = true
@@ -126,13 +143,20 @@ export default function EsimUsersPage () {
           const avgGrowthPercentVal = parseFloat(
             avgGrowthPercentStr.replace('%', '')
           )
+
+          // Cap at 100%
+          const finalGrowthPercentVal = Math.min(avgGrowthPercentVal, 100)
+          const avgGrowthPercentStrCapped = `${finalGrowthPercentVal.toFixed(
+            2
+          )}%`
+
           setStats({
             yesterdayCount,
             yesterdayDateStr,
             avgGrowthCount,
             isCountIncreasing: avgGrowthCount >= 0,
-            avgGrowthPercent: avgGrowthPercentStr,
-            isPctIncreasing: avgGrowthPercentVal >= 0
+            avgGrowthPercent: avgGrowthPercentStrCapped,
+            isPctIncreasing: finalGrowthPercentVal >= 0
           })
           setStatsLoadedFromApi(true)
           hasApiStats = true
@@ -156,7 +180,7 @@ export default function EsimUsersPage () {
         setRowsRaw([])
       }
     })()
-  }, [])
+  }, [dateRange.start, dateRange.end])
 
   useEffect(() => {
     if (statsLoadedFromApi || !rowsRaw || rowsRaw.length === 0) return
@@ -303,7 +327,22 @@ export default function EsimUsersPage () {
     const term = String(searchTerm || '')
       .trim()
       .toLowerCase()
-    if (!term) return true
+
+    // Date Range Filtering
+    const bookingTime = new Date(row.raw?.createdAt).getTime()
+    const startTime = dateRange.start
+      ? new Date(dateRange.start).setHours(0, 0, 0, 0)
+      : null
+    const endTime = dateRange.end
+      ? new Date(dateRange.end).setHours(23, 59, 59, 999)
+      : null
+
+    const matchesDate =
+      (!startTime || bookingTime >= startTime) &&
+      (!endTime || bookingTime <= endTime)
+
+    if (!term) return matchesDate
+
     const tDigits = term.replace(/[^0-9]/g, '')
     const orderId = String(row.orderId || '').toLowerCase()
     const dateStr = String(row.eventDate || '').toLowerCase()
@@ -318,7 +357,7 @@ export default function EsimUsersPage () {
       payment.includes(term)
     const dateDigits = String(row.eventDate || '').replace(/[^0-9]/g, '')
     const matchesDigits = tDigits && dateDigits.includes(tDigits)
-    return matchesText || matchesDigits
+    return matchesDate && (matchesText || matchesDigits)
   })
 
   const handleDownloadExcel = () => {
@@ -529,19 +568,61 @@ export default function EsimUsersPage () {
   }
 
   return (
-    <div className='p-4 h-full flex flex-col bg-white'>
-      <div className='mb-4'>
-        <h1 className='text-xl font-bold text-gray-900 mb-1'>
-          Gross Transaction Value
-        </h1>
-        <nav className='text-sm text-gray-500'>
-          <span>Dashboard</span> /{' '}
-          <span className='text-gray-900 font-medium'>
+    <div className='p-4 min-h-screen bg-white'>
+      {/* Title and Breadcrumb */}
+      <div className='flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6'>
+        <div>
+          <h1 className='text-xl font-bold text-gray-900 mb-1'>
             Gross Transaction Value
-          </span>
-        </nav>
+          </h1>
+          <nav className='text-sm text-gray-500'>
+            <span>Dashboard</span> / <span>Gross Transaction Value</span>
+          </nav>
+        </div>
+        <div className='flex items-center gap-2'>
+          <div className='flex items-center gap-2'>
+            <div className='flex flex-col'>
+              <label className='text-[10px] text-gray-500 font-medium ml-1'>
+                Start Date
+              </label>
+              <input
+                type='date'
+                value={dateRange.start}
+                onChange={e =>
+                  setDateRange(prev => ({ ...prev, start: e.target.value }))
+                }
+                className='h-9 px-3 border border-gray-300 rounded-lg text-xs text-gray-700 focus:outline-none focus:border-indigo-500'
+              />
+            </div>
+            <span className='text-gray-400 mt-4'>-</span>
+            <div className='flex flex-col'>
+              <label className='text-[10px] text-gray-500 font-medium ml-1'>
+                End Date
+              </label>
+              <input
+                type='date'
+                max={new Date().toISOString().split('T')[0]}
+                value={dateRange.end}
+                onChange={e =>
+                  setDateRange(prev => ({ ...prev, end: e.target.value }))
+                }
+                className='h-9 px-3 border border-gray-300 rounded-lg text-xs text-gray-700 focus:outline-none focus:border-indigo-500'
+              />
+            </div>
+          </div>
+          {(dateRange.start || dateRange.end) && (
+            <button
+              onClick={() => setDateRange({ start: '', end: '' })}
+              className='mt-4 p-2 text-gray-500 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors'
+              title='Clear Date Filter'
+            >
+              <X size={16} />
+            </button>
+          )}
+        </div>
       </div>
 
+      {/* Stats Cards */}
       <div className='grid grid-cols-1 md:grid-cols-3 gap-4 mb-6'>
         <div className='bg-gradient-to-r from-[#E8EEFF] to-[#C5D5FF] p-4 rounded-lg'>
           <div className='flex items-center justify-between'>
@@ -580,10 +661,15 @@ export default function EsimUsersPage () {
                     Increasing
                   </span>
                 ) : (
-                  <span className='text-xs flex items-center mb-1 text-red-500'>
-                    <TbTrendingDown className='w-3 h-3 mr-0.5' />
-                    Decreasing
-                  </span>
+                  <>
+                    <p className='text-2xl text-red-600 font-bold'>
+                      {stats.avgGrowthCount}
+                    </p>
+                    <span className='text-xs flex items-center mb-1 text-red-600'>
+                      <TbTrendingDown className='w-3 h-3 mr-0.5' />
+                      Decreasing
+                    </span>
+                  </>
                 )}
               </div>
             </div>
@@ -608,12 +694,72 @@ export default function EsimUsersPage () {
                     Increasing
                   </span>
                 ) : (
-                  <span className='text-xs flex items-center mb-1 text-red-500'>
-                    <TbTrendingDown className='w-3 h-3 mr-0.5' />
-                    Decreasing
-                  </span>
+                  <>
+                    <p className='text-2xl text-red-600 font-bold'>
+                      {stats.avgGrowthPercent}
+                    </p>
+                    <span className='text-xs flex items-center mb-1 text-red-600'>
+                      <TbTrendingDown className='w-3 h-3 mr-0.5' />
+                      Decreasing
+                    </span>
+                  </>
                 )}
               </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Additional Stats Cards (Filtered) */}
+      <div className='grid grid-cols-1 md:grid-cols-2 gap-4 mb-6'>
+        {/* Total E-Sim Bookings (Filtered) */}
+        <div className='bg-blue-300 text-white p-4 rounded-lg'>
+          <div className='flex items-center'>
+            <div className='bg-white p-2 rounded-lg mr-3'>
+              <TbTicket className='w-6 h-6 text-blue-600' />
+            </div>
+            <div>
+              <p className='text-xs text-black opacity-90'>
+                Total E-Sim Bookings
+              </p>
+              <p className='text-2xl text-black font-bold'>
+                {filteredRows.length}{' '}
+                <span className='text-lg font-semibold opacity-90'>
+                  (₦
+                  {filteredRows
+                    .reduce((acc, curr) => acc + (curr.amountNum || 0), 0)
+                    .toLocaleString()}
+                  )
+                </span>
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* New Bookings Today (Filtered) */}
+        <div className='bg-orange-300 text-white p-4 rounded-lg'>
+          <div className='flex items-center'>
+            <div className='bg-white p-2 rounded-lg mr-3'>
+              <TbTicket className='w-6 h-6 text-orange-600' />
+            </div>
+            <div>
+              <p className='text-xs text-black opacity-90'>
+                New Bookings Today
+              </p>
+              <p className='text-2xl text-black font-bold'>
+                {
+                  filteredRows.filter(b => {
+                    if (!b.raw?.createdAt) return false
+                    const d = new Date(b.raw.createdAt)
+                    const today = new Date()
+                    return (
+                      d.getDate() === today.getDate() &&
+                      d.getMonth() === today.getMonth() &&
+                      d.getFullYear() === today.getFullYear()
+                    )
+                  }).length
+                }
+              </p>
             </div>
           </div>
         </div>
@@ -668,7 +814,9 @@ export default function EsimUsersPage () {
                       d='M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3'
                     />
                   </svg>
-                  <span className='ml-2 text-xs text-gray-700 font-medium'>Export</span>
+                  <span className='ml-2 text-xs text-gray-700 font-medium'>
+                    Export
+                  </span>
                 </button>
               </div>
             </div>

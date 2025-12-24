@@ -1,12 +1,23 @@
-'use client';
+"use client";
 
-import { useState, useRef, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { Search, MoreVertical, Download, Ticket, User, Loader2 } from 'lucide-react';
+import { useState, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import {
+  Search,
+  MoreVertical,
+  Download,
+  Ticket,
+  User,
+  Loader2,
+} from "lucide-react";
 import { IoFilterSharp } from "react-icons/io5";
 import { TbCaretUpDownFilled } from "react-icons/tb";
-import { getAllActivityBookings, downloadActivityBookedTicket } from '@/services/places-to-visit/placesToVisit.service';
-import Modal from '@/components/ui/Modal'
+import {
+  getAllActivityBookings,
+  downloadActivityBookedTicket,
+} from "@/services/places-to-visit/placesToVisit.service";
+import Modal from "@/components/ui/Modal";
+import { downloadExcel } from "@/utils/excelExport";
 
 const metricCardsBase = {
   total: {
@@ -48,22 +59,27 @@ const metricCardsBase = {
       </svg>
     ),
   },
-}
+};
 
-const statusClass = s => {
-  const v = String(s || '').toLowerCase()
-  if (v === 'paid' || v === 'completed') return 'bg-emerald-50 text-emerald-600 border border-emerald-200'
-  if (v === 'pending' || v === 'incomplete') return 'bg-orange-50 text-orange-600 border border-orange-200'
-  return 'bg-red-50 text-red-600 border border-red-200'
-}
+const statusClass = (s) => {
+  const v = String(s || "").toLowerCase();
+  if (v === "paid" || v === "completed")
+    return "bg-emerald-50 text-emerald-600 border border-emerald-200";
+  if (v === "pending" || v === "incomplete")
+    return "bg-orange-50 text-orange-600 border border-orange-200";
+  return "bg-red-50 text-red-600 border border-red-200";
+};
 
-const activityStatusClass = s => {
-  const v = String(s || '').toLowerCase()
-  if (v === 'scanned') return 'bg-emerald-50 text-emerald-600 border border-emerald-200'
-  if (v === 'canceled' || v === 'cancelled') return 'bg-red-50 text-red-600 border border-red-200'
-  if (v === 'pending') return 'bg-gray-100 text-gray-600 border border-gray-200'
-  return 'bg-orange-50 text-orange-600 border border-orange-200'
-}
+const activityStatusClass = (s) => {
+  const v = String(s || "").toLowerCase();
+  if (v === "scanned")
+    return "bg-emerald-50 text-emerald-600 border border-emerald-200";
+  if (v === "canceled" || v === "cancelled")
+    return "bg-red-50 text-red-600 border border-red-200";
+  if (v === "pending")
+    return "bg-gray-100 text-gray-600 border border-gray-200";
+  return "bg-orange-50 text-orange-600 border border-orange-200";
+};
 
 const TableHeaderCell = ({ children }) => (
   <div className="flex items-center gap-1 text-xs font-medium capitalize tracking-wider text-gray-500 whitespace-nowrap">
@@ -74,190 +90,344 @@ const TableHeaderCell = ({ children }) => (
 
 export default function TicketsBooked() {
   const router = useRouter();
-  
+
   const [activeDropdown, setActiveDropdown] = useState(null);
   const dropdownRef = useRef(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [rows, setRows] = useState([]);
-  const [metrics, setMetrics] = useState({ totalTickets: 0, totalAmount: 0, bookedTickets: 0, bookedAmount: 0, unbookedTickets: 0, unbookedAmount: 0 });
-  const [menuOpenId, setMenuOpenId] = useState(null)
-  const [menuPos, setMenuPos] = useState({ top: 0, left: 0 })
-  const [selectedBooking, setSelectedBooking] = useState(null)
-  const [ticketOpen, setTicketOpen] = useState(false)
-  const [customerOpen, setCustomerOpen] = useState(false)
-  const [downloadingId, setDownloadingId] = useState(null)
+  const [metrics, setMetrics] = useState({
+    totalTickets: 0,
+    totalAmount: 0,
+    bookedTickets: 0,
+    bookedAmount: 0,
+    unbookedTickets: 0,
+    unbookedAmount: 0,
+  });
+  const [menuOpenId, setMenuOpenId] = useState(null);
+  const [menuPos, setMenuPos] = useState({ top: 0, left: 0 });
+  const [selectedBooking, setSelectedBooking] = useState(null);
+  const [ticketOpen, setTicketOpen] = useState(false);
+  const [customerOpen, setCustomerOpen] = useState(false);
+  const [downloadingId, setDownloadingId] = useState(null);
+  const [exporting, setExporting] = useState(false);
 
-  const fmtCurrency = n => `₦${Number(n || 0).toLocaleString('en-NG')}`
-  const fmtDate = d => {
-    if (!d) return '-'
-    const date = new Date(typeof d === 'object' && d.$date ? d.$date : d)
-    return date.toLocaleString(undefined, { weekday: 'short', day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })
-  }
-  const ticketsText = tList => {
-    if (!Array.isArray(tList)) return '-'
-    return tList.map(t => `${t.quantity} x ${t.ticketName} (${fmtCurrency(t.perTicketPrice)})`).join('\n')
-  }
-  const ticketsTotal = b => {
-    const list = Array.isArray(b?.tickets) ? b.tickets : []
-    return list.reduce((sum, t) => sum + (Number(t.totalPrice || ((Number(t.perTicketPrice) || 0) * (Number(t.quantity) || 0))) || 0), 0)
-  }
+  const fmtCurrency = (n) => `₦${Number(n || 0).toLocaleString("en-NG")}`;
+  const fmtDate = (d) => {
+    if (!d) return "-";
+    const date = new Date(typeof d === "object" && d.$date ? d.$date : d);
+    return date.toLocaleString(undefined, {
+      weekday: "short",
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+  const ticketsText = (tList) => {
+    if (!Array.isArray(tList)) return "-";
+    return tList
+      .map(
+        (t) =>
+          `${t.quantity} x ${t.ticketName} (${fmtCurrency(t.perTicketPrice)})`
+      )
+      .join("\n");
+  };
+  const ticketsTotal = (b) => {
+    const list = Array.isArray(b?.tickets) ? b.tickets : [];
+    return list.reduce(
+      (sum, t) =>
+        sum +
+        (Number(
+          t.totalPrice ||
+            (Number(t.perTicketPrice) || 0) * (Number(t.quantity) || 0)
+        ) || 0),
+      0
+    );
+  };
 
   useEffect(() => {
     const fetchBookings = async () => {
-      setLoading(true)
-      setError('')
+      setLoading(true);
+      setError("");
       try {
-        const res = await getAllActivityBookings()
-        const data = Array.isArray(res?.data) ? res.data : []
-        const mapped = data.map(b => ({
+        const res = await getAllActivityBookings();
+        const data = Array.isArray(res?.data) ? res.data : [];
+        const mapped = data.map((b) => ({
           id: b._id || b.id,
           bookedOn: fmtDate(b.createdAt || b.updatedAt),
-          userName: String(b?.buyer?.fullName || '-'),
-          email: String(b?.buyer?.email || '-'),
-          phoneNumber: String(b?.buyer?.phone || '-'),
+          userName: String(b?.buyer?.fullName || "-"),
+          email: String(b?.buyer?.email || "-"),
+          phoneNumber: String(b?.buyer?.phone || "-"),
           ticketsBooked: ticketsText(b?.tickets),
           amount: fmtCurrency(ticketsTotal(b)),
           arrivalDate: fmtDate(b?.arrivalDate),
-          paymentStatus: String(b?.paymentStatus || '-').toLowerCase() === 'paid' ? 'Paid' : String(b?.paymentStatus || '-'),
+          paymentStatus:
+            String(b?.paymentStatus || "-").toLowerCase() === "paid"
+              ? "Paid"
+              : String(b?.paymentStatus || "-"),
           statusClass: statusClass(b?.paymentStatus),
-          status: String(b?.status || b?.bookingStatus || 'Pending'),
-          activityStatusClass: activityStatusClass(b?.status || b?.bookingStatus),
-          raw: b
-        }))
-        setRows(mapped)
+          status: String(b?.status || b?.bookingStatus || "Pending"),
+          activityStatusClass: activityStatusClass(
+            b?.status || b?.bookingStatus
+          ),
+          raw: b,
+        }));
+        setRows(mapped);
         // Metrics
-        const sumQuantities = (list, predicate) => list.reduce((acc, b) => acc + (Array.isArray(b.tickets) ? b.tickets.reduce((s, t) => s + (predicate(b) ? Number(t.quantity || 0) : 0), 0) : 0), 0)
-        const sumAmounts = (list, predicate) => list.reduce((acc, b) => acc + (predicate(b) ? Number(b?.pricing?.total || 0) : 0), 0)
-        const isPaid = b => String(b?.paymentStatus || '').toLowerCase() === 'paid'
-        const totalTickets = sumQuantities(data, () => true)
-        const totalAmount = sumAmounts(data, () => true)
-        const bookedTickets = sumQuantities(data, isPaid)
-        const bookedAmount = sumAmounts(data, isPaid)
-        const unbookedTickets = totalTickets - bookedTickets
-        const unbookedAmount = totalAmount - bookedAmount
-        setMetrics({ totalTickets, totalAmount, bookedTickets, bookedAmount, unbookedTickets, unbookedAmount })
+        const sumQuantities = (list, predicate) =>
+          list.reduce(
+            (acc, b) =>
+              acc +
+              (Array.isArray(b.tickets)
+                ? b.tickets.reduce(
+                    (s, t) => s + (predicate(b) ? Number(t.quantity || 0) : 0),
+                    0
+                  )
+                : 0),
+            0
+          );
+        const sumAmounts = (list, predicate) =>
+          list.reduce(
+            (acc, b) =>
+              acc + (predicate(b) ? Number(b?.pricing?.total || 0) : 0),
+            0
+          );
+        const isPaid = (b) =>
+          String(b?.paymentStatus || "").toLowerCase() === "paid";
+        const totalTickets = sumQuantities(data, () => true);
+        const totalAmount = sumAmounts(data, () => true);
+        const bookedTickets = sumQuantities(data, isPaid);
+        const bookedAmount = sumAmounts(data, isPaid);
+        const unbookedTickets = totalTickets - bookedTickets;
+        const unbookedAmount = totalAmount - bookedAmount;
+        setMetrics({
+          totalTickets,
+          totalAmount,
+          bookedTickets,
+          bookedAmount,
+          unbookedTickets,
+          unbookedAmount,
+        });
       } catch (e) {
-        setError('Failed to load bookings')
-        setRows([])
-        setMetrics({ totalTickets: 0, totalAmount: 0, bookedTickets: 0, bookedAmount: 0, unbookedTickets: 0, unbookedAmount: 0 })
+        setError("Failed to load bookings");
+        setRows([]);
+        setMetrics({
+          totalTickets: 0,
+          totalAmount: 0,
+          bookedTickets: 0,
+          bookedAmount: 0,
+          unbookedTickets: 0,
+          unbookedAmount: 0,
+        });
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
+    };
+    fetchBookings();
+  }, []);
+
+  const handleDownloadBookingExcel = () => {
+    try {
+      setExporting(true);
+
+      if (!rows.length) return;
+
+      const dataToExport = rows.map((r) => {
+        const b = r.raw; // original booking object
+
+        return {
+          // 🔹 Booking Info
+          "Order ID": b.orderId,
+          "Booking Date": b.createdAt,
+          "Arrival Date": b.arrivalDate,
+          "Payment Status": b.paymentStatus,
+          "Referral Code": b.referralCode || "-",
+
+          // 🔹 Buyer Info
+          "Buyer Name": b.buyer?.fullName,
+          "Buyer Email": b.buyer?.email,
+          "Buyer Phone": b.buyer?.phone,
+          "Buyer Country": b.buyer?.country,
+          "Buyer City": b.buyer?.city,
+
+          // 🔹 Activity Info
+          "Activity Name": b.activityId?.activityName,
+          "Activity Type": b.activityId?.activityType?.activityTypeName,
+          Location: b.activityId?.location,
+          Slug: b.activityId?.slug,
+
+          // 🔹 Ticket Summary
+          "Total Quantity": b.quantity,
+          "Tickets Booked": b.tickets
+            ?.map(
+              (t) =>
+                `${t.ticketName} (${t.ticketType}) x${t.quantity} @ ${t.perTicketPrice}`
+            )
+            .join(" | "),
+
+          // 🔹 Attendees
+          Attendees: b.tickets
+            ?.flatMap((t) => t.attendees || [])
+            .map((a) => `${a.fullName} (${a.email})`)
+            .join(" | "),
+
+          // 🔹 Pricing
+          "Service Fee": b.pricing?.serviceFee,
+          Discount: b.pricing?.discountApplied,
+          "Total Ticket Price": b.tickets?.reduce(
+            (sum, t) => sum + Number(t.totalPrice || 0),
+            0
+          ),
+        };
+      });
+
+      downloadExcel(dataToExport, "Activity_Bookings.xlsx");
+    } finally {
+      setExporting(false);
     }
-    fetchBookings()
-  }, [])
+  };
 
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setActiveDropdown(null);
-        setMenuOpenId(null)
+        setMenuOpenId(null);
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
 
-  const toIdString = v => {
-    if (!v) return ''
-    if (typeof v === 'string') return v
-    if (typeof v === 'object') {
-      if (v.$oid) return String(v.$oid)
-      if (v.$id) return String(v.$id)
-      if (v.oid) return String(v.oid)
-      if (v._id) return toIdString(v._id)
+  const toIdString = (v) => {
+    if (!v) return "";
+    if (typeof v === "string") return v;
+    if (typeof v === "object") {
+      if (v.$oid) return String(v.$oid);
+      if (v.$id) return String(v.$id);
+      if (v.oid) return String(v.oid);
+      if (v._id) return toIdString(v._id);
     }
-    return String(v)
-  }
+    return String(v);
+  };
 
-  const openTicket = booking => {
-    const b = booking?.raw || booking || {}
-    const id = toIdString(b._id || b.id || b.bookingId)
-    const aid = toIdString(b.activityId || (b.activity && b.activity._id))
-    const qs = aid ? `?activityId=${encodeURIComponent(String(aid))}` : ''
+  const openTicket = (booking) => {
+    const b = booking?.raw || booking || {};
+    const id = toIdString(b._id || b.id || b.bookingId);
+    const aid = toIdString(b.activityId || (b.activity && b.activity._id));
+    const qs = aid ? `?activityId=${encodeURIComponent(String(aid))}` : "";
     if (id) {
-      router.push(`/places-to-visit/tickets-booked/view/${encodeURIComponent(String(id))}${qs}`)
+      router.push(
+        `/places-to-visit/tickets-booked/view/${encodeURIComponent(
+          String(id)
+        )}${qs}`
+      );
     } else {
-      setSelectedBooking(b)
-      setTicketOpen(true)
+      setSelectedBooking(b);
+      setTicketOpen(true);
     }
-    setActiveDropdown(null)
-    setMenuOpenId(null)
-  }
+    setActiveDropdown(null);
+    setMenuOpenId(null);
+  };
 
-  const openCustomer = booking => {
-    const b = booking?.raw || booking || {}
-    setSelectedBooking(b)
-    setCustomerOpen(true)
-    setActiveDropdown(null)
-    setMenuOpenId(null)
-  }
+  const openCustomer = (booking) => {
+    const b = booking?.raw || booking || {};
+    setSelectedBooking(b);
+    setCustomerOpen(true);
+    setActiveDropdown(null);
+    setMenuOpenId(null);
+  };
 
-  const downloadReceipt = booking => {
-    const b = booking?.raw || booking || {}
-    const id = toIdString(b._id || b.id || b.bookingId)
-    const aid = toIdString(b.activityId || (b.activity && b.activity._id))
+  const downloadReceipt = (booking) => {
+    const b = booking?.raw || booking || {};
+    const id = toIdString(b._id || b.id || b.bookingId);
+    const aid = toIdString(b.activityId || (b.activity && b.activity._id));
     if (!id) {
-      alert('Invalid booking id')
-      return
+      alert("Invalid booking id");
+      return;
     }
-    if (!((b.buyer && b.buyer.fullName) || (Array.isArray(b.tickets) && b.tickets.some(t => Array.isArray(t.attendees) && t.attendees.length > 0)))) {
-      alert('Buyer or attendee details missing for this booking')
-      return
+    if (
+      !(
+        (b.buyer && b.buyer.fullName) ||
+        (Array.isArray(b.tickets) &&
+          b.tickets.some(
+            (t) => Array.isArray(t.attendees) && t.attendees.length > 0
+          ))
+      )
+    ) {
+      alert("Buyer or attendee details missing for this booking");
+      return;
     }
-    ;(async () => {
+    (async () => {
       try {
-        if (String(downloadingId || '') === String(id)) return
-        setDownloadingId(id)
-        const res = await downloadActivityBookedTicket(id, aid)
-        const pdfUrl = res?.data?.pdfUrl || res?.pdfUrl || ''
+        if (String(downloadingId || "") === String(id)) return;
+        setDownloadingId(id);
+        const res = await downloadActivityBookedTicket(id, aid);
+        const pdfUrl = res?.data?.pdfUrl || res?.pdfUrl || "";
         if (!pdfUrl) {
-          const msg = res?.message || 'Failed to download ticket'
-          throw new Error(msg)
+          const msg = res?.message || "Failed to download ticket";
+          throw new Error(msg);
         }
         try {
-          const r = await fetch(pdfUrl)
-          const blob = await r.blob()
-          const a = document.createElement('a')
-          const objectUrl = URL.createObjectURL(blob)
-          a.href = objectUrl
-          a.download = `ticket-${id}.pdf`
-          document.body.appendChild(a)
-          a.click()
-          document.body.removeChild(a)
-          URL.revokeObjectURL(objectUrl)
+          const r = await fetch(pdfUrl);
+          const blob = await r.blob();
+          const a = document.createElement("a");
+          const objectUrl = URL.createObjectURL(blob);
+          a.href = objectUrl;
+          a.download = `ticket-${id}.pdf`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(objectUrl);
         } catch {
-          window.open(pdfUrl, '_blank')
+          window.open(pdfUrl, "_blank");
         }
       } catch (e) {
-        const msg = e?.response?.data?.message || e?.message || 'Failed to download ticket'
-        alert(msg)
+        const msg =
+          e?.response?.data?.message ||
+          e?.message ||
+          "Failed to download ticket";
+        alert(msg);
       } finally {
-        setDownloadingId(null)
-        setActiveDropdown(null)
-        setMenuOpenId(null)
+        setDownloadingId(null);
+        setActiveDropdown(null);
+        setMenuOpenId(null);
       }
-    })()
-  }
+    })();
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-12">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Tickets Booked</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+          Tickets Booked
+        </h1>
         <p className="text-sm text-gray-500 mt-1">Dashboard / Tickets Booked</p>
       </div>
 
       {/* Metric Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-4">
         {[
-          { ...metricCardsBase.total, value: String(metrics.totalTickets), amount: `(${fmtCurrency(metrics.totalAmount)})` },
-          { ...metricCardsBase.booked, value: String(metrics.bookedTickets), amount: `(${fmtCurrency(metrics.bookedAmount)})` },
-          { ...metricCardsBase.unbooked, value: String(metrics.unbookedTickets), amount: `(${fmtCurrency(metrics.unbookedAmount)})` },
+          {
+            ...metricCardsBase.total,
+            value: String(metrics.totalTickets),
+            amount: `(${fmtCurrency(metrics.totalAmount)})`,
+          },
+          {
+            ...metricCardsBase.booked,
+            value: String(metrics.bookedTickets),
+            amount: `(${fmtCurrency(metrics.bookedAmount)})`,
+          },
+          {
+            ...metricCardsBase.unbooked,
+            value: String(metrics.unbookedTickets),
+            amount: `(${fmtCurrency(metrics.unbookedAmount)})`,
+          },
         ].map((card) => (
           <div
             key={card.id}
@@ -408,48 +578,74 @@ export default function TicketsBooked() {
               <div className='px-3 py-4 text-[10px] text-[#5E6582]'>No bookings found</div>
             )}
           </div>
-      </div>
+        </div>
       </div>
 
       {ticketOpen && selectedBooking && (
-        <div className='fixed inset-0 z-40 flex items-center justify-center'>
+        <div className="fixed inset-0 z-40 flex items-center justify-center">
           <div
-            className='absolute inset-0 bg-black/40'
+            className="absolute inset-0 bg-black/40"
             onClick={() => {
-              setTicketOpen(false)
-              setSelectedBooking(null)
+              setTicketOpen(false);
+              setSelectedBooking(null);
             }}
           />
-          <div className='relative z-50 w-full max-w-lg rounded-2xl border border-[#E5E8F6] bg-white p-6 shadow-[0_24px_60px_-40px_rgba(15,23,42,0.55)]'>
-            <div className='text-lg font-semibold text-slate-900 mb-3'>
+          <div className="relative z-50 w-full max-w-lg rounded-2xl border border-[#E5E8F6] bg-white p-6 shadow-[0_24px_60px_-40px_rgba(15,23,42,0.55)]">
+            <div className="text-lg font-semibold text-slate-900 mb-3">
               Ticket
             </div>
-            <div className='space-y-2 text-sm text-[#2D3658]'>
-              <div className='flex justify-between'>
+            <div className="space-y-2 text-sm text-[#2D3658]">
+              <div className="flex justify-between">
                 <span>Booking ID</span>
-                <span>{selectedBooking._id || selectedBooking.id || selectedBooking.bookingId || '-'}</span>
+                <span>
+                  {selectedBooking._id ||
+                    selectedBooking.id ||
+                    selectedBooking.bookingId ||
+                    "-"}
+                </span>
               </div>
-              <div className='flex justify-between'>
+              <div className="flex justify-between">
                 <span>Booked On</span>
-                <span>{(() => {
-                  const d = selectedBooking.createdAt || selectedBooking.updatedAt
-                  const date = d ? new Date(typeof d === 'object' && d.$date ? d.$date : d) : null
-                  return date ? date.toLocaleString() : '-'
-                })()}</span>
+                <span>
+                  {(() => {
+                    const d =
+                      selectedBooking.createdAt || selectedBooking.updatedAt;
+                    const date = d
+                      ? new Date(typeof d === "object" && d.$date ? d.$date : d)
+                      : null;
+                    return date ? date.toLocaleString() : "-";
+                  })()}
+                </span>
               </div>
-              <div className='flex justify-between'>
+              <div className="flex justify-between">
                 <span>Tickets</span>
-                <span>{Array.isArray(selectedBooking.tickets) ? selectedBooking.tickets.map(t => `${t.quantity} x ${t.ticketName}`).join(', ') : '-'}</span>
+                <span>
+                  {Array.isArray(selectedBooking.tickets)
+                    ? selectedBooking.tickets
+                        .map((t) => `${t.quantity} x ${t.ticketName}`)
+                        .join(", ")
+                    : "-"}
+                </span>
               </div>
-              <div className='flex justify-between'>
+              <div className="flex justify-between">
                 <span>Amount</span>
-                <span>{(() => { const amt = ticketsTotal(selectedBooking); return typeof amt === 'number' ? `₦${amt.toLocaleString()}` : amt || '-' })()}</span>
+                <span>
+                  {(() => {
+                    const amt = ticketsTotal(selectedBooking);
+                    return typeof amt === "number"
+                      ? `₦${amt.toLocaleString()}`
+                      : amt || "-";
+                  })()}
+                </span>
               </div>
             </div>
-            <div className='mt-6 flex justify-end gap-3'>
+            <div className="mt-6 flex justify-end gap-3">
               <button
-                onClick={() => { setTicketOpen(false); setSelectedBooking(null) }}
-                className='rounded-xl border border-[#E5E6EF] bg-white px-5 py-2.5 text-sm font-medium text-[#1A1F3F] shadow-sm transition hover:bg-[#F9FAFD]'
+                onClick={() => {
+                  setTicketOpen(false);
+                  setSelectedBooking(null);
+                }}
+                className="rounded-xl border border-[#E5E6EF] bg-white px-5 py-2.5 text-sm font-medium text-[#1A1F3F] shadow-sm transition hover:bg-[#F9FAFD]"
               >
                 Close
               </button>
@@ -461,77 +657,145 @@ export default function TicketsBooked() {
       {customerOpen && selectedBooking && (
         <Modal
           open={customerOpen}
-          onOpenChange={v => {
+          onOpenChange={(v) => {
             if (!v) {
-              setCustomerOpen(false)
-              setSelectedBooking(null)
+              setCustomerOpen(false);
+              setSelectedBooking(null);
             }
           }}
-          title={'Customer Details'}
+          title={"Customer Details"}
         >
-          <div className='space-y-6'>
-            <div className='rounded-xl bg-[#F8F9FC] p-4'>
-              <div className='grid grid-cols-2 gap-4 text-sm'>
-                <div className='text-[#5E6582]'>Full Name</div>
-                <div className='text-right font-semibold text-slate-900'>
-                  {(() => { const c = selectedBooking.buyer || (Array.isArray(selectedBooking.tickets) && selectedBooking.tickets[0]?.attendees?.[0]) || {}; return c?.fullName || '-' })()}
+          <div className="space-y-6">
+            <div className="rounded-xl bg-[#F8F9FC] p-4">
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div className="text-[#5E6582]">Full Name</div>
+                <div className="text-right font-semibold text-slate-900">
+                  {(() => {
+                    const c =
+                      selectedBooking.buyer ||
+                      (Array.isArray(selectedBooking.tickets) &&
+                        selectedBooking.tickets[0]?.attendees?.[0]) ||
+                      {};
+                    return c?.fullName || "-";
+                  })()}
                 </div>
-                <div className='text-[#5E6582]'>Email Address</div>
-                <div className='text-right font-semibold text-slate-900'>
-                  {(() => { const c = selectedBooking.buyer || (Array.isArray(selectedBooking.tickets) && selectedBooking.tickets[0]?.attendees?.[0]) || {}; return c?.email || '-' })()}
+                <div className="text-[#5E6582]">Email Address</div>
+                <div className="text-right font-semibold text-slate-900">
+                  {(() => {
+                    const c =
+                      selectedBooking.buyer ||
+                      (Array.isArray(selectedBooking.tickets) &&
+                        selectedBooking.tickets[0]?.attendees?.[0]) ||
+                      {};
+                    return c?.email || "-";
+                  })()}
                 </div>
-                <div className='text-[#5E6582]'>Phone</div>
-                <div className='text-right font-semibold text-slate-900'>
-                  {(() => { const c = selectedBooking.buyer || (Array.isArray(selectedBooking.tickets) && selectedBooking.tickets[0]?.attendees?.[0]) || {}; return c?.phone || '-' })()}
+                <div className="text-[#5E6582]">Phone</div>
+                <div className="text-right font-semibold text-slate-900">
+                  {(() => {
+                    const c =
+                      selectedBooking.buyer ||
+                      (Array.isArray(selectedBooking.tickets) &&
+                        selectedBooking.tickets[0]?.attendees?.[0]) ||
+                      {};
+                    return c?.phone || "-";
+                  })()}
                 </div>
               </div>
             </div>
 
-            {Array.isArray(selectedBooking.tickets) && selectedBooking.tickets.some(t => Array.isArray(t.attendees) && t.attendees.length > 0) ? (
-              <div className='rounded-xl border border-[#E5E8F6] bg-white p-4'>
-                <div className='text-sm font-semibold text-slate-900 mb-3'>Attendees</div>
-                <div className='space-y-2'>
-                  {selectedBooking.tickets.flatMap(t => (Array.isArray(t.attendees) ? t.attendees.map(a => ({ ...a })) : [])).map((a, i) => (
-                    <div key={`att-${i}`} className='grid grid-cols-2 gap-4 text-sm'>
-                      <div className='text-[#5E6582]'>{a.fullName || '-'}</div>
-                      <div className='text-right text-[#2D3658]'>{a.email || a.phone || '-'}</div>
-                    </div>
-                  ))}
+            {Array.isArray(selectedBooking.tickets) &&
+            selectedBooking.tickets.some(
+              (t) => Array.isArray(t.attendees) && t.attendees.length > 0
+            ) ? (
+              <div className="rounded-xl border border-[#E5E8F6] bg-white p-4">
+                <div className="text-sm font-semibold text-slate-900 mb-3">
+                  Attendees
+                </div>
+                <div className="space-y-2">
+                  {selectedBooking.tickets
+                    .flatMap((t) =>
+                      Array.isArray(t.attendees)
+                        ? t.attendees.map((a) => ({ ...a }))
+                        : []
+                    )
+                    .map((a, i) => (
+                      <div
+                        key={`att-${i}`}
+                        className="grid grid-cols-2 gap-4 text-sm"
+                      >
+                        <div className="text-[#5E6582]">
+                          {a.fullName || "-"}
+                        </div>
+                        <div className="text-right text-[#2D3658]">
+                          {a.email || a.phone || "-"}
+                        </div>
+                      </div>
+                    ))}
                 </div>
               </div>
             ) : null}
 
-            <div className='rounded-xl bg-orange-50 p-4'>
-              <div className='flex items-center justify-between text-sm font-semibold text-slate-900 mb-3'>
+            <div className="rounded-xl bg-orange-50 p-4">
+              <div className="flex items-center justify-between text-sm font-semibold text-slate-900 mb-3">
                 <span>
-                  Order ID {selectedBooking._id || selectedBooking.id || selectedBooking.bookingId || '-'}
+                  Order ID{" "}
+                  {selectedBooking._id ||
+                    selectedBooking.id ||
+                    selectedBooking.bookingId ||
+                    "-"}
                 </span>
-                <span>
-                  {(() => { const amt = ticketsTotal(selectedBooking); return typeof amt === 'number' ? `₦${amt.toLocaleString()}` : amt || '-' })()}
-                </span>
-              </div>
-              <div className='flex items-center justify-between text-sm text-[#2D3658]'>
                 <span>
                   {(() => {
-                    const q = Array.isArray(selectedBooking.tickets) ? selectedBooking.tickets.reduce((sum, t) => sum + (Number(t.quantity) || 0), 0) : null
-                    const nm = 'Ticket'
-                    const unit = null
-                    const unitStr = unit ? `₦${unit.toLocaleString()}` : ''
-                    const qtyStr = typeof q === 'number' ? `${unitStr} x ${q} ${nm}` : `${selectedBooking.ticketsBooked || nm}`
-                    return qtyStr
+                    const amt = ticketsTotal(selectedBooking);
+                    return typeof amt === "number"
+                      ? `₦${amt.toLocaleString()}`
+                      : amt || "-";
+                  })()}
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-sm text-[#2D3658]">
+                <span>
+                  {(() => {
+                    const q = Array.isArray(selectedBooking.tickets)
+                      ? selectedBooking.tickets.reduce(
+                          (sum, t) => sum + (Number(t.quantity) || 0),
+                          0
+                        )
+                      : null;
+                    const nm = "Ticket";
+                    const unit = null;
+                    const unitStr = unit ? `₦${unit.toLocaleString()}` : "";
+                    const qtyStr =
+                      typeof q === "number"
+                        ? `${unitStr} x ${q} ${nm}`
+                        : `${selectedBooking.ticketsBooked || nm}`;
+                    return qtyStr;
                   })()}
                 </span>
                 <span>
-                  {(() => { const amt = ticketsTotal(selectedBooking); return typeof amt === 'number' ? `₦${amt.toLocaleString()}` : amt || '-' })()}
+                  {(() => {
+                    const amt = ticketsTotal(selectedBooking);
+                    return typeof amt === "number"
+                      ? `₦${amt.toLocaleString()}`
+                      : amt || "-";
+                  })()}
                 </span>
               </div>
             </div>
 
-            <div className='mt-4 pt-4 border-t border-[#EEF1FA]'>
-              <div className='flex items-center justify-between'>
-                <span className='text-base font-semibold text-slate-900'>Total</span>
-                <span className='flex items-center gap-2 text-base font-bold text-slate-900'>
-                  {(() => { const amt = ticketsTotal(selectedBooking); return typeof amt === 'number' ? `₦${amt.toLocaleString()}` : amt || '-' })()}
+            <div className="mt-4 pt-4 border-t border-[#EEF1FA]">
+              <div className="flex items-center justify-between">
+                <span className="text-base font-semibold text-slate-900">
+                  Total
+                </span>
+                <span className="flex items-center gap-2 text-base font-bold text-slate-900">
+                  {(() => {
+                    const amt = ticketsTotal(selectedBooking);
+                    return typeof amt === "number"
+                      ? `₦${amt.toLocaleString()}`
+                      : amt || "-";
+                  })()}
                 </span>
               </div>
             </div>

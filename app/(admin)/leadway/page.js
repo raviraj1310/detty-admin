@@ -2,10 +2,13 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { Search, X } from 'lucide-react'
 import {
-  Search
-} from 'lucide-react'
-import { TbCaretUpDownFilled, TbTicket, TbTrendingUp, TbTrendingDown } from 'react-icons/tb'
+  TbCaretUpDownFilled,
+  TbTicket,
+  TbTrendingUp,
+  TbTrendingDown
+} from 'react-icons/tb'
 import { FaChartColumn } from 'react-icons/fa6'
 import { getLeadwayList } from '@/services/leadway/leadway.service'
 import { downloadExcel } from '@/utils/excelExport'
@@ -28,6 +31,7 @@ const filterTabs = [
 export default function LeadwayPage () {
   const router = useRouter()
   const [searchTerm, setSearchTerm] = useState('')
+  const [dateRange, setDateRange] = useState({ start: '', end: '' })
   const [requests, setRequests] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -35,13 +39,16 @@ export default function LeadwayPage () {
   const [sortDir, setSortDir] = useState('desc')
   const [detailOpen, setDetailOpen] = useState(false)
   const [selected, setSelected] = useState(null)
+  const [apiStats, setApiStats] = useState(null)
   const [stats, setStats] = useState({
     yesterdayCount: 0,
     yesterdayDateStr: '',
     avgGrowthCount: 0,
     isCountIncreasing: false,
     avgGrowthPercent: '0%',
-    isPctIncreasing: false
+    isPctIncreasing: false,
+    filteredTotalCount: 0,
+    newCountToday: 0
   })
 
   useEffect(() => {
@@ -49,7 +56,10 @@ export default function LeadwayPage () {
       setLoading(true)
       setError('')
       try {
-        const res = await getLeadwayList()
+        const res = await getLeadwayList({
+          startDate: dateRange.start || undefined,
+          endDate: dateRange.end || undefined
+        })
 
         const d = res || {}
         const yesterdayCount = Number(d.totalPurchasingYesterday || 0)
@@ -71,14 +81,19 @@ export default function LeadwayPage () {
           avgGrowthPercentStr.replace('%', '')
         )
 
-        setStats({
+        const initialStats = {
           yesterdayCount,
           yesterdayDateStr,
           avgGrowthCount,
           isCountIncreasing: avgGrowthCount >= 0,
           avgGrowthPercent: avgGrowthPercentStr,
-          isPctIncreasing: avgGrowthPercentVal >= 0
-        })
+          isPctIncreasing: avgGrowthPercentVal >= 0,
+          filteredTotalCount: 0,
+          newCountToday: 0
+        }
+
+        setStats(initialStats)
+        setApiStats(initialStats)
 
         const raw = Array.isArray(res?.data)
           ? res.data
@@ -116,15 +131,33 @@ export default function LeadwayPage () {
       }
     }
     load()
-  }, [])
+  }, [dateRange.start, dateRange.end])
 
   const filtered = useMemo(() => {
     const term = String(searchTerm || '')
       .trim()
       .toLowerCase()
-    if (!term) return requests
+
+    // Date Range Filtering
+    const startTime = dateRange.start
+      ? new Date(dateRange.start).setHours(0, 0, 0, 0)
+      : null
+    const endTime = dateRange.end
+      ? new Date(dateRange.end).setHours(23, 59, 59, 999)
+      : null
+
+    const dateFiltered = requests.filter(s => {
+      const bookingTime = s.createdTs
+      const matchesDate =
+        (!startTime || bookingTime >= startTime) &&
+        (!endTime || bookingTime <= endTime)
+      return matchesDate
+    })
+
+    if (!term) return dateFiltered
+
     const termDigits = term.replace(/[^0-9]/g, '')
-    return requests.filter(s => {
+    return dateFiltered.filter(s => {
       const customer = String(s.customer || '').toLowerCase()
       const type = String(s.policyType || '').toLowerCase()
       const status = String(s.status || '').toLowerCase()
@@ -149,7 +182,72 @@ export default function LeadwayPage () {
       const matchesDigits = termDigits && createdDigits.includes(termDigits)
       return matchesText || matchesDigits
     })
-  }, [requests, searchTerm])
+  }, [requests, searchTerm, dateRange])
+
+  useEffect(() => {
+    if (!apiStats) return
+
+    const isFiltered =
+      dateRange.start || dateRange.end || searchTerm || filtered.length > 0
+
+    if (!dateRange.start && !dateRange.end && !searchTerm) {
+      const todayStr = new Date().toISOString().split('T')[0]
+      const newToday = requests.filter(r =>
+        r.createdOn?.startsWith(todayStr)
+      ).length
+
+      setStats({
+        ...apiStats,
+        filteredTotalCount: requests.length,
+        newCountToday: newToday
+      })
+      return
+    }
+
+    // Recalculate based on filtered data
+    const currentData = filtered
+    const totalCount = currentData.length
+
+    const todayStr = new Date().toISOString().split('T')[0]
+    const newToday = currentData.filter(r =>
+      r.createdOn?.startsWith(todayStr)
+    ).length
+
+    // Trends (First Half vs Second Half)
+    let growthCount = 0
+    let growthPercent = 0
+
+    if (currentData.length > 1) {
+      // Sort by date for trend calculation
+      const sorted = [...currentData].sort((a, b) => a.createdTs - b.createdTs)
+      const mid = Math.floor(sorted.length / 2)
+      const firstHalf = sorted.slice(0, mid)
+      const secondHalf = sorted.slice(mid)
+
+      const firstCount = firstHalf.length
+      const secondCount = secondHalf.length
+
+      growthCount = secondCount - firstCount
+      if (firstCount > 0) {
+        growthPercent = ((secondCount - firstCount) / firstCount) * 100
+      } else {
+        growthPercent = secondCount > 0 ? 100 : 0
+      }
+    }
+
+    // Cap at 100%
+    if (growthPercent > 100) growthPercent = 100
+
+    setStats({
+      ...apiStats, // Preserve yesterdayCount from API
+      avgGrowthCount: growthCount,
+      isCountIncreasing: growthCount >= 0,
+      avgGrowthPercent: `${growthPercent.toFixed(1)}%`,
+      isPctIncreasing: growthPercent >= 0,
+      filteredTotalCount: totalCount,
+      newCountToday: newToday
+    })
+  }, [filtered, dateRange, searchTerm, apiStats, requests])
 
   const toggleSort = key => {
     if (sortKey === key) {
@@ -322,13 +420,59 @@ export default function LeadwayPage () {
   return (
     <div className='p-4 h-full flex flex-col bg-white'>
       <div className='mb-4'>
-        <h1 className='text-xl font-bold text-gray-900 mb-1'>
-          Gross Transaction Value
-        </h1>
-        <nav className='text-sm text-gray-500'>
-          <span>Dashboard</span> /{' '}
-          <span className='text-gray-900 font-medium'>Users</span>
-        </nav>
+        <div className='flex flex-col md:flex-row md:items-center justify-between gap-4 mb-1'>
+          <div>
+            <h1 className='text-xl font-bold text-gray-900 mb-1'>
+              Gross Transaction Value
+            </h1>
+            <nav className='text-sm text-gray-500'>
+              <span>Dashboard</span> /{' '}
+              <span className='text-gray-900 font-medium'>Users</span>
+            </nav>
+          </div>
+          <div className='flex items-center gap-2'>
+            <div className='flex items-center gap-2'>
+              <div className='flex flex-col'>
+                <label className='text-[10px] text-gray-500 font-medium ml-1'>
+                  Start Date
+                </label>
+                <input
+                  type='date'
+                  max={new Date().toISOString().split('T')[0]}
+                  value={dateRange.start}
+                  onChange={e =>
+                    setDateRange(prev => ({ ...prev, start: e.target.value }))
+                  }
+                  className='h-9 px-3 border border-gray-300 rounded-lg text-xs text-gray-700 focus:outline-none focus:border-indigo-500'
+                />
+              </div>
+              <span className='text-gray-400 mt-4'>-</span>
+              <div className='flex flex-col'>
+                <label className='text-[10px] text-gray-500 font-medium ml-1'>
+                  End Date
+                </label>
+                <input
+                  type='date'
+                  max={new Date().toISOString().split('T')[0]}
+                  value={dateRange.end}
+                  onChange={e =>
+                    setDateRange(prev => ({ ...prev, end: e.target.value }))
+                  }
+                  className='h-9 px-3 border border-gray-300 rounded-lg text-xs text-gray-700 focus:outline-none focus:border-indigo-500'
+                />
+              </div>
+            </div>
+            {(dateRange.start || dateRange.end) && (
+              <button
+                onClick={() => setDateRange({ start: '', end: '' })}
+                className='mt-4 p-2 text-gray-500 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors'
+                title='Clear Date Filter'
+              >
+                <X size={16} />
+              </button>
+            )}
+          </div>
+        </div>
       </div>
 
       <div className='grid grid-cols-1 md:grid-cols-3 gap-4 mb-6'>
@@ -369,10 +513,15 @@ export default function LeadwayPage () {
                     Increasing
                   </span>
                 ) : (
-                  <span className='text-xs flex items-center mb-1 text-red-500'>
-                    <TbTrendingDown className='w-3 h-3 mr-0.5' />
-                    Decreasing
-                  </span>
+                  <>
+                    <p className='text-2xl text-red-600 font-bold'>
+                      {stats.avgGrowthCount}
+                    </p>
+                    <span className='text-xs flex items-center mb-1 text-red-600'>
+                      <TbTrendingDown className='w-3 h-3 mr-0.5' />
+                      Decreasing
+                    </span>
+                  </>
                 )}
               </div>
             </div>
@@ -397,12 +546,47 @@ export default function LeadwayPage () {
                     Increasing
                   </span>
                 ) : (
-                  <span className='text-xs flex items-center mb-1 text-red-500'>
-                    <TbTrendingDown className='w-3 h-3 mr-0.5' />
-                    Decreasing
-                  </span>
+                  <>
+                    <p className='text-2xl text-red-600 font-bold'>
+                      {stats.avgGrowthPercent}
+                    </p>
+                    <span className='text-xs flex items-center mb-1 text-red-600'>
+                      <TbTrendingDown className='w-3 h-3 mr-0.5' />
+                      Decreasing
+                    </span>
+                  </>
                 )}
               </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className='grid grid-cols-1 md:grid-cols-2 gap-4 mb-6'>
+        <div className='bg-blue-300 p-4 rounded-lg'>
+          <div className='flex items-center'>
+            <div className='bg-white p-2 rounded-lg mr-3'>
+              <TbTicket className='w-6 h-6 text-blue-600' />
+            </div>
+            <div>
+              <p className='text-xs text-gray-600'>Total Leadway Bookings</p>
+              <p className='text-2xl font-bold text-gray-900'>
+                {stats.filteredTotalCount}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className='bg-orange-300 p-4 rounded-lg'>
+          <div className='flex items-center'>
+            <div className='bg-white p-2 rounded-lg mr-3'>
+              <TbTicket className='w-6 h-6 text-orange-600' />
+            </div>
+            <div>
+              <p className='text-xs text-gray-600'>New Bookings Today</p>
+              <p className='text-2xl font-bold text-gray-900'>
+                {stats.newCountToday}
+              </p>
             </div>
           </div>
         </div>

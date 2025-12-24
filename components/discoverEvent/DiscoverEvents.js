@@ -19,6 +19,8 @@ import {
 } from "@/services/discover-events/event.service";
 import Toast from "@/components/ui/Toast";
 import Link from "next/link";
+import { getUsers } from "@/services/users/user.service";
+import { downloadExcel } from "@/utils/excelExport";
 
 const metricCards = [
   {
@@ -106,6 +108,7 @@ export default function DiscoverEvents() {
   const [addNewLoading, setAddNewLoading] = useState(false);
   const [sortBy, setSortBy] = useState("eventDate");
   const [sortDir, setSortDir] = useState("desc");
+  const [exporting, setExporting] = useState(false);
 
   const toIdString = (v) => {
     if (!v) return "";
@@ -379,6 +382,48 @@ export default function DiscoverEvents() {
     }
   };
 
+  const handleDownloadExcel = () => {
+    try {
+      setExporting(true);
+
+      if (!events.length) return;
+
+      const dataToExport = events.map((e) => ({
+        // 🔹 Event Info
+        "Event Name": e.eventName,
+        Slug: e.slug,
+        Location: e.location,
+        "Map Location": e.mapLocation,
+        "Opening Hours": e.openingHours,
+        About: e.about,
+
+        // 🔹 Dates
+        "Event Start Date": e.eventStartDate,
+        "Event End Date": e.eventEndDate,
+        "Created At": e.createdAt,
+        "Updated At": e.updatedAt,
+
+        // 🔹 Event Type (flattened)
+        "Event Type": e.eventTypeId?.eventType,
+        "Event Type Status": e.eventTypeId?.status,
+
+        // 🔹 Media & Links
+        Image: e.image,
+        "Twitter Link": e.twitterLink,
+        "Website Link": e.websiteLink,
+
+        // 🔹 Business / Metrics
+        "Business Name": e.businessName,
+        Status: e.status ? "Active" : "Inactive",
+        "Total Booked Tickets": e.totalBookedTickets,
+      }));
+
+      downloadExcel(dataToExport, "Events.xlsx");
+    } finally {
+      setExporting(false);
+    }
+  };
+
   return (
     <div className="space-y-7 py-6 px-6">
       <Toast
@@ -473,7 +518,9 @@ export default function DiscoverEvents() {
 
       <div className="rounded-2xl border border-[#E1E6F7] bg-white p-4 shadow-[0_24px_60px_-40px_rgba(15,23,42,0.55)]">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-base font-semibold text-slate-900">Events List</h2>
+          <h2 className="text-base font-semibold text-slate-900">
+            Events List
+          </h2>
           <div className="flex flex-wrap items-center gap-2">
             <div className="relative flex items-center">
               <input
@@ -520,7 +567,11 @@ export default function DiscoverEvents() {
               <IoFilterSharp className="h-3.5 w-3.5 text-[#8B93AF]" />
               {filtersOpen ? "Hide Filters" : "Filters"}
             </button>
-            <button className="flex h-8 items-center gap-1.5 rounded-lg border border-[#E5E6EF] bg-white px-3 text-xs font-medium text-[#2D3658] transition hover:bg-[#F6F7FD]">
+            <button
+              onClick={handleDownloadExcel}
+              disabled={exporting}
+              className="flex h-8 items-center gap-1.5 rounded-lg border border-[#E5E6EF] bg-white px-3 text-xs font-medium text-[#2D3658] transition hover:bg-[#F6F7FD]"
+            >
               <Download className="h-3.5 w-3.5 text-[#8B93AF]" />
             </button>
           </div>
@@ -682,45 +733,45 @@ export default function DiscoverEvents() {
                           ref={dropdownRef}
                           className="absolute right-0 top-full mt-1 w-48 rounded-md shadow-lg bg-white z-[100] border border-gray-200"
                         >
-                        <div className="py-1">
-                          <Link
-                            href={
-                              event.id
-                                ? `/discover-events/detail/${event.id}`
-                                : "#"
-                            }
-                            className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                          >
-                            View/Edit Detail
-                          </Link>
-                          <Link
-                            href={
-                              event.id
-                                ? `/discover-events/tickets-booked/${event.id}`
-                                : "#"
-                            }
-                            className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                          >
-                            View Tickets Booked
-                          </Link>
-                          <Link
-                            href={
-                              event.id
-                                ? `/discover-events/edit-tickets/${event.id}`
-                                : "#"
-                            }
-                            className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                          >
-                            View/Edit Tickets
-                          </Link>
+                          <div className="py-1">
+                            <Link
+                              href={
+                                event.id
+                                  ? `/discover-events/detail/${event.id}`
+                                  : "#"
+                              }
+                              className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                            >
+                              View/Edit Detail
+                            </Link>
+                            <Link
+                              href={
+                                event.id
+                                  ? `/discover-events/tickets-booked/${event.id}`
+                                  : "#"
+                              }
+                              className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                            >
+                              View Tickets Booked
+                            </Link>
+                            <Link
+                              href={
+                                event.id
+                                  ? `/discover-events/edit-tickets/${event.id}`
+                                  : "#"
+                              }
+                              className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                            >
+                              View/Edit Tickets
+                            </Link>
 
-                          <button
-                            onClick={() => handleCopyEvent(event.id)}
-                            className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                          >
-                            Copy Event
-                          </button>
-                        </div>
+                            <button
+                              onClick={() => handleCopyEvent(event.id)}
+                              className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                            >
+                              Copy Event
+                            </button>
+                          </div>
                         </div>
                       )}
                     </div>

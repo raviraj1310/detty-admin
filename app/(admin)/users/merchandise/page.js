@@ -1,14 +1,15 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
-import {
-  Download,
-  User,
-  Loader2
-} from 'lucide-react'
+import { Download, User, Loader2, X } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { downloadExcel } from '@/utils/excelExport'
-import { TbCaretUpDownFilled, TbTicket, TbTrendingUp, TbTrendingDown } from 'react-icons/tb'
+import {
+  TbCaretUpDownFilled,
+  TbTicket,
+  TbTrendingUp,
+  TbTrendingDown
+} from 'react-icons/tb'
 import { FaChartColumn } from 'react-icons/fa6'
 import CustomerDetailsModal from '@/components/common/CustomerDetailsModal'
 import {
@@ -217,6 +218,7 @@ const filterTabs = [
 
 export default function MerchandisePage () {
   const [searchTerm, setSearchTerm] = useState('')
+  const [dateRange, setDateRange] = useState({ start: '', end: '' })
   const [activeTab, setActiveTab] = useState('merchandise')
   const [showOrderDetails, setShowOrderDetails] = useState(false)
   const [selectedOrder, setSelectedOrder] = useState(null)
@@ -237,7 +239,10 @@ export default function MerchandisePage () {
   useEffect(() => {
     ;(async () => {
       try {
-        const res = await getAllOrders()
+        const res = await getAllOrders({
+          startDate: dateRange.start || undefined,
+          endDate: dateRange.end || undefined
+        })
         let list = []
 
         let hasApiStats = false
@@ -260,13 +265,19 @@ export default function MerchandisePage () {
             avgGrowthPercentStr.replace('%', '')
           )
 
+          // Cap at 100%
+          const finalGrowthPercentVal = Math.min(avgGrowthPercentVal, 100)
+          const avgGrowthPercentStrCapped = `${finalGrowthPercentVal.toFixed(
+            2
+          )}%`
+
           setStats({
             yesterdayCount,
             yesterdayDateStr,
             avgGrowthCount,
             isCountIncreasing: avgGrowthCount >= 0,
-            avgGrowthPercent: avgGrowthPercentStr,
-            isPctIncreasing: avgGrowthPercentVal >= 0
+            avgGrowthPercent: avgGrowthPercentStrCapped,
+            isPctIncreasing: finalGrowthPercentVal >= 0
           })
           setStatsLoadedFromApi(true)
           hasApiStats = true
@@ -332,7 +343,7 @@ export default function MerchandisePage () {
         setOrdersRaw([])
       }
     })()
-  }, [])
+  }, [dateRange.start, dateRange.end])
 
   // Calculate stats client-side if not loaded from API
   useEffect(() => {
@@ -509,6 +520,7 @@ export default function MerchandisePage () {
             ? `${qty} x ${toCurrency(unitPrice)}`
             : `${toCurrency(unitPrice)}`,
           totalAmount: toCurrency(total),
+          amountNum: total,
           activityStatus: activity,
           paymentStatus: payment,
           rawOrder: o,
@@ -525,7 +537,22 @@ export default function MerchandisePage () {
     const term = String(searchTerm || '')
       .trim()
       .toLowerCase()
-    if (!term) return true
+
+    // Date Range Filtering
+    const bookingTime = new Date(merchandise.rawOrder?.createdAt).getTime()
+    const startTime = dateRange.start
+      ? new Date(dateRange.start).setHours(0, 0, 0, 0)
+      : null
+    const endTime = dateRange.end
+      ? new Date(dateRange.end).setHours(23, 59, 59, 999)
+      : null
+
+    const matchesDate =
+      (!startTime || bookingTime >= startTime) &&
+      (!endTime || bookingTime <= endTime)
+
+    if (!term) return matchesDate
+
     const termDigits = term.replace(/[^0-9]/g, '')
     const name = String(merchandise.merchandiseName || '').toLowerCase()
     const customerName = String(merchandise.customerName || '').toLowerCase()
@@ -541,7 +568,7 @@ export default function MerchandisePage () {
       customerName.includes(term) ||
       dateStr.includes(term)
     const matchesDigits = termDigits && dateDigits.includes(termDigits)
-    return matchesText || matchesDigits
+    return matchesDate && (matchesText || matchesDigits)
   })
 
   const getActivityStatusColor = status => {
@@ -655,13 +682,55 @@ export default function MerchandisePage () {
   return (
     <div className='p-4 min-h-screen bg-white'>
       {/* Title and Breadcrumb */}
-      <div className='mb-4'>
-        <h1 className='text-xl font-bold text-gray-900 mb-1'>
-          Gross Transaction Value
-        </h1>
-        <nav className='text-sm text-gray-500'>
-          <span>Dashboard</span> / <span>Gross Transaction Value</span>
-        </nav>
+      <div className='flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6'>
+        <div>
+          <h1 className='text-xl font-bold text-gray-900 mb-1'>
+            Gross Transaction Value
+          </h1>
+          <nav className='text-sm text-gray-500'>
+            <span>Dashboard</span> / <span>Gross Transaction Value</span>
+          </nav>
+        </div>
+        <div className='flex items-center gap-2'>
+          <div className='flex items-center gap-2'>
+            <div className='flex flex-col'>
+              <label className='text-[10px] text-gray-500 font-medium ml-1'>
+                Start Date
+              </label>
+              <input
+                type='date'
+                value={dateRange.start}
+                onChange={e =>
+                  setDateRange(prev => ({ ...prev, start: e.target.value }))
+                }
+                className='h-9 px-3 border border-gray-300 rounded-lg text-xs text-gray-700 focus:outline-none focus:border-indigo-500'
+              />
+            </div>
+            <span className='text-gray-400 mt-4'>-</span>
+            <div className='flex flex-col'>
+              <label className='text-[10px] text-gray-500 font-medium ml-1'>
+                End Date
+              </label>
+              <input
+                type='date'
+                value={dateRange.end}
+                onChange={e =>
+                  setDateRange(prev => ({ ...prev, end: e.target.value }))
+                }
+                className='h-9 px-3 border border-gray-300 rounded-lg text-xs text-gray-700 focus:outline-none focus:border-indigo-500'
+              />
+            </div>
+          </div>
+          {(dateRange.start || dateRange.end) && (
+            <button
+              onClick={() => setDateRange({ start: '', end: '' })}
+              className='mt-4 p-2 text-gray-500 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors'
+              title='Clear Date Filter'
+            >
+              <X size={16} />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Stats Cards */}
@@ -706,10 +775,15 @@ export default function MerchandisePage () {
                     Increasing
                   </span>
                 ) : (
-                  <span className='text-xs flex items-center mb-1 text-red-500'>
-                    <TbTrendingDown className='w-3 h-3 mr-0.5' />
-                    Decreasing
-                  </span>
+                  <>
+                    <p className='text-2xl text-red-500 font-bold'>
+                      {stats.avgGrowthCount}
+                    </p>
+                    <span className='text-xs flex items-center mb-1 text-red-500'>
+                      <TbTrendingDown className='w-3 h-3 mr-0.5' />
+                      Decreasing
+                    </span>
+                  </>
                 )}
               </div>
             </div>
@@ -736,12 +810,72 @@ export default function MerchandisePage () {
                     Increasing
                   </span>
                 ) : (
-                  <span className='text-xs flex items-center mb-1 text-red-500'>
-                    <TbTrendingDown className='w-3 h-3 mr-0.5' />
-                    Decreasing
-                  </span>
+                  <>
+                    <p className='text-2xl text-red-500 font-bold'>
+                      {stats.avgGrowthPercent}
+                    </p>
+                    <span className='text-xs flex items-center mb-1 text-red-500'>
+                      <TbTrendingDown className='w-3 h-3 mr-0.5' />
+                      Decreasing
+                    </span>
+                  </>
                 )}
               </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Additional Stats Cards (Filtered) */}
+      <div className='grid grid-cols-1 md:grid-cols-2 gap-4 mb-6'>
+        {/* Total Merchandise Bookings (Filtered) */}
+        <div className='bg-blue-300 text-white p-4 rounded-lg'>
+          <div className='flex items-center'>
+            <div className='bg-white p-2 rounded-lg mr-3'>
+              <TbTicket className='w-6 h-6 text-blue-600' />
+            </div>
+            <div>
+              <p className='text-xs text-black opacity-90'>
+                Total Merchandise Bookings
+              </p>
+              <p className='text-2xl text-black font-bold'>
+                {filteredMerchandise.length}{' '}
+                <span className='text-lg font-semibold opacity-90'>
+                  (₦
+                  {filteredMerchandise
+                    .reduce((acc, curr) => acc + (curr.amountNum || 0), 0)
+                    .toLocaleString()}
+                  )
+                </span>
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* New Bookings Today (Filtered) */}
+        <div className='bg-orange-300 text-white p-4 rounded-lg'>
+          <div className='flex items-center'>
+            <div className='bg-white p-2 rounded-lg mr-3'>
+              <TbTicket className='w-6 h-6 text-orange-600' />
+            </div>
+            <div>
+              <p className='text-xs text-black opacity-90'>
+                New Bookings Today
+              </p>
+              <p className='text-2xl text-black font-bold'>
+                {
+                  filteredMerchandise.filter(b => {
+                    if (!b.rawOrder?.createdAt) return false
+                    const d = new Date(b.rawOrder.createdAt)
+                    const today = new Date()
+                    return (
+                      d.getDate() === today.getDate() &&
+                      d.getMonth() === today.getMonth() &&
+                      d.getFullYear() === today.getFullYear()
+                    )
+                  }).length
+                }
+              </p>
             </div>
           </div>
         </div>
@@ -796,7 +930,9 @@ export default function MerchandisePage () {
                       d='M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 01-.659 1.591l-5.432 5.432a2.25 2.25 0 00-.659 1.591v2.927a2.25 2.25 0 01-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 00-.659-1.591L3.659 7.409A2.25 2.25 0 013 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0112 3z'
                     />
                   </svg>
-                  <span className='text-xs text-gray-700 font-medium'>Filters</span>
+                  <span className='text-xs text-gray-700 font-medium'>
+                    Filters
+                  </span>
                 </button>
 
                 {/* Download */}
@@ -817,7 +953,9 @@ export default function MerchandisePage () {
                       d='M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3'
                     />
                   </svg>
-                  <span className='ml-2 text-xs text-gray-700 font-medium'>Export</span>
+                  <span className='ml-2 text-xs text-gray-700 font-medium'>
+                    Export
+                  </span>
                 </button>
               </div>
             </div>

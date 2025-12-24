@@ -1,13 +1,13 @@
 import api from '../../src/axois/axois'
 
-export const getBookingList = async eventId => {
+export const getBookingList = async (eventId, params = {}) => {
   try {
     const url = eventId
       ? `/event/event-wise-booked-tickets/${encodeURIComponent(
           String(eventId)
         )}`
       : `/event/event-wise-booked-tickets`
-    const response = await api.get(url)
+    const response = await api.get(url, { params })
     return response.data
   } catch (error) {
     console.error('Error fetching event booked tickets:', error)
@@ -32,9 +32,11 @@ export const downloadBookingReceipt = async (bookingId, eventId) => {
   }
 }
 
-export const getActivityBookedTickets = async activityId => {
+export const getActivityBookedTickets = async (activityId, params = {}) => {
   try {
-    const response = await api.get(`activity-type/get-all-activity-bookings`)
+    const response = await api.get(`activity-type/get-all-activity-bookings`, {
+      params
+    })
     return response.data
   } catch (error) {
     console.error('Error fetching activity bookings:', error)
@@ -61,9 +63,9 @@ export const activityReferralReport = async () => {
   }
 }
 
-export const getAllEsimBookingList = async () => {
+export const getAllEsimBookingList = async (params = {}) => {
   try {
-    const response = await api.get(`/sochitel/esim-order-list`)
+    const response = await api.get(`/sochitel/esim-order-list`, { params })
     return response.data
   } catch (error) {
     console.error('Error fetching all esim booking list:', error)
