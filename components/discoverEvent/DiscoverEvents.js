@@ -385,16 +385,36 @@ export default function DiscoverEvents() {
     try {
       setExporting(true);
 
-      if (!filteredRows.length) return;
+      if (!events.length) return;
 
-      const dataToExport = filteredRows.map((r) => ({
-        "Event Name": r.eventName,
-        "Hosted By": r.hostedBy,
-        Type: r.type,
-        Location: r.location,
-        Status: r.status,
-        "Event Date": r.eventDate,
-        "Tickets Booked": r.ticketsBooked,
+      const dataToExport = events.map((e) => ({
+        // 🔹 Event Info
+        "Event Name": e.eventName,
+        Slug: e.slug,
+        Location: e.location,
+        "Map Location": e.mapLocation,
+        "Opening Hours": e.openingHours,
+        About: e.about,
+
+        // 🔹 Dates
+        "Event Start Date": e.eventStartDate,
+        "Event End Date": e.eventEndDate,
+        "Created At": e.createdAt,
+        "Updated At": e.updatedAt,
+
+        // 🔹 Event Type (flattened)
+        "Event Type": e.eventTypeId?.eventType,
+        "Event Type Status": e.eventTypeId?.status,
+
+        // 🔹 Media & Links
+        Image: e.image,
+        "Twitter Link": e.twitterLink,
+        "Website Link": e.websiteLink,
+
+        // 🔹 Business / Metrics
+        "Business Name": e.businessName,
+        Status: e.status ? "Active" : "Inactive",
+        "Total Booked Tickets": e.totalBookedTickets,
       }));
 
       downloadExcel(dataToExport, "Events.xlsx");
