@@ -74,7 +74,10 @@ export default function MedOrdersPage () {
   useEffect(() => {
     ;(async () => {
       try {
-        const res = await getMedOrderList()
+        const res = await getMedOrderList({
+          startDate: dateRange.start || undefined,
+          endDate: dateRange.end || undefined
+        })
 
         const d = res
         const yesterdayCount = Number(d.totalPurchasingYesterday || 0)
@@ -116,7 +119,7 @@ export default function MedOrdersPage () {
         setRowsRaw([])
       }
     })()
-  }, [])
+  }, [dateRange.start, dateRange.end])
 
   const rows = useMemo(() => {
     const list = Array.isArray(rowsRaw) ? rowsRaw : []

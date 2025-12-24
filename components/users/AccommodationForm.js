@@ -283,7 +283,10 @@ export default function AccommodationPage () {
       setLoading(true)
       setError('')
       try {
-        const res = await getAllAccommodationOrders()
+        const res = await getAllAccommodationOrders({
+          startDate: dateRange.start || undefined,
+          endDate: dateRange.end || undefined
+        })
         const d = res
         const yesterdayCount = Number(d.totalPurchasingYesterday || 0)
 
@@ -327,7 +330,7 @@ export default function AccommodationPage () {
       }
     }
     run()
-  }, [])
+  }, [dateRange.start, dateRange.end])
 
   // Calculate stats client-side if not loaded from API or if filtered
   useEffect(() => {

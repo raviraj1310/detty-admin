@@ -56,7 +56,10 @@ export default function LeadwayPage () {
       setLoading(true)
       setError('')
       try {
-        const res = await getLeadwayList()
+        const res = await getLeadwayList({
+          startDate: dateRange.start || undefined,
+          endDate: dateRange.end || undefined
+        })
 
         const d = res || {}
         const yesterdayCount = Number(d.totalPurchasingYesterday || 0)
@@ -128,7 +131,7 @@ export default function LeadwayPage () {
       }
     }
     load()
-  }, [])
+  }, [dateRange.start, dateRange.end])
 
   const filtered = useMemo(() => {
     const term = String(searchTerm || '')

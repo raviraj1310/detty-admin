@@ -79,7 +79,10 @@ export default function RoyalConciergeList () {
       setLoading(true)
       setError('')
       try {
-        const res = await getRoyalBookingList()
+        const res = await getRoyalBookingList({
+          startDate: dateRange.start || undefined,
+          endDate: dateRange.end || undefined
+        })
 
         const d = res
         const yesterdayCount = Number(d.totalPurchasingYesterday || 0)
@@ -169,7 +172,7 @@ export default function RoyalConciergeList () {
       }
     }
     load()
-  }, [])
+  }, [dateRange.start, dateRange.end])
 
   // Calculate stats client-side if not loaded from API or if filtered
   useEffect(() => {

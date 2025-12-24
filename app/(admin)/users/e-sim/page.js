@@ -80,7 +80,10 @@ export default function EsimUsersPage () {
   useEffect(() => {
     ;(async () => {
       try {
-        const res = await getAllEsimBookingList()
+        const res = await getAllEsimBookingList({
+          startDate: dateRange.start || undefined,
+          endDate: dateRange.end || undefined
+        })
         let list = []
         let hasApiStats = false
 
@@ -177,7 +180,7 @@ export default function EsimUsersPage () {
         setRowsRaw([])
       }
     })()
-  }, [])
+  }, [dateRange.start, dateRange.end])
 
   useEffect(() => {
     if (statsLoadedFromApi || !rowsRaw || rowsRaw.length === 0) return

@@ -443,7 +443,10 @@ export default function TransactionsForm () {
       setLoading(true)
       setError('')
       try {
-        const res = await getBookingList()
+        const params = {}
+        if (dateRange.start) params.startDate = dateRange.start
+        if (dateRange.end) params.endDate = dateRange.end
+        const res = await getBookingList(undefined, params)
         let raw = []
 
         // Check if API returns stats in res.data object
@@ -571,7 +574,7 @@ export default function TransactionsForm () {
       }
     }
     fetchData()
-  }, [])
+  }, [dateRange.start, dateRange.end])
 
   const filteredBookings = bookings
     .filter(booking => {

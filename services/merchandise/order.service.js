@@ -1,8 +1,8 @@
 import api from '../../src/axois/axois'
 
-export const getAllOrders = async () => {
+export const getAllOrders = async (params = {}) => {
   try {
-    const res = await api.get('/product/get-all-orders')
+    const res = await api.get('/product/get-all-orders', { params })
     return res.data
   } catch (error) {
     console.log(error)
@@ -45,10 +45,9 @@ export const getOrderDetail = async orderId => {
   }
 }
 
-
-export const getAllAccommodationOrders = async () => {
+export const getAllAccommodationOrders = async (params = {}) => {
   try {
-    const res = await api.get('/stay/get-stay-bookings')
+    const res = await api.get('/stay/get-stay-bookings', { params })
     return res.data
   } catch (error) {
     console.log(error)

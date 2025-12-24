@@ -154,7 +154,10 @@ export default function RidesForm ({ dateRange = { start: '', end: '' } }) {
       setLoading(true)
       setError('')
       try {
-        const res = await getAllRideBookings()
+        const res = await getAllRideBookings({
+          startDate: dateRange?.start || undefined,
+          endDate: dateRange?.end || undefined
+        })
         // API structure: { success: true, data: { data: [...] } }
 
         const d = res?.data || {}
@@ -223,7 +226,7 @@ export default function RidesForm ({ dateRange = { start: '', end: '' } }) {
       }
     }
     fetchData()
-  }, [])
+  }, [dateRange?.start, dateRange?.end])
 
   const filteredRides = useMemo(() => {
     return rides
