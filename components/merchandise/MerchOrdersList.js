@@ -267,8 +267,41 @@ export default function MerchOrdersList() {
     }
   };
 
+  const summaryCards = [
+    {
+      id: "total",
+      title: "Total Orders",
+      count: metrics.totalCount,
+      amount: metrics.totalAmount,
+      iconSrc: "/images/backend/icons/icons (3).svg",
+      bg: "bg-gradient-to-r from-[#E8EEFF] to-[#C5D5FF]",
+      iconBg: "bg-white",
+      textColor: "text-indigo-600",
+    },
+    {
+      id: "completed",
+      title: "Completed Orders",
+      count: metrics.completedCount,
+      amount: metrics.completedAmount,
+      iconSrc: "/images/backend/icons/icons (5).svg",
+      bg: "bg-gradient-to-r from-[#E8F8F0] to-[#B8EDD0]",
+      iconBg: "bg-white",
+      textColor: "text-emerald-600",
+    },
+    {
+      id: "pending",
+      title: "Pending Orders",
+      count: metrics.pendingCount,
+      amount: metrics.pendingAmount,
+      iconSrc: "/images/backend/icons/icons (4).svg",
+      bg: "bg-gradient-to-r from-[#FFE8E8] to-[#FFC5C5]",
+      iconBg: "bg-white",
+      textColor: "text-red-600",
+    },
+  ];
+
   return (
-    <div className="space-y-7 py-12 px-12">
+    <div className="space-y-7 py-12 px-6 lg:px-12">
       <Toast
         open={toastOpen}
         onOpenChange={setToastOpen}
@@ -278,68 +311,43 @@ export default function MerchOrdersList() {
         duration={2500}
         position="top-right"
       />
-
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-2 ">
         <h1 className="text-2xl font-semibold text-slate-900">Orders</h1>
         <p className="text-sm text-[#99A1BC]">Dashboard / Orders</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-2">
-        <div className="bg-[#2563EB] rounded-2xl p-6 text-white">
-          <div className="flex items-center justify-between">
-            <div className="bg-white p-4 rounded-2xl">
-              <img
-                src="/images/backend/icons/icons (3).svg"
-                alt="Total Orders"
-                className="w-8 h-8"
-              />
-            </div>
-            <div className="text-right">
-              <p className="text-sm font-medium text-white/90">Total Orders</p>
-              <p className="text-4xl font-bold">
-                {metrics.totalCount} ({toCurrency(metrics.totalAmount)})
-              </p>
-            </div>
-          </div>
-        </div>
-        <div className="bg-[#16A34A] rounded-2xl p-6 text-white">
-          <div className="flex items-center justify-between">
-            <div className="bg-white p-4 rounded-2xl">
-              <img
-                src="/images/backend/icons/icons (5).svg"
-                alt="Completed Orders"
-                className="w-8 h-8"
-              />
-            </div>
-            <div className="text-right">
-              <p className="text-sm font-medium text-white/90">
-                Completed Orders
-              </p>
-              <p className="text-4xl font-bold">
-                {metrics.completedCount} ({toCurrency(metrics.completedAmount)})
-              </p>
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mb-2">
+        {summaryCards.map((card) => (
+          <div
+            key={card.id}
+            className={`${card.bg} rounded-xl p-3 relative overflow-hidden border border-gray-100`}
+          >
+            <div className="flex items-center justify-between">
+              <div
+                className={`${card.iconBg} p-2.5 rounded-xl flex-shrink-0`}
+              >
+                <img src={card.iconSrc} alt={card.title} className="w-6 h-6" />
+              </div>
+              <div className="text-right">
+                <p
+                  className={`${card.textColor} opacity-80 text-xs font-medium mb-1`}
+                >
+                  {card.title}
+                </p>
+                <p
+                  className={`text-2xl font-bold ${card.textColor}`}
+                >
+                  {String(card.count)}
+                </p>
+                <p
+                  className={`text-sm font-semibold ${card.textColor} opacity-70`}
+                >
+                  {toCurrency(card.amount)}
+                </p>
+              </div>
             </div>
           </div>
-        </div>
-        <div className="bg-[#DC2626] rounded-2xl p-6 text-white">
-          <div className="flex items-center justify-between">
-            <div className="bg-white p-4 rounded-2xl">
-              <img
-                src="/images/backend/icons/icons (4).svg"
-                alt="Pending Orders"
-                className="w-8 h-8"
-              />
-            </div>
-            <div className="text-right">
-              <p className="text-sm font-medium text-white/90">
-                Pending Orders
-              </p>
-              <p className="text-4xl font-bold">
-                {metrics.pendingCount} ({toCurrency(metrics.pendingAmount)})
-              </p>
-            </div>
-          </div>
-        </div>
+        ))}
       </div>
 
       <div className="rounded-[30px] border border-[#E1E6F7] bg-white p-6 shadow-[0_24px_60px_-40px_rgba(15,23,42,0.55)] overflow-visible">
@@ -387,40 +395,45 @@ export default function MerchOrdersList() {
         </div>
 
         <div className="overflow-visible rounded-2xl border border-[#E5E8F5]">
-          <div className="grid grid-cols-[1.5fr_1.5fr_2fr_1.5fr_2fr_1fr_1fr] gap-3 bg-[#F7F9FD] px-6 py-4">
+          <div className="grid grid-cols-[1.5fr_1.5fr_2fr_1.5fr_2fr_1fr_1.2fr_50px] gap-3 bg-[#F7F9FD] px-6 py-4">
             <div>
-              <div className="text-xs font-medium uppercase tracking-[0.12em] text-[#8A92AC]">
-                Ordered On
+              <div className="text-xs font-medium capitalize tracking-wide text-[#8A92AC]">
+                Ordered on
               </div>
             </div>
             <div>
-              <div className="text-xs font-medium uppercase tracking-[0.12em] text-[#8A92AC]">
-                User Name
+              <div className="text-xs font-medium capitalize tracking-wide text-[#8A92AC]">
+                User name
               </div>
             </div>
             <div>
-              <div className="text-xs font-medium uppercase tracking-[0.12em] text-[#8A92AC]">
+              <div className="text-xs font-medium capitalize tracking-wide text-[#8A92AC]">
                 Email id
               </div>
             </div>
             <div>
-              <div className="text-xs font-medium uppercase tracking-[0.12em] text-[#8A92AC]">
-                Phone Number
+              <div className="text-xs font-medium capitalize tracking-wide text-[#8A92AC]">
+                Phone number
               </div>
             </div>
             <div>
-              <div className="text-xs font-medium uppercase tracking-[0.12em] text-[#8A92AC]">
-                Order Details
+              <div className="text-xs font-medium capitalize tracking-wide text-[#8A92AC]">
+                Order details
               </div>
             </div>
             <div>
-              <div className="text-xs font-medium uppercase tracking-[0.12em] text-[#8A92AC]">
+              <div className="text-xs font-medium capitalize tracking-wide text-[#8A92AC]">
                 Amount
               </div>
             </div>
-            <div className="flex justify-end">
-              <div className="text-xs font-medium uppercase tracking-[0.12em] text-[#8A92AC]">
-                Order Status
+            <div>
+              <div className="text-xs font-medium capitalize tracking-wide text-[#8A92AC]">
+                Order status
+              </div>
+            </div>
+            <div>
+              <div className="text-xs font-medium capitalize tracking-wide text-[#8A92AC]">
+                Action
               </div>
             </div>
           </div>
@@ -435,7 +448,7 @@ export default function MerchOrdersList() {
               filtered.map((o) => (
                 <div
                   key={o.id}
-                  className="grid grid-cols-[1.5fr_1.5fr_2fr_1.5fr_2fr_1fr_1fr] gap-3 px-6 py-5 hover:bg-[#F9FAFD]"
+                  className="grid grid-cols-[1.5fr_1.5fr_2fr_1.5fr_2fr_1fr_1.2fr_50px] gap-3 px-6 py-5 hover:bg-[#F9FAFD]"
                 >
                   <div className="self-center text-sm text-[#5E6582]">
                     {o.date}
@@ -452,10 +465,10 @@ export default function MerchOrdersList() {
                   <div className="self-center text-sm text-[#5E6582]">
                     {o.details}
                   </div>
-                  <div className="self-center text-sm font-semibold text-slate-900 text-right">
+                  <div className="self-center text-sm font-semibold text-slate-900">
                     {toCurrency(o.amount)}
                   </div>
-                  <div className="self-center flex items-center justify-end gap-2">
+                  <div className="self-center">
                     <span
                       className={`inline-flex items-center justify-center rounded-full px-3 py-1 text-xs font-semibold ${
                         String(o.status).toLowerCase() === "completed"
@@ -465,6 +478,8 @@ export default function MerchOrdersList() {
                     >
                       {o.status}
                     </span>
+                  </div>
+                  <div className="self-center flex items-center justify-center">
                     <div className="relative z-[2]">
                       <button
                         onClick={() =>

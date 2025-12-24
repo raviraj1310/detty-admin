@@ -24,27 +24,33 @@ import { downloadExcel } from "@/utils/excelExport";
 
 const metricCards = [
   {
-    id: "total",
-    title: "Total Merchandise",
-    value: "1540",
-    iconSrc: "/images/backend/icons/icons (3).svg",
-    bg: "bg-[#2563EB]",
+    id: 'total',
+    title: 'Total Merchandise',
+    value: '1540',
+    iconSrc: '/images/backend/icons/icons (3).svg',
+    bg: 'bg-gradient-to-r from-[#E8EEFF] to-[#C5D5FF]',
+    iconBg: 'bg-white',
+    textColor: 'text-indigo-600'
   },
   {
-    id: "active",
-    title: "Active Merchandise",
-    value: "1240",
-    iconSrc: "/images/backend/icons/icons (5).svg",
-    bg: "bg-[#16A34A]",
+    id: 'active',
+    title: 'Active Merchandise',
+    value: '1240',
+    iconSrc: '/images/backend/icons/icons (5).svg',
+    bg: 'bg-gradient-to-r from-[#E8F8F0] to-[#B8EDD0]',
+    iconBg: 'bg-white',
+    textColor: 'text-emerald-600'
   },
   {
-    id: "inactive",
-    title: "Inactive Merchandise",
-    value: "100",
-    iconSrc: "/images/backend/icons/icons (4).svg",
-    bg: "bg-[#DC2626]",
-  },
-];
+    id: 'inactive',
+    title: 'Inactive Merchandise',
+    value: '100',
+    iconSrc: '/images/backend/icons/icons (4).svg',
+    bg: 'bg-gradient-to-r from-[#FFE8E8] to-[#FFC5C5]',
+    iconBg: 'bg-white',
+    textColor: 'text-red-600'
+  }
+]
 
 const TableHeaderCell = ({
   children,
@@ -528,21 +534,21 @@ export default function MerchandiseList() {
           return (
             <div
               key={card.id}
-              className={`${card.bg} rounded-xl p-3 text-white relative overflow-hidden`}
+              className={`${card.bg} rounded-xl p-3 relative overflow-hidden border border-gray-100`}
             >
-              <div className="flex items-center justify-between">
-                <div className="bg-white p-2.5 rounded-xl flex-shrink-0">
+              <div className='flex items-center justify-between'>
+                <div className={`${card.iconBg} p-2.5 rounded-xl flex-shrink-0`}>
                   <img
                     src={card.iconSrc}
                     alt={card.title}
                     className="w-6 h-6"
                   />
                 </div>
-                <div className="text-right">
-                  <p className="text-white/90 text-xs font-medium mb-1">
+                <div className='text-right'>
+                  <p className={`${card.textColor} opacity-80 text-xs font-medium mb-1`}>
                     {card.title}
                   </p>
-                  <p className="text-2xl font-bold text-white">
+                  <p className={`text-2xl font-bold ${card.textColor}`}>
                     {String(cardValue)}
                   </p>
                 </div>

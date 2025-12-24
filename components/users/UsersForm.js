@@ -122,7 +122,7 @@ const TableHeaderCell = ({
   <button
     type='button'
     onClick={onClick}
-    className={`flex items-center gap-1 text-xs font-medium uppercase tracking-[0.12em] ${
+    className={`flex items-center gap-1 text-xs font-medium tracking-[0.04em] whitespace-nowrap ${
       active ? 'text-[#2D3658]' : 'text-[#8A92AC]'
     } ${
       align === 'right' ? 'justify-end' : 'justify-start'
@@ -131,12 +131,12 @@ const TableHeaderCell = ({
     {children}
     {active ? (
       direction === 'asc' ? (
-        <ChevronUp size={14} className='text-[#2D3658]' />
+        <ChevronUp size={14} className='text-[#2D3658] flex-shrink-0' />
       ) : (
-        <ChevronDown size={14} className='text-[#2D3658]' />
+        <ChevronDown size={14} className='text-[#2D3658] flex-shrink-0' />
       )
     ) : (
-      <TbCaretUpDownFilled size={14} className='text-[#CBCFE2]' />
+      <TbCaretUpDownFilled size={14} className='text-[#CBCFE2] flex-shrink-0' />
     )}
   </button>
 )
@@ -1333,7 +1333,7 @@ export default function UsersForm () {
 
       {/* Stats Cards */}
       <div className='grid grid-cols-1 md:grid-cols-3 gap-4 mb-6'>
-        <div className='bg-blue-200 text-white p-4 rounded-lg'>
+        <div className='bg-gradient-to-r from-[#E8EEFF] to-[#C5D5FF] p-4 rounded-lg shadow-md'>
           <div className='flex items-center'>
             <div className='bg-white bg-opacity-20 p-2 rounded-lg mr-3'>
               <Image
@@ -1353,7 +1353,7 @@ export default function UsersForm () {
           </div>
         </div>
 
-        <div className='bg-green-100 text-white p-4 rounded-lg'>
+        <div className='bg-gradient-to-r from-[#E8F8F0] to-[#B8EDD0] p-4 rounded-lg shadow-md'>
           <div className='flex items-center'>
             <div className='bg-white bg-opacity-20 p-2 rounded-lg mr-3'>
               <Image
@@ -1373,7 +1373,7 @@ export default function UsersForm () {
           </div>
         </div>
 
-        <div className='bg-red-100 text-white p-4 rounded-lg'>
+        <div className='bg-gradient-to-r from-[#FFE8E8] to-[#FFC5C5] p-4 rounded-lg shadow-md'>
           <div className='flex items-center'>
             <div className='bg-white bg-opacity-20 p-2 rounded-lg mr-3'>
               <Image
@@ -1394,10 +1394,10 @@ export default function UsersForm () {
         </div>
 
         {/* Total Bookings Yesterday */}
-        <div className='bg-indigo-100 text-white p-4 rounded-lg'>
+        <div className='bg-gradient-to-r from-[#FFF4E8] to-[#FFE4C5] p-4 rounded-lg shadow-md'>
           <div className='flex items-center'>
             <div className='bg-white p-2 rounded-lg mr-3'>
-              <FaUserPlus className='w-6 h-6 text-indigo-600' />
+              <FaUserPlus className='w-6 h-6 text-orange-600' />
             </div>
             <div>
               <p className='text-xs text-black opacity-90'>
@@ -1414,7 +1414,7 @@ export default function UsersForm () {
         </div>
 
         {/* Avg Daily Growth (Count) */}
-        <div className='bg-purple-200 text-white p-4 rounded-lg'>
+        <div className='bg-gradient-to-r from-[#F3E8FF] to-[#E0C5FF] p-4 rounded-lg shadow-md'>
           <div className='flex items-center'>
             <div className='bg-white p-2 rounded-lg mr-3'>
               <TbTrendingUp className='w-6 h-6 text-purple-600' />
@@ -1451,7 +1451,7 @@ export default function UsersForm () {
         </div>
 
         {/* Avg Daily Growth (%) */}
-        <div className='bg-teal-200 text-white p-4 rounded-lg'>
+        <div className='bg-gradient-to-r from-[#E0FFF7] to-[#A8F0DC] p-4 rounded-lg shadow-md'>
           <div className='flex items-center'>
             <div className='bg-white p-2 rounded-lg mr-3'>
               <FaChartColumn className='w-6 h-6 text-teal-600' />
@@ -1618,25 +1618,25 @@ export default function UsersForm () {
             <table className='w-full table-fixed'>
               <thead className='bg-gray-50'>
                 <tr>
-                  <th className='w-[12%] px-3 py-2 text-left text-xs font-medium uppercase tracking-[0.08em]'>
+                  <th className='w-[12%] px-3 py-2 text-left text-xs font-medium tracking-[0.04em]'>
                     <TableHeaderCell
                       onClick={() => toggleSort('createdTs')}
                       active={sort.key === 'createdTs'}
                       direction={sort.dir}
                     >
-                      Created On
+                      Created on
                     </TableHeaderCell>
                   </th>
-                  <th className='w-[14%] px-3 py-2 text-left text-xs font-medium uppercase tracking-[0.08em]'>
+                  <th className='w-[14%] px-3 py-2 text-left text-xs font-medium tracking-[0.04em]'>
                     <TableHeaderCell
                       onClick={() => toggleSort('name')}
                       active={sort.key === 'name'}
                       direction={sort.dir}
                     >
-                      User Name
+                      User name
                     </TableHeaderCell>
                   </th>
-                  <th className='w-[22%] px-3 py-2 text-left text-xs font-medium uppercase tracking-[0.08em]'>
+                  <th className='w-[22%] px-3 py-2 text-left text-xs font-medium tracking-[0.04em]'>
                     <TableHeaderCell
                       onClick={() => toggleSort('email')}
                       active={sort.key === 'email'}
@@ -1645,28 +1645,28 @@ export default function UsersForm () {
                       Email
                     </TableHeaderCell>
                   </th>
-                  <th className='w-[10%] px-3 py-2 text-left text-xs font-medium uppercase tracking-[0.08em]'>
+                  <th className='w-[10%] px-3 py-2 text-left text-xs font-medium tracking-[0.04em]'>
                     <TableHeaderCell
                       onClick={() => toggleSort('phone')}
                       active={sort.key === 'phone'}
                       direction={sort.dir}
                     >
-                      Phone Number
+                      Phone number
                     </TableHeaderCell>
                   </th>
-                  <th className='w-[10%] px-3 py-2 text-left text-xs font-medium uppercase tracking-[0.08em]'>
+                  <th className='w-[10%] px-3 py-2 text-left text-xs font-medium tracking-[0.04em]'>
                     <TableHeaderCell
                       onClick={() => toggleSort('walletPointsNum')}
                       active={sort.key === 'walletPointsNum'}
                       direction={sort.dir}
                     >
-                      Wallet Points
+                      Wallet points
                     </TableHeaderCell>
                   </th>
-                  <th className='w-[12%] px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-[0.08em]'>
+                  <th className='w-[12%] px-3 py-2 text-left text-xs font-medium text-gray-500 tracking-[0.04em]'>
                     Actions
                   </th>
-                  <th className='w-[10%] px-3 py-2 text-left text-xs font-medium uppercase tracking-[0.08em]'>
+                  <th className='w-[10%] px-3 py-2 text-left text-xs font-medium tracking-[0.04em]'>
                     <TableHeaderCell
                       onClick={() => toggleSort('status')}
                       active={sort.key === 'status'}
@@ -1675,7 +1675,7 @@ export default function UsersForm () {
                       Status
                     </TableHeaderCell>
                   </th>
-                  <th className='w-[10%] px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-[0.08em]'></th>
+                  <th className='w-[10%] px-3 py-2 text-right text-xs font-medium text-gray-500 tracking-[0.04em]'></th>
                 </tr>
               </thead>
               <tbody className='bg-white divide-y divide-gray-200'>
