@@ -707,7 +707,7 @@ export default function AccommodationPage () {
               <div className='flex items-end gap-2'>
                 {stats.isCountIncreasing ? (
                   <>
-                    <p className='text-2xl text-black font-bold'>
+                    <p className='text-2xl text-green-600 font-bold'>
                       {stats.avgGrowthCount}
                     </p>
                     <span className='text-xs flex items-center mb-1 text-green-600'>
@@ -717,10 +717,10 @@ export default function AccommodationPage () {
                   </>
                 ) : (
                   <>
-                    <p className='text-2xl text-black font-bold'>
+                    <p className='text-2xl text-red-600 font-bold'>
                       {stats.avgGrowthCount}
                     </p>
-                    <span className='text-xs flex items-center mb-1 text-red-500'>
+                    <span className='text-xs flex items-center mb-1 text-red-600'>
                       <TbTrendingDown className='w-3 h-3 mr-0.5' />
                       Decreasing
                     </span>
@@ -742,19 +742,26 @@ export default function AccommodationPage () {
                 Avg Daily Growth (%)
               </p>
               <div className='flex items-end gap-2'>
-                <p className='text-2xl text-black font-bold'>
-                  {stats.avgGrowthPercent}
-                </p>
                 {stats.isPctIncreasing ? (
-                  <span className='text-xs flex items-center mb-1 text-green-600'>
-                    <TbTrendingUp className='w-3 h-3 mr-0.5' />
-                    Increasing
-                  </span>
+                  <>
+                    <p className='text-2xl text-green-600 font-bold'>
+                      {stats.avgGrowthPercent}
+                    </p>
+                    <span className='text-xs flex items-center mb-1 text-green-600'>
+                      <TbTrendingUp className='w-3 h-3 mr-0.5' />
+                      Increasing
+                    </span>
+                  </>
                 ) : (
-                  <span className='text-xs flex items-center mb-1 text-red-500'>
-                    <TbTrendingDown className='w-3 h-3 mr-0.5' />
-                    Decreasing
-                  </span>
+                  <>
+                    <p className='text-2xl text-red-600 font-bold'>
+                      {stats.avgGrowthPercent}
+                    </p>
+                    <span className='text-xs flex items-center mb-1 text-red-600'>
+                      <TbTrendingDown className='w-3 h-3 mr-0.5' />
+                      Decreasing
+                    </span>
+                  </>
                 )}
               </div>
             </div>
