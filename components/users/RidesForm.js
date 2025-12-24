@@ -286,35 +286,35 @@ export default function RidesForm () {
   return (
     <div className='p-4 h-full flex flex-col bg-white'>
       <div className='grid grid-cols-1 md:grid-cols-3 gap-4 mb-6'>
-        <div className='bg-indigo-300 text-white p-4 rounded-lg'>
-          <div className='flex items-center'>
-            <div className='bg-white p-2 rounded-lg mr-3'>
+        <div className='bg-gradient-to-r from-[#E8EEFF] to-[#C5D5FF] p-4 rounded-lg'>
+          <div className='flex items-center justify-between'>
+            <div className='bg-white p-2 rounded-lg'>
               <TbTicket className='w-6 h-6 text-indigo-600' />
             </div>
-            <div>
-              <p className='text-xs text-black opacity-90'>
+            <div className='text-right'>
+              <p className='text-xs text-indigo-600 opacity-90'>
                 Total Purchasing Yesterday{' '}
                 <span className='text-[10px] opacity-75'>
                   ({stats.yesterdayDateStr})
                 </span>
               </p>
-              <p className='text-2xl text-black font-bold'>
+              <p className='text-2xl text-indigo-600 font-bold'>
                 {stats.yesterdayCount}
               </p>
             </div>
           </div>
         </div>
-        <div className='bg-purple-300 text-white p-4 rounded-lg'>
-          <div className='flex items-center'>
-            <div className='bg-white p-2 rounded-lg mr-3'>
+        <div className='bg-gradient-to-r from-[#F3E8FF] to-[#DDD6FE] p-4 rounded-lg'>
+          <div className='flex items-center justify-between'>
+            <div className='bg-white p-2 rounded-lg'>
               <TbTrendingUp className='w-6 h-6 text-purple-600' />
             </div>
-            <div>
-              <p className='text-xs text-black opacity-90'>
+            <div className='text-right'>
+              <p className='text-xs text-purple-600 opacity-90'>
                 Avg Daily Growth (Count)
               </p>
-              <div className='flex items-end gap-2'>
-                <p className='text-2xl text-black font-bold'>
+              <div className='flex items-end justify-end gap-2'>
+                <p className='text-2xl text-purple-600 font-bold'>
                   {stats.avgGrowthCount}
                 </p>
                 {stats.isCountIncreasing ? (
@@ -332,17 +332,17 @@ export default function RidesForm () {
             </div>
           </div>
         </div>
-        <div className='bg-teal-300 text-white p-4 rounded-lg'>
-          <div className='flex items-center'>
-            <div className='bg-white p-2 rounded-lg mr-3'>
+        <div className='bg-gradient-to-r from-[#CCFBF1] to-[#99F6E4] p-4 rounded-lg'>
+          <div className='flex items-center justify-between'>
+            <div className='bg-white p-2 rounded-lg'>
               <FaChartColumn className='w-6 h-6 text-teal-600' />
             </div>
-            <div>
-              <p className='text-xs text-black opacity-90'>
+            <div className='text-right'>
+              <p className='text-xs text-teal-600 opacity-90'>
                 Avg Daily Growth (%)
               </p>
-              <div className='flex items-end gap-2'>
-                <p className='text-2xl text-black font-bold'>
+              <div className='flex items-end justify-end gap-2'>
+                <p className='text-2xl text-teal-600 font-bold'>
                   {stats.avgGrowthPercent}
                 </p>
                 {stats.isPctIncreasing ? (

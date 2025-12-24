@@ -1,14 +1,16 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import { Search, Download, Mail, PlusCircle, XCircle } from "lucide-react"
+import { Search, Download } from "lucide-react"
 import { TbCaretUpDownFilled } from "react-icons/tb"
+import { HiOutlineMail } from "react-icons/hi"
+import { AiOutlinePlusCircle, AiOutlineCloseCircle } from "react-icons/ai"
 import { getEmailSubscriptions, downloadEmailSubscriptionsCSV } from "@/services/email-subscription/email-subscription.service"
 
 const cardDefs = [
-  { id: "total", title: "Total Subscriptions", bg: "bg-[#1F57D6]", Icon: Mail },
-  { id: "new", title: "New Today", bg: "bg-[#15803D]", Icon: PlusCircle },
-  { id: "unsub", title: "Unsubscribed", bg: "bg-[#B91C1C]", Icon: XCircle }
+  { id: "total", title: "Total Subscriptions", bg: "bg-gradient-to-r from-[#E8EEFF] to-[#C5D5FF]", iconBg: "bg-white", textColor: "text-indigo-600", Icon: HiOutlineMail },
+  { id: "new", title: "New Today", bg: "bg-gradient-to-r from-[#E8F8F0] to-[#B8EDD0]", iconBg: "bg-white", textColor: "text-emerald-600", Icon: AiOutlinePlusCircle },
+  { id: "unsub", title: "Unsubscribed", bg: "bg-gradient-to-r from-[#FFE8E8] to-[#FFC5C5]", iconBg: "bg-white", textColor: "text-red-600", Icon: AiOutlineCloseCircle }
 ]
 
 const TableHeaderCell = ({ children, onClick }) => (
@@ -135,14 +137,14 @@ export default function EmailSubscriptions() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
         {cardDefs.map(card => (
-          <div key={card.id} className={`${card.bg} rounded-xl p-3 text-white relative overflow-hidden`}>
+          <div key={card.id} className={`${card.bg} rounded-xl p-3 relative overflow-hidden border border-gray-100 shadow-md`}>
             <div className="flex items-center justify-between">
-              <div className="bg-white/10 p-2.5 rounded-xl flex-shrink-0">
-                <card.Icon className="h-6 w-6 text-white" />
+              <div className={`${card.iconBg} p-2.5 rounded-xl flex-shrink-0`}>
+                <card.Icon className={`h-6 w-6 ${card.textColor}`} />
               </div>
               <div className="text-right">
-                <p className="text-white/90 text-xs font-medium mb-1">{card.title}</p>
-                <p className="text-2xl font-bold text-white">{String(card.id === 'total' ? metrics.total : card.id === 'new' ? metrics.new : metrics.unsub)}</p>
+                <p className={`${card.textColor} opacity-80 text-xs font-medium mb-1`}>{card.title}</p>
+                <p className={`text-2xl font-bold ${card.textColor}`}>{String(card.id === 'total' ? metrics.total : card.id === 'new' ? metrics.new : metrics.unsub)}</p>
               </div>
             </div>
           </div>

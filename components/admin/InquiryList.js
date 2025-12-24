@@ -1,17 +1,19 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { Search, Download, Mail, PlusCircle, AlertCircle } from 'lucide-react'
+import { Search, Download } from 'lucide-react'
 import { TbCaretUpDownFilled } from 'react-icons/tb'
+import { HiOutlineMail } from 'react-icons/hi'
+import { AiOutlinePlusCircle, AiOutlineExclamationCircle } from 'react-icons/ai'
 import {
   getInquiries,
   downloadInquiriesCSV
 } from '@/services/inquiry/inquiry.service'
 
 const cardDefs = [
-  { id: 'total', title: 'Total Inquiries', bg: 'bg-[#1F57D6]', Icon: Mail },
-  { id: 'new', title: 'New Today', bg: 'bg-[#15803D]', Icon: PlusCircle },
-  { id: 'resolved', title: 'Resolved', bg: 'bg-[#B91C1C]', Icon: AlertCircle }
+  { id: 'total', title: 'Total Inquiries', bg: 'bg-gradient-to-r from-[#E8EEFF] to-[#C5D5FF]', iconBg: 'bg-white', textColor: 'text-indigo-600', Icon: HiOutlineMail },
+  { id: 'new', title: 'New Today', bg: 'bg-gradient-to-r from-[#E8F8F0] to-[#B8EDD0]', iconBg: 'bg-white', textColor: 'text-emerald-600', Icon: AiOutlinePlusCircle },
+  { id: 'resolved', title: 'Resolved', bg: 'bg-gradient-to-r from-[#FFE8E8] to-[#FFC5C5]', iconBg: 'bg-white', textColor: 'text-red-600', Icon: AiOutlineExclamationCircle }
 ]
 
 const TableHeaderCell = ({ children, onClick }) => (
@@ -213,17 +215,17 @@ export default function InquiryList () {
         {cardDefs.map(card => (
           <div
             key={card.id}
-            className={`${card.bg} rounded-xl p-3 text-white relative overflow-hidden`}
+            className={`${card.bg} rounded-xl p-3 relative overflow-hidden border border-gray-100 shadow-md`}
           >
             <div className='flex items-center justify-between'>
-              <div className='bg-white/10 p-2.5 rounded-xl flex-shrink-0'>
-                <card.Icon className='h-6 w-6 text-white' />
+              <div className={`${card.iconBg} p-2.5 rounded-xl flex-shrink-0`}>
+                <card.Icon className={`h-6 w-6 ${card.textColor}`} />
               </div>
               <div className='text-right'>
-                <p className='text-white/90 text-xs font-medium mb-1'>
+                <p className={`${card.textColor} opacity-80 text-xs font-medium mb-1`}>
                   {card.title}
                 </p>
-                <p className='text-2xl font-bold text-white'>
+                <p className={`text-2xl font-bold ${card.textColor}`}>
                   {String(
                     card.id === 'total'
                       ? metrics.total

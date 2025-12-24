@@ -31,38 +31,44 @@ const metricCards = [
     title: 'Total Tickets',
     value: '0',
     iconSrc: '/images/backend/icons/icons (1).svg',
-    bg: 'bg-[#4F46E5]'
+    bg: 'bg-gradient-to-r from-[#E8EEFF] to-[#C5D5FF]',
+    iconBg: 'bg-white',
+    textColor: 'text-indigo-600'
   },
   {
     id: 'booked',
     title: 'Tickets Booked',
     value: '0',
     iconSrc: '/images/backend/icons/icons (5).svg',
-    bg: 'bg-[#059669]'
+    bg: 'bg-gradient-to-r from-[#E8F8F0] to-[#B8EDD0]',
+    iconBg: 'bg-white',
+    textColor: 'text-emerald-600'
   },
   {
     id: 'unbooked',
     title: 'Unbooked Tickets',
     value: '0',
     iconSrc: '/images/backend/icons/icons (6).svg',
-    bg: 'bg-[#DC2626]'
+    bg: 'bg-gradient-to-r from-[#FFE8E8] to-[#FFC5C5]',
+    iconBg: 'bg-white',
+    textColor: 'text-red-600'
   }
 ]
 
 const bookingRows = []
 
-const MetricCard = ({ title, value, iconSrc, bg }) => (
-  <div className={`${bg} rounded-xl p-3 text-white relative overflow-hidden`}>
+const MetricCard = ({ title, value, iconSrc, bg, iconBg, textColor }) => (
+  <div className={`${bg} rounded-xl p-3 relative overflow-hidden shadow-md border border-gray-100`}>
     <div className='flex items-center justify-between'>
       {/* Icon on the left */}
-      <div className='bg-white p-2.5 rounded-xl flex-shrink-0'>
+      <div className={`${iconBg} p-2.5 rounded-xl flex-shrink-0`}>
         <img src={iconSrc} alt={title} className='w-6 h-6' />
       </div>
 
       {/* Content on the right */}
       <div className='text-right'>
-        <p className='text-white/90 text-xs font-medium mb-1'>{title}</p>
-        <p className='text-2xl font-bold text-white'>{value}</p>
+        <p className={`${textColor} opacity-80 text-xs font-medium mb-1`}>{title}</p>
+        <p className={`text-2xl font-bold ${textColor}`}>{value}</p>
       </div>
     </div>
   </div>
@@ -436,6 +442,8 @@ export default function TicketsBooked () {
               value={String(value)}
               iconSrc={card.iconSrc}
               bg={card.bg}
+              iconBg={card.iconBg}
+              textColor={card.textColor}
             />
           )
         })}

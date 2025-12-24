@@ -27,37 +27,38 @@ const metricCards = [
     value: "1540",
     iconSrc: "/images/backend/icons/icons (3).svg",
     accent: "from-[#2563EB] to-[#1D4ED8]",
-    textColor: "text-white",
-    bg: "bg-[#4F46E5]",
-    iconBg: "bg-white/20",
+    textColor: "text-indigo-600",
+    bg: "bg-gradient-to-r from-[#E8EEFF] to-[#C5D5FF]",
+    iconBg: "bg-white",
   },
   {
     id: "done",
     title: "Done Events",
     value: "1240",
     iconSrc: "/images/backend/icons/icons (5).svg",
-    bg: "bg-[#059669]",
+    bg: "bg-gradient-to-r from-[#E8F8F0] to-[#B8EDD0]",
     accent: "from-[#15803D] to-[#166534]",
-    textColor: "text-white",
-    iconBg: "bg-white/15",
+    textColor: "text-emerald-600",
+    iconBg: "bg-white",
   },
   {
     id: "ongoing",
     title: "Ongoing Events",
     value: "1",
     iconSrc: "/images/backend/icons/icons (2).svg",
-    bg: "bg-[#EA580C]",
-    iconBg: "bg-white/15",
+    bg: "bg-gradient-to-r from-[#FFF4E8] to-[#FFE4C5]",
+    textColor: "text-orange-600",
+    iconBg: "bg-white",
   },
   {
     id: "upcoming",
     title: "Upcoming Events",
     value: "100",
     iconSrc: "/images/backend/icons/icons (4).svg",
-    bg: "bg-[#DC2626]",
+    bg: "bg-gradient-to-r from-[#FFE8E8] to-[#FFC5C5]",
     accent: "from-[#DC2626] to-[#B91C1C]",
-    textColor: "text-white",
-    iconBg: "bg-white/15",
+    textColor: "text-red-600",
+    iconBg: "bg-white",
   },
 ];
 
@@ -446,10 +447,10 @@ export default function DiscoverEvents() {
           return (
             <div
               key={card.id}
-              className={`${card.bg} rounded-xl p-3 text-white relative overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300`}
+              className={`${card.bg} rounded-xl p-3 relative overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 border border-gray-100`}
             >
               <div className="flex items-center justify-between gap-2">
-                <div className="bg-white/95 p-2.5 rounded-lg flex-shrink-0 shadow-sm">
+                <div className={`${card.iconBg} p-2.5 rounded-lg flex-shrink-0 shadow-sm`}>
                   <img
                     src={card.iconSrc}
                     alt={card.title}
@@ -457,10 +458,10 @@ export default function DiscoverEvents() {
                   />
                 </div>
                 <div className="text-right flex-1 min-w-0">
-                  <p className="text-white/95 text-xs font-medium mb-0.5 leading-tight">
+                  <p className={`${card.textColor} opacity-80 text-xs font-medium mb-0.5 leading-tight`}>
                     {card.title}
                   </p>
-                  <p className="text-2xl font-bold text-white tracking-tight">
+                  <p className={`text-2xl font-bold ${card.textColor} tracking-tight`}>
                     {String(cardValue)}
                   </p>
                 </div>

@@ -12,28 +12,36 @@ const metricCards = [
     title: "Total Balance",
     value: "0",
     iconSrc: "/images/backend/icons/icons (3).svg",
-    bg: "bg-[#4F46E5]",
+    bg: "bg-gradient-to-r from-[#E8EEFF] to-[#C5D5FF]",
+    iconBg: "bg-white",
+    textColor: "text-indigo-600",
   },
   {
     id: "completed",
     title: "Completed",
     value: "0",
     iconSrc: "/images/backend/icons/icons (5).svg",
-    bg: "bg-[#059669]",
+    bg: "bg-gradient-to-r from-[#E8F8F0] to-[#B8EDD0]",
+    iconBg: "bg-white",
+    textColor: "text-emerald-600",
   },
   {
     id: "pending",
     title: "Pending",
     value: "0",
     iconSrc: "/images/backend/icons/icons (2).svg",
-    bg: "bg-[#EA580C]",
+    bg: "bg-gradient-to-r from-[#FFF4E8] to-[#FFE4C5]",
+    iconBg: "bg-white",
+    textColor: "text-orange-600",
   },
   {
     id: "failed",
     title: "Failed",
     value: "0",
     iconSrc: "/images/backend/icons/icons (4).svg",
-    bg: "bg-[#DC2626]",
+    bg: "bg-gradient-to-r from-[#FFE8E8] to-[#FFC5C5]",
+    iconBg: "bg-white",
+    textColor: "text-red-600",
   },
 ];
 
@@ -271,17 +279,17 @@ export default function WalletForm() {
           return (
             <div
               key={card.id}
-              className={`${card.bg} rounded-xl p-3 text-white relative overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300`}
+              className={`${card.bg} rounded-xl p-3 relative overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 border border-gray-100`}
             >
               <div className="flex items-center justify-between gap-2">
-                <div className="bg-white/95 p-2.5 rounded-lg flex-shrink-0 shadow-sm">
+                <div className={`${card.iconBg} p-2.5 rounded-lg flex-shrink-0 shadow-sm`}>
                   <img src={card.iconSrc} alt={card.title} className="w-7 h-7" />
                 </div>
                 <div className="text-right flex-1 min-w-0">
-                  <p className="text-white/95 text-xs font-medium mb-0.5 leading-tight">
+                  <p className={`${card.textColor} opacity-80 text-xs font-medium mb-0.5 leading-tight`}>
                     {card.title}
                   </p>
-                  <p className="text-2xl font-bold text-white tracking-tight">
+                  <p className={`text-2xl font-bold ${card.textColor} tracking-tight`}>
                     {loading && card.id === "balance" ? "..." : String(value)}
                   </p>
                 </div>

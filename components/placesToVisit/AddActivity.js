@@ -337,24 +337,24 @@ export default function AddActivity () {
   return (
     <div className='min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-12 relative z-50'>
       {/* Header */}
-      <div className='mb-6'>
-        <h1 className='text-2xl sm:text-3xl font-bold text-gray-900'>
+      <div className='mb-4'>
+        <h1 className='text-xl sm:text-2xl font-bold text-gray-900'>
           Add Activity
         </h1>
-        <p className='text-sm text-gray-500 mt-1'>Dashboard / Add Activity</p>
+        <p className='text-xs text-gray-500 mt-1'>Dashboard / Add Activity</p>
       </div>
 
       {/* Main Card */}
-      <div className='bg-white rounded-2xl shadow-sm border border-gray-200 p-6 relative z-50'>
+      <div className='bg-white rounded-xl shadow-sm border border-gray-200 p-4 relative z-50'>
         {/* Card Header */}
-        <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 pb-4 border-b border-gray-200'>
-          <h2 className='text-xl font-semibold text-gray-900'>
+        <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4 pb-3 border-b border-gray-200'>
+          <h2 className='text-base font-semibold text-gray-900'>
             Activity Details
           </h2>
-          <div className='flex gap-3'>
+          <div className='flex gap-2'>
             <button
               onClick={handleAdd}
-              className='px-6 py-2.5 bg-[#FF5B2C] hover:bg-[#F0481A] text-white font-medium rounded-lg transition-colors'
+              className='px-4 py-2 bg-[#FF5B2C] hover:bg-[#F0481A] text-white text-sm font-medium rounded-lg transition-colors'
             >
               Add
             </button>
@@ -362,53 +362,53 @@ export default function AddActivity () {
         </div>
 
         {/* Form Fields */}
-        <div className='space-y-6'>
+        <div className='space-y-4'>
           {/* Row 1: Activity Name, Location, Map Location */}
-          <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
+          <div className='grid grid-cols-1 md:grid-cols-3 gap-3'>
             <div>
-              <label className='block text-sm font-medium text-gray-700 mb-2'>
+              <label className='block text-xs font-medium text-gray-700 mb-1.5'>
                 Activity Name<span className='text-red-500'>*</span>
               </label>
               <input
                 type='text'
                 value={formData.activityName}
                 onChange={e => handleChange('activityName', e.target.value)}
-                className='w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900'
+                className='w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm text-gray-900'
               />
             </div>
             <div>
-              <label className='block text-sm font-medium text-gray-700 mb-2'>
+              <label className='block text-xs font-medium text-gray-700 mb-1.5'>
                 Location<span className='text-red-500'>*</span>
               </label>
               <input
                 type='text'
                 value={formData.location}
                 onChange={e => handleChange('location', e.target.value)}
-                className='w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900'
+                className='w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm text-gray-900'
               />
             </div>
             <div>
-              <label className='block text-sm font-medium text-gray-700 mb-2'>
+              <label className='block text-xs font-medium text-gray-700 mb-1.5'>
                 Map Location<span className='text-red-500'>*</span>
               </label>
               <input
                 type='text'
                 value={formData.mapLocation}
                 onChange={e => handleChange('mapLocation', e.target.value)}
-                className='w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900'
+                className='w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm text-gray-900'
               />
             </div>
           </div>
 
-          <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
+          <div className='grid grid-cols-1 md:grid-cols-3 gap-3'>
             <div className='md:col-span-3'>
-              <label className='block text-sm font-medium text-gray-700 mb-2'>
+              <label className='block text-xs font-medium text-gray-700 mb-1.5'>
                 Hosted by vendor<span className='text-red-500'>*</span>
               </label>
               <select
                 value={selectedVendorId}
                 onChange={e => setSelectedVendorId(e.target.value)}
-                className='w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900 bg-white'
+                className='w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm text-gray-900 bg-white'
                 disabled={vendorsLoading}
               >
                 {vendorsLoading && <option value=''>Loading vendors...</option>}
@@ -426,23 +426,23 @@ export default function AddActivity () {
                   ))}
               </select>
               {vendorsError && (
-                <p className='text-red-500 text-sm mt-1'>{vendorsError}</p>
+                <p className='text-red-500 text-xs mt-1'>{vendorsError}</p>
               )}
               {!selectedVendorId && (
-                <p className='text-red-500 text-sm mt-1'>Select vendor</p>
+                <p className='text-red-500 text-xs mt-1'>Select vendor</p>
               )}
             </div>
           </div>
 
-          <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
+          <div className='grid grid-cols-1 md:grid-cols-3 gap-3'>
             <div className='relative z-50'>
-              <label className='block text-sm font-medium text-gray-700 mb-2'>
+              <label className='block text-xs font-medium text-gray-700 mb-1.5'>
                 Activity Type<span className='text-red-500'>*</span>
               </label>
               <select
                 value={selectedActivityTypeId}
                 onChange={e => setSelectedActivityTypeId(e.target.value)}
-                className='w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900 bg-white relative z-50'
+                className='w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm text-gray-900 bg-white relative z-50'
                 disabled={activityTypesLoading}
               >
                 {activityTypesLoading && (
@@ -462,18 +462,18 @@ export default function AddActivity () {
                   ))}
               </select>
               {activityTypesError && (
-                <p className='text-red-500 text-sm mt-1'>
+                <p className='text-red-500 text-xs mt-1'>
                   {activityTypesError}
                 </p>
               )}
               {errors.activityTypeId && (
-                <p className='text-red-500 text-sm mt-1'>
+                <p className='text-red-500 text-xs mt-1'>
                   {errors.activityTypeId}
                 </p>
               )}
             </div>
             <div>
-              <label className='block text-sm font-medium text-gray-700 mb-2'>
+              <label className='block text-xs font-medium text-gray-700 mb-1.5'>
                 Activity Start Date<span className='text-red-500'>*</span>
               </label>
               <div className='relative'>
@@ -485,18 +485,18 @@ export default function AddActivity () {
                   }
                   min='2025-12-13'
                   max='2026-01-04'
-                  className='w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900'
+                  className='w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm text-gray-900'
                 />
-                <Calendar className='pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400' />
+                <Calendar className='pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400' />
               </div>
               {errors.activityStartDate && (
-                <p className='text-red-500 text-sm mt-1'>
+                <p className='text-red-500 text-xs mt-1'>
                   {errors.activityStartDate}
                 </p>
               )}
             </div>
             <div>
-              <label className='block text-sm font-medium text-gray-700 mb-2'>
+              <label className='block text-xs font-medium text-gray-700 mb-1.5'>
                 Activity End Date<span className='text-red-500'>*</span>
               </label>
               <div className='relative'>
@@ -508,17 +508,17 @@ export default function AddActivity () {
                   }
                   min={formData.activityStartDate || '2025-12-13'}
                   max='2026-01-04'
-                  className='w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900'
+                  className='w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm text-gray-900'
                 />
-                <Calendar className='pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400' />
+                <Calendar className='pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400' />
               </div>
               {errors.activityEndDate && (
-                <p className='text-red-500 text-sm mt-1'>
+                <p className='text-red-500 text-xs mt-1'>
                   {errors.activityEndDate}
                 </p>
               )}
               {calculatedDuration > 0 && (
-                <p className='text-gray-600 text-sm mt-1'>
+                <p className='text-gray-600 text-xs mt-1'>
                   Duration: {calculatedDuration} day
                   {calculatedDuration !== 1 ? 's' : ''}
                 </p>
@@ -527,16 +527,16 @@ export default function AddActivity () {
           </div>
 
           {/* Row 2: Activity Days, Opening Hours, Duration */}
-          <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
+          <div className='grid grid-cols-1 md:grid-cols-3 gap-3'>
             <div>
-              <label className='block text-sm font-medium text-gray-700 mb-2'>
+              <label className='block text-xs font-medium text-gray-700 mb-1.5'>
                 Activity Days<span className='text-red-500'>*</span>
               </label>
               <div className='relative' ref={daysDropdownRef}>
                 <button
                   type='button'
                   onClick={() => setDaysOpen(v => !v)}
-                  className='w-full flex items-center justify-between px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-500'
+                  className='w-full flex items-center justify-between px-3 py-2 border border-gray-300 rounded-lg bg-white text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-500'
                 >
                   <span className='truncate'>
                     {selectedDays.length
@@ -610,7 +610,7 @@ export default function AddActivity () {
               )}
             </div>
             <div>
-              <label className='block text-sm font-medium text-gray-700 mb-2'>
+              <label className='block text-xs font-medium text-gray-700 mb-1.5'>
                 Opening Hours<span className='text-red-500'>*</span>
               </label>
               <div className='flex gap-2'>
@@ -625,11 +625,11 @@ export default function AddActivity () {
                     type='time'
                     value={formData.openingStart}
                     onChange={e => handleChange('openingStart', e.target.value)}
-                    className='w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900'
+                    className='w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm text-gray-900'
                   />
-                  <Calendar className='pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400' />
+                  <Calendar className='pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400' />
                 </div>
-                <div className='flex items-center px-1 text-gray-500'>-</div>
+                <div className='flex items-center px-1 text-gray-500 text-sm'>-</div>
                 <div
                   className='relative flex-1'
                   onClick={e => {
@@ -641,14 +641,14 @@ export default function AddActivity () {
                     type='time'
                     value={formData.openingEnd}
                     onChange={e => handleChange('openingEnd', e.target.value)}
-                    className='w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900'
+                    className='w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm text-gray-900'
                   />
-                  <Calendar className='pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400' />
+                  <Calendar className='pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400' />
                 </div>
               </div>
             </div>
             <div>
-              <label className='block text-sm font-medium text-gray-700 mb-2'>
+              <label className='block text-xs font-medium text-gray-700 mb-1.5'>
                 Duration<span className='text-red-500'>*</span>
               </label>
               <div className='flex gap-2'>
@@ -656,12 +656,12 @@ export default function AddActivity () {
                   type='number'
                   value={calculatedDuration || ''}
                   disabled
-                  className='flex-1 px-4 py-2.5 border border-gray-300 rounded-lg bg-gray-100 text-gray-900 cursor-not-allowed'
+                  className='flex-1 px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 text-sm text-gray-900 cursor-not-allowed'
                 />
                 <select
                   value='Days'
                   disabled
-                  className='px-4 py-2.5 border border-gray-300 rounded-lg bg-gray-100 text-gray-900 cursor-not-allowed'
+                  className='px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 text-sm text-gray-900 cursor-not-allowed'
                 >
                   <option>Days</option>
                 </select>
@@ -671,14 +671,14 @@ export default function AddActivity () {
 
           {/* Upload Image */}
           <div className='max-w-md'>
-            <label className='block text-sm font-medium text-gray-700 mb-2'>
+            <label className='block text-xs font-medium text-gray-700 mb-1.5'>
               Upload Image<span className='text-red-500'>*</span>
             </label>
             <div
-              className='flex h-12 items-stretch overflow-hidden rounded-xl border border-[#E5E6EF]'
+              className='flex h-10 items-stretch overflow-hidden rounded-lg border border-[#E5E6EF]'
               onClick={() => fileInputRef.current?.click()}
             >
-              <div className='flex-1 bg-[#F8F9FC] px-4 text-sm text-slate-700 flex items-center justify-between cursor-pointer'>
+              <div className='flex-1 bg-[#F8F9FC] px-3 text-xs text-slate-700 flex items-center justify-between cursor-pointer'>
                 <span className='truncate' title={formData.uploadImage}>
                   {formData.uploadImage || 'Image.jpg'}
                 </span>
@@ -686,7 +686,7 @@ export default function AddActivity () {
               <button
                 type='button'
                 onClick={() => fileInputRef.current?.click()}
-                className='px-6 text-sm font-medium text-[#2D3658] bg-white transition hover:bg-[#F6F7FD]'
+                className='px-4 text-xs font-medium text-[#2D3658] bg-white transition hover:bg-[#F6F7FD]'
               >
                 Browse
               </button>
@@ -699,17 +699,17 @@ export default function AddActivity () {
               onChange={handleImageChange}
             />
             {errors.uploadImage && (
-              <p className='text-red-500 text-sm mt-1'>{errors.uploadImage}</p>
+              <p className='text-red-500 text-xs mt-1'>{errors.uploadImage}</p>
             )}
             <p className='text-gray-500 text-xs mt-1'>
               Max size: 2MB. Allowed: JPG, JPEG, PNG, WEBP, AVIF
             </p>
             {imageUrl && (
-              <div className='mt-3'>
+              <div className='mt-2'>
                 <img
                   src={imageUrl}
                   alt='Activity image preview'
-                  className='w-28 h-28 object-cover rounded border border-gray-300'
+                  className='w-24 h-24 object-cover rounded border border-gray-300'
                 />
               </div>
             )}
@@ -717,147 +717,147 @@ export default function AddActivity () {
 
           {/* About Activity - Rich Text Editor */}
           <div>
-            <label className='block text-sm font-medium text-gray-700 mb-2'>
+            <label className='block text-xs font-medium text-gray-700 mb-1.5'>
               About Activity<span className='text-red-500'>*</span>
             </label>
             <div className='border border-gray-300 rounded-lg overflow-hidden'>
               {/* Toolbar */}
-              <div className='flex items-center gap-1 p-2 border-b border-gray-300 bg-gray-50 overflow-x-auto'>
+              <div className='flex items-center gap-1 p-1.5 border-b border-gray-300 bg-gray-50 overflow-x-auto'>
                 <button
-                  className='p-2 bg-white border border-gray-300 rounded hover:bg-gray-50 cursor-pointer flex-shrink-0'
+                  className='p-1.5 bg-white border border-gray-300 rounded hover:bg-gray-50 cursor-pointer flex-shrink-0'
                   title='Format'
                 >
-                  <Wand2 className='w-4 h-4' />
+                  <Wand2 className='w-3.5 h-3.5' />
                 </button>
                 <button
-                  className='p-2 bg-white border border-gray-300 rounded hover:bg-gray-50 cursor-pointer flex-shrink-0'
+                  className='p-1.5 bg-white border border-gray-300 rounded hover:bg-gray-50 cursor-pointer flex-shrink-0'
                   title='Bold'
                 >
-                  <Bold className='w-4 h-4 font-bold' />
+                  <Bold className='w-3.5 h-3.5 font-bold' />
                 </button>
                 <button
-                  className='p-2 bg-white border border-gray-300 rounded hover:bg-gray-50 cursor-pointer flex-shrink-0'
+                  className='p-1.5 bg-white border border-gray-300 rounded hover:bg-gray-50 cursor-pointer flex-shrink-0'
                   title='Underline'
                 >
-                  <Underline className='w-4 h-4' />
+                  <Underline className='w-3.5 h-3.5' />
                 </button>
                 <button
-                  className='p-2 bg-white border border-gray-300 rounded hover:bg-gray-50 cursor-pointer flex-shrink-0'
+                  className='p-1.5 bg-white border border-gray-300 rounded hover:bg-gray-50 cursor-pointer flex-shrink-0'
                   title='Italic'
                 >
-                  <Italic className='w-4 h-4' />
+                  <Italic className='w-3.5 h-3.5' />
                 </button>
                 <button
-                  className='p-2 bg-white border border-gray-300 rounded hover:bg-gray-50 cursor-pointer flex-shrink-0'
+                  className='p-1.5 bg-white border border-gray-300 rounded hover:bg-gray-50 cursor-pointer flex-shrink-0'
                   title='Strikethrough'
                 >
-                  <Strikethrough className='w-4 h-4' />
+                  <Strikethrough className='w-3.5 h-3.5' />
                 </button>
                 <button
-                  className='p-2 bg-white border border-gray-300 rounded hover:bg-gray-50 cursor-pointer flex-shrink-0'
+                  className='p-1.5 bg-white border border-gray-300 rounded hover:bg-gray-50 cursor-pointer flex-shrink-0'
                   title='Text Color'
                 >
-                  <Palette className='w-4 h-4' />
+                  <Palette className='w-3.5 h-3.5' />
                 </button>
                 <button
-                  className='p-2 bg-white border border-gray-300 rounded hover:bg-gray-50 cursor-pointer flex-shrink-0'
+                  className='p-1.5 bg-white border border-gray-300 rounded hover:bg-gray-50 cursor-pointer flex-shrink-0'
                   title='Bullet List'
                 >
-                  <List className='w-4 h-4' />
+                  <List className='w-3.5 h-3.5' />
                 </button>
                 <button
-                  className='p-2 bg-white border border-gray-300 rounded hover:bg-gray-50 cursor-pointer flex-shrink-0'
+                  className='p-1.5 bg-white border border-gray-300 rounded hover:bg-gray-50 cursor-pointer flex-shrink-0'
                   title='Numbered List'
                 >
-                  <ListOrdered className='w-4 h-4' />
+                  <ListOrdered className='w-3.5 h-3.5' />
                 </button>
                 <button
-                  className='p-2 bg-white border border-gray-300 rounded hover:bg-gray-50 cursor-pointer flex-shrink-0'
+                  className='p-1.5 bg-white border border-gray-300 rounded hover:bg-gray-50 cursor-pointer flex-shrink-0'
                   title='Align Left'
                 >
-                  <AlignLeft className='w-4 h-4' />
+                  <AlignLeft className='w-3.5 h-3.5' />
                 </button>
                 <button
-                  className='p-2 bg-white border border-gray-300 rounded hover:bg-gray-50 cursor-pointer flex-shrink-0'
+                  className='p-1.5 bg-white border border-gray-300 rounded hover:bg-gray-50 cursor-pointer flex-shrink-0'
                   title='Align Center'
                 >
-                  <AlignCenter className='w-4 h-4' />
+                  <AlignCenter className='w-3.5 h-3.5' />
                 </button>
                 <button
-                  className='p-2 bg-white border border-gray-300 rounded hover:bg-gray-50 cursor-pointer flex-shrink-0'
+                  className='p-1.5 bg-white border border-gray-300 rounded hover:bg-gray-50 cursor-pointer flex-shrink-0'
                   title='Align Right'
                 >
-                  <AlignRight className='w-4 h-4' />
+                  <AlignRight className='w-3.5 h-3.5' />
                 </button>
                 <button
-                  className='p-2 bg-white border border-gray-300 rounded hover:bg-gray-50 cursor-pointer flex-shrink-0'
+                  className='p-1.5 bg-white border border-gray-300 rounded hover:bg-gray-50 cursor-pointer flex-shrink-0'
                   title='Link'
                 >
-                  <Link2 className='w-4 h-4' />
+                  <Link2 className='w-3.5 h-3.5' />
                 </button>
                 <button
-                  className='p-2 bg-white border border-gray-300 rounded hover:bg-gray-50 cursor-pointer flex-shrink-0'
+                  className='p-1.5 bg-white border border-gray-300 rounded hover:bg-gray-50 cursor-pointer flex-shrink-0'
                   title='Image'
                 >
-                  <ImageIcon className='w-4 h-4' />
+                  <ImageIcon className='w-3.5 h-3.5' />
                 </button>
                 <button
-                  className='p-2 bg-white border border-gray-300 rounded hover:bg-gray-50 cursor-pointer flex-shrink-0'
+                  className='p-1.5 bg-white border border-gray-300 rounded hover:bg-gray-50 cursor-pointer flex-shrink-0'
                   title='Code'
                 >
-                  <Code className='w-4 h-4' />
+                  <Code className='w-3.5 h-3.5' />
                 </button>
                 <button
-                  className='p-2 bg-white border border-gray-300 rounded hover:bg-gray-50 cursor-pointer flex-shrink-0'
+                  className='p-1.5 bg-white border border-gray-300 rounded hover:bg-gray-50 cursor-pointer flex-shrink-0'
                   title='Fullscreen'
                 >
-                  <Maximize2 className='w-4 h-4' />
+                  <Maximize2 className='w-3.5 h-3.5' />
                 </button>
               </div>
               {/* Text Area */}
               <textarea
                 value={formData.aboutActivity}
                 onChange={e => handleChange('aboutActivity', e.target.value)}
-                rows={6}
-                className='w-full px-4 py-3 focus:outline-none resize-none text-gray-900'
+                rows={5}
+                className='w-full px-3 py-2 focus:outline-none resize-none text-sm text-gray-900'
               />
             </div>
           </div>
 
           {/* Important Info */}
           <div>
-            <label className='block text-sm font-medium text-gray-700 mb-2'>
+            <label className='block text-xs font-medium text-gray-700 mb-1.5'>
               Important Info
             </label>
             <textarea
               value={formData.importantInfo}
               onChange={e => handleChange('importantInfo', e.target.value)}
-              rows={4}
-              className='w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900'
+              rows={3}
+              className='w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm text-gray-900'
               placeholder='Any special notes, requirements, or tips for visitors'
             />
           </div>
 
           {/* Contact Information Section */}
-          <div className='pt-6'>
-            <div className='bg-gray-900 text-white px-4 py-2 rounded-t-lg inline-block mb-4'>
-              <h3 className='font-medium'>Contact Information</h3>
+          <div className='pt-4'>
+            <div className='bg-gray-900 text-white px-3 py-1.5 rounded-t-lg inline-block mb-3'>
+              <h3 className='font-medium text-sm'>Contact Information</h3>
             </div>
 
-            <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+            <div className='grid grid-cols-1 md:grid-cols-2 gap-3'>
               <div>
-                <label className='block text-sm font-medium text-gray-700 mb-2'>
+                <label className='block text-xs font-medium text-gray-700 mb-1.5'>
                   Twitter / Instagram <span className='text-red-500'>*</span>
                 </label>
                 <input
                   type='text'
                   value={formData.twitter}
                   onChange={e => handleChange('twitter', e.target.value)}
-                  className='w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900'
+                  className='w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm text-gray-900'
                 />
               </div>
               <div>
-                <label className='block text-sm font-medium text-gray-700 mb-2'>
+                <label className='block text-xs font-medium text-gray-700 mb-1.5'>
                   Website<span className='text-red-500'>*</span>
                 </label>
                 <div className='relative'>
@@ -865,15 +865,15 @@ export default function AddActivity () {
                     type='text'
                     value={formData.website}
                     onChange={e => handleChange('website', e.target.value)}
-                    className='w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900'
+                    className='w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm text-gray-900'
                   />
-                  <Calendar className='absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400' />
+                  <Calendar className='absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400' />
                 </div>
               </div>
             </div>
           </div>
           {errors.submit && (
-            <p className='text-red-500 text-sm'>{errors.submit}</p>
+            <p className='text-red-500 text-xs'>{errors.submit}</p>
           )}
         </div>
       </div>

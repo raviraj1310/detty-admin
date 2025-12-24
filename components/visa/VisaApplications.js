@@ -6,12 +6,13 @@ import {
   Search,
   Download,
   MoreVertical,
-  CheckCircle,
-  MinusCircle,
   Link
 } from 'lucide-react'
 import { TbCaretUpDownFilled } from 'react-icons/tb'
 import { IoFilterSharp } from 'react-icons/io5'
+import { HiOutlineClipboardList } from 'react-icons/hi'
+import { FiCheckCircle } from 'react-icons/fi'
+import { AiOutlineMinusCircle } from 'react-icons/ai'
 import {
   getVisaApplications,
   downloadVisaApplicationsCSV,
@@ -19,13 +20,16 @@ import {
 } from '@/services/visa/visa.service'
 
 const cardDefs = [
-  { id: 'total', title: 'Total Visa Applications', bg: 'bg-[#1F57D6]' },
+  { id: 'total', title: 'Total Visa Applications', bg: 'bg-gradient-to-r from-[#E8EEFF] to-[#C5D5FF]', iconBg: 'bg-white', textColor: 'text-indigo-600', iconColor: 'text-indigo-600' },
   {
     id: 'completed',
     title: 'Processed Visa Applications',
-    bg: 'bg-[#15803D]'
+    bg: 'bg-gradient-to-r from-[#E8F8F0] to-[#B8EDD0]',
+    iconBg: 'bg-white',
+    textColor: 'text-emerald-600',
+    iconColor: 'text-emerald-600'
   },
-  { id: 'pending', title: 'Pending Visa Applications', bg: 'bg-[#B91C1C]' }
+  { id: 'pending', title: 'Pending Visa Applications', bg: 'bg-gradient-to-r from-[#FFE8E8] to-[#FFC5C5]', iconBg: 'bg-white', textColor: 'text-red-600', iconColor: 'text-red-600' }
 ]
 
 const toName = a =>
@@ -281,35 +285,23 @@ export default function VisaApplications () {
         {cardDefs.map(card => (
           <div
             key={card.id}
-            className={`${card.bg} rounded-xl p-3 text-white relative overflow-hidden`}
+            className={`${card.bg} rounded-xl p-3 relative overflow-hidden border border-gray-100 shadow-md`}
           >
             <div className='flex items-center justify-between'>
-              <div className='bg-white/10 p-2.5 rounded-xl flex-shrink-0'>
+              <div className={`${card.iconBg} p-2.5 rounded-xl flex-shrink-0`}>
                 {card.id === 'completed' ? (
-                  <CheckCircle className='h-6 w-6 text-white' />
+                  <FiCheckCircle className={`h-6 w-6 ${card.iconColor}`} />
                 ) : card.id === 'pending' ? (
-                  <MinusCircle className='h-6 w-6 text-white' />
+                  <AiOutlineMinusCircle className={`h-6 w-6 ${card.iconColor}`} />
                 ) : (
-                  <svg
-                    className='h-6 w-6 text-white'
-                    fill='none'
-                    stroke='currentColor'
-                    viewBox='0 0 24 24'
-                  >
-                    <path
-                      strokeLinecap='round'
-                      strokeLinejoin='round'
-                      strokeWidth={2}
-                      d='M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2'
-                    />
-                  </svg>
+                  <HiOutlineClipboardList className={`h-6 w-6 ${card.iconColor}`} />
                 )}
               </div>
               <div className='text-right'>
-                <p className='text-white/90 text-xs font-medium mb-1'>
+                <p className={`${card.textColor} opacity-80 text-xs font-medium mb-1`}>
                   {card.title}
                 </p>
-                <p className='text-2xl font-bold text-white'>
+                <p className={`text-2xl font-bold ${card.textColor}`}>
                   {String(
                     card.id === 'total'
                       ? metrics.total
