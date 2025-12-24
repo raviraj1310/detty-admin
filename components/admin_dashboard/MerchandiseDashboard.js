@@ -24,6 +24,8 @@ const MerchandiseStats = ({ stats: apiStats }) => {
     soldValue: '₦0' // Not provided in API
   }
 
+  const growthData = apiStats?.growth?.products || {}
+
   return (
     <div className='bg-white rounded-2xl shadow-sm p-6 border border-gray-100  h-full flex flex-col'>
       <div className='flex justify-between items-center mb-6 pb-2 border-b border-gray-100'>
@@ -68,6 +70,26 @@ const MerchandiseStats = ({ stats: apiStats }) => {
             </p>
             <p className='text-2xl font-bold text-gray-900'>
               {stats.totalQuantity}({stats.totalValue})
+            </p>
+          </div>
+        </div>
+
+        <div className='bg-[#F0F9FF] rounded-xl p-4 flex items-center gap-3'>
+          <div className='bg-gradient-to-r from-[#BAE6FD] to-[#0EA5E9] p-3 rounded-xl'>
+            <img
+              src='/images/dashboard/trending_up.svg'
+              alt='Growth'
+              className='w-7 h-7'
+            />
+          </div>
+          <div>
+            <p className='text-xs font-medium text-gray-600 mb-1'>Growth</p>
+            <p className='text-2xl font-bold text-gray-900'>
+              {growthData.newYesterday || 0}
+            </p>
+            <p className='text-[10px] text-gray-500 mt-1 whitespace-nowrap'>
+              Avg: {growthData.avgDailyGrowthCount || 0} (
+              {growthData.avgDailyGrowthPercent || '0.00%'})
             </p>
           </div>
         </div>
