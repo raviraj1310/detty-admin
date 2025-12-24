@@ -79,6 +79,7 @@ export default function PlacesToVisit() {
     ongoing: 0,
     upcoming: 0,
   });
+  const [rawData, setRawData] = useState([]);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewSrc, setPreviewSrc] = useState("");
   const [previewTitle, setPreviewTitle] = useState("");
@@ -148,6 +149,7 @@ export default function PlacesToVisit() {
     try {
       const res = await getAllActivities();
       const raw = Array.isArray(res?.data) ? res.data : [];
+      setRawData(raw || raw || []);
       const IMAGE_BASE_ORIGIN = process.env.NEXT_PUBLIC_SIM_IMAGE_BASE_ORIGIN;
       const sanitizeImageUrl = (input) => {
         if (typeof input !== "string") return null;
@@ -356,27 +358,66 @@ export default function PlacesToVisit() {
       if (!sortedActivities.length) return;
 
       const formatDate = (d) => {
-        if (!d || d === "-") return "-";
+        if (!d) return "-";
         const date =
           typeof d === "object" && d.$date ? new Date(d.$date) : new Date(d);
         return date.toLocaleString();
       };
 
-      const dataToExport = sortedActivities.map((a) => ({
-        "Activity Name": a.activityName,
-        Type: a.type,
-        Location: a.location,
-        Status: a.status,
-        "Booked Count": a.bookedCount ?? 0,
-        "Added On": formatDate(a.addedOn),
-      }));
+      const dataToExport = rawData.map((a) => {
+        const act = a || a;
+        return {
+          /* ===== Basic Info ===== */
+          Activity_ID: act._id,
+          Activity_Name: act.activityName,
+          Type_Name: act.activityType?.activityTypeName,
+          Type_Slug: act.activityType?.slug,
+          Type_Status: act.activityType?.status,
+          Type_Title: act.activityType?.title,
+          Type_Description: act.activityType?.description,
+          Type_For: act.activityType?.activityFor,
+          Location: act.location,
+          Map_Location: act.mapLocation,
+          Activity_Days: Array.isArray(act.activityDays)
+            ? act.activityDays.join(" | ")
+            : "",
+          Opening_Hours: act.openingHours,
+          Duration: act.duration,
+          About: act.about,
+          Important_Info: act.importantInfo,
+          Status: act.status,
+          Booked_Count: act.bookedCount ?? 0,
+          Added_On: formatDate(act.createdAt),
+          Updated_On: formatDate(act.updatedAt),
+          Activity_Start_Date: formatDate(act.activityStartDate),
+          Activity_End_Date: formatDate(act.activityEndDate),
+          Slug: act.slug,
+          Image: act.image,
 
-      downloadExcel(dataToExport, "Activities.xlsx");
+          /* ===== Hosted By ===== */
+          Host_Name: act.hostedBy?.name,
+          Host_Email: act.hostedBy?.email,
+          Host_Phone: act.hostedBy?.phoneNumber,
+          Host_Status: act.hostedBy?.status,
+          Host_CreatedAt: formatDate(act.hostedBy?.createdAt),
+          Host_UpdatedAt: formatDate(act.hostedBy?.updatedAt),
+
+          /* ===== Vendor Profile ===== */
+          Vendor_Business_Name: act.hostedBy?.vendorProfile?.businessName,
+          Vendor_CreatedAt: formatDate(act.hostedBy?.vendorProfile?.createdAt),
+          Vendor_UpdatedAt: formatDate(act.hostedBy?.vendorProfile?.updatedAt),
+
+          /* ===== Links ===== */
+          Twitter_Link: act.twitterLink,
+          Website_Link: act.websiteLink,
+        };
+      });
+
+      downloadExcel(dataToExport, "Activities_Data.xlsx");
     } finally {
       setExporting(false);
     }
   };
-
   return (
     <div className="space-y-4 py-4 px-6">
       <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">

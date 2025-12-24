@@ -228,18 +228,54 @@ export default function TicketsBooked() {
 
       if (!rows.length) return;
 
-      const dataToExport = rows.map((r) => ({
-        "Booking ID": r.id,
-        "Booked On": r.bookedOn,
-        "User Name": r.userName,
-        Email: r.email,
-        "Phone Number": r.phoneNumber,
-        "Tickets Booked": r.ticketsBooked,
-        Amount: r.amount,
-        "Arrival Date": r.arrivalDate,
-        "Payment Status": r.paymentStatus,
-        "Booking Status": r.status,
-      }));
+      const dataToExport = rows.map((r) => {
+        const b = r.raw; // original booking object
+
+        return {
+          // 🔹 Booking Info
+          "Order ID": b.orderId,
+          "Booking Date": b.createdAt,
+          "Arrival Date": b.arrivalDate,
+          "Payment Status": b.paymentStatus,
+          "Referral Code": b.referralCode || "-",
+
+          // 🔹 Buyer Info
+          "Buyer Name": b.buyer?.fullName,
+          "Buyer Email": b.buyer?.email,
+          "Buyer Phone": b.buyer?.phone,
+          "Buyer Country": b.buyer?.country,
+          "Buyer City": b.buyer?.city,
+
+          // 🔹 Activity Info
+          "Activity Name": b.activityId?.activityName,
+          "Activity Type": b.activityId?.activityType?.activityTypeName,
+          Location: b.activityId?.location,
+          Slug: b.activityId?.slug,
+
+          // 🔹 Ticket Summary
+          "Total Quantity": b.quantity,
+          "Tickets Booked": b.tickets
+            ?.map(
+              (t) =>
+                `${t.ticketName} (${t.ticketType}) x${t.quantity} @ ${t.perTicketPrice}`
+            )
+            .join(" | "),
+
+          // 🔹 Attendees
+          Attendees: b.tickets
+            ?.flatMap((t) => t.attendees || [])
+            .map((a) => `${a.fullName} (${a.email})`)
+            .join(" | "),
+
+          // 🔹 Pricing
+          "Service Fee": b.pricing?.serviceFee,
+          Discount: b.pricing?.discountApplied,
+          "Total Ticket Price": b.tickets?.reduce(
+            (sum, t) => sum + Number(t.totalPrice || 0),
+            0
+          ),
+        };
+      });
 
       downloadExcel(dataToExport, "Activity_Bookings.xlsx");
     } finally {
@@ -430,6 +466,7 @@ export default function TicketsBooked() {
             </button>
             <button
               onClick={handleDownloadBookingExcel}
+              disabled={exporting}
               className="flex h-10 items-center gap-2 rounded-xl border border-[#E5E6EF] bg-white px-4 text-sm font-medium text-[#2D3658] transition hover:bg-[#F6F7FD]"
             >
               <svg

@@ -365,7 +365,7 @@ export default function MerchandiseList() {
         "Added On": r.addedOn ?? "-",
       }));
 
-      downloadExcel(dataToExport, "Items.xlsx");
+      downloadExcel(dataToExport, "merchandise items.xlsx");
     } finally {
       setExporting(false);
     }
