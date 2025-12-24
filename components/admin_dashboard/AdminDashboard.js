@@ -86,19 +86,52 @@ export default function AdminDashboard ({ stats }) {
     (stats?.totalMedRevenue || 0) +
     (stats?.totalRoyalRevenue || 0)
 
-  const getGrowthCard = (key, title = 'New Yesterday') => {
+  const getGrowthCards = (key, title = 'New Yesterday') => {
     const data = stats?.growth?.[key] || {}
-    return {
-      id: `growth-${key}`,
-      title: title,
-      value: data.newYesterday || 0,
-      subText: `Avg: ${data.avgDailyGrowthCount || 0} (${
-        data.avgDailyGrowthPercent || '0.00%'
-      })`,
-      iconSrc: '/images/dashboard/trending_up.svg',
-      bg: 'bg-[#F0F9FF]',
-      iconBg: 'bg-gradient-to-r from-[#BAE6FD] to-[#0EA5E9]'
-    }
+    const avgCount = Number(data.avgDailyGrowthCount) || 0
+    const avgPercent = parseFloat(data.avgDailyGrowthPercent) || 0
+    const yesterday = new Date()
+    yesterday.setDate(yesterday.getDate() - 1)
+    const yesterdayStr = yesterday.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric'
+    })
+
+    return [
+      {
+        id: `growth-${key}-new`,
+        title: title,
+        value: data.newYesterday || 0,
+        subText: `(${yesterdayStr})`,
+        iconSrc: '/images/dashboard/trending_up.svg',
+        bg: 'bg-[#E8EEFF]',
+        iconBg: 'bg-gradient-to-r from-[#AECBFF] to-[#5A7CC1]'
+      },
+      {
+        id: `growth-${key}-avg-count`,
+        title: 'Avg Daily Growth (Count)',
+        value: data.avgDailyGrowthCount || 0,
+        trend: {
+          isPositive: avgCount >= 0,
+          text: avgCount >= 0 ? 'Increasing' : 'Decreasing'
+        },
+        iconSrc: '/images/dashboard/trending_up.svg',
+        bg: 'bg-[#F0E8FF]',
+        iconBg: 'bg-gradient-to-r from-[#C4B5FD] to-[#7C3AED]'
+      },
+      {
+        id: `growth-${key}-avg-pct`,
+        title: 'Avg Daily Growth (%)',
+        value: data.avgDailyGrowthPercent || '0.00%',
+        trend: {
+          isPositive: avgPercent >= 0,
+          text: avgPercent >= 0 ? 'Increasing' : 'Decreasing'
+        },
+        iconSrc: '/images/dashboard/trending_up.svg',
+        bg: 'bg-[#E8F8F0]',
+        iconBg: 'bg-gradient-to-r from-[#8EEDC7] to-[#3FA574]'
+      }
+    ]
   }
 
   const dashboardData = [
@@ -130,7 +163,7 @@ export default function AdminDashboard ({ stats }) {
           bg: 'bg-[#FFE8E8]',
           iconBg: 'bg-gradient-to-r from-[#FFA8A8] to-[#E03E3E]'
         },
-        getGrowthCard('users')
+        ...getGrowthCards('users', 'New Registrations Yesterday')
       ]
     },
     {
@@ -153,7 +186,7 @@ export default function AdminDashboard ({ stats }) {
           bg: 'bg-[#E8F8F0]',
           iconBg: 'bg-gradient-to-r from-[#8EEDC7] to-[#3FA574]'
         },
-        getGrowthCard('bookings')
+        ...getGrowthCards('bookings')
       ]
     },
     {
@@ -176,7 +209,7 @@ export default function AdminDashboard ({ stats }) {
           bg: 'bg-[#E8F8F0]',
           iconBg: 'bg-gradient-to-r from-[#8EEDC7] to-[#3FA574]'
         },
-        getGrowthCard('events')
+        ...getGrowthCards('events')
       ]
     },
     {
@@ -199,7 +232,7 @@ export default function AdminDashboard ({ stats }) {
           bg: 'bg-[#E8F8F0]',
           iconBg: 'bg-gradient-to-r from-[#8EEDC7] to-[#3FA574]'
         },
-        getGrowthCard('activities')
+        ...getGrowthCards('activities')
       ]
     }
   ]

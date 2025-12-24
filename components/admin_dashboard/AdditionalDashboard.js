@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { TrendingUp, TrendingDown } from 'lucide-react'
 
 const MetricCard = ({
   label,
@@ -10,9 +11,13 @@ const MetricCard = ({
   bgColor,
   iconBg,
   textColor = 'text-gray-900',
-  iconSrc
+  iconSrc,
+  trend,
+  className = ''
 }) => (
-  <div className={`${bgColor} rounded-xl p-4 flex items-center gap-3 w-full`}>
+  <div
+    className={`${bgColor} rounded-xl p-4 flex items-center gap-3 w-full ${className}`}
+  >
     <div className={`${iconBg} p-3 rounded-xl flex-shrink-0`}>
       <img src={iconSrc} alt={label} className='w-7 h-7' />
     </div>
@@ -23,6 +28,20 @@ const MetricCard = ({
         <p className='text-[10px] text-gray-500 mt-1 whitespace-nowrap'>
           {subText}
         </p>
+      )}
+      {trend && (
+        <div
+          className={`flex items-center gap-1 mt-1 text-[10px] font-medium ${
+            trend.isPositive ? 'text-green-600' : 'text-red-600'
+          }`}
+        >
+          {trend.isPositive ? (
+            <TrendingUp size={12} />
+          ) : (
+            <TrendingDown size={12} />
+          )}
+          <span>{trend.text}</span>
+        </div>
       )}
     </div>
   </div>
@@ -107,18 +126,52 @@ export default function AdditionalDashboard ({ stats }) {
   const contactEnquiries = stats?.totalContacts || 0
   const eventEnquiries = stats?.totalInquiries || 0
 
-  const getGrowthProps = key => {
+  const getGrowthCards = (key, title = 'New Yesterday') => {
     const data = stats?.growth?.[key] || {}
-    return {
-      label: 'Growth',
-      value: data.newYesterday || 0,
-      subText: `Avg: ${data.avgDailyGrowthCount || 0} (${
-        data.avgDailyGrowthPercent || '0.00%'
-      })`,
-      iconSrc: '/images/dashboard/trending_up.svg',
-      bgColor: 'bg-[#F0F9FF]',
-      iconBg: 'bg-gradient-to-r from-[#BAE6FD] to-[#0EA5E9]'
-    }
+    const avgCount = Number(data.avgDailyGrowthCount) || 0
+    const avgPercent = parseFloat(data.avgDailyGrowthPercent) || 0
+    const yesterday = new Date()
+    yesterday.setDate(yesterday.getDate() - 1)
+    const yesterdayStr = yesterday.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric'
+    })
+
+    return [
+      {
+        id: `growth-${key}-new`,
+        label: title,
+        value: data.newYesterday || 0,
+        subText: `(${yesterdayStr})`,
+        iconSrc: '/images/dashboard/trending_up.svg',
+        bgColor: 'bg-[#E8EEFF]',
+        iconBg: 'bg-gradient-to-r from-[#AECBFF] to-[#5A7CC1]'
+      },
+      {
+        id: `growth-${key}-avg-count`,
+        label: 'Avg Daily Growth (Count)',
+        value: data.avgDailyGrowthCount || 0,
+        trend: {
+          isPositive: avgCount >= 0,
+          text: avgCount >= 0 ? 'Increasing' : 'Decreasing'
+        },
+        iconSrc: '/images/dashboard/trending_up.svg',
+        bgColor: 'bg-[#F0E8FF]',
+        iconBg: 'bg-gradient-to-r from-[#C4B5FD] to-[#7C3AED]'
+      },
+      {
+        id: `growth-${key}-avg-pct`,
+        label: 'Avg Daily Growth (%)',
+        value: data.avgDailyGrowthPercent || '0.00%',
+        trend: {
+          isPositive: avgPercent >= 0,
+          text: avgPercent >= 0 ? 'Increasing' : 'Decreasing'
+        },
+        iconSrc: '/images/dashboard/icons (1).svg',
+        bgColor: 'bg-[#E8F8F0]',
+        iconBg: 'bg-gradient-to-r from-[#8EEDC7] to-[#3FA574]'
+      }
+    ]
   }
 
   return (
@@ -126,7 +179,7 @@ export default function AdditionalDashboard ({ stats }) {
       {/* Row 1: Accommodations & eSims */}
       <div className='grid grid-cols-1 lg:grid-cols-2 gap-2'>
         <SectionCard title='Accommodations' viewLink='/users/accommodation'>
-          <div className='flex flex-wrap gap-2 mx-auto'>
+          <div className='grid grid-cols-2 gap-2'>
             <MetricCard
               label='Total Accommodations'
               value={accommodations}
@@ -134,19 +187,22 @@ export default function AdditionalDashboard ({ stats }) {
               iconBg='bg-gradient-to-r from-[#7DD3FC] to-[#0EA5E9]'
               iconSrc='/images/dashboard/icons (14).svg'
             />
+            {getGrowthCards('accommodations').map(card => (
+              <MetricCard key={card.id} {...card} />
+            ))}
             <MetricCard
               label='Revenue'
               value={accommodationRevenue}
               bgColor='bg-[#E8F8F0]'
               iconBg='bg-gradient-to-r from-[#8EEDC7] to-[#3FA574]'
               iconSrc='/images/dashboard/icons (1).svg'
+              className='col-span-2'
             />
-            <MetricCard {...getGrowthProps('accommodations')} />
           </div>
         </SectionCard>
 
         <SectionCard title='eSims' viewLink='/users/e-sim'>
-          <div className='flex flex-wrap gap-4'>
+          <div className='grid grid-cols-2 gap-2'>
             <MetricCard
               label='Total eSims'
               value={esims}
@@ -154,14 +210,17 @@ export default function AdditionalDashboard ({ stats }) {
               iconBg='bg-gradient-to-r from-[#FFD8A8] to-[#F76707]'
               iconSrc='/images/dashboard/icons (19).svg'
             />
+            {getGrowthCards('internetConnectivity').map(card => (
+              <MetricCard key={card.id} {...card} />
+            ))}
             <MetricCard
               label='Revenue'
               value={esimRevenue}
               bgColor='bg-[#E8F8F0]'
               iconBg='bg-gradient-to-r from-[#8EEDC7] to-[#3FA574]'
               iconSrc='/images/dashboard/icons (1).svg'
+              className='col-span-2'
             />
-            <MetricCard {...getGrowthProps('internetConnectivity')} />
           </div>
         </SectionCard>
       </div>
@@ -169,7 +228,7 @@ export default function AdditionalDashboard ({ stats }) {
       {/* Row 2: Rides & Leadway */}
       <div className='grid grid-cols-1 lg:grid-cols-2 gap-2'>
         <SectionCard title='Rides' viewLink='/users/rides'>
-          <div className='flex flex-wrap gap-4'>
+          <div className='grid grid-cols-2 gap-2'>
             <MetricCard
               label='Total Rides'
               value={rides}
@@ -177,19 +236,22 @@ export default function AdditionalDashboard ({ stats }) {
               iconBg='bg-gradient-to-r from-[#FFADD2] to-[#E91E8C]'
               iconSrc='/images/dashboard/icons (10).svg'
             />
+            {getGrowthCards('rides').map(card => (
+              <MetricCard key={card.id} {...card} />
+            ))}
             <MetricCard
               label='Revenue'
               value={rideRevenue}
               bgColor='bg-[#E8F8F0]'
               iconBg='bg-gradient-to-r from-[#8EEDC7] to-[#3FA574]'
               iconSrc='/images/dashboard/icons (1).svg'
+              className='col-span-2'
             />
-            <MetricCard {...getGrowthProps('rides')} />
           </div>
         </SectionCard>
 
         <SectionCard title='Leadway' viewLink='/leadway'>
-          <div className='flex flex-wrap gap-4'>
+          <div className='grid grid-cols-2 gap-2'>
             <MetricCard
               label='Total Leadway'
               value={leadway}
@@ -197,14 +259,17 @@ export default function AdditionalDashboard ({ stats }) {
               iconBg='bg-gradient-to-r from-[#C4B5FD] to-[#7C3AED]'
               iconSrc='/images/dashboard/icons (8).svg'
             />
+            {getGrowthCards('leadway').map(card => (
+              <MetricCard key={card.id} {...card} />
+            ))}
             <MetricCard
               label='Revenue'
               value={leadwayRevenue}
               bgColor='bg-[#E8F8F0]'
               iconBg='bg-gradient-to-r from-[#8EEDC7] to-[#3FA574]'
               iconSrc='/images/dashboard/icons (1).svg'
+              className='col-span-2'
             />
-            <MetricCard {...getGrowthProps('leadway')} />
           </div>
         </SectionCard>
       </div>
@@ -212,7 +277,7 @@ export default function AdditionalDashboard ({ stats }) {
       {/* Row 3: Med Plus - Drug Store & Consultation */}
       <div className='grid grid-cols-1 lg:grid-cols-2 gap-2'>
         <SectionCard title='Med Plus - Drug Store' viewLink='/med-orders'>
-          <div className='flex flex-wrap gap-4'>
+          <div className='grid grid-cols-2 gap-2'>
             <MetricCard
               label='Total Drug Store'
               value={drugStore}
@@ -220,19 +285,22 @@ export default function AdditionalDashboard ({ stats }) {
               iconBg='bg-gradient-to-r from-[#7DD3FC] to-[#0EA5E9]'
               iconSrc='/images/dashboard/icons (17).svg'
             />
+            {getGrowthCards('medPlus').map(card => (
+              <MetricCard key={card.id} {...card} />
+            ))}
             <MetricCard
               label='Revenue'
               value={drugStoreRevenue}
               bgColor='bg-[#E8F8F0]'
               iconBg='bg-gradient-to-r from-[#8EEDC7] to-[#3FA574]'
               iconSrc='/images/dashboard/icons (1).svg'
+              className='col-span-2'
             />
-            <MetricCard {...getGrowthProps('medPlus')} />
           </div>
         </SectionCard>
 
         <SectionCard title='Royal Concierge' viewLink='/royal-concierge'>
-          <div className='flex flex-wrap gap-4'>
+          <div className='grid grid-cols-2 gap-2'>
             <MetricCard
               label='Total Royal Concierge'
               value={royalConcierge}
@@ -240,14 +308,17 @@ export default function AdditionalDashboard ({ stats }) {
               iconBg='bg-gradient-to-r from-[#FFD8A8] to-[#F76707]'
               iconSrc='/images/dashboard/icons (18).svg'
             />
+            {getGrowthCards('royalConcierge').map(card => (
+              <MetricCard key={card.id} {...card} />
+            ))}
             <MetricCard
               label='Revenue'
               value={royalConciergeRevenue}
               bgColor='bg-[#E8F8F0]'
               iconBg='bg-gradient-to-r from-[#8EEDC7] to-[#3FA574]'
               iconSrc='/images/dashboard/icons (1).svg'
+              className='col-span-2'
             />
-            <MetricCard {...getGrowthProps('royalConcierge')} />
           </div>
         </SectionCard>
       </div>
@@ -257,7 +328,7 @@ export default function AdditionalDashboard ({ stats }) {
         {/* Left Column: Visa & Wallet */}
         <div className='space-y-2'>
           <SectionCard title='Visa Applications' viewLink='/visa' compact>
-            <div className='flex flex-wrap gap-4'>
+            <div className='grid grid-cols-2 gap-2'>
               <MetricCard
                 label='Total Applications Received'
                 value={visaApplications}
@@ -272,7 +343,9 @@ export default function AdditionalDashboard ({ stats }) {
                 iconBg='bg-gradient-to-r from-[#8EEDC7] to-[#3FA574]'
                 iconSrc='/images/dashboard/icons (9).svg'
               />
-              <MetricCard {...getGrowthProps('visaApplications')} />
+              {getGrowthCards('visaApplications').map(card => (
+                <MetricCard key={card.id} {...card} />
+              ))}
             </div>
           </SectionCard>
 

@@ -103,7 +103,11 @@ export default function DashboardPage () {
         {!loading && (
           <>
             <AdminDashboard stats={stats} />
-            <MerchandiseDashboard stats={stats} />
+            <MerchandiseDashboard
+              stats={stats}
+              startDate={dateRange.start}
+              endDate={dateRange.end}
+            />
             <AdditionalDashboard stats={stats} />
           </>
         )}
