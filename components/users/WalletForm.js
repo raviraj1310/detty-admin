@@ -5,6 +5,7 @@ import { Search, Download, MoreVertical } from "lucide-react";
 import { IoFilterSharp } from "react-icons/io5";
 import { TbCaretUpDownFilled } from "react-icons/tb";
 import { getAllUsersWallet } from "@/services/users/user.service";
+import { downloadExcel } from "@/utils/excelExport";
 
 const metricCards = [
   {
@@ -123,6 +124,7 @@ export default function WalletForm() {
   const [sortDir, setSortDir] = useState("desc");
   const [activeDropdown, setActiveDropdown] = useState(null);
   const dropdownRef = useRef(null);
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -163,7 +165,9 @@ export default function WalletForm() {
   }, []);
 
   const filteredTransactions = useMemo(() => {
-    const term = String(searchTerm || "").trim().toLowerCase();
+    const term = String(searchTerm || "")
+      .trim()
+      .toLowerCase();
     if (!term && !typeFilter && !statusFilter) return transactions;
 
     return transactions.filter((t) => {
@@ -210,13 +214,21 @@ export default function WalletForm() {
         case "transactionDate":
           return (a.createdAtTs - b.createdAtTs) * dir;
         case "transactionName":
-          return String(a.transactionName || "").localeCompare(String(b.transactionName || "")) * dir;
+          return (
+            String(a.transactionName || "").localeCompare(
+              String(b.transactionName || "")
+            ) * dir
+          );
         case "type":
           return String(a.type || "").localeCompare(String(b.type || "")) * dir;
         case "amount":
           return (a.amountNum - b.amountNum) * dir;
         case "status":
-          return String(a.paymentStatus || "").localeCompare(String(b.paymentStatus || "")) * dir;
+          return (
+            String(a.paymentStatus || "").localeCompare(
+              String(b.paymentStatus || "")
+            ) * dir
+          );
         default:
           return 0;
       }
@@ -243,8 +255,10 @@ export default function WalletForm() {
 
   const statusClass = (s) => {
     const v = String(s || "").toLowerCase();
-    if (v === "completed") return "bg-emerald-50 text-emerald-600 border border-emerald-200";
-    if (v === "pending") return "bg-orange-50 text-orange-600 border border-orange-200";
+    if (v === "completed")
+      return "bg-emerald-50 text-emerald-600 border border-emerald-200";
+    if (v === "pending")
+      return "bg-orange-50 text-orange-600 border border-orange-200";
     return "bg-red-50 text-red-600 border border-red-200";
   };
 
@@ -256,6 +270,36 @@ export default function WalletForm() {
 
   const typeOptions = ["CREDIT", "DEBIT"];
   const statusOptions = ["Completed", "Pending", "Failed"];
+
+  const handleDownloadWalletExcel = () => {
+    try {
+      setExporting(true);
+
+      if (!sortedTransactions.length) return;
+
+      const dataToExport = sortedTransactions.map((t) => ({
+        // 🔹 Transaction Info
+        "Transaction Name": t.transactionName || "-",
+        "User Email": t.userEmail || "-",
+        Source: t.source || "-",
+        Type: t.type || "-",
+
+        // 🔹 Amount & Status
+        Amount: t.amountNum ?? 0,
+        "Payment Status": t.paymentStatus || "-",
+        Reference: t.reference || "-",
+
+        // 🔹 Dates
+        "Transaction Date": t.createdAt
+          ? new Date(t.createdAt).toLocaleString()
+          : "-",
+      }));
+
+      downloadExcel(dataToExport, "Wallet_Transactions.xlsx");
+    } finally {
+      setExporting(false);
+    }
+  };
 
   return (
     <div className="space-y-4 py-4 px-6">
@@ -282,14 +326,24 @@ export default function WalletForm() {
               className={`${card.bg} rounded-xl p-3 relative overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 border border-gray-100`}
             >
               <div className="flex items-center justify-between gap-2">
-                <div className={`${card.iconBg} p-2.5 rounded-lg flex-shrink-0 shadow-sm`}>
-                  <img src={card.iconSrc} alt={card.title} className="w-7 h-7" />
+                <div
+                  className={`${card.iconBg} p-2.5 rounded-lg flex-shrink-0 shadow-sm`}
+                >
+                  <img
+                    src={card.iconSrc}
+                    alt={card.title}
+                    className="w-7 h-7"
+                  />
                 </div>
                 <div className="text-right flex-1 min-w-0">
-                  <p className={`${card.textColor} opacity-80 text-xs font-medium mb-0.5 leading-tight`}>
+                  <p
+                    className={`${card.textColor} opacity-80 text-xs font-medium mb-0.5 leading-tight`}
+                  >
                     {card.title}
                   </p>
-                  <p className={`text-2xl font-bold ${card.textColor} tracking-tight`}>
+                  <p
+                    className={`text-2xl font-bold ${card.textColor} tracking-tight`}
+                  >
                     {loading && card.id === "balance" ? "..." : String(value)}
                   </p>
                 </div>
@@ -301,7 +355,9 @@ export default function WalletForm() {
 
       <div className="rounded-2xl border border-[#E1E6F7] bg-white p-4 shadow-[0_24px_60px_-40px_rgba(15,23,42,0.55)]">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-base font-semibold text-slate-900">Transaction List</h2>
+          <h2 className="text-base font-semibold text-slate-900">
+            Transaction List
+          </h2>
           <div className="flex flex-wrap items-center gap-2">
             <div className="relative flex items-center">
               <input
@@ -323,7 +379,9 @@ export default function WalletForm() {
                   >
                     <option value="">All Types</option>
                     {typeOptions.map((t) => (
-                      <option key={t} value={t}>{t}</option>
+                      <option key={t} value={t}>
+                        {t}
+                      </option>
                     ))}
                   </select>
                 </div>
@@ -335,7 +393,9 @@ export default function WalletForm() {
                   >
                     <option value="">All Status</option>
                     {statusOptions.map((s) => (
-                      <option key={s} value={s}>{s}</option>
+                      <option key={s} value={s}>
+                        {s}
+                      </option>
                     ))}
                   </select>
                 </div>
@@ -349,7 +409,11 @@ export default function WalletForm() {
               <IoFilterSharp className="h-3.5 w-3.5 text-[#8B93AF]" />
               {filtersOpen ? "Hide Filters" : "Filters"}
             </button>
-            <button className="flex h-8 items-center gap-1.5 rounded-lg border border-[#E5E6EF] bg-white px-3 text-xs font-medium text-[#2D3658] transition hover:bg-[#F6F7FD]">
+            <button
+              onClick={handleDownloadWalletExcel}
+              disabled={exporting}
+              className="flex h-8 items-center gap-1.5 rounded-lg border border-[#E5E6EF] bg-white px-3 text-xs font-medium text-[#2D3658] transition hover:bg-[#F6F7FD]"
+            >
               <Download className="h-3.5 w-3.5 text-[#8B93AF]" />
             </button>
           </div>
@@ -388,80 +452,93 @@ export default function WalletForm() {
 
             <div className="divide-y divide-[#EEF1FA] bg-white">
               {loading && (
-                <div className="px-3 py-3 text-xs text-[#5E6582]">Loading...</div>
+                <div className="px-3 py-3 text-xs text-[#5E6582]">
+                  Loading...
+                </div>
               )}
               {error && !loading && (
                 <div className="px-3 py-3 text-xs text-red-600">{error}</div>
               )}
-              {!loading && !error && sortedTransactions.map((transaction, idx) => (
-                <div
-                  key={transaction.id || idx}
-                  className="grid grid-cols-[18%_22%_12%_18%_15%_15%] gap-0 px-3 py-3 hover:bg-[#F9FAFD]"
-                >
-                  <div className="self-center text-xs text-[#5E6582] line-clamp-2">
-                    {transaction.transactionDate}
-                  </div>
-                  <div className="self-center">
-                    <p className="text-xs font-semibold text-slate-900 leading-tight line-clamp-1">
-                      {transaction.transactionName}
-                    </p>
-                    {transaction.userEmail && transaction.userEmail !== "-" && (
-                      <p className="text-xs text-[#5E6582] line-clamp-1">
-                        {transaction.userEmail}
+              {!loading &&
+                !error &&
+                sortedTransactions.map((transaction, idx) => (
+                  <div
+                    key={transaction.id || idx}
+                    className="grid grid-cols-[18%_22%_12%_18%_15%_15%] gap-0 px-3 py-3 hover:bg-[#F9FAFD]"
+                  >
+                    <div className="self-center text-xs text-[#5E6582] line-clamp-2">
+                      {transaction.transactionDate}
+                    </div>
+                    <div className="self-center">
+                      <p className="text-xs font-semibold text-slate-900 leading-tight line-clamp-1">
+                        {transaction.transactionName}
                       </p>
-                    )}
-                  </div>
-                  <div className="self-center">
-                    <span className="text-xs font-medium text-slate-900">
-                      {transaction.type}
-                    </span>
-                    {transaction.source && transaction.source !== "-" && (
-                      <p className="text-xs text-[#5E6582] line-clamp-1">
-                        {transaction.source}
-                      </p>
-                    )}
-                  </div>
-                  <div className="self-center">
-                    <span className={`text-xs ${getAmountColor(transaction.amount)}`}>
-                      {transaction.amount}
-                    </span>
-                  </div>
-                  <div className="flex items-center self-center">
-                    <span className={`inline-flex items-center justify-center rounded-full px-2 py-0.5 text-xs font-semibold ${statusClass(transaction.paymentStatus)}`}>
-                      {transaction.paymentStatus}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-end self-center relative">
-                    <button
-                      onClick={() =>
-                        setActiveDropdown(
-                          activeDropdown === (transaction.id || idx)
-                            ? null
-                            : transaction.id || idx
-                        )
-                      }
-                      className="rounded-full border border-transparent p-1 text-[#8C93AF] transition hover:border-[#E5E8F6] hover:bg-[#F5F7FD] hover:text-[#2D3658]"
-                    >
-                      <MoreVertical className="h-4 w-4" />
-                    </button>
-                    {activeDropdown === (transaction.id || idx) && (
-                      <div
-                        ref={dropdownRef}
-                        className="absolute right-0 top-full mt-1 w-48 rounded-md shadow-lg bg-white border border-[#E5E8F5] z-50"
+                      {transaction.userEmail &&
+                        transaction.userEmail !== "-" && (
+                          <p className="text-xs text-[#5E6582] line-clamp-1">
+                            {transaction.userEmail}
+                          </p>
+                        )}
+                    </div>
+                    <div className="self-center">
+                      <span className="text-xs font-medium text-slate-900">
+                        {transaction.type}
+                      </span>
+                      {transaction.source && transaction.source !== "-" && (
+                        <p className="text-xs text-[#5E6582] line-clamp-1">
+                          {transaction.source}
+                        </p>
+                      )}
+                    </div>
+                    <div className="self-center">
+                      <span
+                        className={`text-xs ${getAmountColor(
+                          transaction.amount
+                        )}`}
                       >
-                        <div className="py-1">
-                          <button className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                            View Detail
-                          </button>
-                          <button className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                            Download Receipt
-                          </button>
+                        {transaction.amount}
+                      </span>
+                    </div>
+                    <div className="flex items-center self-center">
+                      <span
+                        className={`inline-flex items-center justify-center rounded-full px-2 py-0.5 text-xs font-semibold ${statusClass(
+                          transaction.paymentStatus
+                        )}`}
+                      >
+                        {transaction.paymentStatus}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-end self-center relative">
+                      <button
+                        onClick={() =>
+                          setActiveDropdown(
+                            activeDropdown === (transaction.id || idx)
+                              ? null
+                              : transaction.id || idx
+                          )
+                        }
+                        className="rounded-full border border-transparent p-1 text-[#8C93AF] transition hover:border-[#E5E8F6] hover:bg-[#F5F7FD] hover:text-[#2D3658]"
+                      >
+                        <MoreVertical className="h-4 w-4" />
+                      </button>
+                      {activeDropdown === (transaction.id || idx) && (
+                        <div
+                          ref={dropdownRef}
+                          className="absolute right-0 top-full mt-1 w-48 rounded-md shadow-lg bg-white border border-[#E5E8F5] z-50"
+                        >
+                          <div className="py-1">
+                            <button className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                              View Detail
+                            </button>
+                            <button className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                              Download Receipt
+                            </button>
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
               {!loading && !error && filteredTransactions.length === 0 && (
                 <div className="px-3 py-3 text-xs text-[#5E6582]">
                   No transactions found
