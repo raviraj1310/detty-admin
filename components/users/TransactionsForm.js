@@ -911,7 +911,7 @@ export default function TransactionsForm () {
       {/* Stats Cards */}
       <div className='grid grid-cols-1 md:grid-cols-3 gap-4 mb-6'>
         {/* Total Bookings Yesterday */}
-        <div className='bg-gradient-to-r from-[#E8EEFF] to-[#C5D5FF] p-4 rounded-lg shadow-md'></div>
+        <div className='bg-gradient-to-r from-[#E8EEFF] to-[#C5D5FF] p-4 rounded-lg shadow-md'>
           <div className='flex items-center justify-between'>
             <div className='bg-white p-2 rounded-lg'>
               <TbTicket className='w-6 h-6 text-indigo-600' />
