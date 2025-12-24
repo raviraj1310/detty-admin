@@ -11,6 +11,7 @@ import {
   copyActivityById,
   getAllActivities,
 } from "@/services/places-to-visit/placesToVisit.service";
+import { downloadExcel } from "@/utils/excelExport";
 
 const metricCards = [
   {
@@ -81,6 +82,7 @@ export default function PlacesToVisit() {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewSrc, setPreviewSrc] = useState("");
   const [previewTitle, setPreviewTitle] = useState("");
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -347,6 +349,34 @@ export default function PlacesToVisit() {
     }
   };
 
+  const handleDownloadActivityExcel = () => {
+    try {
+      setExporting(true);
+
+      if (!sortedActivities.length) return;
+
+      const formatDate = (d) => {
+        if (!d || d === "-") return "-";
+        const date =
+          typeof d === "object" && d.$date ? new Date(d.$date) : new Date(d);
+        return date.toLocaleString();
+      };
+
+      const dataToExport = sortedActivities.map((a) => ({
+        "Activity Name": a.activityName,
+        Type: a.type,
+        Location: a.location,
+        Status: a.status,
+        "Booked Count": a.bookedCount ?? 0,
+        "Added On": formatDate(a.addedOn),
+      }));
+
+      downloadExcel(dataToExport, "Activities.xlsx");
+    } finally {
+      setExporting(false);
+    }
+  };
+
   return (
     <div className="space-y-4 py-4 px-6">
       <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
@@ -460,7 +490,11 @@ export default function PlacesToVisit() {
               <IoFilterSharp className="h-3.5 w-3.5 text-[#8B93AF]" />
               {filtersOpen ? "Hide Filters" : "Filters"}
             </button>
-            <button className="flex h-8 items-center gap-1.5 rounded-lg border border-[#E5E6EF] bg-white px-3 text-xs font-medium text-[#2D3658] transition hover:bg-[#F6F7FD]">
+            <button
+              onClick={handleDownloadActivityExcel}
+              disabled={exporting}
+              className="flex h-8 items-center gap-1.5 rounded-lg border border-[#E5E6EF] bg-white px-3 text-xs font-medium text-[#2D3658] transition hover:bg-[#F6F7FD]"
+            >
               <Download className="h-3.5 w-3.5 text-[#8B93AF]" />
             </button>
           </div>
