@@ -43,9 +43,9 @@ export const changePassword = async (userId, payload) => {
   }
 }
 
-export const dashboardData = async () => {
+export const dashboardData = async (params = {}) => {
   try {
-    const response = await api.get('/admin/dashboard')
+    const response = await api.get('/admin/dashboard', { params })
     return response.data
   } catch (error) {
     console.error('Error fetching dashboard data:', error)
