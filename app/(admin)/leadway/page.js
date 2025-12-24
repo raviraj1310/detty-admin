@@ -39,13 +39,16 @@ export default function LeadwayPage () {
   const [sortDir, setSortDir] = useState('desc')
   const [detailOpen, setDetailOpen] = useState(false)
   const [selected, setSelected] = useState(null)
+  const [apiStats, setApiStats] = useState(null)
   const [stats, setStats] = useState({
     yesterdayCount: 0,
     yesterdayDateStr: '',
     avgGrowthCount: 0,
     isCountIncreasing: false,
     avgGrowthPercent: '0%',
-    isPctIncreasing: false
+    isPctIncreasing: false,
+    filteredTotalCount: 0,
+    newCountToday: 0
   })
 
   useEffect(() => {
@@ -75,14 +78,19 @@ export default function LeadwayPage () {
           avgGrowthPercentStr.replace('%', '')
         )
 
-        setStats({
+        const initialStats = {
           yesterdayCount,
           yesterdayDateStr,
           avgGrowthCount,
           isCountIncreasing: avgGrowthCount >= 0,
           avgGrowthPercent: avgGrowthPercentStr,
-          isPctIncreasing: avgGrowthPercentVal >= 0
-        })
+          isPctIncreasing: avgGrowthPercentVal >= 0,
+          filteredTotalCount: 0,
+          newCountToday: 0
+        }
+
+        setStats(initialStats)
+        setApiStats(initialStats)
 
         const raw = Array.isArray(res?.data)
           ? res.data
@@ -172,6 +180,71 @@ export default function LeadwayPage () {
       return matchesText || matchesDigits
     })
   }, [requests, searchTerm, dateRange])
+
+  useEffect(() => {
+    if (!apiStats) return
+
+    const isFiltered =
+      dateRange.start || dateRange.end || searchTerm || filtered.length > 0
+
+    if (!dateRange.start && !dateRange.end && !searchTerm) {
+      const todayStr = new Date().toISOString().split('T')[0]
+      const newToday = requests.filter(r =>
+        r.createdOn?.startsWith(todayStr)
+      ).length
+
+      setStats({
+        ...apiStats,
+        filteredTotalCount: requests.length,
+        newCountToday: newToday
+      })
+      return
+    }
+
+    // Recalculate based on filtered data
+    const currentData = filtered
+    const totalCount = currentData.length
+
+    const todayStr = new Date().toISOString().split('T')[0]
+    const newToday = currentData.filter(r =>
+      r.createdOn?.startsWith(todayStr)
+    ).length
+
+    // Trends (First Half vs Second Half)
+    let growthCount = 0
+    let growthPercent = 0
+
+    if (currentData.length > 1) {
+      // Sort by date for trend calculation
+      const sorted = [...currentData].sort((a, b) => a.createdTs - b.createdTs)
+      const mid = Math.floor(sorted.length / 2)
+      const firstHalf = sorted.slice(0, mid)
+      const secondHalf = sorted.slice(mid)
+
+      const firstCount = firstHalf.length
+      const secondCount = secondHalf.length
+
+      growthCount = secondCount - firstCount
+      if (firstCount > 0) {
+        growthPercent = ((secondCount - firstCount) / firstCount) * 100
+      } else {
+        growthPercent = secondCount > 0 ? 100 : 0
+      }
+    }
+
+    // Cap at 100%
+    if (growthPercent > 100) growthPercent = 100
+
+    setStats({
+      ...apiStats, // Preserve yesterdayCount from API
+      avgGrowthCount: growthCount,
+      isCountIncreasing: growthCount >= 0,
+      avgGrowthPercent: `${growthPercent.toFixed(1)}%`,
+      isPctIncreasing: growthPercent >= 0,
+      filteredTotalCount: totalCount,
+      newCountToday: newToday
+    })
+  }, [filtered, dateRange, searchTerm, apiStats, requests])
 
   const toggleSort = key => {
     if (sortKey === key) {
@@ -362,6 +435,7 @@ export default function LeadwayPage () {
                 </label>
                 <input
                   type='date'
+                  max={new Date().toISOString().split('T')[0]}
                   value={dateRange.start}
                   onChange={e =>
                     setDateRange(prev => ({ ...prev, start: e.target.value }))
@@ -376,6 +450,7 @@ export default function LeadwayPage () {
                 </label>
                 <input
                   type='date'
+                  max={new Date().toISOString().split('T')[0]}
                   value={dateRange.end}
                   onChange={e =>
                     setDateRange(prev => ({ ...prev, end: e.target.value }))
@@ -469,6 +544,36 @@ export default function LeadwayPage () {
                   </span>
                 )}
               </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className='grid grid-cols-1 md:grid-cols-2 gap-4 mb-6'>
+        <div className='bg-blue-300 p-4 rounded-lg'>
+          <div className='flex items-center'>
+            <div className='bg-white p-2 rounded-lg mr-3'>
+              <TbTicket className='w-6 h-6 text-blue-600' />
+            </div>
+            <div>
+              <p className='text-xs text-gray-600'>Total Leadway Bookings</p>
+              <p className='text-2xl font-bold text-gray-900'>
+                {stats.filteredTotalCount}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className='bg-orange-300 p-4 rounded-lg'>
+          <div className='flex items-center'>
+            <div className='bg-white p-2 rounded-lg mr-3'>
+              <TbTicket className='w-6 h-6 text-orange-600' />
+            </div>
+            <div>
+              <p className='text-xs text-gray-600'>New Bookings Today</p>
+              <p className='text-2xl font-bold text-gray-900'>
+                {stats.newCountToday}
+              </p>
             </div>
           </div>
         </div>

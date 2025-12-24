@@ -31,6 +31,7 @@ export default function RidesPage () {
                 </label>
                 <input
                   type='date'
+                  max={new Date().toISOString().split('T')[0]}
                   value={dateRange.start}
                   onChange={e =>
                     setDateRange(prev => ({ ...prev, start: e.target.value }))
@@ -45,6 +46,7 @@ export default function RidesPage () {
                 </label>
                 <input
                   type='date'
+                  max={new Date().toISOString().split('T')[0]}
                   value={dateRange.end}
                   onChange={e =>
                     setDateRange(prev => ({ ...prev, end: e.target.value }))

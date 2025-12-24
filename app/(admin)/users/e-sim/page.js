@@ -100,13 +100,20 @@ export default function EsimUsersPage () {
           const avgGrowthPercentVal = parseFloat(
             avgGrowthPercentStr.replace('%', '')
           )
+
+          // Cap at 100%
+          const finalGrowthPercentVal = Math.min(avgGrowthPercentVal, 100)
+          const avgGrowthPercentStrCapped = `${finalGrowthPercentVal.toFixed(
+            2
+          )}%`
+
           setStats({
             yesterdayCount,
             yesterdayDateStr,
             avgGrowthCount,
             isCountIncreasing: avgGrowthCount >= 0,
-            avgGrowthPercent: avgGrowthPercentStr,
-            isPctIncreasing: avgGrowthPercentVal >= 0
+            avgGrowthPercent: avgGrowthPercentStrCapped,
+            isPctIncreasing: finalGrowthPercentVal >= 0
           })
           setStatsLoadedFromApi(true)
           hasApiStats = true
@@ -133,13 +140,20 @@ export default function EsimUsersPage () {
           const avgGrowthPercentVal = parseFloat(
             avgGrowthPercentStr.replace('%', '')
           )
+
+          // Cap at 100%
+          const finalGrowthPercentVal = Math.min(avgGrowthPercentVal, 100)
+          const avgGrowthPercentStrCapped = `${finalGrowthPercentVal.toFixed(
+            2
+          )}%`
+
           setStats({
             yesterdayCount,
             yesterdayDateStr,
             avgGrowthCount,
             isCountIncreasing: avgGrowthCount >= 0,
-            avgGrowthPercent: avgGrowthPercentStr,
-            isPctIncreasing: avgGrowthPercentVal >= 0
+            avgGrowthPercent: avgGrowthPercentStrCapped,
+            isPctIncreasing: finalGrowthPercentVal >= 0
           })
           setStatsLoadedFromApi(true)
           hasApiStats = true
@@ -584,6 +598,7 @@ export default function EsimUsersPage () {
               </label>
               <input
                 type='date'
+                max={new Date().toISOString().split('T')[0]}
                 value={dateRange.end}
                 onChange={e =>
                   setDateRange(prev => ({ ...prev, end: e.target.value }))
@@ -604,7 +619,9 @@ export default function EsimUsersPage () {
         </div>
       </div>
 
+      {/* Stats Cards */}
       <div className='grid grid-cols-1 md:grid-cols-3 gap-4 mb-6'>
+        {/* Total Purchasing Yesterday */}
         <div className='bg-indigo-300 text-white p-4 rounded-lg'>
           <div className='flex items-center'>
             <div className='bg-white p-2 rounded-lg mr-3'>
@@ -623,6 +640,8 @@ export default function EsimUsersPage () {
             </div>
           </div>
         </div>
+
+        {/* Avg Daily Growth (Count) */}
         <div className='bg-purple-300 text-white p-4 rounded-lg'>
           <div className='flex items-center'>
             <div className='bg-white p-2 rounded-lg mr-3'>
@@ -633,24 +652,33 @@ export default function EsimUsersPage () {
                 Avg Daily Growth (Count)
               </p>
               <div className='flex items-end gap-2'>
-                <p className='text-2xl text-black font-bold'>
-                  {stats.avgGrowthCount}
-                </p>
                 {stats.isCountIncreasing ? (
-                  <span className='text-xs flex items-center mb-1 text-green-500'>
-                    <TbTrendingUp className='w-3 h-3 mr-0.5' />
-                    Increasing
-                  </span>
+                  <>
+                    <p className='text-2xl text-black font-bold'>
+                      {stats.avgGrowthCount}
+                    </p>
+                    <span className='text-xs flex items-center mb-1 text-green-600'>
+                      <TbTrendingUp className='w-3 h-3 mr-0.5' />
+                      Increasing
+                    </span>
+                  </>
                 ) : (
-                  <span className='text-xs flex items-center mb-1 text-red-500'>
-                    <TbTrendingDown className='w-3 h-3 mr-0.5' />
-                    Decreasing
-                  </span>
+                  <>
+                    <p className='text-2xl text-black font-bold'>
+                      {stats.avgGrowthCount}
+                    </p>
+                    <span className='text-xs flex items-center mb-1 text-red-500'>
+                      <TbTrendingDown className='w-3 h-3 mr-0.5' />
+                      Decreasing
+                    </span>
+                  </>
                 )}
               </div>
             </div>
           </div>
         </div>
+
+        {/* Avg Daily Growth (%) */}
         <div className='bg-teal-300 text-white p-4 rounded-lg'>
           <div className='flex items-center'>
             <div className='bg-white p-2 rounded-lg mr-3'>
@@ -665,7 +693,7 @@ export default function EsimUsersPage () {
                   {stats.avgGrowthPercent}
                 </p>
                 {stats.isPctIncreasing ? (
-                  <span className='text-xs flex items-center mb-1 text-green-500'>
+                  <span className='text-xs flex items-center mb-1 text-green-600'>
                     <TbTrendingUp className='w-3 h-3 mr-0.5' />
                     Increasing
                   </span>
@@ -676,6 +704,61 @@ export default function EsimUsersPage () {
                   </span>
                 )}
               </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Additional Stats Cards (Filtered) */}
+      <div className='grid grid-cols-1 md:grid-cols-2 gap-4 mb-6'>
+        {/* Total E-Sim Bookings (Filtered) */}
+        <div className='bg-blue-300 text-white p-4 rounded-lg'>
+          <div className='flex items-center'>
+            <div className='bg-white p-2 rounded-lg mr-3'>
+              <TbTicket className='w-6 h-6 text-blue-600' />
+            </div>
+            <div>
+              <p className='text-xs text-black opacity-90'>
+                Total E-Sim Bookings
+              </p>
+              <p className='text-2xl text-black font-bold'>
+                {filteredRows.length}{' '}
+                <span className='text-lg font-semibold opacity-90'>
+                  (₦
+                  {filteredRows
+                    .reduce((acc, curr) => acc + (curr.amountNum || 0), 0)
+                    .toLocaleString()}
+                  )
+                </span>
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* New Bookings Today (Filtered) */}
+        <div className='bg-orange-300 text-white p-4 rounded-lg'>
+          <div className='flex items-center'>
+            <div className='bg-white p-2 rounded-lg mr-3'>
+              <TbTicket className='w-6 h-6 text-orange-600' />
+            </div>
+            <div>
+              <p className='text-xs text-black opacity-90'>
+                New Bookings Today
+              </p>
+              <p className='text-2xl text-black font-bold'>
+                {
+                  filteredRows.filter(b => {
+                    if (!b.raw?.createdAt) return false
+                    const d = new Date(b.raw.createdAt)
+                    const today = new Date()
+                    return (
+                      d.getDate() === today.getDate() &&
+                      d.getMonth() === today.getMonth() &&
+                      d.getFullYear() === today.getFullYear()
+                    )
+                  }).length
+                }
+              </p>
             </div>
           </div>
         </div>

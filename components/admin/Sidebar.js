@@ -46,7 +46,7 @@ const menuSections = [
         icon: '/images/backend/side_menu/side_menu (13).svg',
         href: '/visa'
       },
-      { label: 'Wallet', icon: 'lucide-wallet', href: '/users/wallet' },
+      { label: 'Pocket Book', icon: 'lucide-wallet', href: '/users/wallet' },
       {
         label: 'Email Subscription',
         icon: '/images/backend/side_menu/side_menu (9).svg',

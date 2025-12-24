@@ -196,7 +196,12 @@ export default function TransactionsForm () {
   })
 
   useEffect(() => {
-    if (!bookings || statsLoadedFromApi) return
+    if (!bookings) return
+
+    // If API stats are loaded and NO filter is active, preserve them.
+    // If a filter is active, we recalculate based on the filtered range.
+    const isFiltered = dateRange.start || dateRange.end
+    if (statsLoadedFromApi && !isFiltered) return
 
     const now = new Date()
     const yesterday = new Date(now)
@@ -210,50 +215,102 @@ export default function TransactionsForm () {
       day: 'numeric'
     })
 
-    // 1. Total Bookings Yesterday
+    // 1. Total Bookings Yesterday (Always absolute)
     const yesterdayCount = bookings.filter(b => {
       const d = new Date(b.bookedOnRaw)
       return d >= yesterday && d <= yesterdayEnd
     }).length
 
-    // 2. Avg Daily Growth Logic
+    // 2. Avg Daily Growth Logic (Filter Aware)
+    let start, end, daysCount
+
+    if (isFiltered) {
+      if (dateRange.start) {
+        start = new Date(dateRange.start)
+        start.setHours(0, 0, 0, 0)
+      } else {
+        // No start, default to 30 days before end
+        end = new Date(dateRange.end)
+        start = new Date(end)
+        start.setDate(start.getDate() - 29)
+        start.setHours(0, 0, 0, 0)
+      }
+
+      if (dateRange.end) {
+        end = new Date(dateRange.end)
+        end.setHours(23, 59, 59, 999)
+      } else {
+        // Start but no end, default to Today
+        end = new Date()
+        end.setHours(23, 59, 59, 999)
+      }
+
+      // Validate
+      if (start > end) {
+        end = new Date()
+        start = new Date()
+        start.setDate(now.getDate() - 29)
+        start.setHours(0, 0, 0, 0)
+        end.setHours(23, 59, 59, 999)
+      }
+
+      const diffTime = Math.abs(end - start)
+      daysCount = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+      if (daysCount < 1) daysCount = 1
+    } else {
+      // Default: Last 30 Days
+      end = new Date()
+      start = new Date()
+      start.setDate(now.getDate() - 29)
+      start.setHours(0, 0, 0, 0)
+      end.setHours(23, 59, 59, 999)
+      daysCount = 30
+    }
+
     const bookingsByDate = {}
     bookings.forEach(b => {
       const d = new Date(b.bookedOnRaw)
       if (isNaN(d.getTime())) return
-      const dateKey = d.toISOString().split('T')[0]
-      bookingsByDate[dateKey] = (bookingsByDate[dateKey] || 0) + 1
+      if (d >= start && d <= end) {
+        const dateKey = d.toISOString().split('T')[0]
+        bookingsByDate[dateKey] = (bookingsByDate[dateKey] || 0) + 1
+      }
     })
 
-    // Get last 30 days
-    const days30 = []
-    for (let i = 0; i < 30; i++) {
-      const d = new Date(now)
-      d.setDate(d.getDate() - i)
+    // Generate daily buckets
+    const dailyData = []
+    for (let i = 0; i < daysCount; i++) {
+      const d = new Date(start)
+      d.setDate(d.getDate() + i)
       const dateKey = d.toISOString().split('T')[0]
-      days30.push({ date: dateKey, count: bookingsByDate[dateKey] || 0 })
+      dailyData.push({ date: dateKey, count: bookingsByDate[dateKey] || 0 })
     }
-    days30.reverse() // Oldest to newest
 
     // Avg Daily Count
-    const totalCount30 = days30.reduce((acc, curr) => acc + curr.count, 0)
-    const avgGrowthCount = Math.round(totalCount30 / 30)
+    const totalCount = dailyData.reduce((acc, curr) => acc + curr.count, 0)
+    const avgGrowthCount = Math.round(totalCount / daysCount)
 
-    // Trend for Count (Last 7 vs Prev 7)
-    const last7 = days30.slice(-7)
-    const prev7 = days30.slice(-14, -7)
-    const avgLast7 = last7.reduce((a, c) => a + c.count, 0) / 7
-    const avgPrev7 = prev7.reduce((a, c) => a + c.count, 0) / 7
-    const isCountIncreasing = avgLast7 >= avgPrev7
+    // Trend for Count (Compare first half vs second half of the period)
+    let isCountIncreasing = false
+    if (dailyData.length >= 2) {
+      const mid = Math.floor(dailyData.length / 2)
+      const firstHalf = dailyData.slice(0, mid)
+      const secondHalf = dailyData.slice(mid)
+      const avgFirst =
+        firstHalf.reduce((a, c) => a + c.count, 0) / firstHalf.length
+      const avgSecond =
+        secondHalf.reduce((a, c) => a + c.count, 0) / secondHalf.length
+      isCountIncreasing = avgSecond >= avgFirst
+    }
 
     // Avg Daily Growth %
     let totalPctChange = 0
     let validDays = 0
     const pctChanges = []
 
-    for (let i = 1; i < days30.length; i++) {
-      const prev = days30[i - 1].count
-      const curr = days30[i].count
+    for (let i = 1; i < dailyData.length; i++) {
+      const prev = dailyData[i - 1].count
+      const curr = dailyData[i].count
       let pct = 0
       if (prev === 0) {
         pct = curr > 0 ? 100 : 0
@@ -266,20 +323,20 @@ export default function TransactionsForm () {
     }
 
     const avgGrowthPercentVal = validDays > 0 ? totalPctChange / validDays : 0
-    const avgGrowthPercent = `${avgGrowthPercentVal.toFixed(2)}%`
+    const finalGrowthPercent = Math.min(avgGrowthPercentVal, 100)
+    const avgGrowthPercent = `${finalGrowthPercent.toFixed(2)}%`
 
-    // Trend for % (Last 7 vs Prev 7)
-    const last7Pct = pctChanges.slice(-7)
-    const prev7Pct = pctChanges.slice(-14, -7)
-    const avgLast7Pct =
-      last7Pct.length > 0
-        ? last7Pct.reduce((a, c) => a + c, 0) / last7Pct.length
-        : 0
-    const avgPrev7Pct =
-      prev7Pct.length > 0
-        ? prev7Pct.reduce((a, c) => a + c, 0) / prev7Pct.length
-        : 0
-    const isPctIncreasing = avgLast7Pct >= avgPrev7Pct
+    // Trend for %
+    let isPctIncreasing = false
+    if (pctChanges.length >= 2) {
+      const mid = Math.floor(pctChanges.length / 2)
+      const firstHalf = pctChanges.slice(0, mid)
+      const secondHalf = pctChanges.slice(mid)
+      const avgFirst = firstHalf.reduce((a, c) => a + c, 0) / firstHalf.length
+      const avgSecond =
+        secondHalf.reduce((a, c) => a + c, 0) / secondHalf.length
+      isPctIncreasing = avgSecond >= avgFirst
+    }
 
     setStats({
       yesterdayCount,
@@ -289,7 +346,7 @@ export default function TransactionsForm () {
       avgGrowthPercent,
       isPctIncreasing
     })
-  }, [bookings, statsLoadedFromApi])
+  }, [bookings, statsLoadedFromApi, dateRange])
 
   useEffect(() => {
     const handleClickOutside = event => {
@@ -422,10 +479,14 @@ export default function TransactionsForm () {
           }
 
           const avgGrowthCount = Number(d.avgDailyGrowthCount || 0)
-          const avgGrowthPercentStr = String(d.avgDailyGrowthPercent || '0%')
-          const avgGrowthPercentVal = parseFloat(
-            avgGrowthPercentStr.replace('%', '')
+          let avgGrowthPercentVal = parseFloat(
+            String(d.avgDailyGrowthPercent || '0%').replace('%', '')
           )
+          if (isNaN(avgGrowthPercentVal)) avgGrowthPercentVal = 0
+
+          // Cap at 100%
+          const finalGrowthPercentVal = Math.min(avgGrowthPercentVal)
+          const avgGrowthPercentStr = `${finalGrowthPercentVal.toFixed(2)}%`
 
           setStats({
             yesterdayCount,
@@ -808,6 +869,7 @@ export default function TransactionsForm () {
               </label>
               <input
                 type='date'
+                max={new Date().toISOString().split('T')[0]}
                 value={dateRange.start}
                 onChange={e =>
                   setDateRange(prev => ({ ...prev, start: e.target.value }))
@@ -822,6 +884,7 @@ export default function TransactionsForm () {
               </label>
               <input
                 type='date'
+                max={new Date().toISOString().split('T')[0]}
                 value={dateRange.end}
                 onChange={e =>
                   setDateRange(prev => ({ ...prev, end: e.target.value }))
@@ -875,19 +938,26 @@ export default function TransactionsForm () {
                 Avg Daily Growth (Count)
               </p>
               <div className='flex items-end gap-2'>
-                <p className='text-2xl text-black font-bold'>
-                  {stats.avgGrowthCount}
-                </p>
                 {stats.isCountIncreasing ? (
-                  <span className='text-xs flex items-center mb-1 text-green-500'>
-                    <TbTrendingUp className='w-3 h-3 mr-0.5' />
-                    Increasing
-                  </span>
+                  <>
+                    <p className='text-2xl text-green-600 font-bold'>
+                      {stats.avgGrowthCount}
+                    </p>
+                    <span className='text-xs flex items-center mb-1 text-green-600'>
+                      <TbTrendingUp className='w-3 h-3 mr-0.5' />
+                      Increasing
+                    </span>
+                  </>
                 ) : (
-                  <span className='text-xs flex items-center mb-1 text-red-500'>
-                    <TbTrendingDown className='w-3 h-3 mr-0.5' />
-                    Decreasing
-                  </span>
+                  <>
+                    <p className='text-2xl text-red-500 font-bold'>
+                      {stats.avgGrowthCount}
+                    </p>
+                    <span className='text-xs flex items-center mb-1 text-red-500'>
+                      <TbTrendingDown className='w-3 h-3 mr-0.5' />
+                      Decreasing
+                    </span>
+                  </>
                 )}
               </div>
             </div>
@@ -905,21 +975,83 @@ export default function TransactionsForm () {
                 Avg Daily Growth (%)
               </p>
               <div className='flex items-end gap-2'>
-                <p className='text-2xl text-black font-bold'>
-                  {stats.avgGrowthPercent}
-                </p>
                 {stats.isPctIncreasing ? (
-                  <span className='text-xs flex items-center mb-1 text-green-500'>
-                    <TbTrendingUp className='w-3 h-3 mr-0.5' />
-                    Increasing
-                  </span>
+                  <>
+                    <p className='text-2xl text-green-600 font-bold'>
+                      {stats.avgGrowthPercent}
+                    </p>
+
+                    <span className='text-xs flex items-center mb-1 text-green-600'>
+                      <TbTrendingUp className='w-3 h-3 mr-0.5' />
+                      Increasing
+                    </span>
+                  </>
                 ) : (
-                  <span className='text-xs flex items-center mb-1 text-red-500'>
-                    <TbTrendingDown className='w-3 h-3 mr-0.5' />
-                    Decreasing
-                  </span>
+                  <>
+                    <p className='text-2xl text-red-600 font-bold'>
+                      {stats.avgGrowthPercent}
+                    </p>
+                    <span className='text-xs flex items-center mb-1 text-red-600'>
+                      <TbTrendingDown className='w-3 h-3 mr-0.5' />
+                      Decreasing
+                    </span>
+                  </>
                 )}
               </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Additional Stats Cards (Filtered) */}
+      <div className='grid grid-cols-1 md:grid-cols-2 gap-4 mb-6'>
+        {/* Total Event Bookings (Filtered) */}
+        <div className='bg-blue-300 text-white p-4 rounded-lg'>
+          <div className='flex items-center'>
+            <div className='bg-white p-2 rounded-lg mr-3'>
+              <TbTicket className='w-6 h-6 text-blue-600' />
+            </div>
+            <div>
+              <p className='text-xs text-black opacity-90'>
+                Total Event Bookings
+              </p>
+              <p className='text-2xl text-black font-bold'>
+                {filteredBookings.length}{' '}
+                <span className='text-lg font-semibold opacity-90'>
+                  (₦
+                  {filteredBookings
+                    .reduce((acc, curr) => acc + (curr.amountNum || 0), 0)
+                    .toLocaleString()}
+                  )
+                </span>
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* New Bookings Today (Filtered) */}
+        <div className='bg-orange-300 text-white p-4 rounded-lg'>
+          <div className='flex items-center'>
+            <div className='bg-white p-2 rounded-lg mr-3'>
+              <TbTrendingUp className='w-6 h-6 text-orange-600' />
+            </div>
+            <div>
+              <p className='text-xs text-black opacity-90'>
+                New Bookings Today
+              </p>
+              <p className='text-2xl text-black font-bold'>
+                {
+                  filteredBookings.filter(b => {
+                    const d = new Date(b.bookedOnRaw)
+                    const now = new Date()
+                    return (
+                      d.getDate() === now.getDate() &&
+                      d.getMonth() === now.getMonth() &&
+                      d.getFullYear() === now.getFullYear()
+                    )
+                  }).length
+                }
+              </p>
             </div>
           </div>
         </div>

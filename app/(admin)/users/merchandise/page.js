@@ -262,13 +262,19 @@ export default function MerchandisePage () {
             avgGrowthPercentStr.replace('%', '')
           )
 
+          // Cap at 100%
+          const finalGrowthPercentVal = Math.min(avgGrowthPercentVal, 100)
+          const avgGrowthPercentStrCapped = `${finalGrowthPercentVal.toFixed(
+            2
+          )}%`
+
           setStats({
             yesterdayCount,
             yesterdayDateStr,
             avgGrowthCount,
             isCountIncreasing: avgGrowthCount >= 0,
-            avgGrowthPercent: avgGrowthPercentStr,
-            isPctIncreasing: avgGrowthPercentVal >= 0
+            avgGrowthPercent: avgGrowthPercentStrCapped,
+            isPctIncreasing: finalGrowthPercentVal >= 0
           })
           setStatsLoadedFromApi(true)
           hasApiStats = true
@@ -511,6 +517,7 @@ export default function MerchandisePage () {
             ? `${qty} x ${toCurrency(unitPrice)}`
             : `${toCurrency(unitPrice)}`,
           totalAmount: toCurrency(total),
+          amountNum: total,
           activityStatus: activity,
           paymentStatus: payment,
           rawOrder: o,
@@ -756,19 +763,26 @@ export default function MerchandisePage () {
                 Avg Daily Growth (Count)
               </p>
               <div className='flex items-end gap-2'>
-                <p className='text-2xl text-black font-bold'>
-                  {stats.avgGrowthCount}
-                </p>
                 {stats.isCountIncreasing ? (
-                  <span className='text-xs flex items-center mb-1 text-green-500'>
-                    <TbTrendingUp className='w-3 h-3 mr-0.5' />
-                    Increasing
-                  </span>
+                  <>
+                    <p className='text-2xl text-black font-bold'>
+                      {stats.avgGrowthCount}
+                    </p>
+                    <span className='text-xs flex items-center mb-1 text-green-600'>
+                      <TbTrendingUp className='w-3 h-3 mr-0.5' />
+                      Increasing
+                    </span>
+                  </>
                 ) : (
-                  <span className='text-xs flex items-center mb-1 text-red-500'>
-                    <TbTrendingDown className='w-3 h-3 mr-0.5' />
-                    Decreasing
-                  </span>
+                  <>
+                    <p className='text-2xl text-black font-bold'>
+                      {stats.avgGrowthCount}
+                    </p>
+                    <span className='text-xs flex items-center mb-1 text-red-500'>
+                      <TbTrendingDown className='w-3 h-3 mr-0.5' />
+                      Decreasing
+                    </span>
+                  </>
                 )}
               </div>
             </div>
@@ -790,7 +804,7 @@ export default function MerchandisePage () {
                   {stats.avgGrowthPercent}
                 </p>
                 {stats.isPctIncreasing ? (
-                  <span className='text-xs flex items-center mb-1 text-green-500'>
+                  <span className='text-xs flex items-center mb-1 text-green-600'>
                     <TbTrendingUp className='w-3 h-3 mr-0.5' />
                     Increasing
                   </span>
@@ -801,6 +815,61 @@ export default function MerchandisePage () {
                   </span>
                 )}
               </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Additional Stats Cards (Filtered) */}
+      <div className='grid grid-cols-1 md:grid-cols-2 gap-4 mb-6'>
+        {/* Total Merchandise Bookings (Filtered) */}
+        <div className='bg-blue-300 text-white p-4 rounded-lg'>
+          <div className='flex items-center'>
+            <div className='bg-white p-2 rounded-lg mr-3'>
+              <TbTicket className='w-6 h-6 text-blue-600' />
+            </div>
+            <div>
+              <p className='text-xs text-black opacity-90'>
+                Total Merchandise Bookings
+              </p>
+              <p className='text-2xl text-black font-bold'>
+                {filteredMerchandise.length}{' '}
+                <span className='text-lg font-semibold opacity-90'>
+                  (₦
+                  {filteredMerchandise
+                    .reduce((acc, curr) => acc + (curr.amountNum || 0), 0)
+                    .toLocaleString()}
+                  )
+                </span>
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* New Bookings Today (Filtered) */}
+        <div className='bg-orange-300 text-white p-4 rounded-lg'>
+          <div className='flex items-center'>
+            <div className='bg-white p-2 rounded-lg mr-3'>
+              <TbTicket className='w-6 h-6 text-orange-600' />
+            </div>
+            <div>
+              <p className='text-xs text-black opacity-90'>
+                New Bookings Today
+              </p>
+              <p className='text-2xl text-black font-bold'>
+                {
+                  filteredMerchandise.filter(b => {
+                    if (!b.rawOrder?.createdAt) return false
+                    const d = new Date(b.rawOrder.createdAt)
+                    const today = new Date()
+                    return (
+                      d.getDate() === today.getDate() &&
+                      d.getMonth() === today.getMonth() &&
+                      d.getFullYear() === today.getFullYear()
+                    )
+                  }).length
+                }
+              </p>
             </div>
           </div>
         </div>
