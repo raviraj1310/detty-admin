@@ -158,7 +158,7 @@ export default function MerchOrdersList() {
         : [],
     [ordersRaw]
   );
-
+  console.log(orders, "Orders");
   const filtered = useMemo(() => {
     const term = String(searchTerm || "")
       .trim()
@@ -172,7 +172,7 @@ export default function MerchOrdersList() {
       const t = term;
       const text = `${o.userName} ${o.email} ${o.phone} ${o.details} ${
         o.date
-      } ${o.amount} ${toCurrency(o.amount)}`.toLowerCase();
+      } ${o.amount} ${toCurrency(o.amount)} ${o.status}`.toLowerCase();
       return text.includes(t) && statusOk;
     });
   }, [orders, searchTerm, statusFilter]);
@@ -323,9 +323,7 @@ export default function MerchOrdersList() {
             className={`${card.bg} rounded-xl p-3 relative overflow-hidden border border-gray-100`}
           >
             <div className="flex items-center justify-between">
-              <div
-                className={`${card.iconBg} p-2.5 rounded-xl flex-shrink-0`}
-              >
+              <div className={`${card.iconBg} p-2.5 rounded-xl flex-shrink-0`}>
                 <img src={card.iconSrc} alt={card.title} className="w-6 h-6" />
               </div>
               <div className="text-right">
@@ -334,9 +332,7 @@ export default function MerchOrdersList() {
                 >
                   {card.title}
                 </p>
-                <p
-                  className={`text-2xl font-bold ${card.textColor}`}
-                >
+                <p className={`text-2xl font-bold ${card.textColor}`}>
                   {String(card.count)}
                 </p>
                 <p
