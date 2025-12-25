@@ -40,6 +40,9 @@ export default function LeadwayPage() {
   const [detailOpen, setDetailOpen] = useState(false);
   const [selected, setSelected] = useState(null);
   const [apiStats, setApiStats] = useState(null);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [statusFilter, setStatusFilter] = useState("");
+
   const [stats, setStats] = useState({
     yesterdayCount: 0,
     yesterdayDateStr: "",
@@ -425,6 +428,10 @@ export default function LeadwayPage() {
     );
   };
 
+  const handleToggleFilters = () => {
+    setFiltersOpen((v) => !v);
+  };
+
   return (
     <div className="p-4 h-full flex flex-col bg-white">
       <div className="mb-4">
@@ -620,7 +627,23 @@ export default function LeadwayPage() {
                   <Search className="w-4 h-4 text-gray-600 absolute left-3 top-2.5" />
                 </div>
 
-                <button className="h-9 flex items-center px-4 border border-gray-300 rounded-lg hover:bg-gray-50 bg-white">
+                {filtersOpen && (
+                  <div className="relative">
+                    <select
+                      value={statusFilter}
+                      onChange={(e) => setStatusFilter(e.target.value)}
+                      className="h-9 px-3 border border-gray-300 rounded-lg bg-white text-xs text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                      <option value="">All Status</option>
+                      <option value="Active">Active</option>
+                      <option value="Inactive">Inactive</option>
+                    </select>
+                  </div>
+                )}
+                <button
+                  onClick={handleToggleFilters}
+                  className="h-9 flex items-center px-4 border border-gray-300 rounded-lg hover:bg-gray-50 bg-white"
+                >
                   <svg
                     className="w-4 h-4 mr-2 text-gray-600"
                     fill="none"
@@ -635,7 +658,7 @@ export default function LeadwayPage() {
                     />
                   </svg>
                   <span className="text-xs text-gray-700 font-medium">
-                    Filters
+                    {filtersOpen ? "Hide Filters" : "Filters"}
                   </span>
                 </button>
 

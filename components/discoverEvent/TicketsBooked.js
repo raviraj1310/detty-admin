@@ -320,8 +320,6 @@ export default function TicketsBooked() {
     return String(v);
   };
 
-  console.log("Bookings:", bookings);
-
   const filteredBookings = bookings.filter((booking) => {
     const term = String(searchTerm || "").toLowerCase();
     if (!term) return true;

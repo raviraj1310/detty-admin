@@ -185,6 +185,9 @@ export default function TransactionsForm() {
   const [sortKey, setSortKey] = useState("date");
   const [sortDir, setSortDir] = useState("desc");
   const [statsLoadedFromApi, setStatsLoadedFromApi] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [statusFilter, setStatusFilter] = useState("");
+  const [paymentStatusFilter, setPaymentStatusFilter] = useState("");
 
   const [stats, setStats] = useState({
     yesterdayCount: 0,
@@ -593,6 +596,16 @@ export default function TransactionsForm() {
       }
       if (!matchesDate) return false;
 
+      if (paymentStatusFilter) {
+        const paymentStatus = String(booking.paymentStatus || "")
+          .toLowerCase()
+          .trim();
+
+        if (paymentStatus !== paymentStatusFilter.toLowerCase()) {
+          return false;
+        }
+      }
+
       const term = String(searchTerm || "")
         .trim()
         .toLowerCase();
@@ -879,6 +892,10 @@ export default function TransactionsForm() {
     }
     return String(v);
   };
+  const handleToggleFilters = () => {
+    setFiltersOpen((v) => !v);
+  };
+
   return (
     <div className="p-4 h-full flex flex-col bg-white">
       {/* Header with Date Range */}
@@ -1105,9 +1122,25 @@ export default function TransactionsForm() {
                     />
                   </svg>
                 </div>
-
                 {/* Filters */}
-                <button className="h-9 flex items-center px-4 border border-gray-300 rounded-lg hover:bg-gray-50 bg-white">
+                {filtersOpen && (
+                  <div className="relative">
+                    <select
+                      value={paymentStatusFilter}
+                      onChange={(e) => setPaymentStatusFilter(e.target.value)}
+                      className="h-9 px-3 border border-gray-300 rounded-lg bg-white text-xs text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                      <option value="">All Payments</option>
+                      <option value="completed">Completed</option>
+                      <option value="pending">Pending</option>
+                      <option value="paid">Paid</option>
+                    </select>
+                  </div>
+                )}
+                <button
+                  onClick={handleToggleFilters}
+                  className="h-9 flex items-center px-4 border border-gray-300 rounded-lg hover:bg-gray-50 bg-white"
+                >
                   <svg
                     className="w-4 h-4 mr-2 text-gray-600"
                     fill="none"
@@ -1122,7 +1155,7 @@ export default function TransactionsForm() {
                     />
                   </svg>
                   <span className="text-xs text-gray-700 font-medium">
-                    Filters
+                    {filtersOpen ? "Hide Filters" : "Filters"}
                   </span>
                 </button>
 
