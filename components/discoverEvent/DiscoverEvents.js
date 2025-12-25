@@ -314,12 +314,16 @@ export default function DiscoverEvents() {
     const locLc = String(r.location || "").toLowerCase();
     const dateStr = String(r.eventDate || "").toLowerCase();
     const dateDigits = dateStr.replace(/[^0-9]/g, "");
+    const statusLc = String(r.status || "").toLowerCase();
+
     const matchesText =
       name.includes(term) ||
       host.includes(term) ||
       typeLc.includes(term) ||
       locLc.includes(term) ||
-      dateStr.includes(term);
+      dateStr.includes(term) ||
+      statusLc.includes(term); // ✅
+
     const matchesDigits = digits && dateDigits.includes(digits);
     return (matchesText || matchesDigits) && typeOk && locationOk && statusOk;
   });
@@ -495,7 +499,9 @@ export default function DiscoverEvents() {
               className={`${card.bg} rounded-xl p-3 relative overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 border border-gray-100`}
             >
               <div className="flex items-center justify-between gap-2">
-                <div className={`${card.iconBg} p-2.5 rounded-lg flex-shrink-0 shadow-sm`}>
+                <div
+                  className={`${card.iconBg} p-2.5 rounded-lg flex-shrink-0 shadow-sm`}
+                >
                   <img
                     src={card.iconSrc}
                     alt={card.title}
@@ -503,10 +509,14 @@ export default function DiscoverEvents() {
                   />
                 </div>
                 <div className="text-right flex-1 min-w-0">
-                  <p className={`${card.textColor} opacity-80 text-xs font-medium mb-0.5 leading-tight`}>
+                  <p
+                    className={`${card.textColor} opacity-80 text-xs font-medium mb-0.5 leading-tight`}
+                  >
                     {card.title}
                   </p>
-                  <p className={`text-2xl font-bold ${card.textColor} tracking-tight`}>
+                  <p
+                    className={`text-2xl font-bold ${card.textColor} tracking-tight`}
+                  >
                     {String(cardValue)}
                   </p>
                 </div>
