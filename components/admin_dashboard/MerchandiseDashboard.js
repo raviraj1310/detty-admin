@@ -14,18 +14,44 @@ const formatCurrency = amount => {
   )
 }
 
-const MerchandiseStats = ({ stats: apiStats }) => {
+const MerchandiseStats = ({ stats: apiStats, summary }) => {
+  const skuCount =
+    (summary && Number(summary.skuCount || 0)) ||
+    Number(apiStats?.totalProducts || 0)
+  const totalQuantity =
+    (summary && Number(summary.totalProductsQuantity || 0)) || 0
+  const totalValue =
+    (summary && formatCurrency(summary.totalProductsValue)) ||
+    formatCurrency(apiStats?.totalProductsRevenue)
+  const unsoldProducts =
+    (summary && Number(summary?.unsold?.productsCount || 0)) || 0
+  const unsoldUnits = (summary && Number(summary?.unsold?.units || 0)) || 0
+  const unsoldValue =
+    (summary && formatCurrency(summary?.unsold?.value)) || '₦0'
+  const productsSold =
+    (summary && Number(summary?.sold?.productsCount || 0)) || 0
+  const soldUnits = (summary && Number(summary?.sold?.units || 0)) || 0
+  const soldValue = (summary && formatCurrency(summary?.sold?.revenue)) || '₦0'
+
   const stats = {
-    skuCount: apiStats?.totalProducts || 0,
-    totalQuantity: 0, // Not provided in API
-    totalValue: formatCurrency(apiStats?.totalProductsRevenue),
-    unsoldProducts: 0, // Not provided in API
-    unsoldValue: '₦0', // Not provided in API
-    productsSold: 0, // Not provided in API
-    soldValue: '₦0' // Not provided in API
+    skuCount,
+    totalQuantity,
+    totalValue,
+    unsoldProducts,
+    unsoldValue,
+    productsSold,
+    soldValue
   }
 
-  const growthData = apiStats?.growth?.products || {}
+  const growthData =
+    (summary && summary.growth) || apiStats?.growth?.products || {}
+
+  const totalUnits =
+    soldUnits + unsoldUnits || Number(summary?.totalProductsQuantity || 0) || 0
+  const circumference = 502
+  const soldArc =
+    totalUnits > 0 ? Math.round((soldUnits / totalUnits) * circumference) : 0
+  const soldDashArray = `${soldArc} ${circumference}`
 
   return (
     <div className='bg-white rounded-2xl shadow-sm p-6 border border-gray-100  h-full flex flex-col'>
@@ -110,7 +136,7 @@ const MerchandiseStats = ({ stats: apiStats }) => {
                 stroke='#E5E7EB'
                 strokeWidth='20'
               />
-              {/* Products Sold - Green arc (58% = 140/242) */}
+              {/* Products Sold - Green arc */}
               <circle
                 cx='100'
                 cy='100'
@@ -118,7 +144,7 @@ const MerchandiseStats = ({ stats: apiStats }) => {
                 fill='none'
                 stroke='#10B981'
                 strokeWidth='20'
-                strokeDasharray='290 502'
+                strokeDasharray={soldDashArray}
                 strokeDashoffset='0'
                 transform='rotate(-90 100 100)'
                 strokeLinecap='round'
@@ -140,7 +166,7 @@ const MerchandiseStats = ({ stats: apiStats }) => {
                 className='text-2xl font-bold fill-gray-900'
                 fontSize='24'
               >
-                {stats.skuCount}
+                {stats.totalQuantity || stats.skuCount}
               </text>
             </svg>
 
@@ -312,7 +338,8 @@ const LeastMovingProducts = ({ products = [] }) => {
 export default function MerchandiseDashboard ({ stats, startDate, endDate }) {
   const [merchandiseData, setMerchandiseData] = useState({
     bestSellingProducts: [],
-    leastSellingProducts: []
+    leastSellingProducts: [],
+    merchandiseSummary: null
   })
 
   useEffect(() => {
@@ -326,7 +353,8 @@ export default function MerchandiseDashboard ({ stats, startDate, endDate }) {
         if (response?.success && response?.data) {
           setMerchandiseData({
             bestSellingProducts: response.data.bestSellingProducts || [],
-            leastSellingProducts: response.data.leastSellingProducts || []
+            leastSellingProducts: response.data.leastSellingProducts || [],
+            merchandiseSummary: response.data.merchandiseSummary || null
           })
         }
       } catch (error) {
@@ -340,7 +368,10 @@ export default function MerchandiseDashboard ({ stats, startDate, endDate }) {
   return (
     <div className='flex flex-col lg:flex-row w-full gap-6 items-stretch overflow-hidden'>
       <div className='w-full lg:w-[450px] flex-shrink-0'>
-        <MerchandiseStats stats={stats} />
+        <MerchandiseStats
+          stats={stats}
+          summary={merchandiseData.merchandiseSummary}
+        />
       </div>
       <div className='flex flex-col sm:flex-row flex-1 bg-white p-4 rounded-xl gap-4 min-w-0 overflow-hidden'>
         <div className='flex-1 min-w-0 overflow-hidden'>
