@@ -31,6 +31,7 @@ import {
   updateActivityCoupon,
   deleteActivityCoupon,
   updateDiscountStatus,
+  updateActivityDiscountStatus,
 } from "@/services/discount/discount.service";
 import { getAllEvents } from "@/services/discover-events/event.service";
 import {
@@ -108,6 +109,7 @@ export default function DiscountMaster() {
     discountValue: "",
     validUpTo: "",
   });
+  const [activityDiscounts, setActivityDiscounts] = useState([]); // ✅ define the state
 
   const handleInputChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -815,11 +817,41 @@ export default function DiscountMaster() {
     }
   };
 
-  const handleStatusChange = async (id, currentStatus) => {
+  const handleEventStatusChange = async (id, currentStatus) => {
     setRowActionLoading(id);
     try {
       const newStatus = !currentStatus;
       await updateDiscountStatus(id, newStatus);
+      setDiscounts((prev) =>
+        prev.map((d) => (d._id === id ? { ...d, status: newStatus } : d))
+      );
+
+      setToast({
+        open: true,
+        title: "Status Updated",
+        description: `Discount marked as ${newStatus ? "active" : "inactive"}`,
+        variant: "success",
+      });
+    } catch (error) {
+      console.error("Failed to change status", error);
+      setToast({
+        open: true,
+        title: "Error",
+        description: "Failed to update status",
+        variant: "destructive",
+      });
+    } finally {
+      setRowActionLoading(null);
+      setMenuOpenId(null);
+    }
+  };
+
+  const handleActivityDiscountStatusChange = async (id, currentStatus) => {
+    setRowActionLoading(id);
+    try {
+      const newStatus = !currentStatus;
+      await updateActivityDiscountStatus(id, newStatus);
+
       setDiscounts((prev) =>
         prev.map((d) => (d._id === id ? { ...d, status: newStatus } : d))
       );
@@ -1518,9 +1550,16 @@ export default function DiscountMaster() {
 
                             {/* status change */}
                             <button
-                              onClick={() =>
-                                handleStatusChange(d._id, d.status)
-                              }
+                              onClick={() => {
+                                if (activeTab === "event") {
+                                  handleEventStatusChange(d._id, d.status); // call event status handler
+                                } else if (activeTab === "activity") {
+                                  handleActivityDiscountStatusChange(
+                                    d._id,
+                                    d.status
+                                  ); // call activity status handler
+                                }
+                              }}
                               disabled={rowActionLoading === d._id}
                               className={`flex w-full items-center gap-2 px-3 py-2 text-sm ${
                                 d.status

@@ -154,3 +154,17 @@ export const updateDiscountStatus = async (discountId, newStatus) => {
     throw error;
   }
 };
+
+export const updateActivityDiscountStatus = async (discountId, newStatus) => {
+  console.log(discountId, "activity discountId");
+  try {
+    const response = await api.put(
+      `/activity-type/activity-coupon/status/${discountId}`,
+      { status: newStatus } // send boolean
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error updating activity discount status:", error);
+    throw error;
+  }
+};
