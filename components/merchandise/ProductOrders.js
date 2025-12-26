@@ -291,6 +291,41 @@ export default function ProductOrders() {
     },
   ];
 
+  const flattenObject = (obj, parentKey = "", res = {}) => {
+    for (let key in obj) {
+      if (!obj.hasOwnProperty(key)) continue;
+
+      const propName = parentKey ? `${parentKey}.${key}` : key;
+      const value = obj[key];
+
+      if (
+        value &&
+        typeof value === "object" &&
+        !Array.isArray(value) &&
+        !(value instanceof Date)
+      ) {
+        flattenObject(value, propName, res);
+      } else if (Array.isArray(value)) {
+        // Convert array to string (customize as needed)
+        res[propName] = value
+          .map((item) =>
+            typeof item === "object" ? JSON.stringify(item) : item
+          )
+          .join(", ");
+      } else {
+        res[propName] = value;
+      }
+    }
+    return res;
+  };
+
+  const handleDownloadRawDataExcel = () => {
+    if (!rawData || rawData.length === 0) return;
+
+    const flattenedData = rawData.map((item) => flattenObject(item));
+    downloadExcel(flattenedData, `orders-raw-${productId || "all"}.xlsx`);
+  };
+
   return (
     <div className="space-y-7 py-12 px-6 lg:px-12">
       <Toast
@@ -317,9 +352,7 @@ export default function ProductOrders() {
             className={`${card.bg} rounded-xl p-3 relative overflow-hidden border border-gray-100`}
           >
             <div className="flex items-center justify-between">
-              <div
-                className={`${card.iconBg} p-2.5 rounded-xl flex-shrink-0`}
-              >
+              <div className={`${card.iconBg} p-2.5 rounded-xl flex-shrink-0`}>
                 <img src={card.iconSrc} alt={card.title} className="w-6 h-6" />
               </div>
               <div className="text-right">
@@ -377,7 +410,7 @@ export default function ProductOrders() {
               {filtersOpen ? "Hide Filters" : "Filters"}
             </button>
             <button
-              onClick={handleDownloadProductExcel}
+              onClick={handleDownloadRawDataExcel}
               disabled={exporting}
               className="flex h-10 items-center gap-2 rounded-xl border border-[#E5E6F7] bg-white px-4 text-sm font-medium text-[#2D3658] transition hover:bg-[#F6F7FD]"
             >
