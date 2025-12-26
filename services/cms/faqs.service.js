@@ -119,3 +119,15 @@ export const updateFAQCategoryStatus = async (categoryId, newStatus) => {
     throw error;
   }
 };
+
+export const updateFAQStatus = async (faqId, newStatus) => {
+  try {
+    const response = await api.put(`/faq/update-faq-status/${faqId}`, {
+      status: newStatus,
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error updating FAQ status:", error);
+    throw error;
+  }
+};

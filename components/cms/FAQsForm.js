@@ -17,6 +17,7 @@ import {
   getAllFAQs,
   deleteFAQ,
   updateFAQCategoryStatus,
+  updateFAQStatus,
 } from "@/services/cms/faqs.service";
 
 export default function FAQsForm() {
@@ -30,6 +31,12 @@ export default function FAQsForm() {
   const [confirmId, setConfirmId] = useState(null);
   const [deleting, setDeleting] = useState(false);
   const [rowActionLoading, setRowActionLoading] = useState(null);
+  const [toast, setToast] = useState({
+    open: false,
+    title: "",
+    description: "",
+    variant: "success",
+  });
 
   const loadFAQs = async () => {
     setLoading(true);
@@ -131,6 +138,35 @@ export default function FAQsForm() {
     }
   };
 
+  const handleFaqStatusChange = async (faqId, currentStatus) => {
+    setRowActionLoading(faqId);
+    try {
+      const newStatus = !currentStatus;
+
+      await updateFAQStatus(faqId, newStatus);
+
+      setFaqs((prev) =>
+        prev.map((f) => (f.id === faqId ? { ...f, status: newStatus } : f))
+      );
+
+      setToast({
+        open: true,
+        title: "Status Updated",
+        description: `FAQ marked as ${newStatus ? "active" : "inactive"}`,
+        variant: "success",
+      });
+    } catch (error) {
+      setToast({
+        open: true,
+        title: "Error",
+        description: error?.message || "Failed to update FAQ status",
+        variant: "destructive",
+      });
+    } finally {
+      setRowActionLoading(null);
+      setOpenMenuId(null);
+    }
+  };
 
   return (
     <div className="p-3 sm:p-4 lg:p-6 pt-16 lg:pt-6 bg-white min-h-screen">
@@ -326,12 +362,12 @@ export default function FAQsForm() {
                           >
                             {faq.status ? (
                               <>
-                                <XCircle className="inline h-4 w-4 mr-1" />
+                                <XCircle className="inline h-4 w-4 mr-1" />{" "}
                                 Inactive
                               </>
                             ) : (
                               <>
-                                <CheckCircle className="inline h-4 w-4 mr-1" />
+                                <CheckCircle className="inline h-4 w-4 mr-1" />{" "}
                                 Active
                               </>
                             )}
