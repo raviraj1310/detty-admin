@@ -1,7 +1,8 @@
 'use client'
 
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { dashboardMerchandise } from '@/services/auth/login.service'
 
 const formatCurrency = amount => {
   return (
@@ -13,18 +14,44 @@ const formatCurrency = amount => {
   )
 }
 
-const MerchandiseStats = ({ stats: apiStats }) => {
+const MerchandiseStats = ({ stats: apiStats, summary }) => {
+  const skuCount =
+    (summary && Number(summary.skuCount || 0)) ||
+    Number(apiStats?.totalProducts || 0)
+  const totalQuantity =
+    (summary && Number(summary.totalProductsQuantity || 0)) || 0
+  const totalValue =
+    (summary && formatCurrency(summary.totalProductsValue)) ||
+    formatCurrency(apiStats?.totalProductsRevenue)
+  const unsoldProducts =
+    (summary && Number(summary?.unsold?.productsCount || 0)) || 0
+  const unsoldUnits = (summary && Number(summary?.unsold?.units || 0)) || 0
+  const unsoldValue =
+    (summary && formatCurrency(summary?.unsold?.value)) || '₦0'
+  const productsSold =
+    (summary && Number(summary?.sold?.productsCount || 0)) || 0
+  const soldUnits = (summary && Number(summary?.sold?.units || 0)) || 0
+  const soldValue = (summary && formatCurrency(summary?.sold?.revenue)) || '₦0'
+
   const stats = {
-    skuCount: apiStats?.totalProducts || 0,
-    totalQuantity: 0, // Not provided in API
-    totalValue: formatCurrency(apiStats?.totalProductsRevenue),
-    unsoldProducts: 0, // Not provided in API
-    unsoldValue: '₦0', // Not provided in API
-    productsSold: 0, // Not provided in API
-    soldValue: '₦0' // Not provided in API
+    skuCount,
+    totalQuantity,
+    totalValue,
+    unsoldProducts,
+    unsoldValue,
+    productsSold,
+    soldValue
   }
 
-  const growthData = apiStats?.growth?.products || {}
+  const growthData =
+    (summary && summary.growth) || apiStats?.growth?.products || {}
+
+  const totalUnits =
+    soldUnits + unsoldUnits || Number(summary?.totalProductsQuantity || 0) || 0
+  const circumference = 502
+  const soldArc =
+    totalUnits > 0 ? Math.round((soldUnits / totalUnits) * circumference) : 0
+  const soldDashArray = `${soldArc} ${circumference}`
 
   return (
     <div className='bg-white rounded-xl shadow-sm p-3 border border-gray-100 h-full flex flex-col'>
@@ -109,7 +136,7 @@ const MerchandiseStats = ({ stats: apiStats }) => {
                 stroke='#E5E7EB'
                 strokeWidth='20'
               />
-              {/* Products Sold - Green arc (58% = 140/242) */}
+              {/* Products Sold - Green arc */}
               <circle
                 cx='100'
                 cy='100'
@@ -117,7 +144,7 @@ const MerchandiseStats = ({ stats: apiStats }) => {
                 fill='none'
                 stroke='#10B981'
                 strokeWidth='20'
-                strokeDasharray='290 502'
+                strokeDasharray={soldDashArray}
                 strokeDashoffset='0'
                 transform='rotate(-90 100 100)'
                 strokeLinecap='round'
@@ -139,7 +166,7 @@ const MerchandiseStats = ({ stats: apiStats }) => {
                 className='text-xl font-bold fill-gray-900'
                 fontSize='20'
               >
-                {stats.skuCount}
+                {stats.totalQuantity || stats.skuCount}
               </text>
             </svg>
 
@@ -181,17 +208,32 @@ const MerchandiseStats = ({ stats: apiStats }) => {
   )
 }
 
+const toImageUrl = p => {
+  const s = String(p || '').trim()
+  if (!s) return null
+  if (/^https?:\/\//i.test(s)) return s
+  const originEnv = process.env.NEXT_PUBLIC_SIM_IMAGE_BASE_ORIGIN
+  const base =
+    originEnv && originEnv.trim()
+      ? originEnv.trim()
+      : 'https://accessdettyfusion.com'
+  const path = s.startsWith('/') ? s : `/${s}`
+  return `${base}${path}`
+}
+
 const ProductCard = ({ product, type }) => {
   const iconSrc =
     type === 'best'
       ? '/images/dashboard/trending_up.svg'
       : '/images/dashboard/trending_down.svg'
 
+  const imageUrl = toImageUrl(product.image) || '/images/no-image.webp'
+
   return (
     <div className='flex items-center gap-2 p-2 bg-white rounded-lg hover:bg-gray-50 transition-colors shadow-sm'>
       <div className='w-10 h-10 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0'>
         <img
-          src={product.image || '/images/no-image.webp'}
+          src={imageUrl}
           alt={product.name}
           className='w-full h-full object-cover'
         />
@@ -213,57 +255,32 @@ const ProductCard = ({ product, type }) => {
   )
 }
 
-const BestSellers = () => {
-  const products = [
-    {
-      id: 1,
-      name: 'DettyFusion T-Shirt',
-      unitsSold: '100(N3',
-      value: '40,000)',
-      image: '/images/dashboard/image.webp'
-    },
-    {
-      id: 2,
-      name: 'DettyFusion Hat',
-      unitsSold: '90(N3',
-      value: '40,000)',
-      image: '/images/dashboard/image-1.webp'
-    },
-    {
-      id: 3,
-      name: 'DettyFusion Bottle',
-      unitsSold: '80(N3',
-      value: '40,000)',
-      image: '/images/dashboard/image-2.webp'
-    },
-    {
-      id: 4,
-      name: 'DettyFusion Shirt',
-      unitsSold: '70(N3',
-      value: '40,000)',
-      image: '/images/dashboard/image-3.webp'
-    },
-    {
-      id: 5,
-      name: 'DettyFusion T-Shirt',
-      unitsSold: '60(N3',
-      value: '40,000)',
-      image: '/images/dashboard/image.webp'
-    }
-  ]
-
+const BestSellers = ({ products = [] }) => {
   return (
     <div className='rounded-xl h-full flex flex-col'>
       <h2 className='text-sm font-semibold text-gray-900 mb-2'>Best Sellers</h2>
       <div className='bg-[#F2F5F8] p-2.5 rounded-xl flex flex-col'>
         <div className='space-y-1.5'>
-          {products.map(product => (
-            <ProductCard key={product.id} product={product} type='best' />
-          ))}
+          {products.length > 0 ? (
+            products.map(product => (
+              <ProductCard
+                key={product._id}
+                product={{
+                  name: product.title,
+                  unitsSold: product.totalSales,
+                  value: formatCurrency(product.totalRevenue),
+                  image: product.image
+                }}
+                type='best'
+              />
+            ))
+          ) : (
+            <p className='text-center text-gray-500 py-4'>No data available</p>
+          )}
         </div>
         <Link
-          href='/merchandise/best-sellers'
-          className='flex items-center justify-center gap-1.5 mt-2 py-1.5 border-t border-gray-200 text-xs font-medium text-gray-900 hover:text-gray-900 transition-colors'
+          href='users/merchandise'
+          className='flex items-center justify-center gap-2 mt-3 py-2 border-t border-gray-200 text-sm  font-medium text-gray-900 hover:text-gray-900 transition-colors'
         >
           View List
           <img
@@ -277,45 +294,7 @@ const BestSellers = () => {
   )
 }
 
-const LeastMovingProducts = () => {
-  const products = [
-    {
-      id: 1,
-      name: 'DettyFusion T-Shirt',
-      unitsSold: '10(N3',
-      value: '0,000)',
-      image: '/images/dashboard/image-3.webp'
-    },
-    {
-      id: 2,
-      name: 'DettyFusion Bottle',
-      unitsSold: '10(N3',
-      value: '0,000)',
-      image: '/images/dashboard/image-2.webp'
-    },
-    {
-      id: 3,
-      name: 'DettyFusion T-Shirt',
-      unitsSold: '10(N3',
-      value: '0,000)',
-      image: '/images/dashboard/image.webp'
-    },
-    {
-      id: 4,
-      name: 'DettyFusion Hat',
-      unitsSold: '10(N3',
-      value: '0,000)',
-      image: '/images/dashboard/image-1.webp'
-    },
-    {
-      id: 5,
-      name: 'DettyFusion T-Shirt',
-      unitsSold: '10(N3',
-      value: '0,000)',
-      image: '/images/dashboard/image.webp'
-    }
-  ]
-
+const LeastMovingProducts = ({ products = [] }) => {
   return (
     <div className='rounded-xl h-full flex flex-col'>
       <h2 className='text-sm font-semibold text-gray-900 mb-2'>
@@ -323,13 +302,26 @@ const LeastMovingProducts = () => {
       </h2>
       <div className='bg-[#F2F5F8] p-2.5 rounded-xl flex flex-col'>
         <div className='space-y-1.5'>
-          {products.map(product => (
-            <ProductCard key={product.id} product={product} type='least' />
-          ))}
+          {products.length > 0 ? (
+            products.map(product => (
+              <ProductCard
+                key={product._id}
+                product={{
+                  name: product.title,
+                  unitsSold: product.totalSales,
+                  value: formatCurrency(product.totalRevenue),
+                  image: product.image
+                }}
+                type='least'
+              />
+            ))
+          ) : (
+            <p className='text-center text-gray-500 py-4'>No data available</p>
+          )}
         </div>
         <Link
-          href='/merchandise/least-moving'
-          className='flex items-center justify-center gap-1.5 mt-2 py-1.5 text-xs font-medium text-gray-900 border-t border-gray-200 hover:text-gray-900 transition-colors'
+          href='users/merchandise'
+          className='flex items-center justify-center gap-2 mt-3 py-2 text-sm font-medium text-gray-900 border-t border-gray-200 hover:text-gray-900 transition-colors'
         >
           View List
           <img
@@ -343,18 +335,52 @@ const LeastMovingProducts = () => {
   )
 }
 
-export default function MerchandiseDashboard ({ stats }) {
+export default function MerchandiseDashboard ({ stats, startDate, endDate }) {
+  const [merchandiseData, setMerchandiseData] = useState({
+    bestSellingProducts: [],
+    leastSellingProducts: [],
+    merchandiseSummary: null
+  })
+
+  useEffect(() => {
+    const fetchMerchandiseData = async () => {
+      try {
+        const params = {}
+        if (startDate) params.startDate = startDate
+        if (endDate) params.endDate = endDate
+
+        const response = await dashboardMerchandise(params)
+        if (response?.success && response?.data) {
+          setMerchandiseData({
+            bestSellingProducts: response.data.bestSellingProducts || [],
+            leastSellingProducts: response.data.leastSellingProducts || [],
+            merchandiseSummary: response.data.merchandiseSummary || null
+          })
+        }
+      } catch (error) {
+        console.error('Failed to fetch merchandise data:', error)
+      }
+    }
+
+    fetchMerchandiseData()
+  }, [startDate, endDate])
+
   return (
     <div className='flex flex-col lg:flex-row w-full gap-3 items-stretch overflow-hidden'>
       <div className='w-full lg:w-[380px] flex-shrink-0'>
-        <MerchandiseStats stats={stats} />
+        <MerchandiseStats
+          stats={stats}
+          summary={merchandiseData.merchandiseSummary}
+        />
       </div>
       <div className='flex flex-col sm:flex-row flex-1 bg-white p-3 rounded-xl gap-3 min-w-0 overflow-hidden'>
         <div className='flex-1 min-w-0 overflow-hidden'>
-          <BestSellers />
+          <BestSellers products={merchandiseData.bestSellingProducts} />
         </div>
         <div className='flex-1 min-w-0 overflow-hidden'>
-          <LeastMovingProducts />
+          <LeastMovingProducts
+            products={merchandiseData.leastSellingProducts}
+          />
         </div>
       </div>
     </div>

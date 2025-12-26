@@ -71,6 +71,11 @@ const menuSections = [
         label: 'Referral Report',
         icon: '/images/backend/side_menu/side_menu (7).svg',
         href: '/referral-reports'
+      },
+      {
+        label: 'Custom Notifications',
+        icon: '/images/backend/side_menu/side_menu (7).svg',
+        href: '/custom-notifications'
       }
 
       // { label: 'Ride Services', icon: '/images/backend/side_menu/side_menu (9).svg', href: '/users/ride-services' },

@@ -27,47 +27,51 @@ import Modal from "@/components/ui/Modal";
 
 const metricCards = [
   {
-    id: 'total',
-    title: 'Total Tickets',
-    value: '0',
-    iconSrc: '/images/backend/icons/icons (1).svg',
-    bg: 'bg-gradient-to-r from-[#E8EEFF] to-[#C5D5FF]',
-    iconBg: 'bg-white',
-    textColor: 'text-indigo-600'
+    id: "total",
+    title: "Total Tickets",
+    value: "0",
+    iconSrc: "/images/backend/icons/icons (1).svg",
+    bg: "bg-gradient-to-r from-[#E8EEFF] to-[#C5D5FF]",
+    iconBg: "bg-white",
+    textColor: "text-indigo-600",
   },
   {
-    id: 'booked',
-    title: 'Tickets Booked',
-    value: '0',
-    iconSrc: '/images/backend/icons/icons (5).svg',
-    bg: 'bg-gradient-to-r from-[#E8F8F0] to-[#B8EDD0]',
-    iconBg: 'bg-white',
-    textColor: 'text-emerald-600'
+    id: "booked",
+    title: "Tickets Booked",
+    value: "0",
+    iconSrc: "/images/backend/icons/icons (5).svg",
+    bg: "bg-gradient-to-r from-[#E8F8F0] to-[#B8EDD0]",
+    iconBg: "bg-white",
+    textColor: "text-emerald-600",
   },
   {
-    id: 'unbooked',
-    title: 'Unbooked Tickets',
-    value: '0',
-    iconSrc: '/images/backend/icons/icons (6).svg',
-    bg: 'bg-gradient-to-r from-[#FFE8E8] to-[#FFC5C5]',
-    iconBg: 'bg-white',
-    textColor: 'text-red-600'
-  }
-]
+    id: "unbooked",
+    title: "Unbooked Tickets",
+    value: "0",
+    iconSrc: "/images/backend/icons/icons (6).svg",
+    bg: "bg-gradient-to-r from-[#FFE8E8] to-[#FFC5C5]",
+    iconBg: "bg-white",
+    textColor: "text-red-600",
+  },
+];
 
 const bookingRows = [];
 
 const MetricCard = ({ title, value, iconSrc, bg, iconBg, textColor }) => (
-  <div className={`${bg} rounded-xl p-3 relative overflow-hidden shadow-md border border-gray-100`}>
-    <div className='flex items-center justify-between'>
+  <div
+    className={`${bg} rounded-xl p-3 relative overflow-hidden shadow-md border border-gray-100`}
+  >
+    <div className="flex items-center justify-between">
       {/* Icon on the left */}
       <div className={`${iconBg} p-2.5 rounded-xl flex-shrink-0`}>
-        <img src={iconSrc} alt={title} className='w-6 h-6' />
+        <img src={iconSrc} alt={title} className="w-6 h-6" />
       </div>
 
       {/* Content on the right */}
-      <div className='text-right'>
-        <p className={`${textColor} opacity-80 text-xs font-medium mb-1`}>{title}</p>
+      <div className="text-right">
+        <p className={`${textColor} opacity-80 text-xs font-medium mb-1`}>
+          {title}
+        </p>
         <p className={`text-2xl font-bold ${textColor}`}>{value}</p>
       </div>
     </div>
@@ -316,16 +320,44 @@ export default function TicketsBooked() {
     return String(v);
   };
 
-  const filteredBookings = bookings.filter(
-    (booking) =>
-      String(booking.userName || "")
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase()) ||
-      String(booking.email || "")
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase()) ||
-      String(booking.phoneNumber || "").includes(searchTerm)
-  );
+  const filteredBookings = bookings.filter((booking) => {
+    const term = String(searchTerm || "").toLowerCase();
+    if (!term) return true;
+
+    const userName = String(booking.userName || "").toLowerCase();
+    const email = String(booking.email || "").toLowerCase();
+    const phone = String(booking.phoneNumber || "").toLowerCase();
+
+    // 🔹 Format bookedOn to a searchable string
+    let bookedOnStr = "";
+    if (booking.bookedOn) {
+      const dt = new Date(booking.bookedOn);
+      if (!isNaN(dt)) {
+        bookedOnStr = dt
+          .toLocaleString(undefined, {
+            weekday: "short",
+            day: "2-digit",
+            month: "long",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+          })
+          .toLowerCase();
+      }
+    }
+
+    // 🔹 Also allow numeric search on date parts
+    const bookedOnDigits = bookedOnStr.replace(/[^0-9]/g, "");
+    const termDigits = term.replace(/[^0-9]/g, "");
+
+    return (
+      userName.includes(term) ||
+      email.includes(term) ||
+      phone.includes(term) ||
+      bookedOnStr.includes(term) ||
+      (termDigits && bookedOnDigits.includes(termDigits))
+    );
+  });
 
   const handleBack = () => {
     router.push("/discover-events");

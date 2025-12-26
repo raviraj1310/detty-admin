@@ -52,3 +52,12 @@ export const dashboardData = async (params = {}) => {
     throw error
   }
 }
+export const dashboardMerchandise = async (params = {}) => {
+  try {
+    const response = await api.get('/admin/dashboard-merchandise', { params })
+    return response.data
+  } catch (error) {
+    console.error('Error fetching dashboard data:', error)
+    throw error
+  }
+}
