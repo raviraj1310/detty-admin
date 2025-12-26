@@ -9,6 +9,8 @@ import {
   Pencil,
   Trash2,
   AlertCircle,
+  XCircle,
+  CheckCircle,
 } from "lucide-react";
 import { TbCaretUpDownFilled } from "react-icons/tb";
 import {
@@ -17,6 +19,7 @@ import {
   getPromoById,
   updatePromoBanner,
   deletePromoBanner,
+  updateBannerStatus,
 } from "@/services/promo-banner/promo-banner.service";
 import Toast from "@/components/ui/Toast";
 import ImageCropper from "@/components/ui/ImageCropper";
@@ -107,6 +110,8 @@ export default function PromoBannerMaster() {
     originalSizeBytes: 0,
     format: "",
   });
+  const [banners, setBanners] = useState([]);
+
   const [imageUrl, setImageUrl] = useState("");
   const fileInputRef = useRef(null);
   const [failedImages, setFailedImages] = useState({});
@@ -405,6 +410,39 @@ export default function PromoBannerMaster() {
     else {
       setSortKey(key);
       setSortOrder("desc");
+    }
+  };
+
+  const handleBannerStatusChange = async (id, currentStatus) => {
+    setRowActionLoading(id);
+    try {
+      const newStatus = !currentStatus;
+
+      await updateBannerStatus(id, newStatus); // service call
+
+      setBanners((prev) =>
+        prev.map((b) => (b._id === id ? { ...b, status: newStatus } : b))
+      );
+
+      window.location.reload();
+
+      setToast({
+        open: true,
+        title: "Status Updated",
+        description: `Banner marked as ${newStatus ? "active" : "inactive"}`,
+        variant: "success",
+      });
+    } catch (error) {
+      setToast({
+        open: true,
+        title: "Error",
+        description:
+          error?.response?.data?.message || "Failed to update banner status",
+        variant: "destructive",
+      });
+    } finally {
+      setRowActionLoading(null);
+      setMenuOpenId(null);
     }
   };
 
@@ -793,6 +831,36 @@ export default function PromoBannerMaster() {
                             >
                               <Trash2 className="h-3.5 w-3.5" />
                               Delete
+                            </button>
+
+                            {/* 🔁 Status Toggle */}
+                            <button
+                              onClick={() =>
+                                handleBannerStatusChange(
+                                  banner._id,
+                                  banner.status
+                                )
+                              }
+                              disabled={rowActionLoading === banner._id}
+                              className={`flex w-full items-center gap-2 px-3 py-2 text-xs ${
+                                banner.status
+                                  ? "text-red-600 hover:bg-red-50"
+                                  : "text-green-600 hover:bg-green-50"
+                              }`}
+                            >
+                              {rowActionLoading === banner._id ? (
+                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              ) : banner.status ? (
+                                <>
+                                  <XCircle className="h-3.5 w-3.5" />
+                                  Inactive
+                                </>
+                              ) : (
+                                <>
+                                  <CheckCircle className="h-3.5 w-3.5" />
+                                  Active
+                                </>
+                              )}
                             </button>
                           </div>
                         )}
