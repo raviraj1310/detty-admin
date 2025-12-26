@@ -11,9 +11,11 @@ import {
   Trash2,
   AlertCircle,
   Loader2,
+  XCircle,
+  CheckCircle,
 } from "lucide-react";
 import { RiExpandUpDownFill } from "react-icons/ri";
-import { getAllBlogs, deleteBlog } from "@/services/cms/blog.service";
+import { getAllBlogs, deleteBlog, changeBlogStatus } from "@/services/cms/blog.service";
 import Toast from "@/components/ui/Toast";
 
 const toImageSrc = (u) => {
@@ -52,6 +54,7 @@ export default function BlogMaster() {
     description: "",
     variant: "success",
   });
+  const [updatingId, setUpdatingId] = useState("");
 
   useEffect(() => {
     const load = async () => {
@@ -227,6 +230,38 @@ export default function BlogMaster() {
       setDeleting(false);
       setConfirmOpen(false);
       setConfirmId(null);
+    }
+  };
+
+  const handleBlogStatusChange = async (blogId, currentStatus) => {
+    try {
+      setUpdatingId(String(blogId));
+
+      const newStatus = !currentStatus;
+
+      await changeBlogStatus(blogId, newStatus);
+
+      setToast({
+        open: true,
+        title: "Status updated",
+        description: `Blog marked as ${newStatus ? "active" : "inactive"}`,
+        variant: "success",
+      });
+
+      // ✅ refresh to get latest value from backend
+      window.location.reload();
+    } catch (e) {
+      setToast({
+        open: true,
+        title: "Error",
+        description:
+          e?.response?.data?.message ||
+          e?.message ||
+          "Failed to update blog status",
+        variant: "error",
+      });
+    } finally {
+      setUpdatingId("");
     }
   };
 
@@ -442,6 +477,34 @@ export default function BlogMaster() {
                             >
                               <Trash2 className="h-3.5 w-3.5" />
                               Delete
+                            </button>
+                            {/* 🔁 Status toggle */}
+                            <button
+                              onClick={() => {
+                                handleBlogStatusChange(b.id, b.status); // ✅ blog id + boolean
+                                setMenuOpenId(null);
+                              }}
+                              disabled={updatingId === String(b.id)}
+                              className={`flex w-full items-center gap-2 px-3 py-2 text-sm
+                            ${
+                              b.status
+                                ? "text-red-600 hover:bg-red-50"
+                                : "text-green-600 hover:bg-green-50"
+                            }`}
+                            >
+                              {updatingId === String(b.id) ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : b.status ? (
+                                <>
+                                  <XCircle className="h-4 w-4" />
+                                  Inactive
+                                </>
+                              ) : (
+                                <>
+                                  <CheckCircle className="h-4 w-4" />
+                                  Active
+                                </>
+                              )}
                             </button>
                           </div>
                         )}
