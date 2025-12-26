@@ -12,15 +12,15 @@ const MetricCard = ({
   textColor = 'text-gray-900',
   iconSrc
 }) => (
-  <div className={`${bgColor} rounded-xl p-4 flex items-center gap-3 w-full`}>
-    <div className={`${iconBg} p-3 rounded-xl flex-shrink-0`}>
-      <img src={iconSrc} alt={label} className='w-7 h-7' />
+  <div className={`${bgColor} rounded-lg p-2.5 flex items-center gap-2 w-full`}>
+    <div className={`${iconBg} p-2 rounded-lg flex-shrink-0`}>
+      <img src={iconSrc} alt={label} className='w-5 h-5' />
     </div>
     <div className='flex-1 min-w-0'>
-      <p className='text-xs font-medium text-gray-600 mb-1'>{label}</p>
-      <p className={`text-2xl font-bold ${textColor} truncate`}>{value}</p>
+      <p className='text-[10px] font-medium text-gray-600 mb-0.5'>{label}</p>
+      <p className={`text-lg font-bold ${textColor} truncate`}>{value}</p>
       {subText && (
-        <p className='text-[10px] text-gray-500 mt-1 whitespace-nowrap'>
+        <p className='text-[9px] text-gray-500 whitespace-nowrap'>
           {subText}
         </p>
       )}
@@ -30,20 +30,20 @@ const MetricCard = ({
 
 const SectionCard = ({ title, viewLink, children, compact = false }) => (
   <div
-    className={`bg-white rounded-2xl shadow-sm border border-gray-100 ${
+    className={`bg-white rounded-xl shadow-sm border border-gray-100 ${
       compact ? '' : 'h-full'
     } flex flex-col`}
   >
-    <div className='flex items-center justify-between p-4 pb-3 border-b border-gray-100'>
-      <h2 className='text-lg font-semibold text-gray-900'>{title}</h2>
+    <div className='flex items-center justify-between p-2.5 pb-2 border-b border-gray-100'>
+      <h2 className='text-sm font-semibold text-gray-900'>{title}</h2>
       <Link
         href={viewLink}
-        className='px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 hover:bg-gray-100 rounded-lg transition-colors'
+        className='px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-200 hover:bg-gray-100 rounded-lg transition-colors'
       >
         View List
       </Link>
     </div>
-    <div className='p-4 pt-3'>{children}</div>
+    <div className='p-2.5 pt-2'>{children}</div>
   </div>
 )
 
@@ -56,23 +56,23 @@ const EngagementCard = ({
   viewLink
 }) => (
   <div
-    className={`${bgColor} rounded-xl p-4 flex items-center justify-between w-full`}
+    className={`${bgColor} rounded-lg p-2.5 flex items-center justify-between w-full`}
   >
-    <div className='flex items-center gap-3'>
-      <div className={`${iconBg} p-3 rounded-xl flex-shrink-0`}>
-        <img src={iconSrc} alt={label} className='w-7 h-7' />
+    <div className='flex items-center gap-2'>
+      <div className={`${iconBg} p-2 rounded-lg flex-shrink-0`}>
+        <img src={iconSrc} alt={label} className='w-5 h-5' />
       </div>
       <div>
-        <p className='text-xs font-medium text-gray-600 mb-1'>{label}</p>
-        <p className='text-2xl font-bold text-gray-900'>{value}</p>
+        <p className='text-[10px] font-medium text-gray-600 mb-0.5'>{label}</p>
+        <p className='text-lg font-bold text-gray-900'>{value}</p>
       </div>
     </div>
     <Link
       href={viewLink}
-      className='px-3 py-1.5 text-xs font-medium text-gray-700 bg-white hover:bg-gray-50 rounded-lg transition-colors flex items-center gap-1'
+      className='px-2 py-1 text-[10px] font-medium text-gray-700 bg-white hover:bg-gray-50 rounded-lg transition-colors flex items-center gap-1'
     >
       View List
-      <img src='/images/dashboard/arrow.svg' alt='Arrow' className='w-3 h-3' />
+      <img src='/images/dashboard/arrow.svg' alt='Arrow' className='w-2.5 h-2.5' />
     </Link>
   </div>
 )
@@ -146,7 +146,7 @@ export default function AdditionalDashboard ({ stats }) {
         </SectionCard>
 
         <SectionCard title='eSims' viewLink='/users/e-sim'>
-          <div className='flex flex-wrap gap-4'>
+          <div className='flex flex-wrap gap-2'>
             <MetricCard
               label='Total eSims'
               value={esims}
@@ -169,7 +169,7 @@ export default function AdditionalDashboard ({ stats }) {
       {/* Row 2: Rides & Leadway */}
       <div className='grid grid-cols-1 lg:grid-cols-2 gap-2'>
         <SectionCard title='Rides' viewLink='/users/rides'>
-          <div className='flex flex-wrap gap-4'>
+          <div className='flex flex-wrap gap-2'>
             <MetricCard
               label='Total Rides'
               value={rides}
@@ -189,7 +189,7 @@ export default function AdditionalDashboard ({ stats }) {
         </SectionCard>
 
         <SectionCard title='Leadway' viewLink='/leadway'>
-          <div className='flex flex-wrap gap-4'>
+          <div className='flex flex-wrap gap-2'>
             <MetricCard
               label='Total Leadway'
               value={leadway}
@@ -212,7 +212,7 @@ export default function AdditionalDashboard ({ stats }) {
       {/* Row 3: Med Plus - Drug Store & Consultation */}
       <div className='grid grid-cols-1 lg:grid-cols-2 gap-2'>
         <SectionCard title='Med Plus - Drug Store' viewLink='/med-orders'>
-          <div className='flex flex-wrap gap-4'>
+          <div className='flex flex-wrap gap-2'>
             <MetricCard
               label='Total Drug Store'
               value={drugStore}
@@ -232,7 +232,7 @@ export default function AdditionalDashboard ({ stats }) {
         </SectionCard>
 
         <SectionCard title='Royal Concierge' viewLink='/royal-concierge'>
-          <div className='flex flex-wrap gap-4'>
+          <div className='flex flex-wrap gap-2'>
             <MetricCard
               label='Total Royal Concierge'
               value={royalConcierge}
@@ -257,7 +257,7 @@ export default function AdditionalDashboard ({ stats }) {
         {/* Left Column: Visa & Wallet */}
         <div className='space-y-2'>
           <SectionCard title='Visa Applications' viewLink='/visa' compact>
-            <div className='flex flex-wrap gap-4'>
+            <div className='flex flex-wrap gap-2'>
               <MetricCard
                 label='Total Applications Received'
                 value={visaApplications}
@@ -289,7 +289,7 @@ export default function AdditionalDashboard ({ stats }) {
 
         {/* Right Column: Engagement & Enquiries */}
         <SectionCard title='Engagement & Enquiries' viewLink='/inquiries'>
-          <div className='space-y-3'>
+          <div className='space-y-2'>
             <EngagementCard
               label='Email Subscribers'
               value={emailSubscribers}
