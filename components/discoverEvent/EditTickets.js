@@ -20,6 +20,8 @@ import {
   Pencil,
   Trash2,
   AlertCircle,
+  CheckCircle,
+  XCircle,
 } from "lucide-react";
 import { IoFilterSharp } from "react-icons/io5";
 import { TbCaretUpDownFilled } from "react-icons/tb";
@@ -29,6 +31,7 @@ import {
   getTicketById,
   editTicket,
   deleteTicket,
+  changeUserStatus,
 } from "@/services/tickets/ticket.service";
 import Toast from "@/components/ui/Toast";
 
@@ -77,6 +80,13 @@ export default function EditTickets() {
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
   const [deleting, setDeleting] = useState(false);
   const [eventName, setEventName] = useState("");
+  const [updatingId, setUpdatingId] = useState("");
+  const [toast, setToast] = useState({
+    open: false,
+    title: "",
+    description: "",
+    variant: "success",
+  });
 
   const formatPriceInput = (value) => {
     const s = String(value || "");
@@ -311,6 +321,36 @@ export default function EditTickets() {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [menuOpenId]);
+
+  const handleStatusChange = async (id, currentStatus) => {
+    try {
+      setUpdatingId(String(id));
+
+      const newStatus = !currentStatus;
+
+      await changeUserStatus(id, newStatus);
+
+      setToast({
+        open: true,
+        title: "Status updated",
+        description: `User marked as ${newStatus ? "active" : "inactive"}`,
+        variant: "success",
+      });
+
+      // ✅ HARD PAGE REFRESH
+      window.location.reload();
+    } catch (e) {
+      setToast({
+        open: true,
+        title: "Error",
+        description:
+          e?.response?.data?.message || e?.message || "Failed to update status",
+        variant: "error",
+      });
+    } finally {
+      setUpdatingId("");
+    }
+  };
 
   return (
     <div className="space-y-7 py-12 px-12">
@@ -780,6 +820,41 @@ export default function EditTickets() {
                               >
                                 <Trash2 className="h-4 w-4" />
                                 Delete
+                              </button>
+
+                              {/* 🔹 Active / Inactive Toggle */}
+
+                              <button
+                                onClick={() => {
+                                  handleStatusChange(
+                                    t.rawId || t._id, // ✅ ID
+                                    t.status // ✅ boolean
+                                  );
+                                  setMenuOpenId(null);
+                                }}
+                                disabled={
+                                  updatingId === String(t.rawId || t._id)
+                                }
+                                className={`flex w-full items-center gap-2 px-3 py-2 text-sm
+                                ${
+                                  t.status
+                                    ? "text-red-600 hover:bg-red-50"
+                                    : "text-green-600 hover:bg-green-50"
+                                }`}
+                              >
+                                {updatingId === String(t.rawId || t._id) ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : t.status ? (
+                                  <>
+                                    <XCircle className="h-4 w-4" />
+                                    Inactive
+                                  </>
+                                ) : (
+                                  <>
+                                    <CheckCircle className="h-4 w-4" />
+                                    Active
+                                  </>
+                                )}
                               </button>
                             </div>
                           )}
