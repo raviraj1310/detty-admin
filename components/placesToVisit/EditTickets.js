@@ -9,6 +9,8 @@ import {
   AlertCircle,
   Plus,
   Trash2,
+  XCircle,
+  CheckCircle,
 } from "lucide-react";
 import { IoFilterSharp } from "react-icons/io5";
 import { TbCaretUpDownFilled } from "react-icons/tb";
@@ -35,6 +37,7 @@ import {
   getActivityTicketById,
   updateActivityTicket,
   deleteActivityTicket,
+  updatePlaceTicketStatus,
 } from "@/services/tickets/placesToVisitTicket.service";
 import Toast from "@/components/ui/Toast";
 
@@ -71,6 +74,14 @@ export default function EditTickets() {
   const [confirmId, setConfirmId] = useState(null);
   const [deleting, setDeleting] = useState(false);
   const [activityName, setActivityName] = useState("");
+  const [rowActionLoading, setRowActionLoading] = useState(null);
+  const [toast, setToast] = useState({
+    open: false,
+    title: "",
+    description: "",
+    link: "",
+    variant: "success",
+  });
 
   const [activeDropdown, setActiveDropdown] = useState(null);
   const dropdownRef = useRef(null);
@@ -402,6 +413,39 @@ export default function EditTickets() {
       setDeleting(false);
       setConfirmOpen(false);
       setConfirmId(null);
+    }
+  };
+
+  const handlePlaceTicketStatusChange = async (id, currentStatus) => {
+    setRowActionLoading(id);
+    try {
+      const newStatus = !currentStatus;
+
+      await updatePlaceTicketStatus(id, newStatus); // API service
+
+      setTickets((prev) =>
+        prev.map((p) =>
+          (p._id || p.id) === id ? { ...p, status: newStatus } : p
+        )
+      );
+
+      setToast({
+        open: true,
+        title: "Status Updated",
+        description: `Ticket marked as ${newStatus ? "active" : "inactive"}`,
+        variant: "success",
+      });
+    } catch (error) {
+      setToast({
+        open: true,
+        title: "Error",
+        description:
+          error?.response?.data?.message || "Failed to update ticket status",
+        variant: "destructive",
+      });
+    } finally {
+      setRowActionLoading(null);
+      setActiveDropdown(null);
     }
   };
 
@@ -941,6 +985,41 @@ export default function EditTickets() {
                             className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
                           >
                             Delete Ticket
+                          </button>
+
+                          {/* Status Toggle */}
+                          <button
+                            onClick={() =>
+                              handlePlaceTicketStatusChange(
+                                ticket._id || ticket.id,
+                                ticket.status
+                              )
+                            }
+                            disabled={
+                              rowActionLoading === (ticket._id || ticket.id)
+                            }
+                            className={`block w-full text-left px-4 py-2 text-sm ${
+                              ticket.status
+                                ? "text-red-600 hover:bg-red-50"
+                                : "text-green-600 hover:bg-green-50"
+                            }`}
+                          >
+                            {rowActionLoading === (ticket._id || ticket.id) ? (
+                              <span className="inline-flex items-center gap-2">
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                                Updating...
+                              </span>
+                            ) : ticket.status ? (
+                              <span className="inline-flex items-center gap-2">
+                                <XCircle className="h-4 w-4" />
+                                Inactive
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-2">
+                                <CheckCircle className="h-4 w-4" />
+                                Active
+                              </span>
+                            )}
                           </button>
                         </div>
                       </div>
