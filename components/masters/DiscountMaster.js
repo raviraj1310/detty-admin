@@ -10,6 +10,8 @@ import {
   Pencil,
   Trash2,
   AlertCircle,
+  XCircle,
+  CheckCircle,
 } from "lucide-react";
 import { IoFilterSharp } from "react-icons/io5";
 import { TbCaretUpDownFilled } from "react-icons/tb";
@@ -28,6 +30,7 @@ import {
   getActivityWiseDiscount,
   updateActivityCoupon,
   deleteActivityCoupon,
+  updateDiscountStatus,
 } from "@/services/discount/discount.service";
 import { getAllEvents } from "@/services/discover-events/event.service";
 import {
@@ -812,6 +815,35 @@ export default function DiscountMaster() {
     }
   };
 
+  const handleStatusChange = async (id, currentStatus) => {
+    setRowActionLoading(id);
+    try {
+      const newStatus = !currentStatus;
+      await updateDiscountStatus(id, newStatus);
+      setDiscounts((prev) =>
+        prev.map((d) => (d._id === id ? { ...d, status: newStatus } : d))
+      );
+
+      setToast({
+        open: true,
+        title: "Status Updated",
+        description: `Discount marked as ${newStatus ? "active" : "inactive"}`,
+        variant: "success",
+      });
+    } catch (error) {
+      console.error("Failed to change status", error);
+      setToast({
+        open: true,
+        title: "Error",
+        description: "Failed to update status",
+        variant: "destructive",
+      });
+    } finally {
+      setRowActionLoading(null);
+      setMenuOpenId(null);
+    }
+  };
+
   return (
     <div className="space-y-7">
       <Toast
@@ -1482,6 +1514,33 @@ export default function DiscountMaster() {
                             >
                               <Trash2 className="h-4 w-4" />
                               Delete
+                            </button>
+
+                            {/* status change */}
+                            <button
+                              onClick={() =>
+                                handleStatusChange(d._id, d.status)
+                              }
+                              disabled={rowActionLoading === d._id}
+                              className={`flex w-full items-center gap-2 px-3 py-2 text-sm ${
+                                d.status
+                                  ? "text-red-600 hover:bg-red-50"
+                                  : "text-green-600 hover:bg-green-50"
+                              }`}
+                            >
+                              {rowActionLoading === d._id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : d.status ? (
+                                <>
+                                  <XCircle className="h-4 w-4" />
+                                  Inactive
+                                </>
+                              ) : (
+                                <>
+                                  <CheckCircle className="h-4 w-4" />
+                                  Active
+                                </>
+                              )}
                             </button>
                           </div>
                         )}
