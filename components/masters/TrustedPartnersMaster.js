@@ -116,7 +116,7 @@ export default function TrustedPartnersMaster() {
         partnerLogo: buildPartnerImageUrl(partner.image),
         partnerName: partner.name || "NA",
         description: partner.name || "NA",
-        status: partner.status ? "Active" : "Inactive",
+        status: !!partner.status,
         statusBool: !!partner.status,
         statusClass: partner.status
           ? "bg-emerald-50 text-emerald-600 border border-emerald-200"
