@@ -11,3 +11,15 @@ export const createCustomNotification = async notificationData => {
     throw error
   }
 }
+
+export const getNotifications = async (page = 1, limit = 5) => {
+  try {
+    const response = await api.get(
+      `/user/get-all-notifications?page=${page}&limit=${limit}`
+    )
+    return response?.data?.data || { data: [], pagination: {} }
+  } catch (error) {
+    console.error('Error fetching notifications:', error)
+    return { data: [], pagination: {} }
+  }
+}
