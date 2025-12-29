@@ -104,9 +104,11 @@ export const getAllDiscount = async () => {
     throw error
   }
 }
-export const getActivityWiseDiscount = async (activityId) => {
+export const getActivityWiseDiscount = async activityId => {
   try {
-    const response = await api.get(`/activity-type/coupon/activity/${activityId}`)
+    const response = await api.get(
+      `/activity-type/coupon/activity/${activityId}`
+    )
     return response.data
   } catch (error) {
     console.error('Error fetching activity coupon:', error)
@@ -116,7 +118,10 @@ export const getActivityWiseDiscount = async (activityId) => {
 
 export const updateActivityCoupon = async (couponId, couponData) => {
   try {
-    const response = await api.put(`/activity-type/coupon/${couponId}`, couponData)
+    const response = await api.put(
+      `/activity-type/coupon/${couponId}`,
+      couponData
+    )
     return response.data
   } catch (error) {
     console.error('Error updating activity coupon:', error)
@@ -134,7 +139,70 @@ export const deleteActivityCoupon = async couponId => {
   }
 }
 
+// Merchadise discount
+export const createMerchadiseCoupon = async couponData => {
+  try {
+    const response = await api.post('/merchandise/create-discount', couponData)
+    return response.data
+  } catch (error) {
+    console.error('Error creating merchandise coupon:', error)
+    throw error
+  }
+}
 
+export const getMerchadiseCoupons = async () => {
+  try {
+    const response = await api.get(`/merchandise/get-all-discounts`)
+    return response.data
+  } catch (error) {
+    console.error('Error fetching merchandise coupon:', error)
+    throw error
+  }
+}
 
+export const getMerchadiseCouponById = async couponId => {
+  try {
+    const response = await api.get(
+      `/merchandise/get-discount-by-id/${couponId}`
+    )
+    return response.data
+  } catch (error) {
+    console.error('Error fetching merchandise coupon:', error)
+    throw error
+  }
+}
 
+export const getProductWiseDiscount = async productId => {
+  try {
+    const response = await api.get(`/merchandise/get-discount/${productId}`)
+    return response.data
+  } catch (error) {
+    console.error('Error fetching product wise discount:', error)
+    throw error
+  }
+}
 
+export const updateMerchadiseCoupon = async (couponId, couponData) => {
+  try {
+    const response = await api.put(
+      `/merchandise/update-discount/${couponId}`,
+      couponData
+    )
+    return response.data
+  } catch (error) {
+    console.error('Error updating merchandise coupon:', error)
+    throw error
+  }
+}
+
+export const deleteMerchadiseCoupon = async couponId => {
+  try {
+    const response = await api.delete(
+      `/merchandise/delete-discount/${couponId}`
+    )
+    return response.data
+  } catch (error) {
+    console.error('Error deleting merchandise coupon:', error)
+    throw error
+  }
+}

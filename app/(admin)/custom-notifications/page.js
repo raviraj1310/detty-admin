@@ -7,7 +7,8 @@ import {
   Send,
   Link as LinkIcon,
   Type,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Tag
 } from 'lucide-react'
 import { createCustomNotification } from '@/services/notification/notification.service'
 import Toast from '@/components/ui/Toast'
@@ -24,7 +25,8 @@ const CustomNotificationsPage = () => {
     title: '',
     body: '',
     imageUrl: '',
-    link: ''
+    link: '',
+    discountCode: ''
   })
 
   const handleChange = (field, value) => {
@@ -66,7 +68,8 @@ const CustomNotificationsPage = () => {
         title: '',
         body: '',
         imageUrl: '',
-        link: ''
+        link: '',
+        discountCode: ''
       })
     } catch (error) {
       console.error(error)
@@ -174,6 +177,22 @@ const CustomNotificationsPage = () => {
                   onChange={e => handleChange('link', e.target.value)}
                   placeholder='https://example.com/page'
                   className='w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all'
+                />
+              </div>
+              <div>
+                <label className='block text-xs font-medium text-gray-700 mb-1 flex items-center gap-1'>
+                  <Tag className='w-3 h-3 text-gray-500' />
+                  Discount Code{' '}
+                  <span className='text-gray-400 text-[10px] font-normal'>
+                    (Optional)
+                  </span>
+                </label>
+                <input
+                  type='text'
+                  value={formData.discountCode}
+                  onChange={e => handleChange('discountCode', e.target.value)}
+                  placeholder='Enter discount code'
+                  className='w-full px-3 py-1.5 text-sm text-gray-900 uppercase italic border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all'
                 />
               </div>
 
