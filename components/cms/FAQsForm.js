@@ -9,9 +9,16 @@ import {
   MoreVertical,
   AlertCircle,
   Loader2,
+  XCircle,
+  CheckCircle,
 } from "lucide-react";
 import { RiExpandUpDownFill } from "react-icons/ri";
-import { getAllFAQs, deleteFAQ } from "@/services/cms/faqs.service";
+import {
+  getAllFAQs,
+  deleteFAQ,
+  updateFAQCategoryStatus,
+  updateFAQStatus,
+} from "@/services/cms/faqs.service";
 
 export default function FAQsForm() {
   const router = useRouter();
@@ -23,6 +30,13 @@ export default function FAQsForm() {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmId, setConfirmId] = useState(null);
   const [deleting, setDeleting] = useState(false);
+  const [rowActionLoading, setRowActionLoading] = useState(null);
+  const [toast, setToast] = useState({
+    open: false,
+    title: "",
+    description: "",
+    variant: "success",
+  });
 
   const loadFAQs = async () => {
     setLoading(true);
@@ -78,8 +92,6 @@ export default function FAQsForm() {
     router.push("/cms/faqs/add");
   };
 
-  console.log("faqs", faqs);
-
   const filteredFaqs = faqs.filter((f) => {
     const q = searchQuery.trim().toLowerCase();
     if (!q) return true;
@@ -123,6 +135,36 @@ export default function FAQsForm() {
     } catch (e) {
     } finally {
       setDeleting(false);
+    }
+  };
+
+  const handleFaqStatusChange = async (faqId, currentStatus) => {
+    setRowActionLoading(faqId);
+    try {
+      const newStatus = !currentStatus;
+
+      await updateFAQStatus(faqId, newStatus);
+
+      setFaqs((prev) =>
+        prev.map((f) => (f.id === faqId ? { ...f, status: newStatus } : f))
+      );
+
+      setToast({
+        open: true,
+        title: "Status Updated",
+        description: `FAQ marked as ${newStatus ? "active" : "inactive"}`,
+        variant: "success",
+      });
+    } catch (error) {
+      setToast({
+        open: true,
+        title: "Error",
+        description: error?.message || "Failed to update FAQ status",
+        variant: "destructive",
+      });
+    } finally {
+      setRowActionLoading(null);
+      setOpenMenuId(null);
     }
   };
 
@@ -305,6 +347,30 @@ export default function FAQsForm() {
                             className="w-full text-left px-3 py-1.5 text-sm text-red-600 hover:bg-red-50"
                           >
                             Delete
+                          </button>
+
+                          {/* Status Toggle */}
+                          <button
+                            onClick={() =>
+                              handleFaqStatusChange(faq.id, faq.status)
+                            }
+                            className={`w-full text-left px-3 py-1.5 text-sm ${
+                              faq.status
+                                ? "text-red-600 hover:bg-red-50"
+                                : "text-green-600 hover:bg-green-50"
+                            }`}
+                          >
+                            {faq.status ? (
+                              <>
+                                <XCircle className="inline h-4 w-4 mr-1" />{" "}
+                                Inactive
+                              </>
+                            ) : (
+                              <>
+                                <CheckCircle className="inline h-4 w-4 mr-1" />{" "}
+                                Active
+                              </>
+                            )}
                           </button>
                         </div>
                       )}

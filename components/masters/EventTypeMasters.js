@@ -11,6 +11,8 @@ import {
   Trash2,
   RotateCcw,
   AlertCircle,
+  XCircle,
+  CheckCircle,
 } from "lucide-react";
 import { IoFilterSharp } from "react-icons/io5";
 import { TbCaretUpDownFilled } from "react-icons/tb";
@@ -21,6 +23,7 @@ import {
   updateEventType,
   deleteEventType,
   restoreEventType,
+  changeEventTypeStatus,
 } from "@/services/discover-events/eventType.service";
 import Toast from "@/components/ui/Toast";
 
@@ -341,6 +344,41 @@ export default function EventTypeMasters() {
     }
   };
 
+  const handleEventTypeStatusChange = async (id, currentStatus) => {
+    try {
+      setRowActionLoading(id);
+
+      const newStatus = !currentStatus;
+
+      await changeEventTypeStatus(id, newStatus);
+
+      setEventTypes((prev) =>
+        prev.map((et) => (et._id === id ? { ...et, status: newStatus } : et))
+      );
+
+      setToast({
+        open: true,
+        title: "Status updated",
+        description: `Event type marked as ${
+          newStatus ? "active" : "inactive"
+        }`,
+        variant: "success",
+      });
+    } catch (error) {
+      setToast({
+        open: true,
+        title: "Error",
+        description:
+          error?.response?.data?.message ||
+          error?.message ||
+          "Failed to update status",
+        variant: "destructive",
+      });
+    } finally {
+      setRowActionLoading(null);
+    }
+  };
+
   return (
     <div className="space-y-7">
       <Toast
@@ -653,6 +691,37 @@ export default function EventTypeMasters() {
                                 Restore
                               </button>
                             )}
+                            {/* status */}
+                            <button
+                              onClick={() => {
+                                handleEventTypeStatusChange(
+                                  eventType._id,
+                                  eventType.status
+                                );
+                                setMenuOpenId(null);
+                              }}
+                              disabled={rowActionLoading === eventType._id}
+                              className={`flex w-full items-center gap-2 px-3 py-2 text-sm
+                              ${
+                                eventType.status
+                                  ? "text-red-600 hover:bg-red-50"
+                                  : "text-green-600 hover:bg-green-50"
+                              }`}
+                            >
+                              {rowActionLoading === eventType._id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : eventType.status ? (
+                                <>
+                                  <XCircle className="h-4 w-4" />
+                                  Inactive
+                                </>
+                              ) : (
+                                <>
+                                  <CheckCircle className="h-4 w-4" />
+                                  Active
+                                </>
+                              )}
+                            </button>
                           </div>
                         )}
                       </div>

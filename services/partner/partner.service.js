@@ -22,9 +22,13 @@ export const deletePartner = async (partnerId) => {
 
 export const updatePartner = async (partnerId, data) => {
   try {
-    const response = await api.put(`/partner/update-partner/${partnerId}`, data, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    });
+    const response = await api.put(
+      `/partner/update-partner/${partnerId}`,
+      data,
+      {
+        headers: { "Content-Type": "multipart/form-data" },
+      }
+    );
     return response.data;
   } catch (error) {
     console.error("Error updating partner:", error);
@@ -44,4 +48,9 @@ export const addPartner = async (data) => {
     console.error("Error creating partner:", error);
     throw error;
   }
+};
+
+export const updatePartnerStatus = async (id, status) => {
+  const res = await api.put(`/partner/partner-status/${id}`, { status });
+  return res.data;
 };

@@ -206,3 +206,31 @@ export const deleteMerchadiseCoupon = async couponId => {
     throw error
   }
 }
+
+export const updateDiscountStatus = async (discountId, newStatus) => {
+  console.log(discountId, 'discountId')
+  try {
+    const response = await api.put(
+      `/event/event-coupons/status/${discountId}`,
+      { status: newStatus } // send boolean
+    )
+    return response.data
+  } catch (error) {
+    console.error('Error updating discount status:', error)
+    throw error
+  }
+}
+
+export const updateActivityDiscountStatus = async (discountId, newStatus) => {
+  console.log(discountId, 'activity discountId')
+  try {
+    const response = await api.put(
+      `/activity-type/activity-coupon/status/${discountId}`,
+      { status: newStatus } // send boolean
+    )
+    return response.data
+  } catch (error) {
+    console.error('Error updating activity discount status:', error)
+    throw error
+  }
+}

@@ -9,7 +9,9 @@ import {
   Loader2,
   Pencil,
   Trash2,
-  AlertCircle
+  AlertCircle,
+  XCircle,
+  CheckCircle
 } from 'lucide-react'
 import { IoFilterSharp } from 'react-icons/io5'
 import { TbCaretUpDownFilled } from 'react-icons/tb'
@@ -34,7 +36,9 @@ import {
   getMerchadiseCouponById,
   getProductWiseDiscount,
   updateMerchadiseCoupon,
-  deleteMerchadiseCoupon
+  deleteMerchadiseCoupon,
+  updateDiscountStatus,
+  updateActivityDiscountStatus
 } from '@/services/discount/discount.service'
 import { getAllEvents } from '@/services/discover-events/event.service'
 import {
@@ -1069,6 +1073,65 @@ export default function DiscountMaster () {
     }
   }
 
+  const handleEventStatusChange = async (id, currentStatus) => {
+    setRowActionLoading(id)
+    try {
+      const newStatus = !currentStatus
+      await updateDiscountStatus(id, newStatus)
+      setDiscounts(prev =>
+        prev.map(d => (d._id === id ? { ...d, status: newStatus } : d))
+      )
+
+      setToast({
+        open: true,
+        title: 'Status Updated',
+        description: `Discount marked as ${newStatus ? 'active' : 'inactive'}`,
+        variant: 'success'
+      })
+    } catch (error) {
+      console.error('Failed to change status', error)
+      setToast({
+        open: true,
+        title: 'Error',
+        description: 'Failed to update status',
+        variant: 'destructive'
+      })
+    } finally {
+      setRowActionLoading(null)
+      setMenuOpenId(null)
+    }
+  }
+
+  const handleActivityDiscountStatusChange = async (id, currentStatus) => {
+    setRowActionLoading(id)
+    try {
+      const newStatus = !currentStatus
+      await updateActivityDiscountStatus(id, newStatus)
+
+      setDiscounts(prev =>
+        prev.map(d => (d._id === id ? { ...d, status: newStatus } : d))
+      )
+
+      setToast({
+        open: true,
+        title: 'Status Updated',
+        description: `Discount marked as ${newStatus ? 'active' : 'inactive'}`,
+        variant: 'success'
+      })
+    } catch (error) {
+      console.error('Failed to change status', error)
+      setToast({
+        open: true,
+        title: 'Error',
+        description: 'Failed to update status',
+        variant: 'destructive'
+      })
+    } finally {
+      setRowActionLoading(null)
+      setMenuOpenId(null)
+    }
+  }
+
   return (
     <div className='space-y-7'>
       <Toast
@@ -1916,6 +1979,40 @@ export default function DiscountMaster () {
                             >
                               <Trash2 className='h-4 w-4' />
                               Delete
+                            </button>
+
+                            {/* status change */}
+                            <button
+                              onClick={() => {
+                                if (activeTab === 'event') {
+                                  handleEventStatusChange(d._id, d.status) // call event status handler
+                                } else if (activeTab === 'activity') {
+                                  handleActivityDiscountStatusChange(
+                                    d._id,
+                                    d.status
+                                  ) // call activity status handler
+                                }
+                              }}
+                              disabled={rowActionLoading === d._id}
+                              className={`flex w-full items-center gap-2 px-3 py-2 text-sm ${
+                                d.status
+                                  ? 'text-red-600 hover:bg-red-50'
+                                  : 'text-green-600 hover:bg-green-50'
+                              }`}
+                            >
+                              {rowActionLoading === d._id ? (
+                                <Loader2 className='h-4 w-4 animate-spin' />
+                              ) : d.status ? (
+                                <>
+                                  <XCircle className='h-4 w-4' />
+                                  Inactive
+                                </>
+                              ) : (
+                                <>
+                                  <CheckCircle className='h-4 w-4' />
+                                  Active
+                                </>
+                              )}
                             </button>
                           </div>
                         )}
