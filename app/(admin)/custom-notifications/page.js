@@ -33,7 +33,8 @@ const CustomNotificationsPage = () => {
     body: '',
     imageUrl: '',
     link: '',
-    discountCode: ''
+    discountCode: '',
+    sendEmailCounts: 0
   })
   const [notifications, setNotifications] = useState([])
   const [loadingNotifications, setLoadingNotifications] = useState(false)
@@ -112,7 +113,8 @@ const CustomNotificationsPage = () => {
         body: '',
         imageUrl: '',
         link: '',
-        discountCode: ''
+        discountCode: '',
+        sendEmailCounts: 0
       })
       fetchNotifications(1)
     } catch (error) {
@@ -278,12 +280,13 @@ const CustomNotificationsPage = () => {
                   <th className='px-4 py-3 font-medium'>Image</th>
                   <th className='px-4 py-3 font-medium'>Link</th>
                   <th className='px-4 py-3 font-medium'>Discount Code</th>
+                  <th className='px-4 py-3 font-medium'>Total Email Counts </th>
                 </tr>
               </thead>
               <tbody className='divide-y divide-gray-200'>
                 {loadingNotifications ? (
                   <tr>
-                    <td colSpan='6' className='px-4 py-8 text-center'>
+                    <td colSpan='7' className='px-4 py-8 text-center'>
                       <div className='flex justify-center items-center gap-2 text-gray-500'>
                         <div className='w-4 h-4 border-2 border-orange-600 border-t-transparent rounded-full animate-spin' />
                         Loading history...
@@ -293,7 +296,7 @@ const CustomNotificationsPage = () => {
                 ) : notifications.length === 0 ? (
                   <tr>
                     <td
-                      colSpan='6'
+                      colSpan='7'
                       className='px-4 py-8 text-center text-gray-500'
                     >
                       No notifications sent yet
@@ -369,6 +372,16 @@ const CustomNotificationsPage = () => {
                           <span className='inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-800'>
                             <Tag className='w-3 h-3 mr-1' />
                             {notification.discountCode}
+                          </span>
+                        ) : (
+                          <span className='text-gray-400'>-</span>
+                        )}
+                      </td>
+                      <td className='px-4 py-3'>
+                        {notification.sendEmailCounts ? (
+                          <span className='inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-800'>
+                            <Tag className='w-3 h-3 mr-1' />
+                            {notification.sendEmailCounts}
                           </span>
                         ) : (
                           <span className='text-gray-400'>-</span>
