@@ -5,6 +5,7 @@ import { useParams, useSearchParams, useRouter } from "next/navigation";
 import { Tag } from "lucide-react";
 import { getTicketDetail } from "@/services/discover-events/event.service";
 import { formatEventDate } from "@/utils/excelExport";
+import QRCodeGenerator from "../common/QRCodeGenerator";
 
 const toImageSrc = (u) => {
   const s = String(u || "");
@@ -88,6 +89,11 @@ export default function TicketView() {
       : []
   );
 
+  const vendorId = booking?.event?.eventId?.hostedBy?._id;
+
+const qrData = `https://dettyfusion.accessbankplc.com/vendor/scanned-ticket?vendorId=${vendorId}
+&bookingId=${bookingId}`;
+
   return (
     <div className="min-h-screen bg-[#fffff] p-12">
       {loading && (
@@ -161,11 +167,7 @@ export default function TicketView() {
               </div>
             </div>
             <div className="h-20 w-20 rounded-lg bg-gray-100 flex items-center justify-center text-xs text-gray-600">
-              <img
-                src="/images/qrnew.png"
-                alt="qr code"
-                className="h-full w-full"
-              />
+              <QRCodeGenerator value={qrData} size={180} />
             </div>
           </div>
 
