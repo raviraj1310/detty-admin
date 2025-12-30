@@ -194,6 +194,11 @@ const menuSections = [
         label: 'Accommodation Promo Banner',
         icon: '/images/backend/side_menu/side_menu (12).svg',
         href: '/masters/accommodation-promo-banner'
+      },
+      {
+        label: 'Email Templates',
+        icon: '/images/backend/side_menu/side_menu (12).svg',
+        href: '/masters/email-templates'
       }
     ]
   },
