@@ -24,33 +24,33 @@ import { downloadExcel } from "@/utils/excelExport";
 
 const metricCards = [
   {
-    id: 'total',
-    title: 'Total Merchandise',
-    value: '1540',
-    iconSrc: '/images/backend/icons/icons (3).svg',
-    bg: 'bg-gradient-to-r from-[#E8EEFF] to-[#C5D5FF]',
-    iconBg: 'bg-white',
-    textColor: 'text-indigo-600'
+    id: "total",
+    title: "Total Merchandise",
+    value: "1540",
+    iconSrc: "/images/backend/icons/icons (3).svg",
+    bg: "bg-gradient-to-r from-[#E8EEFF] to-[#C5D5FF]",
+    iconBg: "bg-white",
+    textColor: "text-indigo-600",
   },
   {
-    id: 'active',
-    title: 'Active Merchandise',
-    value: '1240',
-    iconSrc: '/images/backend/icons/icons (5).svg',
-    bg: 'bg-gradient-to-r from-[#E8F8F0] to-[#B8EDD0]',
-    iconBg: 'bg-white',
-    textColor: 'text-emerald-600'
+    id: "active",
+    title: "Active Merchandise",
+    value: "1240",
+    iconSrc: "/images/backend/icons/icons (5).svg",
+    bg: "bg-gradient-to-r from-[#E8F8F0] to-[#B8EDD0]",
+    iconBg: "bg-white",
+    textColor: "text-emerald-600",
   },
   {
-    id: 'inactive',
-    title: 'Inactive Merchandise',
-    value: '100',
-    iconSrc: '/images/backend/icons/icons (4).svg',
-    bg: 'bg-gradient-to-r from-[#FFE8E8] to-[#FFC5C5]',
-    iconBg: 'bg-white',
-    textColor: 'text-red-600'
-  }
-]
+    id: "inactive",
+    title: "Inactive Merchandise",
+    value: "100",
+    iconSrc: "/images/backend/icons/icons (4).svg",
+    bg: "bg-gradient-to-r from-[#FFE8E8] to-[#FFC5C5]",
+    iconBg: "bg-white",
+    textColor: "text-red-600",
+  },
+];
 
 const TableHeaderCell = ({
   children,
@@ -208,6 +208,7 @@ export default function MerchandiseList() {
       stockLeft: stockLeftNum,
       ordersCount: totalOrdersNum,
       status: statusStr,
+      sizes: p?.sizes,
       image: toImageSrc(imageStr) || "/images/no-image.webp",
       totalOrders: totalOrdersNum,
     };
@@ -219,6 +220,7 @@ export default function MerchandiseList() {
       setError("");
       try {
         const res = await getAllProducts();
+        console.log(res, "response");
         const list = Array.isArray(res?.message)
           ? res.message
           : Array.isArray(res?.data)
@@ -227,6 +229,7 @@ export default function MerchandiseList() {
           ? res
           : [];
         const mapped = list.map(normalizeProduct);
+        console.log(mapped, "mapped");
         setItems(mapped);
         setToastTitle("Merchandise loaded");
         setToastDesc("The merchandise list has been updated");
@@ -242,6 +245,7 @@ export default function MerchandiseList() {
   }, []);
 
   const itemRows = items.map((e, idx) => {
+    // console.log(e, "sizes");
     const gradients = [
       "bg-gradient-to-br from-orange-400 to-red-500",
       "bg-gradient-to-br from-blue-400 to-purple-500",
@@ -258,6 +262,9 @@ export default function MerchandiseList() {
       addedOn: e.addedOn,
       name: e.name || "-",
       category: e.category || "-",
+      sizes:
+        Array.isArray(e.sizes) && e.sizes.length ? e.sizes.join(", ") : "-",
+
       priceNum: typeof e.price === "number" ? e.price : 0,
       priceText: `₦${Number(e.price || 0).toLocaleString("en-NG", {
         minimumFractionDigits: 2,
@@ -360,7 +367,7 @@ export default function MerchandiseList() {
 
         Price: r.price ?? r.priceNum ?? 0,
         "Price (Number)": r.priceNum ?? 0,
-
+        Sizes: r.sizes ?? "-",
         "Stock Count": r.stockCount ?? 0,
         "Stock Left": r.stockLeftNum ?? r.stockLeftNum ?? 0,
 
@@ -536,16 +543,20 @@ export default function MerchandiseList() {
               key={card.id}
               className={`${card.bg} rounded-xl p-3 relative overflow-hidden border border-gray-100`}
             >
-              <div className='flex items-center justify-between'>
-                <div className={`${card.iconBg} p-2.5 rounded-xl flex-shrink-0`}>
+              <div className="flex items-center justify-between">
+                <div
+                  className={`${card.iconBg} p-2.5 rounded-xl flex-shrink-0`}
+                >
                   <img
                     src={card.iconSrc}
                     alt={card.title}
                     className="w-6 h-6"
                   />
                 </div>
-                <div className='text-right'>
-                  <p className={`${card.textColor} opacity-80 text-xs font-medium mb-1`}>
+                <div className="text-right">
+                  <p
+                    className={`${card.textColor} opacity-80 text-xs font-medium mb-1`}
+                  >
                     {card.title}
                   </p>
                   <p className={`text-2xl font-bold ${card.textColor}`}>
@@ -650,6 +661,9 @@ export default function MerchandiseList() {
                 Category
               </TableHeaderCell>
             </div>
+            {/* <div>
+              <TableHeaderCell>Size</TableHeaderCell>
+            </div> */}
             <div>
               <TableHeaderCell
                 onClick={() => handleSort("price")}
@@ -742,6 +756,19 @@ export default function MerchandiseList() {
                 <div className="self-center text-xs text-[#5E6582] line-clamp-2">
                   {item.category}
                 </div>
+                {/* <div className="flex gap-1 flex-wrap">
+                  {item.sizes !== "-"
+                    ? item.sizes.split(", ").map((size) => (
+                        <span
+                          key={size}
+                          className="px-2 py-1 text-xs rounded bg-blue-100 text-blue-700"
+                        >
+                          {size}
+                        </span>
+                      ))
+                    : "-"}
+                </div> */}
+
                 <div className="self-center text-xs font-semibold text-slate-900">
                   {item.priceText}
                 </div>
