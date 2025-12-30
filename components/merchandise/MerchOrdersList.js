@@ -85,6 +85,8 @@ export default function MerchOrdersList() {
           Product_ID: product._id,
           Product_Title: product.title,
           Product_Price: product.price,
+          Size: item.size && String(item.size).trim() ? item.size : "N/A",
+
           Quantity: item.quantity,
           Item_Total: item.price * item.quantity,
 
@@ -140,7 +142,8 @@ export default function MerchOrdersList() {
                     const title = i?.productId?.title || "-";
                     const qty = Number(i?.quantity || 0);
                     const price = i?.price ?? i?.productId?.price;
-                    return `${qty} x ${title} (${toCurrency(price)})`;
+                    const size = i?.size ? ` | Size: ${i.size}` : ""; // ✅ ADD SIZE
+                    return `${qty} x ${title}${size} (${toCurrency(price)})`;
                   })
                   .join(", ")
               : "";
@@ -200,6 +203,7 @@ export default function MerchOrdersList() {
       try {
         setLoading(true);
         const res = await getAllOrders();
+        console.log(res, "response");
         const list = Array.isArray(res?.data)
           ? res.data
           : Array.isArray(res?.message)

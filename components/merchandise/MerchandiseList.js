@@ -633,7 +633,7 @@ export default function MerchandiseList() {
         </div>
 
         <div className="rounded-xl border border-[#E5E8F5]">
-          <div className="grid grid-cols-[14%_20%_10%_9%_9%_9%_9%_10%_10%] gap-1 bg-[#F7F9FD] px-3 py-2.5">
+          <div className="grid grid-cols-[12%_20%_10%_10%_8%_8%_8%_8%_8%_8%]  gap-1 bg-[#F7F9FD] px-3 py-2.5">
             <div>
               <TableHeaderCell
                 onClick={() => handleSort("addedOn")}
@@ -661,9 +661,9 @@ export default function MerchandiseList() {
                 Category
               </TableHeaderCell>
             </div>
-            {/* <div>
+            <div>
               <TableHeaderCell>Size</TableHeaderCell>
-            </div> */}
+            </div>
             <div>
               <TableHeaderCell
                 onClick={() => handleSort("price")}
@@ -722,7 +722,7 @@ export default function MerchandiseList() {
             {filteredRows.map((item) => (
               <div
                 key={item.rowKey}
-                className="grid grid-cols-[14%_20%_10%_9%_9%_9%_9%_10%_10%] gap-1 px-3 py-2.5 hover:bg-[#F9FAFD] relative"
+                className="grid grid-cols-[12%_20%_10%_10%_8%_8%_8%_8%_8%_8%] gap-1 px-3 py-2.5 hover:bg-[#F9FAFD] relative"
               >
                 <div className="self-center text-xs text-[#5E6582] line-clamp-2">
                   {item.addedOn}
@@ -756,18 +756,12 @@ export default function MerchandiseList() {
                 <div className="self-center text-xs text-[#5E6582] line-clamp-2">
                   {item.category}
                 </div>
-                {/* <div className="flex gap-1 flex-wrap">
-                  {item.sizes !== "-"
-                    ? item.sizes.split(", ").map((size) => (
-                        <span
-                          key={size}
-                          className="px-2 py-1 text-xs rounded bg-blue-100 text-blue-700"
-                        >
-                          {size}
-                        </span>
-                      ))
-                    : "-"}
-                </div> */}
+                <div
+                  title={item.sizes}
+                  className="text-xs text-[#5E6582] truncate max-w-[120px]"
+                >
+                  {item.sizes && item.sizes !== "-" ? item.sizes : "-"}
+                </div>
 
                 <div className="self-center text-xs font-semibold text-slate-900">
                   {item.priceText}
