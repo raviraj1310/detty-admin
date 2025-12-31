@@ -23,3 +23,30 @@ export const getNotifications = async (page = 1, limit = 5) => {
     return { data: [], pagination: {} }
   }
 }
+
+export const getSendedEmailList = async (
+  userNotificationId,
+  page = 1,
+  limit = 10
+) => {
+  try {
+    const id = encodeURIComponent(String(userNotificationId || '').trim())
+    if (!id)
+      return {
+        data: [],
+        pagination: { totalRecords: 0, currentPage: 1, totalPages: 0, limit }
+      }
+    const response = await api.get(`/user/get-all-email-list/${id}`, {
+      params: { page, limit }
+    })
+    return (
+      response?.data?.data || {
+        data: [],
+        pagination: { totalRecords: 0, currentPage: page, totalPages: 0, limit }
+      }
+    )
+  } catch (error) {
+    console.error('Error fetching sended email list:', error)
+    return { data: [], pagination: {} }
+  }
+}

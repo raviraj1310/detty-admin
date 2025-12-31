@@ -16,9 +16,11 @@ import {
 } from 'lucide-react'
 import {
   createCustomNotification,
-  getNotifications
+  getNotifications,
+  getSendedEmailList
 } from '@/services/notification/notification.service'
 import Toast from '@/components/ui/Toast'
+import Modal from '@/components/ui/Modal'
 
 const CustomNotificationsPage = () => {
   const [loading, setLoading] = useState(false)
@@ -44,6 +46,16 @@ const CustomNotificationsPage = () => {
     totalRecords: 0,
     limit: 5
   })
+  const [emailModalOpen, setEmailModalOpen] = useState(false)
+  const [emailModalLoading, setEmailModalLoading] = useState(false)
+  const [emailList, setEmailList] = useState([])
+  const [emailPagination, setEmailPagination] = useState({
+    currentPage: 1,
+    totalPages: 0,
+    totalRecords: 0,
+    limit: 10
+  })
+  const [selectedNotificationId, setSelectedNotificationId] = useState('')
 
   const fetchNotifications = async (page = 1) => {
     setLoadingNotifications(true)
@@ -75,6 +87,49 @@ const CustomNotificationsPage = () => {
 
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }))
+  }
+
+  const fetchEmailList = async (notificationId, page = 1) => {
+    setEmailModalLoading(true)
+    try {
+      const result = await getSendedEmailList(
+        notificationId,
+        page,
+        emailPagination.limit
+      )
+      const data = Array.isArray(result?.data?.data)
+        ? result.data.data
+        : Array.isArray(result?.data)
+        ? result.data
+        : []
+      setEmailList(data)
+      const p = result?.data?.pagination || result?.pagination || {}
+      setEmailPagination(prev => ({
+        ...prev,
+        currentPage: p.currentPage || page,
+        totalPages: p.totalPages || 0,
+        totalRecords: p.totalRecords || 0,
+        limit: p.limit || prev.limit
+      }))
+    } catch (e) {
+      setEmailList([])
+      setEmailPagination(prev => ({
+        ...prev,
+        currentPage: 1,
+        totalPages: 0,
+        totalRecords: 0
+      }))
+    } finally {
+      setEmailModalLoading(false)
+    }
+  }
+
+  const openEmailModal = notificationId => {
+    const id = String(notificationId || '').trim()
+    if (!id) return
+    setSelectedNotificationId(id)
+    setEmailModalOpen(true)
+    fetchEmailList(id, 1)
   }
 
   const handleSubmit = async () => {
@@ -379,10 +434,13 @@ const CustomNotificationsPage = () => {
                       </td>
                       <td className='px-4 py-3'>
                         {notification.sendEmailCounts ? (
-                          <span className='inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-800'>
+                          <button
+                            onClick={() => openEmailModal(notification._id)}
+                            className='inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-800 hover:bg-orange-200 transition'
+                          >
                             <Tag className='w-3 h-3 mr-1' />
                             {notification.sendEmailCounts}
-                          </span>
+                          </button>
                         ) : (
                           <span className='text-gray-400'>-</span>
                         )}
@@ -485,6 +543,129 @@ const CustomNotificationsPage = () => {
           </div>
         </div>
       </div>
+      <Modal
+        open={emailModalOpen}
+        onOpenChange={setEmailModalOpen}
+        title='Sent Email List'
+        maxWidth='max-w-2xl'
+      >
+        <div className='space-y-3'>
+          {emailModalLoading ? (
+            <div className='px-4 py-6 text-center text-gray-500'>
+              <div className='w-5 h-5 border-2 border-orange-600 border-t-transparent rounded-full animate-spin inline-block mr-2 align-middle' />
+              Loading...
+            </div>
+          ) : emailList.length === 0 ? (
+            <div className='px-4 py-6 text-center text-gray-500'>
+              No emails found
+            </div>
+          ) : (
+            <div className='overflow-x-auto'>
+              <table className='w-full text-sm text-left'>
+                <thead className='text-xs text-gray-700 uppercase bg-gray-50 border-b border-gray-200'>
+                  <tr>
+                    <th className='px-4 py-2'>Email</th>
+                    <th className='px-4 py-2'>Sent At</th>
+                    <th className='px-4 py-2'>Status</th>
+                  </tr>
+                </thead>
+                <tbody className='divide-y divide-gray-200'>
+                  {emailList.map((item, idx) => {
+                    const email =
+                      item?.email ||
+                      item?.user?.email ||
+                      item?.userId?.email ||
+                      ''
+                    const sentAt = item?.createdAt || item?.sentAt || ''
+                    const status = item?.status || item?.deliveryStatus || ''
+                    return (
+                      <tr key={item?._id || item?.id || idx}>
+                        <td className='px-4 py-2 text-gray-900'>
+                          {email || '-'}
+                        </td>
+                        <td className='px-4 py-2 text-gray-600'>
+                          {sentAt
+                            ? new Date(sentAt).toLocaleDateString() +
+                              ' ' +
+                              new Date(sentAt).toLocaleTimeString([], {
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })
+                            : '-'}
+                        </td>
+                        <td className='px-4 py-2'>
+                          {status ? (
+                            <span className='inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200'>
+                              {String(status)}
+                            </span>
+                          ) : (
+                            <span className='text-gray-400'>-</span>
+                          )}
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+              <div className='flex items-center justify-between px-2 py-3'>
+                <div className='text-xs text-gray-700'>
+                  Page{' '}
+                  <span className='font-medium'>
+                    {emailPagination.currentPage}
+                  </span>{' '}
+                  of{' '}
+                  <span className='font-medium'>
+                    {emailPagination.totalPages}
+                  </span>{' '}
+                  (
+                  <span className='font-medium'>
+                    {emailPagination.totalRecords}
+                  </span>{' '}
+                  results)
+                </div>
+                <div className='flex items-center gap-2'>
+                  <button
+                    onClick={() =>
+                      fetchEmailList(
+                        selectedNotificationId,
+                        emailPagination.currentPage - 1
+                      )
+                    }
+                    disabled={emailPagination.currentPage <= 1}
+                    className={`px-3 py-1.5 text-xs rounded border border-gray-300 bg-white hover:bg-gray-50 ${
+                      emailPagination.currentPage <= 1
+                        ? 'opacity-50 cursor-not-allowed'
+                        : ''
+                    }`}
+                  >
+                    Prev
+                  </button>
+                  <button
+                    onClick={() =>
+                      fetchEmailList(
+                        selectedNotificationId,
+                        emailPagination.currentPage + 1
+                      )
+                    }
+                    disabled={
+                      emailPagination.totalPages === 0 ||
+                      emailPagination.currentPage >= emailPagination.totalPages
+                    }
+                    className={`px-3 py-1.5 text-xs rounded border border-gray-300 bg-white hover:bg-gray-50 ${
+                      emailPagination.totalPages === 0 ||
+                      emailPagination.currentPage >= emailPagination.totalPages
+                        ? 'opacity-50 cursor-not-allowed'
+                        : ''
+                    }`}
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </Modal>
       <Toast
         open={toast.open}
         onOpenChange={v => setToast(prev => ({ ...prev, open: v }))}
