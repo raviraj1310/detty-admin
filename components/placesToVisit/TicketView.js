@@ -176,7 +176,7 @@ export default function TicketView() {
                   {activity?.activityName || booking?.ticketName || "Activity"}
                 </div>
                 <div className="text-sm text-[#5E6582]">
-                  @ {activity?.location || "Lagos"}
+                  {activity?.location || ""}
                 </div>
               </div>
             </div>
@@ -205,14 +205,23 @@ export default function TicketView() {
                   ))
                 : null}
             </div>
-            <div className="py-3 flex items-center justify-between">
-              <span className="text-sm font-semibold text-slate-900">
-                Total
-              </span>
-              <span className="flex items-center gap-2 text-base font-bold text-slate-900">
-                <Tag className="h-4 w-4 text-orange-500" />
-                {formatNaira(total)}
-              </span>
+            <div className="divide-y divide-[#EEF1FA]">
+              <div className="py-3 space-y-2">
+                {items.length > 0 &&
+                  items.map((it, i) => (
+                    <div
+                      key={i}
+                      className="flex items-center justify-between text-sm"
+                    >
+                      <span>Total</span>
+
+                      {/* item total */}
+                      <span className="font-medium">
+                        {formatNaira(it.quantity * it.price)}
+                      </span>
+                    </div>
+                  ))}
+              </div>
             </div>
             {booking?.paymentStatus ? (
               <div className="py-3 grid grid-cols-2 gap-4">
@@ -224,7 +233,7 @@ export default function TicketView() {
             ) : null}
           </div>
 
-          {attendees.map((a, idx) => (
+          {/* {attendees.map((a, idx) => (
             <div
               key={idx}
               className="rounded-xl border border-[#E5E8F6] bg-white p-4"
@@ -255,7 +264,7 @@ export default function TicketView() {
                 </div>
               </div>
             </div>
-          ))}
+          ))} */}
 
           {buyer?.fullName || buyer?.email || buyer?.phone ? (
             <div className="rounded-xl border border-[#E5E8F6] bg-white p-4">
