@@ -210,7 +210,7 @@ const qrData = `https://dettyfusion.accessbankplc.com/vendor/scanned-ticket?vend
             ) : null}
           </div>
 
-          {attendees.map((a, idx) => (
+          {/* {attendees.map((a, idx) => (
             <div
               key={idx}
               className="rounded-xl border border-[#E5E8F6] bg-white p-4"
@@ -241,7 +241,7 @@ const qrData = `https://dettyfusion.accessbankplc.com/vendor/scanned-ticket?vend
                 </div>
               </div>
             </div>
-          ))}
+          ))} */}
 
           {buyer?.fullName || buyer?.email || buyer?.phone ? (
             <div className="rounded-xl border border-[#E5E8F6] bg-white p-4">
