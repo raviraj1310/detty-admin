@@ -16,6 +16,7 @@ export default function EditMerchandise ({ merchandiseId }) {
     name: '',
     categoryId: '',
     price: '',
+    originalPrice: '',
     stockCount: '',
     imageUrl: '',
     sizes: []
@@ -66,8 +67,31 @@ export default function EditMerchandise ({ merchandiseId }) {
     }
   }, [sizesOpen])
 
+  const formatPriceInput = value => {
+    let val = String(value).replace(/[^0-9.]/g, '')
+    if ((val.match(/\./g) || []).length > 1) {
+      const parts = val.split('.')
+      val = `${parts[0]}.${parts.slice(1).join('')}`
+    }
+    const [intPart, decimalPart] = val.split('.')
+
+    if (!intPart && !decimalPart && intPart !== '0') return ''
+    if (intPart === '') {
+      return decimalPart !== undefined ? `.${decimalPart}` : ''
+    }
+
+    if (decimalPart !== undefined) {
+      return `${intPart}.${decimalPart.slice(0, 2)}`
+    }
+    return intPart
+  }
+
   const handleChange = (field, value) => {
-    setFormData(prev => ({ ...prev, [field]: value }))
+    const v =
+      field === 'price' || field === 'originalPrice'
+        ? formatPriceInput(value)
+        : value
+    setFormData(prev => ({ ...prev, [field]: v }))
   }
 
   const validate = () => {
@@ -77,6 +101,9 @@ export default function EditMerchandise ({ merchandiseId }) {
     if (!formData.categoryId) errs.categoryId = 'Select category'
     const priceNum = toNumber(formData.price)
     if (!(priceNum > 0)) errs.price = 'Enter valid price'
+    const originalPriceNum = toNumber(formData.originalPrice)
+    if (formData.originalPrice && !(originalPriceNum > 0))
+      errs.originalPrice = 'Enter valid original price'
     const stockNum = Number(formData.stockCount)
     if (!(stockNum >= 0)) errs.stockCount = 'Enter valid stock count'
     return errs
@@ -96,6 +123,12 @@ export default function EditMerchandise ({ merchandiseId }) {
         payload.append('title', String(formData.name || '').trim())
         payload.append('categoryId', String(formData.categoryId || '').trim())
         payload.append('price', String(toNumber(formData.price)))
+        if (formData.originalPrice) {
+          payload.append(
+            'originalPrice',
+            String(toNumber(formData.originalPrice))
+          )
+        }
         payload.append('stock', String(Number(formData.stockCount || 0)))
         payload.append('image', imageFile)
         payload.append(
@@ -108,6 +141,9 @@ export default function EditMerchandise ({ merchandiseId }) {
           title: String(formData.name || '').trim(),
           categoryId: String(formData.categoryId || '').trim(),
           price: toNumber(formData.price),
+          originalPrice: formData.originalPrice
+            ? toNumber(formData.originalPrice)
+            : undefined,
           stock: Number(formData.stockCount || 0),
           sizes: Array.isArray(formData.sizes) ? formData.sizes : [],
           status: true
@@ -180,6 +216,7 @@ export default function EditMerchandise ({ merchandiseId }) {
         const name = p?.title || p?.name || ''
         const catId = p?.categoryId?._id || p?.categoryId || ''
         const price = Number(p?.price || 0)
+        const originalPrice = Number(p?.originalPrice || 0)
         const stock = Number(p?.stock || 0)
         const image = toImageSrc(p?.image || p?.imageUrl)
         const sizes = Array.isArray(p?.sizes)
@@ -194,6 +231,7 @@ export default function EditMerchandise ({ merchandiseId }) {
           name,
           categoryId: String(catId || ''),
           price: price ? String(price) : '',
+          originalPrice: originalPrice ? String(originalPrice) : '',
           stockCount: stock ? String(stock) : '',
           imageUrl: image,
           sizes
@@ -319,6 +357,33 @@ export default function EditMerchandise ({ merchandiseId }) {
                 />
                 {errors.price && (
                   <p className='text-xs text-red-600'>{errors.price}</p>
+                )}
+              </div>
+              <div className='space-y-2'>
+                <label className='text-sm font-medium text-slate-700'>
+                  Original Price
+                </label>
+                <input
+                  type='text'
+                  value={formData.originalPrice}
+                  onChange={e => handleChange('originalPrice', e.target.value)}
+                  onFocus={() =>
+                    handleChange(
+                      'originalPrice',
+                      String(toNumber(formData.originalPrice) || '')
+                    )
+                  }
+                  onBlur={() =>
+                    handleChange(
+                      'originalPrice',
+                      formatNaira(toNumber(formData.originalPrice))
+                    )
+                  }
+                  className='w-full h-12 rounded-xl border border-[#E5E6EF] bg-[#F8F9FC] px-4 text-sm text-slate-700 placeholder:text-[#B0B7D0] focus:border-[#C5CAE3] focus:outline-none focus:ring-2 focus:ring-[#C2C8E4]'
+                  placeholder='₦0.00'
+                />
+                {errors.originalPrice && (
+                  <p className='text-xs text-red-600'>{errors.originalPrice}</p>
                 )}
               </div>
             </div>

@@ -13,6 +13,7 @@ export default function AddMerchandise () {
     name: '',
     categoryId: '',
     price: '',
+    originalPrice: '',
     stockCount: '',
     imageUrl: '',
     sizes: []
@@ -85,7 +86,10 @@ export default function AddMerchandise () {
   }, [sizesOpen])
 
   const handleChange = (field, value) => {
-    const v = field === 'price' ? formatPriceInput(value) : value
+    const v =
+      field === 'price' || field === 'originalPrice'
+        ? formatPriceInput(value)
+        : value
     setFormData(prev => ({ ...prev, [field]: v }))
   }
 
@@ -96,6 +100,9 @@ export default function AddMerchandise () {
     if (!formData.categoryId) errs.categoryId = 'Select category'
     const priceNum = toNumber(formData.price)
     if (!(priceNum > 0)) errs.price = 'Enter valid price'
+    const originalPriceNum = toNumber(formData.originalPrice)
+    if (formData.originalPrice && !(originalPriceNum > 0))
+      errs.originalPrice = 'Enter valid original price'
     const stockNum = Number(formData.stockCount)
     if (!(stockNum >= 0)) errs.stockCount = 'Enter valid stock count'
     return errs
@@ -112,6 +119,9 @@ export default function AddMerchandise () {
       fd.append('title', String(formData.name || '').trim())
       fd.append('categoryId', String(formData.categoryId || '').trim())
       fd.append('price', String(toNumber(formData.price)))
+      if (formData.originalPrice) {
+        fd.append('originalPrice', String(toNumber(formData.originalPrice)))
+      }
       fd.append('stock', String(Number(formData.stockCount || 0)))
       if (imageFile) fd.append('image', imageFile)
       {
@@ -271,6 +281,33 @@ export default function AddMerchandise () {
                 />
                 {errors.price && (
                   <p className='text-xs text-red-600'>{errors.price}</p>
+                )}
+              </div>
+              <div className='space-y-2'>
+                <label className='text-sm font-medium text-slate-700'>
+                  Original Price
+                </label>
+                <input
+                  type='text'
+                  value={formData.originalPrice}
+                  onChange={e => handleChange('originalPrice', e.target.value)}
+                  onFocus={() =>
+                    handleChange(
+                      'originalPrice',
+                      String(toNumber(formData.originalPrice) || '')
+                    )
+                  }
+                  onBlur={() =>
+                    handleChange(
+                      'originalPrice',
+                      formatNaira(toNumber(formData.originalPrice))
+                    )
+                  }
+                  className='w-full h-12 rounded-xl border border-[#E5E6EF] bg-[#F8F9FC] px-4 text-sm text-slate-700 placeholder:text-[#B0B7D0] focus:border-[#C5CAE3] focus:outline-none focus:ring-2 focus:ring-[#C2C8E4]'
+                  placeholder='₦0.00'
+                />
+                {errors.originalPrice && (
+                  <p className='text-xs text-red-600'>{errors.originalPrice}</p>
                 )}
               </div>
             </div>
