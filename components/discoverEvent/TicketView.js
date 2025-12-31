@@ -91,7 +91,7 @@ export default function TicketView() {
 
   const vendorId = booking?.event?.eventId?.hostedBy?._id;
 
-const qrData = `https://dettyfusion.accessbankplc.com/vendor/scanned-ticket?vendorId=${vendorId}
+  const qrData = `https://dettyfusion.accessbankplc.com/vendor/scanned-ticket?vendorId=${vendorId}
 &bookingId=${bookingId}`;
 
   return (
@@ -162,7 +162,7 @@ const qrData = `https://dettyfusion.accessbankplc.com/vendor/scanned-ticket?vend
                   })()}
                 </div>
                 <div className="text-sm text-[#5E6582]">
-                  @ {event?.location || "Landmark Event Centre, Lagos"}
+                  {event?.eventId?.location || "Landmark Event Centre, Lagos"}
                 </div>
               </div>
             </div>
@@ -187,14 +187,21 @@ const qrData = `https://dettyfusion.accessbankplc.com/vendor/scanned-ticket?vend
                   ))
                 : null}
             </div>
-            <div className="py-3 flex items-center justify-between">
-              <span className="text-sm font-semibold text-slate-900">
-                Total
-              </span>
-              <span className="flex items-center gap-2 text-base font-bold text-slate-900">
-                <Tag className="h-4 w-4 text-orange-500" />
-                {formatNaira(total)}
-              </span>
+            <div className="py-3 space-y-2">
+              {items.length > 0 &&
+                items.map((it, i) => (
+                  <div
+                    key={i}
+                    className="flex items-center justify-between text-sm"
+                  >
+                    <span>Total</span>
+
+                    {/* item total */}
+                    <span className="font-medium">
+                      {formatNaira(it.quantity * it.price)}
+                    </span>
+                  </div>
+                ))}
             </div>
             {booking?.paymentStatus || booking?.bookingStatus ? (
               <div className="py-3 grid grid-cols-2 gap-4">
