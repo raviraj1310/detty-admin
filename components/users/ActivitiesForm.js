@@ -597,16 +597,11 @@ export default function Activities() {
       const ticketsInfo = Array.isArray(b.tickets)
         ? b.tickets
             .map((t) => {
-              const attendees = Array.isArray(t.attendees)
-                ? t.attendees
-                    .map((a) => `${a.fullName} (${a.email})`)
-                    .join(", ")
-                : "";
               return `[Ticket: ${t.ticketName || "-"}, Type: ${
                 t.ticketType || "-"
               }, Qty: ${t.quantity || 0}, Price: ${
                 t.perTicketPrice || 0
-              }, Total: ${t.totalPrice || 0}, Attendees: (${attendees})]`;
+              }, Total: ${t.totalPrice || 0}`;
             })
             .join("; ")
         : "";

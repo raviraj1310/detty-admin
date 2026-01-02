@@ -795,9 +795,9 @@ export default function TransactionsForm() {
       const event = b.event || {};
       const buyer = b.buyer || {};
       const user = b.user || {};
-      const attendees = Array.isArray(b.attendees)
-        ? b.attendees.map((a) => `${a.fullName} (${a.email})`).join(", ")
-        : "";
+      // const attendees = Array.isArray(b.attendees)
+      //   ? b.attendees.map((a) => `${a.fullName} (${a.email})`).join(", ")
+      //   : "";
 
       return {
         "Booking ID": b.bookingId || b._id,
@@ -835,8 +835,8 @@ export default function TransactionsForm() {
         "Per Ticket Price": b.perTicketPrice,
         "Total Price": b.totalPrice,
 
-        // Attendees
-        Attendees: attendees,
+        // // Attendees
+        // Attendees: attendees,
       };
     });
     downloadExcel(dataToExport, "Event_Bookings.xlsx");

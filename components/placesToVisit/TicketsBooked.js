@@ -320,10 +320,10 @@ export default function TicketsBooked() {
             .join(" | "),
 
           // 🔹 Attendees
-          Attendees: b.tickets
-            ?.flatMap((t) => t.attendees || [])
-            .map((a) => `${a.fullName} (${a.email})`)
-            .join(" | "),
+          // Attendees: b.tickets
+          //   ?.flatMap((t) => t.attendees || [])
+          //   .map((a) => `${a.fullName} (${a.email})`)
+          //   .join(" | "),
 
           // 🔹 Pricing
           "Service Fee": b.pricing?.serviceFee,

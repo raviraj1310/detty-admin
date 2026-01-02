@@ -952,7 +952,7 @@ export default function TicketsBooked () {
                     '-'}
                 </span>
               </div>
-              {Array.isArray(selectedBooking.attendees) &&
+              {/* {Array.isArray(selectedBooking.attendees) &&
                 selectedBooking.attendees.length > 0 && (
                   <div>
                     <div className='font-medium'>Attendees</div>
@@ -962,7 +962,7 @@ export default function TicketsBooked () {
                         .join(', ')}
                     </div>
                   </div>
-                )}
+                )} */}
             </div>
             <div className='mt-6 flex justify-end gap-3'>
               <button
@@ -1028,7 +1028,7 @@ export default function TicketsBooked () {
               </div>
             </div>
 
-            {Array.isArray(selectedBooking.attendees) &&
+            {/* {Array.isArray(selectedBooking.attendees) &&
               selectedBooking.attendees.length > 0 && (
                 <div className='rounded-xl border border-[#E5E8F6] bg-white p-4'>
                   <div className='text-sm font-semibold text-slate-900 mb-3'>
@@ -1050,7 +1050,7 @@ export default function TicketsBooked () {
                     ))}
                   </div>
                 </div>
-              )}
+              )} */}
 
             <div className='rounded-xl bg-orange-50 p-4'>
               <div className='flex items-center justify-between text-sm font-semibold text-slate-900 mb-3'>
