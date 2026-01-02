@@ -909,7 +909,7 @@ export default function TicketsIdBooked ({ activityId }) {
                 </div>
               </div>
             </div>
-            {Array.isArray(selectedBooking.tickets) &&
+            {/* {Array.isArray(selectedBooking.tickets) &&
             selectedBooking.tickets.some(
               t => Array.isArray(t.attendees) && t.attendees.length > 0
             ) ? (
@@ -939,7 +939,7 @@ export default function TicketsIdBooked ({ activityId }) {
                     ))}
                 </div>
               </div>
-            ) : null}
+            ) : null} */}
             <div className='rounded-lg bg-orange-50 p-3'>
               <div className='flex items-center justify-between text-xs font-semibold text-slate-900 mb-2'>
                 <span>
