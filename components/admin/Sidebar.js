@@ -171,6 +171,11 @@ const menuSections = [
         href: '/masters/trusted-partners'
       },
       {
+        label: 'Financial Partners',
+        icon: '/images/backend/side_menu/side_menu (12).svg',
+        href: '/masters/financial-partner'
+      },
+      {
         label: 'FAQ Categories',
         icon: '/images/backend/side_menu/side_menu (12).svg',
         href: '/masters/faq-categories'
