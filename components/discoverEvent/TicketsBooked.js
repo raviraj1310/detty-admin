@@ -498,9 +498,9 @@ export default function TicketsBooked () {
           ? b.amount
           : 0,
       'Arrival Date': toLocal(b.arrivalDate),
-      Attendees: Array.isArray(b.attendees)
-        ? b.attendees.map(a => a.fullName).join(', ')
-        : '-'
+      // Attendees: Array.isArray(b.attendees)
+      //   ? b.attendees.map(a => a.fullName).join(', ')
+      //   : '-'
     }))
 
     const ws = XLSX.utils.json_to_sheet(dataToExport)
