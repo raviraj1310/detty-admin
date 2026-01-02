@@ -679,34 +679,34 @@ export default function TicketsBooked () {
                       </div>
                       <div className='text-sm font-semibold text-slate-900 truncate'>
                         {(booking.buyer && booking.buyer.fullName) || '-'}
-                        {Array.isArray(booking.attendees) &&
+                        {/* {Array.isArray(booking.attendees) &&
                           booking.attendees.length > 0 && (
                             <div className='mt-1 text-xs font-normal text-[#5E6582] truncate'>
                               {booking.attendees
                                 .map(a => a.fullName)
                                 .join(', ')}
                             </div>
-                          )}
+                          )} */}
                       </div>
                       <div className='text-sm text-[#5E6582] truncate'>
                         {(booking.buyer && booking.buyer.email) || '-'}
-                        {Array.isArray(booking.attendees) &&
+                        {/* {Array.isArray(booking.attendees) &&
                           booking.attendees.length > 0 && (
                             <div className='mt-1 text-xs truncate'>
                               {booking.attendees.map(a => a.email).join(', ')}
                             </div>
-                          )}
+                          )} */}
                       </div>
                       <div className='text-sm text-[#5E6582] truncate'>
                         {(booking.buyer && booking.buyer.phone) || '-'}
-                        {Array.isArray(booking.attendees) &&
+                        {/* {Array.isArray(booking.attendees) &&
                           booking.attendees.length > 0 && (
                             <div className='mt-1 text-xs truncate'>
                               {booking.attendees
                                 .map(a => a.phone || '-')
                                 .join(', ')}
                             </div>
-                          )}
+                          )} */}
                       </div>
                       <div className='text-sm text-[#5E6582] truncate'>
                         {booking.ticketsBooked || booking.ticketName || '-'}
