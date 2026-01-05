@@ -92,6 +92,10 @@ export default function PlacesToVisit() {
   const [previewSrc, setPreviewSrc] = useState("");
   const [previewTitle, setPreviewTitle] = useState("");
   const [exporting, setExporting] = useState(false);
+  const role =
+    typeof window !== "undefined" ? localStorage.getItem("user_role") : null;
+
+  const isPartner = role === "Partner";
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -442,12 +446,14 @@ export default function PlacesToVisit() {
           >
             View All Bookings
           </button>
-          <button
-            onClick={handleAddNewActivity}
-            className="rounded-lg bg-[#FF5B2C] px-4 py-2 text-xs font-semibold text-white shadow-[0_14px_30px_-20px_rgba(248,113,72,0.65)] transition hover:bg-[#F0481A]"
-          >
-            Add New Activities
-          </button>
+          {!isPartner && (
+            <button
+              onClick={handleAddNewActivity}
+              className="rounded-lg bg-[#FF5B2C] px-4 py-2 text-xs font-semibold text-white shadow-[0_14px_30px_-20px_rgba(248,113,72,0.65)] transition hover:bg-[#F0481A]"
+            >
+              Add New Activities
+            </button>
+          )}
         </div>
       </div>
 
@@ -467,7 +473,9 @@ export default function PlacesToVisit() {
               className={`${card.bg} rounded-xl p-3 relative overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 border border-gray-100`}
             >
               <div className="flex items-center justify-between gap-2">
-                <div className={`${card.iconBg} p-2.5 rounded-lg flex-shrink-0 shadow-sm`}>
+                <div
+                  className={`${card.iconBg} p-2.5 rounded-lg flex-shrink-0 shadow-sm`}
+                >
                   <img
                     src={card.iconSrc}
                     alt={card.title}
@@ -475,10 +483,14 @@ export default function PlacesToVisit() {
                   />
                 </div>
                 <div className="text-right flex-1 min-w-0">
-                  <p className={`${card.textColor} opacity-80 text-xs font-medium mb-0.5 leading-tight`}>
+                  <p
+                    className={`${card.textColor} opacity-80 text-xs font-medium mb-0.5 leading-tight`}
+                  >
                     {card.title}
                   </p>
-                  <p className={`text-2xl font-bold ${card.textColor} tracking-tight`}>
+                  <p
+                    className={`text-2xl font-bold ${card.textColor} tracking-tight`}
+                  >
                     {String(value)}
                   </p>
                 </div>
@@ -709,33 +721,48 @@ export default function PlacesToVisit() {
                           }`}
                         >
                           <div className="py-1">
-                            <Link
-                              href={`/places-to-visit/edit/${activity.id}`}
-                              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                            >
-                              View/Edit Detail
-                            </Link>
+                            {/* ❌ Hide these for Partner */}
+                            {!isPartner && (
+                              <>
+                                <Link
+                                  href={`/places-to-visit/edit/${activity.id}`}
+                                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                >
+                                  View/Edit Detail
+                                </Link>
 
-                            <Link
-                              href={`/places-to-visit/bookings/${activity.id}`}
-                              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                            >
-                              View Tickets Booked
-                            </Link>
+                                <Link
+                                  href={`/places-to-visit/edit-tickets/${activity.id}`}
+                                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                >
+                                  View/Edit Tickets
+                                </Link>
+                                <Link
+                                  href={`/places-to-visit/bookings/${activity.id}`}
+                                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                >
+                                  View Tickets Booked
+                                </Link>
+                                <button
+                                  onClick={() =>
+                                    handleCopyActivity(activity.id)
+                                  }
+                                  className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                >
+                                  Copy Activity
+                                </button>
+                              </>
+                            )}
 
-                            <Link
-                              href={`/places-to-visit/edit-tickets/${activity.id}`}
-                              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                            >
-                              View/Edit Tickets
-                            </Link>
-
-                            <button
-                              onClick={() => handleCopyActivity(activity.id)}
-                              className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                            >
-                              Copy Activity
-                            </button>
+                            {/* ✅ Show ONLY for Partner */}
+                            {isPartner && (
+                              <Link
+                                href={`/places-to-visit/bookings/${activity.id}`}
+                                className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                              >
+                                View Tickets Booked
+                              </Link>
+                            )}
                           </div>
                         </div>
                       )}

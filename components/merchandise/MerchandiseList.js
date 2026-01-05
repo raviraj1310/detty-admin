@@ -106,6 +106,11 @@ export default function MerchandiseList() {
   const [hardDeleting, setHardDeleting] = useState(false);
   const [exporting, setExporting] = useState(false);
 
+  const role =
+    typeof window !== "undefined" ? localStorage.getItem("user_role") : null;
+
+  const isPartner = role === "Partner";
+
   const toImageSrc = (u) => {
     let s = String(u || "").trim();
     s = s
@@ -508,23 +513,25 @@ export default function MerchandiseList() {
               "View All Orders"
             )}
           </button>
-          <button
-            onClick={() => {
-              setAddNewLoading(true);
-              router.push("/merchandise/add");
-            }}
-            disabled={addNewLoading}
-            className="rounded-lg bg-[#FF5B2C] px-3 py-1.5 text-xs font-semibold text-white shadow-[0_14px_30px_-20px_rgba(248,113,72,0.65)] transition hover:bg-[#F0481A] disabled:opacity-60 disabled:cursor-not-allowed"
-          >
-            {addNewLoading ? (
-              <span className="flex items-center gap-1.5">
-                <Loader2 className="h-3 w-3 animate-spin" />
-                Navigating...
-              </span>
-            ) : (
-              "Add New Merchandise"
-            )}
-          </button>
+          {!isPartner && (
+            <button
+              onClick={() => {
+                setAddNewLoading(true);
+                router.push("/merchandise/add");
+              }}
+              disabled={addNewLoading}
+              className="rounded-lg bg-[#FF5B2C] px-3 py-1.5 text-xs font-semibold text-white shadow-[0_14px_30px_-20px_rgba(248,113,72,0.65)] transition hover:bg-[#F0481A] disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {addNewLoading ? (
+                <span className="flex items-center gap-1.5">
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                  Navigating...
+                </span>
+              ) : (
+                "Add New Merchandise"
+              )}
+            </button>
+          )}
         </div>
       </div>
 
@@ -814,136 +821,90 @@ export default function MerchandiseList() {
                         className="absolute right-full top-0 mr-2 w-48 rounded-md shadow-lg bg-white z-[100]"
                       >
                         <div className="py-1">
-                          <Link
-                            href={
-                              item.id ? `/merchandise/detail/${item.id}` : "#"
-                            }
-                            className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                          >
-                            <span className="mr-3 text-gray-500">
-                              <svg
-                                className="w-4 h-4"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
+                          {/* ❌ Hide for Partner */}
+                          {!isPartner && (
+                            <>
+                              <Link
+                                href={
+                                  item.id
+                                    ? `/merchandise/detail/${item.id}`
+                                    : "#"
+                                }
+                                className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                               >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                                />
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                                />
-                              </svg>
-                            </span>
-                            <span className="text-gray-800">
-                              View/Edit Detail
-                            </span>
-                          </Link>
-                          <Link
-                            href={
-                              item.id ? `/merchandise/order/${item.id}` : "#"
-                            }
-                            className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                          >
-                            <span className="mr-3 text-gray-500">
-                              <svg
-                                className="w-4 h-4"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
+                                <span className="mr-3 text-gray-500">…</span>
+                                <span className="text-gray-800">
+                                  View/Edit Detail
+                                </span>
+                              </Link>
+
+                              <Link
+                                href={
+                                  item.id
+                                    ? `/merchandise/order/${item.id}`
+                                    : "#"
+                                }
+                                className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                               >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                                />
-                              </svg>
-                            </span>
-                            <span className="text-gray-800">View Orders</span>
-                          </Link>
-                          {String(item.status).toLowerCase() === "active" ? (
-                            <button
-                              onClick={() => handleSetStatus(item.id, false)}
-                              className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                            >
-                              <span className="mr-3 text-gray-500">
-                                <svg
-                                  className="w-4 h-4"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  viewBox="0 0 24 24"
+                                <span className="mr-3 text-gray-500">…</span>
+                                <span className="text-gray-800">
+                                  View Orders
+                                </span>
+                              </Link>
+
+                              {String(item.status).toLowerCase() ===
+                              "active" ? (
+                                <button
+                                  onClick={() =>
+                                    handleSetStatus(item.id, false)
+                                  }
+                                  className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                                 >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
-                                  />
-                                </svg>
-                              </span>
-                              <span className="text-gray-800">
-                                {updatingId === item.id
-                                  ? "Updating..."
-                                  : "Inactive"}
-                              </span>
-                            </button>
-                          ) : (
-                            <button
-                              onClick={() => handleSetStatus(item.id, true)}
-                              className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                            >
-                              <span className="mr-3 text-gray-500">
-                                <svg
-                                  className="w-4 h-4"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  viewBox="0 0 24 24"
+                                  <span className="mr-3 text-gray-500">…</span>
+                                  <span className="text-gray-800">
+                                    {updatingId === item.id
+                                      ? "Updating..."
+                                      : "Inactive"}
+                                  </span>
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={() => handleSetStatus(item.id, true)}
+                                  className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                                 >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                                  />
-                                </svg>
-                              </span>
-                              <span className="text-gray-800">
-                                {updatingId === item.id
-                                  ? "Updating..."
-                                  : "Active"}
-                              </span>
-                            </button>
+                                  <span className="mr-3 text-gray-500">…</span>
+                                  <span className="text-gray-800">
+                                    {updatingId === item.id
+                                      ? "Updating..."
+                                      : "Active"}
+                                  </span>
+                                </button>
+                              )}
+
+                              <button
+                                onClick={() => openHardDelete(item.id)}
+                                className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                              >
+                                <span className="mr-3 text-red-500">…</span>
+                                <span className="text-red-700">
+                                  Permanent Delete
+                                </span>
+                              </button>
+                            </>
                           )}
-                          <button
-                            onClick={() => openHardDelete(item.id)}
-                            className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50"
-                          >
-                            <span className="mr-3 text-red-500">
-                              <svg
-                                className="w-4 h-4"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth="2"
-                                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M1 7h22M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3"
-                                />
-                              </svg>
-                            </span>
-                            <span className="text-red-700">
-                              Permanent Delete
-                            </span>
-                          </button>
+
+                          {/* ✅ Show ONLY for Partner */}
+                          {isPartner && (
+                            <Link
+                              href={
+                                item.id ? `/merchandise/order/${item.id}` : "#"
+                              }
+                              className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                            >
+                              <span className="mr-3 text-gray-500">…</span>
+                              <span className="text-gray-800">View Orders</span>
+                            </Link>
+                          )}
                         </div>
                       </div>
                     )}
