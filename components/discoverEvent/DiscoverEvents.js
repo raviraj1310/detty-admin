@@ -110,6 +110,11 @@ export default function DiscoverEvents() {
   const [sortDir, setSortDir] = useState("desc");
   const [exporting, setExporting] = useState(false);
 
+  const role =
+    typeof window !== "undefined" ? localStorage.getItem("user_role") : null;
+
+  const isPartner = role === "Partner";
+
   const toIdString = (v) => {
     if (!v) return "";
     if (typeof v === "string") return v;
@@ -464,20 +469,22 @@ export default function DiscoverEvents() {
               "View All Bookings"
             )}
           </button>
-          <button
-            onClick={handleAddNewEvent}
-            disabled={addNewLoading}
-            className="rounded-xl bg-[#FF5B2C] px-5 py-2.5 text-sm font-semibold text-white shadow-[0_14px_30px_-20px_rgba(248,113,72,0.65)] transition hover:bg-[#F0481A] disabled:opacity-60 disabled:cursor-not-allowed"
-          >
-            {addNewLoading ? (
-              <span className="flex items-center gap-2">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Navigating...
-              </span>
-            ) : (
-              "Add New Events"
-            )}
-          </button>
+          {!isPartner && (
+            <button
+              onClick={handleAddNewEvent}
+              disabled={addNewLoading}
+              className="rounded-xl bg-[#FF5B2C] px-5 py-2.5 text-sm font-semibold text-white shadow-[0_14px_30px_-20px_rgba(248,113,72,0.65)] transition hover:bg-[#F0481A] disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {addNewLoading ? (
+                <span className="flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Navigating...
+                </span>
+              ) : (
+                "Add New Events"
+              )}
+            </button>
+          )}
         </div>
       </div>
 
@@ -744,43 +751,62 @@ export default function DiscoverEvents() {
                           className="absolute right-0 top-full mt-1 w-48 rounded-md shadow-lg bg-white z-[100] border border-gray-200"
                         >
                           <div className="py-1">
-                            <Link
-                              href={
-                                event.id
-                                  ? `/discover-events/detail/${event.id}`
-                                  : "#"
-                              }
-                              className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                            >
-                              View/Edit Detail
-                            </Link>
-                            <Link
-                              href={
-                                event.id
-                                  ? `/discover-events/tickets-booked/${event.id}`
-                                  : "#"
-                              }
-                              className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                            >
-                              View Tickets Booked
-                            </Link>
-                            <Link
-                              href={
-                                event.id
-                                  ? `/discover-events/edit-tickets/${event.id}`
-                                  : "#"
-                              }
-                              className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                            >
-                              View/Edit Tickets
-                            </Link>
+                            {/* ❌ Hide for Partner */}
+                            {!isPartner && (
+                              <>
+                                <Link
+                                  href={
+                                    event.id
+                                      ? `/discover-events/detail/${event.id}`
+                                      : "#"
+                                  }
+                                  className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                >
+                                  View/Edit Detail
+                                </Link>
 
-                            <button
-                              onClick={() => handleCopyEvent(event.id)}
-                              className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                            >
-                              Copy Event
-                            </button>
+                                <Link
+                                  href={
+                                    event.id
+                                      ? `/discover-events/edit-tickets/${event.id}`
+                                      : "#"
+                                  }
+                                  className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                >
+                                  View/Edit Tickets
+                                </Link>
+                                <Link
+                                  href={
+                                    event.id
+                                      ? `/discover-events/tickets-booked/${event.id}`
+                                      : "#"
+                                  }
+                                  className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                >
+                                  View Tickets Booked
+                                </Link>
+                                <button
+                                  onClick={() => handleCopyEvent(event.id)}
+                                  className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                >
+                                  Copy Event
+                                </button>
+                              </>
+                            )}
+
+                            {/* ✅ Show ONLY for Partner */}
+                            {isPartner && (
+                              <Link
+                                href={
+                                  event.id
+                                    ? `/discover-events/tickets-booked/${event.id}`
+                                    : "#"
+                                }
+                                className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                              >
+                                View Tickets Booked
+                              </Link>
+                            )}
                           </div>
                         </div>
                       )}
