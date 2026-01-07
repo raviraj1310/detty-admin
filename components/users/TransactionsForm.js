@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { X } from "lucide-react";
 import {
@@ -188,6 +188,9 @@ export default function TransactionsForm() {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState("");
   const [paymentStatusFilter, setPaymentStatusFilter] = useState("");
+  const [limit, setLimit] = useState(20);
+  const [pageCount, setPageCount] = useState(1);
+  const [page, setPage] = useState(1);
 
   const [stats, setStats] = useState({
     yesterdayCount: 0,
@@ -513,7 +516,7 @@ export default function TransactionsForm() {
           setStatsLoadedFromApi(false);
         }
 
-        console.log("rawdata from the api", raw);
+        // console.log("rawdata from the api", raw);
 
         const list = raw.map((b, idx) => ({
           id: b.bookingId || b._id || `booking-${idx}`,
@@ -699,6 +702,21 @@ export default function TransactionsForm() {
       };
       return dir * val(sortKey);
     });
+
+  const paginatedBookings = useMemo(() => {
+    const startIndex = (page - 1) * limit;
+    const endIndex = startIndex + limit;
+    return filteredBookings.slice(startIndex, endIndex);
+  }, [filteredBookings, page, limit]);
+
+  useEffect(() => {
+    const totalPages = Math.ceil(filteredBookings.length / limit) || 1;
+    setPageCount(totalPages);
+
+    if (page > totalPages) {
+      setPage(1);
+    }
+  }, [filteredBookings.length, limit]);
 
   const toggleSort = (key) => {
     if (sortKey === key) {
@@ -1181,6 +1199,41 @@ export default function TransactionsForm() {
                     Export
                   </span>
                 </button>
+
+                <div className="flex items-center gap-2">
+                  <label className="flex items-center gap-1.5 text-xs text-[#2D3658]">
+                    Show
+                    <select
+                      value={limit}
+                      onChange={(e) => setLimit(Number(e.target.value) || 20)}
+                      className="h-8 px-2 border border-[#E5E6EF] rounded-lg text-xs"
+                    >
+                      <option value={10}>10</option>
+                      <option value={20}>20</option>
+                      <option value={50}>50</option>
+                      <option value={100}>100</option>
+                    </select>
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setPage((p) => Math.max(1, p - 1))}
+                      disabled={page <= 1 || loading}
+                      className="h-8 px-3 py-1.5 border border-[#E5E6EF] rounded-lg bg-white text-xs font-medium text-[#2D3658] disabled:opacity-50 hover:bg-[#F6F7FD]"
+                    >
+                      Prev
+                    </button>
+                    <span className="text-xs text-[#2D3658]">
+                      Page {page} of {pageCount}
+                    </span>
+                    <button
+                      onClick={() => setPage((p) => Math.min(pageCount, p + 1))}
+                      disabled={page >= pageCount || loading}
+                      className="h-8 px-3 py-1.5 border border-[#E5E6EF] rounded-lg bg-white text-xs font-medium text-[#2D3658] disabled:opacity-50 hover:bg-[#F6F7FD]"
+                    >
+                      Next
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -1332,8 +1385,8 @@ export default function TransactionsForm() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {filteredBookings.length > 0 ? (
-                  filteredBookings.map((booking, i) => (
+                {paginatedBookings.length > 0 ? (
+                  paginatedBookings.map((booking, i) => (
                     <tr
                       key={`${booking.rowKey || booking.id}-${i}`}
                       className="hover:bg-gray-50"

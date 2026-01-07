@@ -54,6 +54,10 @@ export default function LeadwayPage() {
     newCountToday: 0,
   });
 
+  const [limit, setLimit] = useState(20);
+  const [pageCount, setPageCount] = useState(1);
+  const [page, setPage] = useState(1);
+
   useEffect(() => {
     const load = async () => {
       setLoading(true);
@@ -297,6 +301,21 @@ export default function LeadwayPage() {
       }
     });
   }, [filtered, sortKey, sortDir]);
+
+  const paginatedBookings = useMemo(() => {
+    const startIndex = (page - 1) * limit;
+    const endIndex = startIndex + limit;
+    return sorted.slice(startIndex, endIndex);
+  }, [sorted, page, limit]);
+
+  useEffect(() => {
+    const totalPages = Math.ceil(sorted.length / limit) || 1;
+    setPageCount(totalPages);
+
+    if (page > totalPages) {
+      setPage(1);
+    }
+  }, [sorted.length, limit]);
 
   const toCurrency = (n) => {
     try {
@@ -683,6 +702,41 @@ export default function LeadwayPage() {
                     Export
                   </span>
                 </button>
+
+                <div className="flex items-center gap-2">
+                  <label className="flex items-center gap-1.5 text-xs text-[#2D3658]">
+                    Show
+                    <select
+                      value={limit}
+                      onChange={(e) => setLimit(Number(e.target.value) || 20)}
+                      className="h-8 px-2 border border-[#E5E6EF] rounded-lg text-xs"
+                    >
+                      <option value={10}>10</option>
+                      <option value={20}>20</option>
+                      <option value={50}>50</option>
+                      <option value={100}>100</option>
+                    </select>
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setPage((p) => Math.max(1, p - 1))}
+                      disabled={page <= 1 || loading}
+                      className="h-8 px-3 py-1.5 border border-[#E5E6EF] rounded-lg bg-white text-xs font-medium text-[#2D3658] disabled:opacity-50 hover:bg-[#F6F7FD]"
+                    >
+                      Prev
+                    </button>
+                    <span className="text-xs text-[#2D3658]">
+                      Page {page} of {pageCount}
+                    </span>
+                    <button
+                      onClick={() => setPage((p) => Math.min(pageCount, p + 1))}
+                      disabled={page >= pageCount || loading}
+                      className="h-8 px-3 py-1.5 border border-[#E5E6EF] rounded-lg bg-white text-xs font-medium text-[#2D3658] disabled:opacity-50 hover:bg-[#F6F7FD]"
+                    >
+                      Next
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -831,7 +885,7 @@ export default function LeadwayPage() {
                 )}
                 {!loading &&
                   !error &&
-                  sorted.map((s, idx) => (
+                  paginatedBookings?.map((s, idx) => (
                     <tr
                       key={s.id || idx}
                       className="hover:bg-gray-50 border-b border-gray-100"

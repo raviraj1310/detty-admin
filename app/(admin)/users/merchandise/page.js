@@ -229,6 +229,9 @@ export default function MerchandisePage() {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState("");
   const [paymentStatusFilter, setPaymentStatusFilter] = useState("");
+  const [limit, setLimit] = useState(20);
+  const [pageCount, setPageCount] = useState(1);
+  const [page, setPage] = useState(1);
 
   const [stats, setStats] = useState({
     yesterdayCount: 0,
@@ -592,6 +595,21 @@ export default function MerchandisePage() {
     const matchesDigits = termDigits && dateDigits.includes(termDigits);
     return matchesDate && (matchesText || matchesDigits);
   });
+
+  const paginatedBookings = useMemo(() => {
+    const startIndex = (page - 1) * limit;
+    const endIndex = startIndex + limit;
+    return filteredMerchandise.slice(startIndex, endIndex);
+  }, [filteredMerchandise, page, limit]);
+
+  useEffect(() => {
+    const totalPages = Math.ceil(filteredMerchandise.length / limit) || 1;
+    setPageCount(totalPages);
+
+    if (page > totalPages) {
+      setPage(1);
+    }
+  }, [filteredMerchandise.length, limit]);
 
   const getActivityStatusColor = (status) => {
     switch (status) {
@@ -1001,6 +1019,41 @@ export default function MerchandisePage() {
                     Export
                   </span>
                 </button>
+
+                <div className="flex items-center gap-2">
+                  <label className="flex items-center gap-1.5 text-xs text-[#2D3658]">
+                    Show
+                    <select
+                      value={limit}
+                      onChange={(e) => setLimit(Number(e.target.value) || 20)}
+                      className="h-8 px-2 border border-[#E5E6EF] rounded-lg text-xs"
+                    >
+                      <option value={10}>10</option>
+                      <option value={20}>20</option>
+                      <option value={50}>50</option>
+                      <option value={100}>100</option>
+                    </select>
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setPage((p) => Math.max(1, p - 1))}
+                      disabled={page <= 1}
+                      className="h-8 px-3 py-1.5 border border-[#E5E6EF] rounded-lg bg-white text-xs font-medium text-[#2D3658] disabled:opacity-50 hover:bg-[#F6F7FD]"
+                    >
+                      Prev
+                    </button>
+                    <span className="text-xs text-[#2D3658]">
+                      Page {page} of {pageCount}
+                    </span>
+                    <button
+                      onClick={() => setPage((p) => Math.min(pageCount, p + 1))}
+                      disabled={page >= pageCount}
+                      className="h-8 px-3 py-1.5 border border-[#E5E6EF] rounded-lg bg-white text-xs font-medium text-[#2D3658] disabled:opacity-50 hover:bg-[#F6F7FD]"
+                    >
+                      Next
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -1068,7 +1121,7 @@ export default function MerchandisePage() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {filteredMerchandise.map((merchandise) => (
+                {paginatedBookings?.map((merchandise) => (
                   <tr
                     key={merchandise.id}
                     className="hover:bg-gray-50 border-b border-gray-100"
