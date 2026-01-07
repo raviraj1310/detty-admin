@@ -43,7 +43,10 @@ export default function InactiveUsersPage () {
   const [exporting, setExporting] = useState(false)
   const [error, setError] = useState('')
   const [rows, setRows] = useState([])
-  const [totalUsers, setTotalUsers] = useState(0)
+  const [counts, setCounts] = useState({
+    totalUsers: 0,
+    totalInactiveUsers: 0
+  })
   const [search, setSearch] = useState('')
   const [sort, setSort] = useState({ key: 'name', dir: 'asc' })
   const [page, setPage] = useState(1)
@@ -55,22 +58,23 @@ export default function InactiveUsersPage () {
     setError('')
     try {
       const res = await getInactiveUsers(page, limit)
-      const payload = res?.data || res || {}
+      // res is the response body containing counts and users/data array
 
-      const list = Array.isArray(payload?.users)
-        ? payload.users
-        : Array.isArray(payload?.data)
-        ? payload.data
-        : Array.isArray(payload)
-        ? payload
+      const list = Array.isArray(res?.users)
+        ? res.users
+        : Array.isArray(res?.data)
+        ? res.data
+        : Array.isArray(res)
+        ? res
         : []
 
-      const total = Number(
-        payload?.totalInactiveUsers ?? payload?.totalUsers ?? list.length
-      )
-      const pages = Number(payload?.pages ?? 1)
+      setCounts({
+        totalUsers: Number(res?.totalUsers || 0),
+        totalInactiveUsers: Number(res?.totalInactiveUsers || 0)
+      })
 
-      setTotalUsers(total)
+      const pages = Number(res?.pages ?? 1)
+
       setTotalPages(pages)
 
       const mapped = list.map(u => {
@@ -216,7 +220,9 @@ export default function InactiveUsersPage () {
               <p className='text-xs text-black opacity-90'>
                 Total Inactive Users
               </p>
-              <p className='text-2xl text-black font-bold'>{totalUsers}</p>
+              <p className='text-2xl text-black font-bold'>
+                {counts.totalUsers}
+              </p>
             </div>
           </div>
         </div>
@@ -235,7 +241,9 @@ export default function InactiveUsersPage () {
               <p className='text-xs text-black opacity-90'>
                 Users Without Sessions
               </p>
-              <p className='text-2xl text-black font-bold'>{totalUsers}</p>
+              <p className='text-2xl text-black font-bold'>
+                {counts.totalInactiveUsers}
+              </p>
             </div>
           </div>
         </div>

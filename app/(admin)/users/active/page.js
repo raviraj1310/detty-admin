@@ -37,7 +37,10 @@ export default function ActiveUsersPage () {
   const [exporting, setExporting] = useState(false)
   const [error, setError] = useState('')
   const [rows, setRows] = useState([])
-  const [totalUsers, setTotalUsers] = useState(0)
+  const [counts, setCounts] = useState({
+    totalUsers: 0,
+    activeUsers: 0
+  })
   const [search, setSearch] = useState('')
   const [sort, setSort] = useState({ key: 'name', dir: 'asc' })
 
@@ -47,14 +50,18 @@ export default function ActiveUsersPage () {
       setError('')
       try {
         const res = await getActiveUsers()
-        const payload = res?.data || res || {}
-        const list = Array.isArray(payload?.data)
-          ? payload.data
-          : Array.isArray(payload)
-          ? payload
+        // res is the response body containing counts and data array
+        const list = Array.isArray(res?.data)
+          ? res.data
+          : Array.isArray(res)
+          ? res
           : []
-        const total = Number(payload?.totalUsers ?? list.length)
-        setTotalUsers(total)
+
+        setCounts({
+          totalUsers: Number(res?.totalUsers || 0),
+          activeUsers: Number(res?.activeUsers || 0)
+        })
+
         const mapped = list.map(it => {
           const u = it?.user || {}
           const sessions = Array.isArray(it?.sessions) ? it.sessions : []
@@ -213,7 +220,9 @@ export default function ActiveUsersPage () {
               <p className='text-xs text-black opacity-90'>
                 Total Active Users
               </p>
-              <p className='text-2xl text-black font-bold'>{totalUsers}</p>
+              <p className='text-2xl text-black font-bold'>
+                {counts.totalUsers}
+              </p>
             </div>
           </div>
         </div>
@@ -232,7 +241,9 @@ export default function ActiveUsersPage () {
               <p className='text-xs text-black opacity-90'>
                 Users With Sessions
               </p>
-              <p className='text-2xl text-black font-bold'>{rows.length}</p>
+              <p className='text-2xl text-black font-bold'>
+                {counts.activeUsers}
+              </p>
             </div>
           </div>
         </div>

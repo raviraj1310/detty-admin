@@ -24,7 +24,9 @@ const StatCard = ({ stat }) => {
         <img src={stat.iconSrc} alt={stat.title} className='w-5 h-5' />
       </div>
       <div className='flex flex-col'>
-        <p className='text-[10px] font-medium text-gray-600 mb-0.5'>{stat.title}</p>
+        <p className='text-[10px] font-medium text-gray-600 mb-0.5'>
+          {stat.title}
+        </p>
         <p className='text-sm font-bold text-gray-900'>{stat.value}</p>
         {stat.subText && (
           <p className='text-[9px] text-gray-500 mt-0.5 whitespace-nowrap'>
