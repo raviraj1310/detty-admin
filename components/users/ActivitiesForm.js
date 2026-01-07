@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import {
   TbCaretUpDownFilled,
@@ -127,6 +127,9 @@ export default function Activities() {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState("");
   const [paymentStatusFilter, setPaymentStatusFilter] = useState("");
+  const [limit, setLimit] = useState(20);
+  const [pageCount, setPageCount] = useState(1);
+  const [page, setPage] = useState(1);
 
   const [stats, setStats] = useState({
     yesterdayCount: 0,
@@ -553,6 +556,21 @@ export default function Activities() {
     }
   });
 
+  const paginatedBookings = useMemo(() => {
+    const startIndex = (page - 1) * limit;
+    const endIndex = startIndex + limit;
+    return sortedActivities.slice(startIndex, endIndex);
+  }, [sortedActivities, page, limit]);
+
+  useEffect(() => {
+    const totalPages = Math.ceil(sortedActivities.length / limit) || 1;
+    setPageCount(totalPages);
+
+    if (page > totalPages) {
+      setPage(1);
+    }
+  }, [sortedActivities.length, limit]);
+
   const getActivityStatusColor = (status) => {
     switch (status) {
       case "Done":
@@ -931,6 +949,41 @@ export default function Activities() {
                     Export
                   </span>
                 </button>
+
+                <div className="flex items-center gap-2">
+                  <label className="flex items-center gap-1.5 text-xs text-[#2D3658]">
+                    Show
+                    <select
+                      value={limit}
+                      onChange={(e) => setLimit(Number(e.target.value) || 20)}
+                      className="h-8 px-2 border border-[#E5E6EF] rounded-lg text-xs"
+                    >
+                      <option value={10}>10</option>
+                      <option value={20}>20</option>
+                      <option value={50}>50</option>
+                      <option value={100}>100</option>
+                    </select>
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setPage((p) => Math.max(1, p - 1))}
+                      disabled={page <= 1 || loading}
+                      className="h-8 px-3 py-1.5 border border-[#E5E6EF] rounded-lg bg-white text-xs font-medium text-[#2D3658] disabled:opacity-50 hover:bg-[#F6F7FD]"
+                    >
+                      Prev
+                    </button>
+                    <span className="text-xs text-[#2D3658]">
+                      Page {page} of {pageCount}
+                    </span>
+                    <button
+                      onClick={() => setPage((p) => Math.min(pageCount, p + 1))}
+                      disabled={page >= pageCount || loading}
+                      className="h-8 px-3 py-1.5 border border-[#E5E6EF] rounded-lg bg-white text-xs font-medium text-[#2D3658] disabled:opacity-50 hover:bg-[#F6F7FD]"
+                    >
+                      Next
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -1089,7 +1142,7 @@ export default function Activities() {
                     </td>
                   </tr>
                 ) : (
-                  sortedActivities.map((activity) => (
+                  paginatedBookings?.map((activity) => (
                     <tr
                       key={activity.id}
                       className="hover:bg-gray-50 border-b border-gray-100"
