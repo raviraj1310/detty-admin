@@ -632,7 +632,11 @@ function UserDetailModal ({ open, userId, onClose }) {
   )
 }
 
-export default function UsersForm () {
+export default function UsersForm ({
+  defaultStatus = '',
+  visibleStats = null,
+  fetchUsersFn = null
+}) {
   const router = useRouter()
   const [searchTerm, setSearchTerm] = useState('')
   const [users, setUsers] = useState([])
@@ -649,7 +653,7 @@ export default function UsersForm () {
   const [detailOpen, setDetailOpen] = useState(false)
   const [detailUserId, setDetailUserId] = useState('')
   const [filtersOpen, setFiltersOpen] = useState(false)
-  const [statusFilter, setStatusFilter] = useState('')
+  const [statusFilter, setStatusFilter] = useState(defaultStatus)
   const [page, setPage] = useState(1)
   const [limit, setLimit] = useState(20)
   const [totalCount, setTotalCount] = useState(0)
@@ -1332,160 +1336,182 @@ export default function UsersForm () {
       </div>
 
       {/* Stats Cards */}
-      <div className='grid grid-cols-1 md:grid-cols-3 gap-4 mb-6'>
-        <div className='bg-gradient-to-r from-[#E8EEFF] to-[#C5D5FF] p-4 rounded-lg shadow-md'>
-          <div className='flex items-center'>
-            <div className='bg-white bg-opacity-20 p-2 rounded-lg mr-3'>
-              <Image
-                src='/images/backend/icons/icons (1).svg'
-                alt='Total Users Icon'
-                width={24}
-                height={24}
-                className='w-6 h-6'
-              />
-            </div>
-            <div>
-              <p className='text-xs text-black opacity-90'>Total Users</p>
-              <p className='text-2xl text-black font-bold'>
-                {globalStats.total}
-              </p>
+      <div
+        className={`grid grid-cols-1 gap-4 mb-6 ${
+          visibleStats?.length === 2 ? 'md:grid-cols-2' : 'md:grid-cols-3'
+        }`}
+      >
+        {(!visibleStats || visibleStats.includes('total')) && (
+          <div className='bg-gradient-to-r from-[#E8EEFF] to-[#C5D5FF] p-4 rounded-lg shadow-md'>
+            <div className='flex items-center'>
+              <div className='bg-white bg-opacity-20 p-2 rounded-lg mr-3'>
+                <Image
+                  src='/images/backend/icons/icons (1).svg'
+                  alt='Total Users Icon'
+                  width={24}
+                  height={24}
+                  className='w-6 h-6'
+                />
+              </div>
+              <div>
+                <p className='text-xs text-black opacity-90'>Total Users</p>
+                <p className='text-2xl text-black font-bold'>
+                  {globalStats.total}
+                </p>
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
-        <div className='bg-gradient-to-r from-[#E8F8F0] to-[#B8EDD0] p-4 rounded-lg shadow-md'>
-          <div className='flex items-center'>
-            <div className='bg-white bg-opacity-20 p-2 rounded-lg mr-3'>
-              <Image
-                src='/images/backend/icons/icons (5).svg'
-                alt='Active Users Icon'
-                width={24}
-                height={24}
-                className='w-6 h-6'
-              />
-            </div>
-            <div>
-              <p className='text-xs text-black opacity-90'>Active Users</p>
-              <p className='text-2xl text-black font-bold'>
-                {globalStats.active}
-              </p>
+        {(!visibleStats || visibleStats.includes('active')) && (
+          <div
+            className='bg-gradient-to-r from-[#E8F8F0] to-[#B8EDD0] p-4 rounded-lg shadow-md cursor-pointer hover:opacity-90 transition-opacity'
+            onClick={() => router.push('/users/active')}
+          >
+            <div className='flex items-center'>
+              <div className='bg-white bg-opacity-20 p-2 rounded-lg mr-3'>
+                <Image
+                  src='/images/backend/icons/icons (5).svg'
+                  alt='Active Users Icon'
+                  width={24}
+                  height={24}
+                  className='w-6 h-6'
+                />
+              </div>
+              <div>
+                <p className='text-xs text-black opacity-90'>Active Users</p>
+                <p className='text-2xl text-black font-bold'>
+                  {globalStats.active}
+                </p>
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
-        <div className='bg-gradient-to-r from-[#FFE8E8] to-[#FFC5C5] p-4 rounded-lg shadow-md'>
-          <div className='flex items-center'>
-            <div className='bg-white bg-opacity-20 p-2 rounded-lg mr-3'>
-              <Image
-                src='/images/backend/icons/icons (6).svg'
-                alt='Inactive Users Icon'
-                width={24}
-                height={24}
-                className='w-6 h-6'
-              />
-            </div>
-            <div>
-              <p className='text-xs text-black opacity-90'>Inactive Users</p>
-              <p className='text-2xl text-black font-bold'>
-                {globalStats.inactive}
-              </p>
+        {(!visibleStats || visibleStats.includes('inactive')) && (
+          <div
+            className='bg-gradient-to-r from-[#FFE8E8] to-[#FFC5C5] p-4 rounded-lg shadow-md cursor-pointer hover:opacity-90 transition-opacity'
+            onClick={() => router.push('/users/inactive')}
+          >
+            <div className='flex items-center'>
+              <div className='bg-white bg-opacity-20 p-2 rounded-lg mr-3'>
+                <Image
+                  src='/images/backend/icons/icons (6).svg'
+                  alt='Inactive Users Icon'
+                  width={24}
+                  height={24}
+                  className='w-6 h-6'
+                />
+              </div>
+              <div>
+                <p className='text-xs text-black opacity-90'>Inactive Users</p>
+                <p className='text-2xl text-black font-bold'>
+                  {globalStats.inactive}
+                </p>
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Total Bookings Yesterday */}
-        <div className='bg-gradient-to-r from-[#FFF4E8] to-[#FFE4C5] p-4 rounded-lg shadow-md'>
-          <div className='flex items-center'>
-            <div className='bg-white p-2 rounded-lg mr-3'>
-              <FaUserPlus className='w-6 h-6 text-orange-600' />
-            </div>
-            <div>
-              <p className='text-xs text-black opacity-90'>
-                New Registrations Yesterday{' '}
-                <span className='text-[10px] text-black opacity-75'>
-                  ({globalStats.yesterdayDateStr})
-                </span>
-              </p>
-              <p className='text-2xl text-black font-bold'>
-                {globalStats.yesterdayCount}
-              </p>
+        {(!visibleStats || visibleStats.includes('new_registrations')) && (
+          <div className='bg-gradient-to-r from-[#FFF4E8] to-[#FFE4C5] p-4 rounded-lg shadow-md'>
+            <div className='flex items-center'>
+              <div className='bg-white p-2 rounded-lg mr-3'>
+                <FaUserPlus className='w-6 h-6 text-orange-600' />
+              </div>
+              <div>
+                <p className='text-xs text-black opacity-90'>
+                  New Registrations Yesterday{' '}
+                  <span className='text-[10px] text-black opacity-75'>
+                    ({globalStats.yesterdayDateStr})
+                  </span>
+                </p>
+                <p className='text-2xl text-black font-bold'>
+                  {globalStats.yesterdayCount}
+                </p>
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Avg Daily Growth (Count) */}
-        <div className='bg-gradient-to-r from-[#F3E8FF] to-[#E0C5FF] p-4 rounded-lg shadow-md'>
-          <div className='flex items-center'>
-            <div className='bg-white p-2 rounded-lg mr-3'>
-              <TbTrendingUp className='w-6 h-6 text-purple-600' />
-            </div>
-            <div>
-              <p className='text-xs text-black opacity-90'>
-                Avg Daily Growth (Count)
-              </p>
-              <div className='flex items-end gap-2'>
-                {globalStats.isCountIncreasing ? (
-                  <>
-                    <p className='text-2xl text-green-600 font-bold'>
-                      {globalStats.avgGrowthCount}
-                    </p>
-                    <span className='text-xs flex items-center mb-1 text-green-600'>
-                      <TbTrendingUp className='w-3 h-3 mr-0.5' />
-                      Increasing
-                    </span>
-                  </>
-                ) : (
-                  <>
-                    <p className='text-2xl text-red-600 font-bold'>
-                      {globalStats.avgGrowthCount}
-                    </p>
-                    <span className='text-xs flex items-center mb-1 text-red-600'>
-                      <TbTrendingDown className='w-3 h-3 mr-0.5' />
-                      Decreasing
-                    </span>
-                  </>
-                )}
+        {(!visibleStats || visibleStats.includes('growth_count')) && (
+          <div className='bg-gradient-to-r from-[#F3E8FF] to-[#E0C5FF] p-4 rounded-lg shadow-md'>
+            <div className='flex items-center'>
+              <div className='bg-white p-2 rounded-lg mr-3'>
+                <TbTrendingUp className='w-6 h-6 text-purple-600' />
+              </div>
+              <div>
+                <p className='text-xs text-black opacity-90'>
+                  Avg Daily Growth (Count)
+                </p>
+                <div className='flex items-end gap-2'>
+                  {globalStats.isCountIncreasing ? (
+                    <>
+                      <p className='text-2xl text-green-600 font-bold'>
+                        {globalStats.avgGrowthCount}
+                      </p>
+                      <span className='text-xs flex items-center mb-1 text-green-600'>
+                        <TbTrendingUp className='w-3 h-3 mr-0.5' />
+                        Increasing
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <p className='text-2xl text-red-600 font-bold'>
+                        {globalStats.avgGrowthCount}
+                      </p>
+                      <span className='text-xs flex items-center mb-1 text-red-600'>
+                        <TbTrendingDown className='w-3 h-3 mr-0.5' />
+                        Decreasing
+                      </span>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Avg Daily Growth (%) */}
-        <div className='bg-gradient-to-r from-[#E0FFF7] to-[#A8F0DC] p-4 rounded-lg shadow-md'>
-          <div className='flex items-center'>
-            <div className='bg-white p-2 rounded-lg mr-3'>
-              <FaChartColumn className='w-6 h-6 text-teal-600' />
-            </div>
-            <div>
-              <p className='text-xs text-black opacity-90'>
-                Avg Daily Growth (%)
-              </p>
-              <div className='flex items-end gap-2'>
-                {globalStats.isPctIncreasing ? (
-                  <>
-                    <p className='text-2xl text-green-600 font-bold'>
-                      {globalStats.avgGrowthPercent}
-                    </p>
-                    <span className='text-xs flex items-center mb-1 text-green-600'>
-                      <TbTrendingUp className='w-3 h-3 mr-0.5' />
-                      Increasing
-                    </span>
-                  </>
-                ) : (
-                  <>
-                    <p className='text-2xl text-red-600 font-bold'>
-                      {globalStats.avgGrowthPercent}
-                    </p>
-                    <span className='text-xs flex items-center mb-1 text-red-600'>
-                      <TbTrendingDown className='w-3 h-3 mr-0.5' />
-                      Decreasing
-                    </span>
-                  </>
-                )}
+        {(!visibleStats || visibleStats.includes('growth_percent')) && (
+          <div className='bg-gradient-to-r from-[#E0FFF7] to-[#A8F0DC] p-4 rounded-lg shadow-md'>
+            <div className='flex items-center'>
+              <div className='bg-white p-2 rounded-lg mr-3'>
+                <FaChartColumn className='w-6 h-6 text-teal-600' />
+              </div>
+              <div>
+                <p className='text-xs text-black opacity-90'>
+                  Avg Daily Growth (%)
+                </p>
+                <div className='flex items-end gap-2'>
+                  {globalStats.isPctIncreasing ? (
+                    <>
+                      <p className='text-2xl text-green-600 font-bold'>
+                        {globalStats.avgGrowthPercent}
+                      </p>
+                      <span className='text-xs flex items-center mb-1 text-green-600'>
+                        <TbTrendingUp className='w-3 h-3 mr-0.5' />
+                        Increasing
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <p className='text-2xl text-red-600 font-bold'>
+                        {globalStats.avgGrowthPercent}
+                      </p>
+                      <span className='text-xs flex items-center mb-1 text-red-600'>
+                        <TbTrendingDown className='w-3 h-3 mr-0.5' />
+                        Decreasing
+                      </span>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
       <div className='bg-gray-200 p-5 rounded-xl'>
         {/* User List Section */}

@@ -208,3 +208,48 @@ export const getMyLeadPlans = async id => {
     throw error
   }
 }
+
+export const getActiveUsers = async () => {
+  try {
+    const response = await api.get(`/user/get-active-users`)
+    return response.data
+  } catch (error) {
+    console.error('Error fetching active users:', error)
+    throw error
+  }
+}
+export const getInactiveUsers = async (page = 1, limit = 20) => {
+  try {
+    const response = await api.get(
+      `/user/get-inactive-users?page=${page}&limit=${limit}`
+    )
+    return response.data
+  } catch (error) {
+    console.error('Error fetching inactive users:', error)
+    throw error
+  }
+}
+
+export const downloadActiveExcel = async () => {
+  try {
+    const response = await api.get(`/user/get-active-users-download`, {
+      responseType: 'blob'
+    })
+    return response.data
+  } catch (error) {
+    console.error('Error downloading active users Excel:', error)
+    throw error
+  }
+}
+
+export const downloadInactiveExcel = async () => {
+  try {
+    const response = await api.get(`/user/get-inactive-users-download`, {
+      responseType: 'blob'
+    })
+    return response.data
+  } catch (error) {
+    console.error('Error downloading inactive users Excel:', error)
+    throw error
+  }
+}
