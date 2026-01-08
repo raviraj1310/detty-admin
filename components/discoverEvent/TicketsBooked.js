@@ -497,7 +497,7 @@ export default function TicketsBooked () {
           : typeof b.amount === 'number'
           ? b.amount
           : 0,
-      'Arrival Date': toLocal(b.arrivalDate),
+      'Arrival Date': toLocal(b.arrivalDate)
       // Attendees: Array.isArray(b.attendees)
       //   ? b.attendees.map(a => a.fullName).join(', ')
       //   : '-'
@@ -537,6 +537,17 @@ export default function TicketsBooked () {
             Tickets Booked - {summary?.eventName || 'Event'}
           </h1>
           <p className='text-xs text-[#99A1BC]'>Dashboard / Tickets Booked</p>
+        </div>
+        <div className='flex items-center'>
+          <button
+            onClick={handleBack}
+            className='rounded-xl border border-[#E5E6EF] bg-white px-4 py-2 text-xs font-medium text-[#1A1F3F] shadow-sm transition hover:bg-[#F9FAFD]'
+          >
+            <span className='flex items-center gap-1.5'>
+              <ArrowLeft className='h-4 w-4' />
+              Back to Discover Events
+            </span>
+          </button>
         </div>
       </div>
 

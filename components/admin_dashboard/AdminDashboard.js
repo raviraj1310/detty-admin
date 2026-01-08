@@ -1,7 +1,8 @@
 'use client'
 
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { dashboardUserActiveInactiveCounts } from '@/services/auth/login.service'
 
 const formatCurrency = amount => {
   return (
@@ -65,6 +66,31 @@ const DashboardSection = ({ section }) => (
 // --- 4. Main Dashboard Component ---
 
 export default function AdminDashboard ({ stats }) {
+  const [userCounts, setUserCounts] = useState({
+    totalUsers: 0,
+    totalActiveUsers: 0,
+    totalInactiveUsers: 0
+  })
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const res = await dashboardUserActiveInactiveCounts()
+        setUserCounts({
+          totalUsers: Number(res?.data?.totalUserCount || 0),
+          totalActiveUsers: Number(res?.data?.activeUserCount || 0),
+          totalInactiveUsers: Number(res?.data?.inactiveUserCount || 0)
+        })
+      } catch (_) {
+        setUserCounts({
+          totalUsers: Number(stats?.totalUsers || 0),
+          totalActiveUsers: Number(stats?.totalActiveUsers || 0),
+          totalInactiveUsers: Number(stats?.totalInactiveUsers || 0)
+        })
+      }
+    }
+    load()
+  }, [])
   // Calculate total bookings and revenue if needed
   const totalBookings =
     (stats?.totalEvents || 0) +
@@ -144,7 +170,7 @@ export default function AdminDashboard ({ stats }) {
         {
           id: 'tu',
           title: 'Total Users',
-          value: stats?.totalUsers || 0,
+          value: userCounts.totalUsers || 0,
           iconSrc: '/images/dashboard/icons (13).svg',
           bg: 'bg-[#E8EEFF]',
           iconBg: 'bg-gradient-to-r from-[#AECBFF] to-[#5A7CC1]'
@@ -152,7 +178,7 @@ export default function AdminDashboard ({ stats }) {
         {
           id: 'au',
           title: 'Active Users',
-          value: stats?.totalActiveUsers || 0,
+          value: userCounts.totalActiveUsers || 0,
           iconSrc: '/images/dashboard/icons (9).svg',
           bg: 'bg-[#E8F8F0]',
           iconBg: 'bg-gradient-to-r from-[#8EEDC7] to-[#3FA574]'
@@ -160,7 +186,7 @@ export default function AdminDashboard ({ stats }) {
         {
           id: 'iu',
           title: 'Inactive Users',
-          value: stats?.totalInactiveUsers || 0,
+          value: userCounts.totalInactiveUsers || 0,
           iconSrc: '/images/dashboard/icons (11).svg',
           bg: 'bg-[#FFE8E8]',
           iconBg: 'bg-gradient-to-r from-[#FFA8A8] to-[#E03E3E]'

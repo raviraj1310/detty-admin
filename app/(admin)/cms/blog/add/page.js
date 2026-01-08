@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Toast from '@/components/ui/Toast'
 import { createBlog } from '@/services/cms/blog.service'
-import { Loader2 } from 'lucide-react'
+import { Loader2, ArrowLeft } from 'lucide-react'
 import { convertToWebp } from '@/src/utils/image'
 import ImageCropper from '@/components/ui/ImageCropper'
 import TiptapEditor from '@/components/editor/TiptapEditor'
@@ -139,11 +139,26 @@ export default function AddBlogPage () {
 
   return (
     <div className='p-4 sm:p-6 lg:p-8 pt-16 lg:pt-8 bg-gray-50 min-h-screen'>
-      <div className='mb-4 sm:mb-6'>
-        <h1 className='text-2xl sm:text-3xl font-bold text-gray-900'>
-          Add Blog
-        </h1>
-        <p className='text-xs sm:text-sm text-gray-500 mt-1'>Dashboard / CMS</p>
+      <div className='mb-4 sm:mb-6 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between'>
+        <div className='flex flex-col gap-1'>
+          <h1 className='text-2xl sm:text-3xl font-bold text-gray-900'>
+            Add Blog
+          </h1>
+          <p className='text-xs sm:text-sm text-gray-500 mt-1'>
+            Dashboard / CMS
+          </p>
+        </div>
+        <div className='flex items-center'>
+          <button
+            onClick={() => router.push('/cms/blog')}
+            className='rounded-xl border border-[#E5E6EF] bg-white px-4 py-2 text-xs font-medium text-[#1A1F3F] shadow-sm transition hover:bg-[#F9FAFD]'
+          >
+            <span className='flex items-center gap-1.5'>
+              <ArrowLeft className='h-4 w-4' />
+              Back to Blogs
+            </span>
+          </button>
+        </div>
       </div>
 
       <div className='bg-gray-200 p-3 sm:p-4 lg:p-6 rounded-xl'>

@@ -61,3 +61,12 @@ export const dashboardMerchandise = async (params = {}) => {
     throw error
   }
 }
+export const dashboardUserActiveInactiveCounts = async (params = {}) => {
+  try {
+    const response = await api.get('/admin/dashboard-user-count', { params })
+    return response.data
+  } catch (error) {
+    console.error('Error fetching dashboard data:', error)
+    throw error
+  }
+}

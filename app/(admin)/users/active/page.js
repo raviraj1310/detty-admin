@@ -1,11 +1,12 @@
 'use client'
 import { useEffect, useState, useMemo } from 'react'
+import { useRouter } from 'next/navigation'
 import {
   getActiveUsers,
   downloadActiveExcel
 } from '@/services/users/user.service'
 import Image from 'next/image'
-import { ChevronUp, ChevronDown, Download } from 'lucide-react'
+import { ChevronUp, ChevronDown, Download, ChevronLeft } from 'lucide-react'
 import { TbTrendingUp } from 'react-icons/tb'
 
 function SortHeader ({ title, sortKey, activeKey, direction, onSort }) {
@@ -33,6 +34,7 @@ function SortHeader ({ title, sortKey, activeKey, direction, onSort }) {
 }
 
 export default function ActiveUsersPage () {
+  const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [exporting, setExporting] = useState(false)
   const [error, setError] = useState('')
@@ -182,6 +184,13 @@ export default function ActiveUsersPage () {
           </nav>
         </div>
         <div className='flex items-center gap-3'>
+          <button
+            onClick={() => router.push('/users')}
+            className='h-9 px-3 border border-gray-300 rounded-lg text-xs text-gray-700 flex items-center gap-1 hover:bg-gray-100'
+          >
+            <ChevronLeft size={14} className='text-gray-700' />
+            Back
+          </button>
           <button
             onClick={handleExport}
             disabled={exporting}
