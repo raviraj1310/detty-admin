@@ -56,12 +56,9 @@ export default function EmailSubscriptions() {
   const [error, setError] = useState("");
   const [sortKey, setSortKey] = useState("date");
   const [sortDir, setSortDir] = useState("desc");
+  const [limit, setLimit] = useState(20);
+  const [pageCount, setPageCount] = useState(1);
   const [page, setPage] = useState(1);
-  const [pagination, setPagination] = useState(null);
-  const [totalPages, setTotalPages] = useState(1);
-  const [limit, setLimit] = useState(10);
-
-  const LIMIT_OPTIONS = [5, 10, 20, 50];
 
   useEffect(() => {
     const load = async () => {
@@ -76,15 +73,14 @@ export default function EmailSubscriptions() {
           : [];
         const totalPagesFromApi = res?.pagination?.totalPages || 1;
 
-        setTotalPages(totalPagesFromApi);
+        setPageCount(totalPagesFromApi);
 
-        setPagination({
-          page,
-          totalPages: totalPagesFromApi,
-          hasPrev: page > 1,
-          hasNext: page < totalPagesFromApi,
-        });
-
+        // setPagination({
+        //   page,
+        //   totalPages: totalPagesFromApi,
+        //   hasPrev: page > 1,
+        //   hasNext: page < totalPagesFromApi,
+        // });
         const mapped = list.map((d) => {
           const created = d?.createdAt || "";
           const createdTs = created ? new Date(created).getTime() : 0;
@@ -122,6 +118,11 @@ export default function EmailSubscriptions() {
     };
     load();
   }, [page, limit]);
+
+  const handleLimitChange = (e) => {
+    setLimit(Number(e.target.value));
+    setPage(1); // ✅ reset to first page
+  };
 
   const filtered = useMemo(() => {
     const term = String(searchTerm || "")
@@ -244,31 +245,6 @@ export default function EmailSubscriptions() {
       </div>
 
       <div className="rounded-xl border border-[#E1E6F7] bg-white p-4 shadow-[0_24px_60px_-40px_rgba(15,23,42,0.55)]">
-        {pagination && (
-          <div className="flex items-center justify-between px-4 py-3 border-t border-[#E5E8F5] bg-[#F9FAFD]">
-            <button
-              onClick={() => setPage((p) => Math.max(p - 1, 1))}
-              disabled={!pagination.hasPrev || loading}
-              className="rounded-lg border border-[#E5E6EF] bg-white px-3 py-1.5 text-xs font-medium text-[#2D3658] disabled:opacity-50"
-            >
-              Previous
-            </button>
-
-            <span className="text-xs text-[#5E6582]">
-              Page <strong>{pagination.page}</strong> of{" "}
-              <strong>{pagination.totalPages}</strong>
-            </span>
-
-            <button
-              onClick={() => setPage((p) => p + 1)}
-              disabled={!pagination.hasNext || loading}
-              className="rounded-lg border border-[#E5E6EF] bg-white px-3 py-1.5 text-xs font-medium text-[#2D3658] disabled:opacity-50"
-            >
-              Next
-            </button>
-          </div>
-        )}
-
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <h2 className="text-sm font-semibold text-slate-900">
             Subscriptions List
@@ -283,21 +259,6 @@ export default function EmailSubscriptions() {
                 className="h-8 rounded-lg border border-[#E5E6EF] bg-[#F8F9FC] pl-8 pr-3 text-xs text-slate-700 placeholder:text-[#B0B7D0] focus:border-[#C5CAE3] focus:outline-none focus:ring-2 focus:ring-[#C2C8E4]"
               />
               <Search className="absolute left-2.5 h-3.5 w-3.5 text-[#A6AEC7]" />
-              {/* ✅ LIMIT DROPDOWN */}
-              <select
-                value={limit}
-                onChange={(e) => {
-                  setLimit(Number(e.target.value));
-                  setPage(1);
-                }}
-                className="h-8 rounded-lg border px-2 text-xs"
-              >
-                {LIMIT_OPTIONS.map((l) => (
-                  <option key={l} value={l}>
-                    {l} / page
-                  </option>
-                ))}
-              </select>
             </div>
             <button
               className="flex h-8 items-center gap-1.5 rounded-lg border border-[#E5E6EF] bg-white px-3 text-xs font-medium text-[#2D3658] transition hover:bg-[#F6F7FD]"
@@ -305,6 +266,45 @@ export default function EmailSubscriptions() {
             >
               <Download className="h-3.5 w-3.5 text-[#8B93AF]" />
             </button>
+            <div className="flex gap-2 items-center  px-4 py-3  border-[#E5E8F5]">
+              {/* LEFT — LIMIT */}
+              <label className="flex items-center gap-1.5 text-xs font-medium text-[#2D3658]">
+                Show
+                <select
+                  value={limit}
+                  onChange={handleLimitChange}
+                  className="h-8 px-2 border border-[#E5E6EF] rounded-lg bg-white text-xs"
+                >
+                  <option value={5}>5</option>
+                  <option value={10}>10</option>
+                  <option value={20}>20</option>
+                  <option value={50}>50</option>
+                </select>
+              </label>
+
+              {/* RIGHT — PAGINATION */}
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page <= 1 || loading}
+                  className="rounded-lg border border-[#E5E6EF] bg-white px-3 py-1.5 text-xs font-medium text-[#2D3658] disabled:opacity-50"
+                >
+                  Prev
+                </button>
+
+                <span className="text-xs text-[#5E6582]">
+                  Page <strong>{page}</strong> of <strong>{pageCount}</strong>
+                </span>
+
+                <button
+                  onClick={() => setPage((p) => Math.min(pageCount, p + 1))}
+                  disabled={page >= pageCount || loading}
+                  className="rounded-lg border border-[#E5E6EF] bg-white px-3 py-1.5 text-xs font-medium text-[#2D3658] disabled:opacity-50"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 

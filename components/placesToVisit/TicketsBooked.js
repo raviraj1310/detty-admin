@@ -112,6 +112,9 @@ export default function TicketsBooked() {
   const [downloadingId, setDownloadingId] = useState(null);
   const [exporting, setExporting] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [limit, setLimit] = useState(20);
+  const [pageCount, setPageCount] = useState(1);
+  const [page, setPage] = useState(1);
 
   const fmtCurrency = (n) => `₦${Number(n || 0).toLocaleString("en-NG")}`;
   const fmtDate = (d) => {
@@ -279,6 +282,20 @@ export default function TicketsBooked() {
       return matchesText || matchesDigits;
     });
   }, [rows, searchTerm]);
+  const paginatedBookings = useMemo(() => {
+    const startIndex = (page - 1) * limit;
+    const endIndex = startIndex + limit;
+    return filteredRows.slice(startIndex, endIndex);
+  }, [filteredRows, page, limit]);
+
+  useEffect(() => {
+    const totalPages = Math.ceil(filteredRows.length / limit) || 1;
+    setPageCount(totalPages);
+
+    if (page > totalPages) {
+      setPage(1);
+    }
+  }, [filteredRows.length, limit]);
 
   const handleDownloadBookingExcel = () => {
     try {
@@ -547,6 +564,40 @@ export default function TicketsBooked() {
                 />
               </svg>
             </button>
+            <div className="flex items-center gap-2">
+              <label className="flex items-center gap-1.5 text-xs text-[#2D3658]">
+                Show
+                <select
+                  value={limit}
+                  onChange={(e) => setLimit(Number(e.target.value) || 20)}
+                  className="h-8 px-2 border border-[#E5E6EF] rounded-lg text-xs"
+                >
+                  <option value={10}>10</option>
+                  <option value={20}>20</option>
+                  <option value={50}>50</option>
+                  <option value={100}>100</option>
+                </select>
+              </label>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page <= 1 || loading}
+                  className="h-8 px-3 py-1.5 border border-[#E5E6EF] rounded-lg bg-white text-xs font-medium text-[#2D3658] disabled:opacity-50 hover:bg-[#F6F7FD]"
+                >
+                  Prev
+                </button>
+                <span className="text-xs text-[#2D3658]">
+                  Page {page} of {pageCount}
+                </span>
+                <button
+                  onClick={() => setPage((p) => Math.min(pageCount, p + 1))}
+                  disabled={page >= pageCount || loading}
+                  className="h-8 px-3 py-1.5 border border-[#E5E6EF] rounded-lg bg-white text-xs font-medium text-[#2D3658] disabled:opacity-50 hover:bg-[#F6F7FD]"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -591,7 +642,7 @@ export default function TicketsBooked() {
             )}
             {!loading &&
               !error &&
-              filteredRows.map((booking) => (
+              paginatedBookings?.map((booking) => (
                 <div
                   key={booking.id}
                   className="grid grid-cols-[0.9fr_0.8fr_1.2fr_0.9fr_1.3fr_0.7fr_0.9fr_0.7fr_0.7fr_32px] gap-1.5 px-3 py-3 hover:bg-[#F9FAFD]"

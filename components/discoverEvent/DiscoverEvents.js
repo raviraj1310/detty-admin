@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Search,
   Download,
@@ -109,6 +109,9 @@ export default function DiscoverEvents() {
   const [sortBy, setSortBy] = useState("eventDate");
   const [sortDir, setSortDir] = useState("desc");
   const [exporting, setExporting] = useState(false);
+  const [limit, setLimit] = useState(20);
+  const [pageCount, setPageCount] = useState(1);
+  const [page, setPage] = useState(1);
 
   const role =
     typeof window !== "undefined" ? localStorage.getItem("user_role") : null;
@@ -332,6 +335,21 @@ export default function DiscoverEvents() {
     const matchesDigits = digits && dateDigits.includes(digits);
     return (matchesText || matchesDigits) && typeOk && locationOk && statusOk;
   });
+
+  const paginatedBookings = useMemo(() => {
+    const startIndex = (page - 1) * limit;
+    const endIndex = startIndex + limit;
+    return filteredRows.slice(startIndex, endIndex);
+  }, [filteredRows, page, limit]);
+
+  useEffect(() => {
+    const totalPages = Math.ceil(filteredRows.length / limit) || 1;
+    setPageCount(totalPages);
+
+    if (page > totalPages) {
+      setPage(1);
+    }
+  }, [filteredRows.length, limit]);
 
   const typeOptions = Array.from(
     new Set(eventRows.map((r) => String(r.type || "").trim()).filter(Boolean))
@@ -591,6 +609,41 @@ export default function DiscoverEvents() {
             >
               <Download className="h-3.5 w-3.5 text-[#8B93AF]" />
             </button>
+
+            <div className="flex items-center gap-2">
+              <label className="flex items-center gap-1.5 text-xs text-[#2D3658]">
+                Show
+                <select
+                  value={limit}
+                  onChange={(e) => setLimit(Number(e.target.value) || 20)}
+                  className="h-8 px-2 border border-[#E5E6EF] rounded-lg text-xs"
+                >
+                  <option value={10}>10</option>
+                  <option value={20}>20</option>
+                  <option value={50}>50</option>
+                  <option value={100}>100</option>
+                </select>
+              </label>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page <= 1}
+                  className="h-8 px-3 py-1.5 border border-[#E5E6EF] rounded-lg bg-white text-xs font-medium text-[#2D3658] disabled:opacity-50 hover:bg-[#F6F7FD]"
+                >
+                  Prev
+                </button>
+                <span className="text-xs text-[#2D3658]">
+                  Page {page} of {pageCount}
+                </span>
+                <button
+                  onClick={() => setPage((p) => Math.min(pageCount, p + 1))}
+                  disabled={page >= pageCount}
+                  className="h-8 px-3 py-1.5 border border-[#E5E6EF] rounded-lg bg-white text-xs font-medium text-[#2D3658] disabled:opacity-50 hover:bg-[#F6F7FD]"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -666,7 +719,7 @@ export default function DiscoverEvents() {
             </div>
 
             <div className="divide-y divide-[#EEF1FA] bg-white">
-              {filteredRows.map((event) => (
+              {paginatedBookings?.map((event) => (
                 <div
                   key={event.rowKey}
                   className="grid grid-cols-[13%_21%_11%_8%_17%_13%_9%_8%] px-2 py-3 hover:bg-[#F9FAFD]"

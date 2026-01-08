@@ -43,6 +43,9 @@ export default function MerchOrdersList() {
   const [orderOpen, setOrderOpen] = useState(false);
   const [customerOpen, setCustomerOpen] = useState(false);
   const [downloadingId, setDownloadingId] = useState(null);
+  const [limit, setLimit] = useState(20);
+  const [pageCount, setPageCount] = useState(1);
+  const [page, setPage] = useState(1);
 
   useEffect(() => {
     const handler = (e) => {
@@ -179,6 +182,21 @@ export default function MerchOrdersList() {
       return text.includes(t) && statusOk;
     });
   }, [orders, searchTerm, statusFilter]);
+
+  const paginatedBookings = useMemo(() => {
+    const startIndex = (page - 1) * limit;
+    const endIndex = startIndex + limit;
+    return filtered.slice(startIndex, endIndex);
+  }, [filtered, page, limit]);
+
+  useEffect(() => {
+    const totalPages = Math.ceil(filtered.length / limit) || 1;
+    setPageCount(totalPages);
+
+    if (page > totalPages) {
+      setPage(1);
+    }
+  }, [filtered.length, limit]);
 
   const metrics = useMemo(() => {
     const totalAmt = filtered.reduce((s, o) => s + (o.amount || 0), 0);
@@ -391,6 +409,41 @@ export default function MerchOrdersList() {
               <Download className="h-4 w-4 text-[#8B93AF]" />
               <span>Export</span>
             </button>
+
+            <div className="flex items-center gap-2">
+              <label className="flex items-center gap-1.5 text-xs text-[#2D3658]">
+                Show
+                <select
+                  value={limit}
+                  onChange={(e) => setLimit(Number(e.target.value) || 20)}
+                  className="h-8 px-2 border border-[#E5E6EF] rounded-lg text-xs"
+                >
+                  <option value={10}>10</option>
+                  <option value={20}>20</option>
+                  <option value={50}>50</option>
+                  <option value={100}>100</option>
+                </select>
+              </label>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page <= 1 || loading}
+                  className="h-8 px-3 py-1.5 border border-[#E5E6EF] rounded-lg bg-white text-xs font-medium text-[#2D3658] disabled:opacity-50 hover:bg-[#F6F7FD]"
+                >
+                  Prev
+                </button>
+                <span className="text-xs text-[#2D3658]">
+                  Page {page} of {pageCount}
+                </span>
+                <button
+                  onClick={() => setPage((p) => Math.min(pageCount, p + 1))}
+                  disabled={page >= pageCount || loading}
+                  className="h-8 px-3 py-1.5 border border-[#E5E6EF] rounded-lg bg-white text-xs font-medium text-[#2D3658] disabled:opacity-50 hover:bg-[#F6F7FD]"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -445,7 +498,7 @@ export default function MerchOrdersList() {
               </div>
             )}
             {!loading &&
-              filtered.map((o) => (
+              paginatedBookings?.map((o) => (
                 <div
                   key={o.id}
                   className="grid grid-cols-[1.5fr_1.5fr_2fr_1.5fr_2fr_1fr_1.2fr_50px] gap-3 px-6 py-5 hover:bg-[#F9FAFD]"
