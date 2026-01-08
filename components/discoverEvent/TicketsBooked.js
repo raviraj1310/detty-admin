@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import {
   Search,
@@ -111,6 +111,9 @@ export default function TicketsBooked () {
   const [customerOpen, setCustomerOpen] = useState(false)
   const [downloadingId, setDownloadingId] = useState(null)
   const [menuPos, setMenuPos] = useState({ top: 0, left: 0 })
+  const [limit, setLimit] = useState(20)
+  const [pageCount, setPageCount] = useState(1)
+  const [page, setPage] = useState(1)
 
   useEffect(() => {
     const fetchData = async () => {
@@ -359,6 +362,21 @@ export default function TicketsBooked () {
     )
   })
 
+  const paginatedBookings = useMemo(() => {
+    const startIndex = (page - 1) * limit
+    const endIndex = startIndex + limit
+    return filteredBookings.slice(startIndex, endIndex)
+  }, [filteredBookings, page, limit])
+
+  useEffect(() => {
+    const totalPages = Math.ceil(filteredBookings.length / limit) || 1
+    setPageCount(totalPages)
+
+    if (page > totalPages) {
+      setPage(1)
+    }
+  }, [filteredBookings.length, limit])
+
   const handleBack = () => {
     router.push('/discover-events')
   }
@@ -602,6 +620,41 @@ export default function TicketsBooked () {
             >
               <Download className='h-3.5 w-3.5 text-[#8B93AF]' />
             </button>
+
+            <div className='flex items-center gap-2'>
+              <label className='flex items-center gap-1.5 text-xs text-[#2D3658]'>
+                Show
+                <select
+                  value={limit}
+                  onChange={e => setLimit(Number(e.target.value) || 20)}
+                  className='h-8 px-2 border border-[#E5E6EF] rounded-lg text-xs'
+                >
+                  <option value={10}>10</option>
+                  <option value={20}>20</option>
+                  <option value={50}>50</option>
+                  <option value={100}>100</option>
+                </select>
+              </label>
+              <div className='flex items-center gap-2'>
+                <button
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                  disabled={page <= 1 || loading}
+                  className='h-8 px-3 py-1.5 border border-[#E5E6EF] rounded-lg bg-white text-xs font-medium text-[#2D3658] disabled:opacity-50 hover:bg-[#F6F7FD]'
+                >
+                  Prev
+                </button>
+                <span className='text-xs text-[#2D3658]'>
+                  Page {page} of {pageCount}
+                </span>
+                <button
+                  onClick={() => setPage(p => Math.min(pageCount, p + 1))}
+                  disabled={page >= pageCount || loading}
+                  className='h-8 px-3 py-1.5 border border-[#E5E6EF] rounded-lg bg-white text-xs font-medium text-[#2D3658] disabled:opacity-50 hover:bg-[#F6F7FD]'
+                >
+                  Next
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -651,7 +704,7 @@ export default function TicketsBooked () {
               )}
               {!loading &&
                 !error &&
-                filteredBookings.map((booking, idx) => {
+                paginatedBookings?.map((booking, idx) => {
                   const rowKey = String(
                     booking._id || booking.id || booking.bookingId || idx
                   )
