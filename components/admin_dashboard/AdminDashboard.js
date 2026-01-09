@@ -2,7 +2,10 @@
 
 import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { dashboardUserActiveInactiveCounts } from '@/services/auth/login.service'
+import {
+  dashboardUserActiveInactiveCounts,
+  transactionCounts
+} from '@/services/auth/login.service'
 
 const formatCurrency = amount => {
   return (
@@ -71,6 +74,16 @@ export default function AdminDashboard ({ stats }) {
     totalActiveUsers: 0,
     totalInactiveUsers: 0
   })
+  const [txnCounts, setTxnCounts] = useState({
+    event: 0,
+    activity: 0,
+    merchandise: 0,
+    ride: 0,
+    accommodation: 0,
+    leadway: 0,
+    royalConcierge: 0,
+    esim: 0
+  })
 
   useEffect(() => {
     const load = async () => {
@@ -87,6 +100,23 @@ export default function AdminDashboard ({ stats }) {
           totalActiveUsers: Number(stats?.totalActiveUsers || 0),
           totalInactiveUsers: Number(stats?.totalInactiveUsers || 0)
         })
+      }
+
+      try {
+        const txnRes = await transactionCounts()
+        const counts = txnRes?.data?.counts || {}
+        setTxnCounts({
+          event: counts.event || 0,
+          activity: counts.activity || 0,
+          merchandise: counts.merchandise || 0,
+          ride: counts.ride || 0,
+          accommodation: counts.accommodation || 0,
+          leadway: counts.leadway || 0,
+          royalConcierge: counts.royalConcierge || 0,
+          esim: counts.esim || 0
+        })
+      } catch (error) {
+        console.error('Error loading transaction counts:', error)
       }
     }
     load()
@@ -177,7 +207,7 @@ export default function AdminDashboard ({ stats }) {
         },
         {
           id: 'au',
-          title: 'Active Users',
+          title: 'Active Users (Logged in the last 30 days)',
           value: userCounts.totalActiveUsers || 0,
           iconSrc: '/images/dashboard/icons (9).svg',
           bg: 'bg-[#E8F8F0]',
@@ -185,7 +215,7 @@ export default function AdminDashboard ({ stats }) {
         },
         {
           id: 'iu',
-          title: 'Inactive Users',
+          title: 'Inactive Users (Not logged in the last 30 days)',
           value: userCounts.totalInactiveUsers || 0,
           iconSrc: '/images/dashboard/icons (11).svg',
           bg: 'bg-[#FFE8E8]',
@@ -215,6 +245,76 @@ export default function AdminDashboard ({ stats }) {
           iconBg: 'bg-gradient-to-r from-[#8EEDC7] to-[#3FA574]'
         },
         ...getGrowthCards('bookings')
+      ]
+    },
+    {
+      title: 'Transaction History Counts (Last 30 days)',
+      viewLink: '#',
+      stats: [
+        {
+          id: 'th-ev',
+          title: 'Event',
+          value: txnCounts.event,
+          iconSrc: '/images/dashboard/icons (15).svg',
+          bg: 'bg-[#FFE8F5]',
+          iconBg: 'bg-gradient-to-r from-[#FFADD2] to-[#E91E8C]'
+        },
+        {
+          id: 'th-ac',
+          title: 'Activity',
+          value: txnCounts.activity,
+          iconSrc: '/images/dashboard/icons (4).svg',
+          bg: 'bg-[#FFF4E8]',
+          iconBg: 'bg-gradient-to-r from-[#FFD8A8] to-[#F76707]'
+        },
+        {
+          id: 'th-me',
+          title: 'Merchandise',
+          value: txnCounts.merchandise,
+          iconSrc: '/images/dashboard/icons (6).svg',
+          bg: 'bg-[#F0E8FF]',
+          iconBg: 'bg-gradient-to-r from-[#C4B5FD] to-[#7C3AED]'
+        },
+        {
+          id: 'th-ri',
+          title: 'Ride',
+          value: txnCounts.ride,
+          iconSrc: '/images/dashboard/icons (13).svg',
+          bg: 'bg-[#E8EEFF]',
+          iconBg: 'bg-gradient-to-r from-[#AECBFF] to-[#5A7CC1]'
+        },
+        {
+          id: 'th-acc',
+          title: 'Accommodation',
+          value: txnCounts.accommodation,
+          iconSrc: '/images/dashboard/icons (11).svg',
+          bg: 'bg-[#FFE8E8]',
+          iconBg: 'bg-gradient-to-r from-[#FFA8A8] to-[#E03E3E]'
+        },
+        {
+          id: 'th-lw',
+          title: 'Leadway',
+          value: txnCounts.leadway,
+          iconSrc: '/images/dashboard/icons (9).svg',
+          bg: 'bg-[#E8F8F0]',
+          iconBg: 'bg-gradient-to-r from-[#8EEDC7] to-[#3FA574]'
+        },
+        {
+          id: 'th-rc',
+          title: 'Royal Concierge',
+          value: txnCounts.royalConcierge,
+          iconSrc: '/images/dashboard/icons (15).svg',
+          bg: 'bg-[#FFE8F5]',
+          iconBg: 'bg-gradient-to-r from-[#FFADD2] to-[#E91E8C]'
+        },
+        {
+          id: 'th-es',
+          title: 'Esim',
+          value: txnCounts.esim,
+          iconSrc: '/images/dashboard/icons (4).svg',
+          bg: 'bg-[#FFF4E8]',
+          iconBg: 'bg-gradient-to-r from-[#FFD8A8] to-[#F76707]'
+        }
       ]
     },
     {

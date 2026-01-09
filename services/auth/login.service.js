@@ -70,3 +70,13 @@ export const dashboardUserActiveInactiveCounts = async (params = {}) => {
     throw error
   }
 }
+
+export const transactionCounts = async () => {
+  try {
+    const response = await api.get('/user/transaction-report')
+    return response.data
+  } catch (error) {
+    console.error('Error fetching transaction counts:', error)
+    throw error
+  }
+}
