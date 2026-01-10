@@ -1380,7 +1380,7 @@ export default function UsersForm ({
               </div>
               <div>
                 <p className='text-xs text-black opacity-90'>
-                  Active Users (Logged in the last 30 days)
+                  Active Users (Logged in the last 10 days)
                 </p>
                 <p className='text-2xl text-black font-bold'>
                   {globalStats.active}
@@ -1407,7 +1407,7 @@ export default function UsersForm ({
               </div>
               <div>
                 <p className='text-xs text-black opacity-90'>
-                  Inactive Users (Not logged in since 30 days)
+                  Inactive Users (Not logged in since 10 days)
                 </p>
                 <p className='text-2xl text-black font-bold'>
                   {globalStats.inactive}

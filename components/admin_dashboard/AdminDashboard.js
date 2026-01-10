@@ -207,7 +207,7 @@ export default function AdminDashboard ({ stats }) {
         },
         {
           id: 'au',
-          title: 'Active Users (Logged in the last 30 days)',
+          title: 'Active Users (Logged in the last 10 days)',
           value: userCounts.totalActiveUsers || 0,
           iconSrc: '/images/dashboard/icons (9).svg',
           bg: 'bg-[#E8F8F0]',
@@ -215,7 +215,7 @@ export default function AdminDashboard ({ stats }) {
         },
         {
           id: 'iu',
-          title: 'Inactive Users (Not logged in the last 30 days)',
+          title: 'Inactive Users (Not logged in the last 10 days)',
           value: userCounts.totalInactiveUsers || 0,
           iconSrc: '/images/dashboard/icons (11).svg',
           bg: 'bg-[#FFE8E8]',
