@@ -1354,7 +1354,9 @@ export default function UsersForm ({
                 />
               </div>
               <div>
-                <p className='text-xs text-black opacity-90'>Total Users</p>
+                <p className='text-xs text-black opacity-90'>
+                  Total Registered Users
+                </p>
                 <p className='text-2xl text-black font-bold'>
                   {globalStats.total}
                 </p>

@@ -248,8 +248,8 @@ export default function AdminDashboard ({ stats }) {
       ]
     },
     {
-      title: 'Transaction History Counts (Last 30 days)',
-      viewLink: '#',
+      title: 'Transaction History Counts (Last 10 days)',
+      viewLink: '/users/transactions',
       stats: [
         {
           id: 'th-ev',
