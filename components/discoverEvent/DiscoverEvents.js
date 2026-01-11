@@ -109,7 +109,7 @@ export default function DiscoverEvents() {
   const [sortBy, setSortBy] = useState("eventDate");
   const [sortDir, setSortDir] = useState("desc");
   const [exporting, setExporting] = useState(false);
-  const [limit, setLimit] = useState(20);
+  const [limit, setLimit] = useState(50);
   const [pageCount, setPageCount] = useState(1);
   const [page, setPage] = useState(1);
 
