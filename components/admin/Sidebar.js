@@ -128,6 +128,11 @@ const menuSections = [
         label: 'Cookie Settings',
         icon: '/images/backend/side_menu/side_menu (7).svg',
         href: '/cms/cookie-settings'
+      },
+      {
+        label: 'Inner Page',
+        icon: '/images/backend/side_menu/side_menu (12).svg',
+        href: '/cms/inner-page'
       }
     ]
   },
