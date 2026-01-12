@@ -92,7 +92,7 @@ export default function PlacesToVisit () {
   const [previewSrc, setPreviewSrc] = useState('')
   const [previewTitle, setPreviewTitle] = useState('')
   const [exporting, setExporting] = useState(false)
-  const [limit, setLimit] = useState(20)
+  const [limit, setLimit] = useState(50)
   const [pageCount, setPageCount] = useState(1)
   const [page, setPage] = useState(1)
 
@@ -136,11 +136,21 @@ export default function PlacesToVisit () {
 
     if (a.activityEndDate) {
       const end = new Date(a.activityEndDate)
-      // If the end date is midnight (00:00), assume inclusive of that day
-      if (end.getHours() === 0 && end.getMinutes() === 0) {
-        end.setHours(23, 59, 59, 999)
+      // If end date is midnight UTC (likely a date-only field), treat as end of that day in local time
+      if (end.getUTCHours() === 0 && end.getUTCMinutes() === 0) {
+        const localEnd = new Date()
+        localEnd.setFullYear(end.getUTCFullYear())
+        localEnd.setMonth(end.getUTCMonth())
+        localEnd.setDate(end.getUTCDate())
+        localEnd.setHours(23, 59, 59, 999)
+        if (now > localEnd) return 'Done'
+      } else {
+        // If end date is midnight local (e.g. from some other source), assume inclusive
+        if (end.getHours() === 0 && end.getMinutes() === 0) {
+          end.setHours(23, 59, 59, 999)
+        }
+        if (now > end) return 'Done'
       }
-      if (now > end) return 'Done'
     }
 
     // If within date range (or no dates), check daily schedule for finer grain

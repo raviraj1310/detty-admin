@@ -126,7 +126,7 @@ export default function Activities () {
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [statusFilter, setStatusFilter] = useState('')
   const [paymentStatusFilter, setPaymentStatusFilter] = useState('')
-  const [limit, setLimit] = useState(20)
+  const [limit, setLimit] = useState(50)
   const [pageCount, setPageCount] = useState(1)
   const [page, setPage] = useState(1)
 

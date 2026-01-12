@@ -70,10 +70,9 @@ export default function MedOrdersPage () {
     avgGrowthPercent: '0%',
     isPctIncreasing: false
   })
-    const [limit, setLimit] = useState(20);
-  const [pageCount, setPageCount] = useState(1);
-  const [page, setPage] = useState(1);
-
+  const [limit, setLimit] = useState(50)
+  const [pageCount, setPageCount] = useState(1)
+  const [page, setPage] = useState(1)
 
   useEffect(() => {
     ;(async () => {
@@ -345,21 +344,20 @@ export default function MedOrdersPage () {
     return matchesDate && (matchesText || matchesDigits)
   })
 
-    const paginatedBookings = useMemo(() => {
-    const startIndex = (page - 1) * limit;
-    const endIndex = startIndex + limit;
-    return filteredRows.slice(startIndex, endIndex);
-  }, [filteredRows, page, limit]);
+  const paginatedBookings = useMemo(() => {
+    const startIndex = (page - 1) * limit
+    const endIndex = startIndex + limit
+    return filteredRows.slice(startIndex, endIndex)
+  }, [filteredRows, page, limit])
 
   useEffect(() => {
-    const totalPages = Math.ceil(filteredRows.length / limit) || 1;
-    setPageCount(totalPages);
+    const totalPages = Math.ceil(filteredRows.length / limit) || 1
+    setPageCount(totalPages)
 
     if (page > totalPages) {
-      setPage(1);
+      setPage(1)
     }
-  }, [filteredRows.length, limit]);
-
+  }, [filteredRows.length, limit])
 
   const handleDownloadExcel = () => {
     if (!filteredRows || filteredRows.length === 0) {
@@ -1107,13 +1105,13 @@ export default function MedOrdersPage () {
                   </span>
                 </button>
 
-                 <div className="flex items-center gap-2">
-                  <label className="flex items-center gap-1.5 text-xs text-[#2D3658]">
+                <div className='flex items-center gap-2'>
+                  <label className='flex items-center gap-1.5 text-xs text-[#2D3658]'>
                     Show
                     <select
                       value={limit}
-                      onChange={(e) => setLimit(Number(e.target.value) || 20)}
-                      className="h-8 px-2 border border-[#E5E6EF] rounded-lg text-xs"
+                      onChange={e => setLimit(Number(e.target.value) || 20)}
+                      className='h-8 px-2 border border-[#E5E6EF] rounded-lg text-xs'
                     >
                       <option value={10}>10</option>
                       <option value={20}>20</option>
@@ -1121,21 +1119,21 @@ export default function MedOrdersPage () {
                       <option value={100}>100</option>
                     </select>
                   </label>
-                  <div className="flex items-center gap-2">
+                  <div className='flex items-center gap-2'>
                     <button
-                      onClick={() => setPage((p) => Math.max(1, p - 1))}
+                      onClick={() => setPage(p => Math.max(1, p - 1))}
                       disabled={page <= 1}
-                      className="h-8 px-3 py-1.5 border border-[#E5E6EF] rounded-lg bg-white text-xs font-medium text-[#2D3658] disabled:opacity-50 hover:bg-[#F6F7FD]"
+                      className='h-8 px-3 py-1.5 border border-[#E5E6EF] rounded-lg bg-white text-xs font-medium text-[#2D3658] disabled:opacity-50 hover:bg-[#F6F7FD]'
                     >
                       Prev
                     </button>
-                    <span className="text-xs text-[#2D3658]">
+                    <span className='text-xs text-[#2D3658]'>
                       Page {page} of {pageCount}
                     </span>
                     <button
-                      onClick={() => setPage((p) => Math.min(pageCount, p + 1))}
+                      onClick={() => setPage(p => Math.min(pageCount, p + 1))}
                       disabled={page >= pageCount}
-                      className="h-8 px-3 py-1.5 border border-[#E5E6EF] rounded-lg bg-white text-xs font-medium text-[#2D3658] disabled:opacity-50 hover:bg-[#F6F7FD]"
+                      className='h-8 px-3 py-1.5 border border-[#E5E6EF] rounded-lg bg-white text-xs font-medium text-[#2D3658] disabled:opacity-50 hover:bg-[#F6F7FD]'
                     >
                       Next
                     </button>

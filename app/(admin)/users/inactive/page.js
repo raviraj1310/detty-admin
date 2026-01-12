@@ -52,7 +52,7 @@ export default function InactiveUsersPage () {
   const [search, setSearch] = useState('')
   const [sort, setSort] = useState({ key: 'name', dir: 'asc' })
   const [page, setPage] = useState(1)
-  const [limit, setLimit] = useState(20)
+  const [limit, setLimit] = useState(50)
   const [totalPages, setTotalPages] = useState(1)
 
   const load = async () => {

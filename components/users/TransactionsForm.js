@@ -1,347 +1,347 @@
-"use client";
+'use client'
 
-import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
-import { X } from "lucide-react";
+import { useEffect, useMemo, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { X } from 'lucide-react'
 import {
   TbCaretUpDownFilled,
   TbTicket,
   TbTrendingUp,
-  TbTrendingDown,
-} from "react-icons/tb";
-import { FaChartColumn } from "react-icons/fa6";
+  TbTrendingDown
+} from 'react-icons/tb'
+import { FaChartColumn } from 'react-icons/fa6'
 import {
   getBookingList,
-  downloadBookingReceipt,
-} from "../../services/booking/booking.service";
-import { downloadExcel } from "@/utils/excelExport";
-import Modal from "@/components/ui/Modal";
+  downloadBookingReceipt
+} from '../../services/booking/booking.service'
+import { downloadExcel } from '@/utils/excelExport'
+import Modal from '@/components/ui/Modal'
 
-function ActionDropdown({ transactionId }) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [buttonPosition, setButtonPosition] = useState({ top: 0, right: 0 });
+function ActionDropdown ({ transactionId }) {
+  const [isOpen, setIsOpen] = useState(false)
+  const [buttonPosition, setButtonPosition] = useState({ top: 0, right: 0 })
 
   const actions = [
     {
-      label: "View Detail",
+      label: 'View Detail',
       icon: (
         <svg
-          className="w-4 h-4"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
+          className='w-4 h-4'
+          fill='none'
+          stroke='currentColor'
+          viewBox='0 0 24 24'
         >
           <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
+            strokeLinecap='round'
+            strokeLinejoin='round'
             strokeWidth={2}
-            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+            d='M15 12a3 3 0 11-6 0 3 3 0 016 0z'
           />
           <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
+            strokeLinecap='round'
+            strokeLinejoin='round'
             strokeWidth={2}
-            d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+            d='M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z'
           />
         </svg>
-      ),
+      )
     },
     {
-      label: "Download Receipt",
+      label: 'Download Receipt',
       icon: (
         <svg
-          className="w-4 h-4"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
+          className='w-4 h-4'
+          fill='none'
+          stroke='currentColor'
+          viewBox='0 0 24 24'
         >
           <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
+            strokeLinecap='round'
+            strokeLinejoin='round'
             strokeWidth={2}
-            d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+            d='M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'
           />
         </svg>
-      ),
+      )
     },
     {
-      label: "Dispute Transaction",
+      label: 'Dispute Transaction',
       icon: (
         <svg
-          className="w-4 h-4"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
+          className='w-4 h-4'
+          fill='none'
+          stroke='currentColor'
+          viewBox='0 0 24 24'
         >
           <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
+            strokeLinecap='round'
+            strokeLinejoin='round'
             strokeWidth={2}
-            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+            d='M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z'
           />
         </svg>
-      ),
-    },
-  ];
+      )
+    }
+  ]
 
-  const handleButtonClick = (e) => {
+  const handleButtonClick = e => {
     if (!isOpen) {
-      const rect = e.currentTarget.getBoundingClientRect();
-      const windowHeight = window.innerHeight;
-      const dropdownHeight = 150;
+      const rect = e.currentTarget.getBoundingClientRect()
+      const windowHeight = window.innerHeight
+      const dropdownHeight = 150
 
-      let top = rect.bottom + 8;
-      let right = window.innerWidth - rect.right;
+      let top = rect.bottom + 8
+      let right = window.innerWidth - rect.right
 
       if (top + dropdownHeight > windowHeight) {
-        top = rect.top - dropdownHeight - 8;
+        top = rect.top - dropdownHeight - 8
       }
 
-      setButtonPosition({ top, right });
+      setButtonPosition({ top, right })
     }
-    setIsOpen(!isOpen);
-  };
+    setIsOpen(!isOpen)
+  }
 
   return (
-    <div className="relative">
+    <div className='relative'>
       <button
         data-menu-button
         onClick={handleButtonClick}
-        className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+        className='p-1 hover:bg-gray-100 rounded-full transition-colors'
       >
         <svg
-          className="w-5 h-5 text-gray-600"
-          fill="currentColor"
-          viewBox="0 0 20 20"
+          className='w-5 h-5 text-gray-600'
+          fill='currentColor'
+          viewBox='0 0 20 20'
         >
-          <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
+          <path d='M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z' />
         </svg>
       </button>
 
       {isOpen && (
         <>
           <div
-            className="fixed inset-0 z-40"
+            className='fixed inset-0 z-40'
             onClick={() => setIsOpen(false)}
           />
           <div
             data-menu-content
-            className="fixed w-52 bg-white rounded-lg shadow-2xl border border-gray-200 z-50 py-2"
+            className='fixed w-52 bg-white rounded-lg shadow-2xl border border-gray-200 z-50 py-2'
             style={{
               top: `${buttonPosition.top}px`,
-              right: `${buttonPosition.right}px`,
+              right: `${buttonPosition.right}px`
             }}
           >
             {actions.map((action, index) => (
               <button
                 key={index}
-                className="flex items-center w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                className='flex items-center w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors'
                 onClick={() => {
                   console.log(
                     `${action.label} for transaction ${transactionId}`
-                  );
-                  setIsOpen(false);
+                  )
+                  setIsOpen(false)
                 }}
               >
-                <span className="mr-3 text-gray-500">{action.icon}</span>
-                <span className="text-gray-800">{action.label}</span>
+                <span className='mr-3 text-gray-500'>{action.icon}</span>
+                <span className='text-gray-800'>{action.label}</span>
               </button>
             ))}
           </div>
         </>
       )}
     </div>
-  );
+  )
 }
 
 const filterTabs = [
   // { id: 'bundle-orders', label: 'Bundle Orders', active: true },
-  { id: "event", label: "Event", active: true },
-  { id: "activities", label: "Places to Visit", active: false },
-  { id: "merchandise", label: "Merchandise", active: false },
-  { id: "e-sim", label: "Internet Connectivity", active: false },
-  { id: "accommodation", label: "Accommodation", active: false },
-  { id: "med-plus", label: "Med Plus", active: false },
-  { id: "royal-concierge", label: "Royal Concierge", active: false },
-  { id: "rides", label: "Rides", active: false },
-  { id: "leadway", label: "Leadway", active: false },
+  { id: 'event', label: 'Event', active: true },
+  { id: 'activities', label: 'Places to Visit', active: false },
+  { id: 'merchandise', label: 'Merchandise', active: false },
+  { id: 'e-sim', label: 'Internet Connectivity', active: false },
+  { id: 'accommodation', label: 'Accommodation', active: false },
+  { id: 'med-plus', label: 'Med Plus', active: false },
+  { id: 'royal-concierge', label: 'Royal Concierge', active: false },
+  { id: 'rides', label: 'Rides', active: false },
+  { id: 'leadway', label: 'Leadway', active: false }
   // { id: 'diy', label: 'DIY', active: false },
-];
+]
 
-export default function TransactionsForm() {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [dateRange, setDateRange] = useState({ start: "", end: "" });
-  const [activeTab, setActiveTab] = useState("event");
-  const router = useRouter();
-  const [bookings, setBookings] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [menuOpenId, setMenuOpenId] = useState(null);
-  const [selectedBooking, setSelectedBooking] = useState(null);
-  const [ticketOpen, setTicketOpen] = useState(false);
-  const [customerOpen, setCustomerOpen] = useState(false);
-  const [downloadingId, setDownloadingId] = useState(null);
-  const [menuPos, setMenuPos] = useState({ top: 0, left: 0 });
-  const [sortKey, setSortKey] = useState("date");
-  const [sortDir, setSortDir] = useState("desc");
-  const [statsLoadedFromApi, setStatsLoadedFromApi] = useState(false);
-  const [filtersOpen, setFiltersOpen] = useState(false);
-  const [statusFilter, setStatusFilter] = useState("");
-  const [paymentStatusFilter, setPaymentStatusFilter] = useState("");
-  const [limit, setLimit] = useState(20);
-  const [pageCount, setPageCount] = useState(1);
-  const [page, setPage] = useState(1);
+export default function TransactionsForm () {
+  const [searchTerm, setSearchTerm] = useState('')
+  const [dateRange, setDateRange] = useState({ start: '', end: '' })
+  const [activeTab, setActiveTab] = useState('event')
+  const router = useRouter()
+  const [bookings, setBookings] = useState([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [menuOpenId, setMenuOpenId] = useState(null)
+  const [selectedBooking, setSelectedBooking] = useState(null)
+  const [ticketOpen, setTicketOpen] = useState(false)
+  const [customerOpen, setCustomerOpen] = useState(false)
+  const [downloadingId, setDownloadingId] = useState(null)
+  const [menuPos, setMenuPos] = useState({ top: 0, left: 0 })
+  const [sortKey, setSortKey] = useState('date')
+  const [sortDir, setSortDir] = useState('desc')
+  const [statsLoadedFromApi, setStatsLoadedFromApi] = useState(false)
+  const [filtersOpen, setFiltersOpen] = useState(false)
+  const [statusFilter, setStatusFilter] = useState('')
+  const [paymentStatusFilter, setPaymentStatusFilter] = useState('')
+  const [limit, setLimit] = useState(50)
+  const [pageCount, setPageCount] = useState(1)
+  const [page, setPage] = useState(1)
 
   const [stats, setStats] = useState({
     yesterdayCount: 0,
-    yesterdayDateStr: "",
+    yesterdayDateStr: '',
     avgGrowthCount: 0,
     isCountIncreasing: false,
-    avgGrowthPercent: "0%",
-    isPctIncreasing: false,
-  });
+    avgGrowthPercent: '0%',
+    isPctIncreasing: false
+  })
 
   useEffect(() => {
-    if (!bookings) return;
+    if (!bookings) return
 
     // If API stats are loaded and NO filter is active, preserve them.
     // If a filter is active, we recalculate based on the filtered range.
-    const isFiltered = dateRange.start || dateRange.end;
-    if (statsLoadedFromApi && !isFiltered) return;
+    const isFiltered = dateRange.start || dateRange.end
+    if (statsLoadedFromApi && !isFiltered) return
 
-    const now = new Date();
-    const yesterday = new Date(now);
-    yesterday.setDate(yesterday.getDate() - 1);
-    yesterday.setHours(0, 0, 0, 0);
-    const yesterdayEnd = new Date(yesterday);
-    yesterdayEnd.setHours(23, 59, 59, 999);
+    const now = new Date()
+    const yesterday = new Date(now)
+    yesterday.setDate(yesterday.getDate() - 1)
+    yesterday.setHours(0, 0, 0, 0)
+    const yesterdayEnd = new Date(yesterday)
+    yesterdayEnd.setHours(23, 59, 59, 999)
 
-    const yesterdayDateStr = yesterday.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-    });
+    const yesterdayDateStr = yesterday.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric'
+    })
 
     // 1. Total Bookings Yesterday (Always absolute)
-    const yesterdayCount = bookings.filter((b) => {
-      const d = new Date(b.bookedOnRaw);
-      return d >= yesterday && d <= yesterdayEnd;
-    }).length;
+    const yesterdayCount = bookings.filter(b => {
+      const d = new Date(b.bookedOnRaw)
+      return d >= yesterday && d <= yesterdayEnd
+    }).length
 
     // 2. Avg Daily Growth Logic (Filter Aware)
-    let start, end, daysCount;
+    let start, end, daysCount
 
     if (isFiltered) {
       if (dateRange.start) {
-        start = new Date(dateRange.start);
-        start.setHours(0, 0, 0, 0);
+        start = new Date(dateRange.start)
+        start.setHours(0, 0, 0, 0)
       } else {
         // No start, default to 30 days before end
-        end = new Date(dateRange.end);
-        start = new Date(end);
-        start.setDate(start.getDate() - 29);
-        start.setHours(0, 0, 0, 0);
+        end = new Date(dateRange.end)
+        start = new Date(end)
+        start.setDate(start.getDate() - 29)
+        start.setHours(0, 0, 0, 0)
       }
 
       if (dateRange.end) {
-        end = new Date(dateRange.end);
-        end.setHours(23, 59, 59, 999);
+        end = new Date(dateRange.end)
+        end.setHours(23, 59, 59, 999)
       } else {
         // Start but no end, default to Today
-        end = new Date();
-        end.setHours(23, 59, 59, 999);
+        end = new Date()
+        end.setHours(23, 59, 59, 999)
       }
 
       // Validate
       if (start > end) {
-        end = new Date();
-        start = new Date();
-        start.setDate(now.getDate() - 29);
-        start.setHours(0, 0, 0, 0);
-        end.setHours(23, 59, 59, 999);
+        end = new Date()
+        start = new Date()
+        start.setDate(now.getDate() - 29)
+        start.setHours(0, 0, 0, 0)
+        end.setHours(23, 59, 59, 999)
       }
 
-      const diffTime = Math.abs(end - start);
-      daysCount = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      if (daysCount < 1) daysCount = 1;
+      const diffTime = Math.abs(end - start)
+      daysCount = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+      if (daysCount < 1) daysCount = 1
     } else {
       // Default: Last 30 Days
-      end = new Date();
-      start = new Date();
-      start.setDate(now.getDate() - 29);
-      start.setHours(0, 0, 0, 0);
-      end.setHours(23, 59, 59, 999);
-      daysCount = 30;
+      end = new Date()
+      start = new Date()
+      start.setDate(now.getDate() - 29)
+      start.setHours(0, 0, 0, 0)
+      end.setHours(23, 59, 59, 999)
+      daysCount = 30
     }
 
-    const bookingsByDate = {};
-    bookings.forEach((b) => {
-      const d = new Date(b.bookedOnRaw);
-      if (isNaN(d.getTime())) return;
+    const bookingsByDate = {}
+    bookings.forEach(b => {
+      const d = new Date(b.bookedOnRaw)
+      if (isNaN(d.getTime())) return
       if (d >= start && d <= end) {
-        const dateKey = d.toISOString().split("T")[0];
-        bookingsByDate[dateKey] = (bookingsByDate[dateKey] || 0) + 1;
+        const dateKey = d.toISOString().split('T')[0]
+        bookingsByDate[dateKey] = (bookingsByDate[dateKey] || 0) + 1
       }
-    });
+    })
 
     // Generate daily buckets
-    const dailyData = [];
+    const dailyData = []
     for (let i = 0; i < daysCount; i++) {
-      const d = new Date(start);
-      d.setDate(d.getDate() + i);
-      const dateKey = d.toISOString().split("T")[0];
-      dailyData.push({ date: dateKey, count: bookingsByDate[dateKey] || 0 });
+      const d = new Date(start)
+      d.setDate(d.getDate() + i)
+      const dateKey = d.toISOString().split('T')[0]
+      dailyData.push({ date: dateKey, count: bookingsByDate[dateKey] || 0 })
     }
 
     // Avg Daily Count
-    const totalCount = dailyData.reduce((acc, curr) => acc + curr.count, 0);
-    const avgGrowthCount = Math.round(totalCount / daysCount);
+    const totalCount = dailyData.reduce((acc, curr) => acc + curr.count, 0)
+    const avgGrowthCount = Math.round(totalCount / daysCount)
 
     // Trend for Count (Compare first half vs second half of the period)
-    let isCountIncreasing = false;
+    let isCountIncreasing = false
     if (dailyData.length >= 2) {
-      const mid = Math.floor(dailyData.length / 2);
-      const firstHalf = dailyData.slice(0, mid);
-      const secondHalf = dailyData.slice(mid);
+      const mid = Math.floor(dailyData.length / 2)
+      const firstHalf = dailyData.slice(0, mid)
+      const secondHalf = dailyData.slice(mid)
       const avgFirst =
-        firstHalf.reduce((a, c) => a + c.count, 0) / firstHalf.length;
+        firstHalf.reduce((a, c) => a + c.count, 0) / firstHalf.length
       const avgSecond =
-        secondHalf.reduce((a, c) => a + c.count, 0) / secondHalf.length;
-      isCountIncreasing = avgSecond >= avgFirst;
+        secondHalf.reduce((a, c) => a + c.count, 0) / secondHalf.length
+      isCountIncreasing = avgSecond >= avgFirst
     }
 
     // Avg Daily Growth %
-    let totalPctChange = 0;
-    let validDays = 0;
-    const pctChanges = [];
+    let totalPctChange = 0
+    let validDays = 0
+    const pctChanges = []
 
     for (let i = 1; i < dailyData.length; i++) {
-      const prev = dailyData[i - 1].count;
-      const curr = dailyData[i].count;
-      let pct = 0;
+      const prev = dailyData[i - 1].count
+      const curr = dailyData[i].count
+      let pct = 0
       if (prev === 0) {
-        pct = curr > 0 ? 100 : 0;
+        pct = curr > 0 ? 100 : 0
       } else {
-        pct = ((curr - prev) / prev) * 100;
+        pct = ((curr - prev) / prev) * 100
       }
-      pctChanges.push(pct);
-      totalPctChange += pct;
-      validDays++;
+      pctChanges.push(pct)
+      totalPctChange += pct
+      validDays++
     }
 
-    const avgGrowthPercentVal = validDays > 0 ? totalPctChange / validDays : 0;
-    const finalGrowthPercent = Math.min(avgGrowthPercentVal, 100);
-    const avgGrowthPercent = `${finalGrowthPercent.toFixed(2)}%`;
+    const avgGrowthPercentVal = validDays > 0 ? totalPctChange / validDays : 0
+    const finalGrowthPercent = Math.min(avgGrowthPercentVal, 100)
+    const avgGrowthPercent = `${finalGrowthPercent.toFixed(2)}%`
 
     // Trend for %
-    let isPctIncreasing = false;
+    let isPctIncreasing = false
     if (pctChanges.length >= 2) {
-      const mid = Math.floor(pctChanges.length / 2);
-      const firstHalf = pctChanges.slice(0, mid);
-      const secondHalf = pctChanges.slice(mid);
-      const avgFirst = firstHalf.reduce((a, c) => a + c, 0) / firstHalf.length;
+      const mid = Math.floor(pctChanges.length / 2)
+      const firstHalf = pctChanges.slice(0, mid)
+      const secondHalf = pctChanges.slice(mid)
+      const avgFirst = firstHalf.reduce((a, c) => a + c, 0) / firstHalf.length
       const avgSecond =
-        secondHalf.reduce((a, c) => a + c, 0) / secondHalf.length;
-      isPctIncreasing = avgSecond >= avgFirst;
+        secondHalf.reduce((a, c) => a + c, 0) / secondHalf.length
+      isPctIncreasing = avgSecond >= avgFirst
     }
 
     setStats({
@@ -350,110 +350,110 @@ export default function TransactionsForm() {
       avgGrowthCount,
       isCountIncreasing,
       avgGrowthPercent,
-      isPctIncreasing,
-    });
-  }, [bookings, statsLoadedFromApi, dateRange]);
+      isPctIncreasing
+    })
+  }, [bookings, statsLoadedFromApi, dateRange])
 
   useEffect(() => {
-    const handleClickOutside = (event) => {
+    const handleClickOutside = event => {
       if (menuOpenId !== null) {
-        const target = event.target;
-        const isMenuButton = target.closest("button[data-menu-button]");
-        const isMenuContent = target.closest("[data-menu-content]");
+        const target = event.target
+        const isMenuButton = target.closest('button[data-menu-button]')
+        const isMenuContent = target.closest('[data-menu-content]')
 
         if (!isMenuButton && !isMenuContent) {
-          setMenuOpenId(null);
+          setMenuOpenId(null)
         }
       }
-    };
+    }
 
     if (menuOpenId !== null) {
-      document.addEventListener("mousedown", handleClickOutside);
+      document.addEventListener('mousedown', handleClickOutside)
     }
 
     return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [menuOpenId]);
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [menuOpenId])
 
   const formatEventDate = (dateInput, timeInput) => {
     const raw =
-      dateInput && typeof dateInput === "object" && dateInput.$date
+      dateInput && typeof dateInput === 'object' && dateInput.$date
         ? dateInput.$date
-        : dateInput;
-    const dt = raw ? new Date(raw) : null;
-    if (!dt || isNaN(dt.getTime())) return "-";
-    const day = dt.toLocaleDateString(undefined, { weekday: "short" });
-    const month = dt.toLocaleDateString(undefined, { month: "long" });
-    const dayNum = dt.toLocaleDateString(undefined, { day: "2-digit" });
-    const year = dt.toLocaleDateString(undefined, { year: "numeric" });
-    let timeStr = "";
-    if (typeof timeInput === "string" && timeInput.trim()) {
-      timeStr = timeInput.trim();
+        : dateInput
+    const dt = raw ? new Date(raw) : null
+    if (!dt || isNaN(dt.getTime())) return '-'
+    const day = dt.toLocaleDateString(undefined, { weekday: 'short' })
+    const month = dt.toLocaleDateString(undefined, { month: 'long' })
+    const dayNum = dt.toLocaleDateString(undefined, { day: '2-digit' })
+    const year = dt.toLocaleDateString(undefined, { year: 'numeric' })
+    let timeStr = ''
+    if (typeof timeInput === 'string' && timeInput.trim()) {
+      timeStr = timeInput.trim()
     } else {
       timeStr = dt.toLocaleTimeString(undefined, {
-        hour: "2-digit",
-        minute: "2-digit",
-      });
+        hour: '2-digit',
+        minute: '2-digit'
+      })
     }
-    return `${day}, ${month} ${dayNum}, ${year} at ${timeStr}`;
-  };
+    return `${day}, ${month} ${dayNum}, ${year} at ${timeStr}`
+  }
 
-  const formatBookedOn = (iso) => {
-    const d = new Date(iso);
-    if (isNaN(d.getTime())) return "-";
-    const day = d.toLocaleDateString("en-US", { weekday: "short" });
-    const datePart = d.toLocaleDateString("en-US", {
-      month: "long",
-      day: "numeric",
-      year: "numeric",
-    });
-    const timePart = d.toLocaleTimeString("en-US", {
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: true,
-    });
-    return `${day}, ${datePart} at ${timePart}`;
-  };
+  const formatBookedOn = iso => {
+    const d = new Date(iso)
+    if (isNaN(d.getTime())) return '-'
+    const day = d.toLocaleDateString('en-US', { weekday: 'short' })
+    const datePart = d.toLocaleDateString('en-US', {
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric'
+    })
+    const timePart = d.toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    })
+    return `${day}, ${datePart} at ${timePart}`
+  }
 
-  const toTimestamp = (v) => {
-    const raw = v && typeof v === "object" && v.$date ? v.$date : v;
-    const dt = raw ? new Date(raw) : null;
-    return dt && !isNaN(dt.getTime()) ? dt.getTime() : 0;
-  };
-  const toImageUrl = (p) => {
-    const s = String(p || "").trim();
-    if (!s) return null;
-    if (/^https?:\/\//i.test(s)) return s;
-    const originEnv = process.env.NEXT_PUBLIC_SIM_IMAGE_BASE_ORIGIN;
+  const toTimestamp = v => {
+    const raw = v && typeof v === 'object' && v.$date ? v.$date : v
+    const dt = raw ? new Date(raw) : null
+    return dt && !isNaN(dt.getTime()) ? dt.getTime() : 0
+  }
+  const toImageUrl = p => {
+    const s = String(p || '').trim()
+    if (!s) return null
+    if (/^https?:\/\//i.test(s)) return s
+    const originEnv = process.env.NEXT_PUBLIC_SIM_IMAGE_BASE_ORIGIN
     const base =
       originEnv && originEnv.trim()
         ? originEnv.trim()
-        : typeof window !== "undefined" && "https://accessdettyfusion.com";
-    const path = s.startsWith("/") ? s : `/${s}`;
-    return `${base}${path}`;
-  };
+        : typeof window !== 'undefined' && 'https://accessdettyfusion.com'
+    const path = s.startsWith('/') ? s : `/${s}`
+    return `${base}${path}`
+  }
 
-  const formatEventDateWthOutTime = (isoDate) => {
-    const date = new Date(isoDate);
+  const formatEventDateWthOutTime = isoDate => {
+    const date = new Date(isoDate)
     const options = {
-      weekday: "long",
-      month: "short",
-      day: "numeric",
-    };
-    return date.toLocaleString("en-US", options);
-  };
+      weekday: 'long',
+      month: 'short',
+      day: 'numeric'
+    }
+    return date.toLocaleString('en-US', options)
+  }
 
   useEffect(() => {
     const fetchData = async () => {
-      setLoading(true);
-      setError("");
+      setLoading(true)
+      setError('')
       try {
-        const params = {};
-        if (dateRange.start) params.startDate = dateRange.start;
-        if (dateRange.end) params.endDate = dateRange.end;
-        const res = await getBookingList(undefined, params);
-        let raw = [];
+        const params = {}
+        if (dateRange.start) params.startDate = dateRange.start
+        if (dateRange.end) params.endDate = dateRange.end
+        const res = await getBookingList(undefined, params)
+        let raw = []
 
         // Check if API returns stats in res.data object
         // Expected structure: { success: true, data: { totalBookingsYesterday, ..., bookings: [] } }
@@ -462,40 +462,40 @@ export default function TransactionsForm() {
         // And assuming the list is inside data.bookings or data.tickets
         if (
           res?.data &&
-          typeof res.data === "object" &&
+          typeof res.data === 'object' &&
           !Array.isArray(res.data) &&
-          (typeof res.data.totalBookingsYesterday !== "undefined" ||
+          (typeof res.data.totalBookingsYesterday !== 'undefined' ||
             res.data.bookings ||
             res.data.tickets)
         ) {
-          const d = res.data;
+          const d = res.data
           // Try to find the list
-          if (Array.isArray(d.bookings)) raw = d.bookings;
-          else if (Array.isArray(d.tickets)) raw = d.tickets;
-          else if (Array.isArray(d.data)) raw = d.data; // fallback
-          else raw = [];
+          if (Array.isArray(d.bookings)) raw = d.bookings
+          else if (Array.isArray(d.tickets)) raw = d.tickets
+          else if (Array.isArray(d.data)) raw = d.data // fallback
+          else raw = []
 
           // Extract Stats
-          const yesterdayCount = Number(d.totalBookingsYesterday || 0);
-          let yesterdayDateStr = d.yesterdayDate || "";
+          const yesterdayCount = Number(d.totalBookingsYesterday || 0)
+          let yesterdayDateStr = d.yesterdayDate || ''
           // Format date if it's YYYY-MM-DD
-          const yDate = new Date(yesterdayDateStr);
+          const yDate = new Date(yesterdayDateStr)
           if (!isNaN(yDate.getTime())) {
-            yesterdayDateStr = yDate.toLocaleDateString("en-US", {
-              month: "short",
-              day: "numeric",
-            });
+            yesterdayDateStr = yDate.toLocaleDateString('en-US', {
+              month: 'short',
+              day: 'numeric'
+            })
           }
 
-          const avgGrowthCount = Number(d.avgDailyGrowthCount || 0);
+          const avgGrowthCount = Number(d.avgDailyGrowthCount || 0)
           let avgGrowthPercentVal = parseFloat(
-            String(d.avgDailyGrowthPercent || "0%").replace("%", "")
-          );
-          if (isNaN(avgGrowthPercentVal)) avgGrowthPercentVal = 0;
+            String(d.avgDailyGrowthPercent || '0%').replace('%', '')
+          )
+          if (isNaN(avgGrowthPercentVal)) avgGrowthPercentVal = 0
 
           // Cap at 100%
-          const finalGrowthPercentVal = Math.min(avgGrowthPercentVal);
-          const avgGrowthPercentStr = `${finalGrowthPercentVal.toFixed(2)}%`;
+          const finalGrowthPercentVal = Math.min(avgGrowthPercentVal)
+          const avgGrowthPercentStr = `${finalGrowthPercentVal.toFixed(2)}%`
 
           setStats({
             yesterdayCount,
@@ -503,24 +503,24 @@ export default function TransactionsForm() {
             avgGrowthCount,
             isCountIncreasing: avgGrowthCount >= 0,
             avgGrowthPercent: avgGrowthPercentStr,
-            isPctIncreasing: avgGrowthPercentVal >= 0,
-          });
-          setStatsLoadedFromApi(true);
+            isPctIncreasing: avgGrowthPercentVal >= 0
+          })
+          setStatsLoadedFromApi(true)
         } else {
           // Legacy or different structure
           raw = Array.isArray(res?.data)
             ? res.data
             : Array.isArray(res)
             ? res
-            : [];
-          setStatsLoadedFromApi(false);
+            : []
+          setStatsLoadedFromApi(false)
         }
 
         // console.log("rawdata from the api", raw);
 
         const list = raw.map((b, idx) => ({
           id: b.bookingId || b._id || `booking-${idx}`,
-          rowKey: `${String(b.bookingId || b._id || "noid")}-${String(
+          rowKey: `${String(b.bookingId || b._id || 'noid')}-${String(
             b.createdAt || b.updatedAt || idx
           )}`,
           bookedOnRaw: b.createdAt || b.updatedAt,
@@ -528,36 +528,36 @@ export default function TransactionsForm() {
           eventName:
             b.event && (b.event.title || b.event.eventName)
               ? b.event.title || b.event.eventName
-              : "-",
+              : '-',
           eventImage: toImageUrl(b?.event?.image),
-          referralCode: b?.referralCode || "-",
+          referralCode: b?.referralCode || '-',
           type:
             b.event && (b.event.eventType || b.event.type)
               ? b.event.eventType || b.event.type
-              : "-",
+              : '-',
           ticketsBooked: `${
-            typeof b.quantity === "number" ? b.quantity : "-"
-          } x ${b.ticketName || "Regular"}`,
-          ticketsQty: typeof b.quantity === "number" ? b.quantity : 0,
-          additionalInfo: "",
+            typeof b.quantity === 'number' ? b.quantity : '-'
+          } x ${b.ticketName || 'Regular'}`,
+          ticketsQty: typeof b.quantity === 'number' ? b.quantity : 0,
+          additionalInfo: '',
           amount:
-            typeof b.totalPrice === "number"
+            typeof b.totalPrice === 'number'
               ? `₦${b.totalPrice.toLocaleString()}`
-              : "-",
+              : '-',
           amountNum:
-            typeof b.totalPrice === "number"
+            typeof b.totalPrice === 'number'
               ? b.totalPrice
               : Number(b.totalPrice) || 0,
-          activityStatus: TextCapitalize(b.status || "Pending"),
+          activityStatus: TextCapitalize(b.status || 'Pending'),
           paymentStatus:
-            (typeof b.totalPrice === "number" && b.totalPrice === 0) ||
-            (typeof b.totalPrice === "string" && parseFloat(b.totalPrice) === 0)
-              ? "Completed"
-              : String(b.paymentStatus || "Pending"),
+            (typeof b.totalPrice === 'number' && b.totalPrice === 0) ||
+            (typeof b.totalPrice === 'string' && parseFloat(b.totalPrice) === 0)
+              ? 'Completed'
+              : String(b.paymentStatus || 'Pending'),
           buyer: b.buyer || null,
-          buyerName: b.buyer?.fullName || "-",
-          buyerEmail: b.buyer?.email || "-",
-          buyerPhone: b.buyer?.phone || "-",
+          buyerName: b.buyer?.fullName || '-',
+          buyerEmail: b.buyer?.email || '-',
+          buyerPhone: b.buyer?.phone || '-',
           event: b.event || null,
           eventDateText: formatEventDate(
             b?.event?.eventStartDate,
@@ -568,81 +568,90 @@ export default function TransactionsForm() {
             toTimestamp(b?.createdAt),
             toTimestamp(b?.updatedAt)
           ),
-          arrivalDate: formatEventDateWthOutTime(b?.arrivalDate) || "-",
-          raw: b,
-        }));
-        setBookings(list);
+          arrivalDate: formatEventDateWthOutTime(b?.arrivalDate) || '-',
+          raw: b
+        }))
+        setBookings(list)
       } catch (e) {
-        setError("Failed to load bookings");
-        setBookings([]);
+        setError('Failed to load bookings')
+        setBookings([])
       } finally {
-        setLoading(false);
+        setLoading(false)
       }
-    };
-    fetchData();
-  }, [dateRange.start, dateRange.end]);
+    }
+    fetchData()
+  }, [dateRange.start, dateRange.end])
 
   const filteredBookings = bookings
-    .filter((booking) => {
+    .filter(booking => {
       // Date Range Filter
       const bookingDate = booking.bookedOnRaw
         ? new Date(booking.bookedOnRaw)
-        : null;
-      let matchesDate = true;
+        : null
+      let matchesDate = true
       if (dateRange.start) {
-        const start = new Date(dateRange.start + "T00:00:00");
-        if (bookingDate && bookingDate < start) matchesDate = false;
+        const start = new Date(dateRange.start + 'T00:00:00')
+        if (bookingDate && bookingDate < start) matchesDate = false
       }
       if (dateRange.end && matchesDate) {
-        const end = new Date(dateRange.end + "T23:59:59.999");
-        if (bookingDate && bookingDate > end) matchesDate = false;
+        const end = new Date(dateRange.end + 'T23:59:59.999')
+        if (bookingDate && bookingDate > end) matchesDate = false
       }
-      if (!matchesDate) return false;
+      if (!matchesDate) return false
 
       if (paymentStatusFilter) {
-        const paymentStatus = String(booking.paymentStatus || "")
+        const paymentStatus = String(booking.paymentStatus || '')
           .toLowerCase()
-          .trim();
+          .trim()
 
         if (paymentStatus !== paymentStatusFilter.toLowerCase()) {
-          return false;
+          return false
         }
       }
 
-      const term = String(searchTerm || "")
+      const term = String(searchTerm || '')
         .trim()
-        .toLowerCase();
-      if (!term) return true;
-      const termDigits = term.replace(/[^0-9]/g, "");
+        .toLowerCase()
+      if (!term) return true
+      const termDigits = term.replace(/[^0-9]/g, '')
       const name = String(
-        booking.eventName || booking?.raw?.event?.eventName || ""
-      ).toLowerCase();
-      const type = String(booking.type || "").toLowerCase();
+        booking.eventName || booking?.raw?.event?.eventName || ''
+      ).toLowerCase()
+      const type = String(booking.type || '').toLowerCase()
 
       const buyerName = String(
         booking.buyerName ||
           booking?.buyer?.fullName ||
           booking?.raw?.buyer?.fullName ||
           booking?.raw?.user?.name ||
-          ""
-      ).toLowerCase();
+          ''
+      ).toLowerCase()
 
       const buyerEmail = String(
         booking.buyerEmail ||
           booking?.buyer?.email ||
           booking?.raw?.buyer?.email ||
           booking?.raw?.user?.email ||
-          ""
-      ).toLowerCase();
+          ''
+      ).toLowerCase()
 
-      const bookedOnText = String(booking.bookedOn || "").toLowerCase();
-      const bookedOnRawText = String(booking.bookedOnRaw || "").toLowerCase();
-      const dateText = `${bookedOnText} ${bookedOnRawText}`;
-      const dateDigits = dateText.replace(/[^0-9]/g, "");
+      const buyerPhone = String(
+        booking.buyerPhone ||
+          booking?.buyer?.phone ||
+          booking?.raw?.buyer?.phone ||
+          booking?.raw?.user?.phoneNumber ||
+          ''
+      ).toLowerCase()
+      const buyerPhoneDigits = buyerPhone.replace(/[^0-9]/g, '')
+
+      const bookedOnText = String(booking.bookedOn || '').toLowerCase()
+      const bookedOnRawText = String(booking.bookedOnRaw || '').toLowerCase()
+      const dateText = `${bookedOnText} ${bookedOnRawText}`
+      const dateDigits = dateText.replace(/[^0-9]/g, '')
 
       const dateStr = String(
-        booking.eventDateText || booking.bookedOn || ""
-      ).toLowerCase();
+        booking.eventDateText || booking.bookedOn || ''
+      ).toLowerCase()
 
       const matchesText =
         name.includes(term) ||
@@ -650,319 +659,323 @@ export default function TransactionsForm() {
         dateStr.includes(term) ||
         buyerName.includes(term) ||
         buyerEmail.includes(term) ||
-        dateText.includes(term);
+        buyerPhone.includes(term) ||
+        dateText.includes(term)
 
-      const matchesDigits = termDigits && dateDigits.includes(termDigits);
+      const matchesDigits =
+        termDigits &&
+        (dateDigits.includes(termDigits) ||
+          buyerPhoneDigits.includes(termDigits))
 
-      return matchesText || matchesDigits;
+      return matchesText || matchesDigits
     })
     .sort((a, b) => {
-      const dir = sortDir === "asc" ? 1 : -1;
-      const val = (key) => {
+      const dir = sortDir === 'asc' ? 1 : -1
+      const val = key => {
         switch (key) {
-          case "date":
-            return toTimestamp(a.bookedOnRaw) - toTimestamp(b.bookedOnRaw);
-          case "userName":
-            return String(a.buyerName || "").localeCompare(
-              String(b.buyerName || ""),
+          case 'date':
+            return toTimestamp(a.bookedOnRaw) - toTimestamp(b.bookedOnRaw)
+          case 'userName':
+            return String(a.buyerName || '').localeCompare(
+              String(b.buyerName || ''),
               undefined,
-              { sensitivity: "base" }
-            );
-          case "email":
-            return String(a.buyerEmail || "").localeCompare(
-              String(b.buyerEmail || ""),
+              { sensitivity: 'base' }
+            )
+          case 'email':
+            return String(a.buyerEmail || '').localeCompare(
+              String(b.buyerEmail || ''),
               undefined,
-              { sensitivity: "base" }
-            );
-          case "phone":
-            return String(a.buyerPhone || "").localeCompare(
-              String(b.buyerPhone || ""),
+              { sensitivity: 'base' }
+            )
+          case 'phone':
+            return String(a.buyerPhone || '').localeCompare(
+              String(b.buyerPhone || ''),
               undefined,
-              { sensitivity: "base" }
-            );
-          case "tickets":
-            return (a.ticketsQty || 0) - (b.ticketsQty || 0);
-          case "amount":
-            return (a.amountNum || 0) - (b.amountNum || 0);
-          case "paymentStatus":
-            return String(a.paymentStatus || "").localeCompare(
-              String(b.paymentStatus || ""),
+              { sensitivity: 'base' }
+            )
+          case 'tickets':
+            return (a.ticketsQty || 0) - (b.ticketsQty || 0)
+          case 'amount':
+            return (a.amountNum || 0) - (b.amountNum || 0)
+          case 'paymentStatus':
+            return String(a.paymentStatus || '').localeCompare(
+              String(b.paymentStatus || ''),
               undefined,
-              { sensitivity: "base" }
-            );
-          case "activityStatus":
-            return String(a.activityStatus || "").localeCompare(
-              String(b.activityStatus || ""),
+              { sensitivity: 'base' }
+            )
+          case 'activityStatus':
+            return String(a.activityStatus || '').localeCompare(
+              String(b.activityStatus || ''),
               undefined,
-              { sensitivity: "base" }
-            );
+              { sensitivity: 'base' }
+            )
           default:
-            return toTimestamp(a.bookedOnRaw) - toTimestamp(b.bookedOnRaw);
+            return toTimestamp(a.bookedOnRaw) - toTimestamp(b.bookedOnRaw)
         }
-      };
-      return dir * val(sortKey);
-    });
+      }
+      return dir * val(sortKey)
+    })
 
   const paginatedBookings = useMemo(() => {
-    const startIndex = (page - 1) * limit;
-    const endIndex = startIndex + limit;
-    return filteredBookings.slice(startIndex, endIndex);
-  }, [filteredBookings, page, limit]);
+    const startIndex = (page - 1) * limit
+    const endIndex = startIndex + limit
+    return filteredBookings.slice(startIndex, endIndex)
+  }, [filteredBookings, page, limit])
 
   useEffect(() => {
-    const totalPages = Math.ceil(filteredBookings.length / limit) || 1;
-    setPageCount(totalPages);
+    const totalPages = Math.ceil(filteredBookings.length / limit) || 1
+    setPageCount(totalPages)
 
     if (page > totalPages) {
-      setPage(1);
+      setPage(1)
     }
-  }, [filteredBookings.length, limit]);
+  }, [filteredBookings.length, limit])
 
-  const toggleSort = (key) => {
+  const toggleSort = key => {
     if (sortKey === key) {
-      setSortDir((prev) => (prev === "asc" ? "desc" : "asc"));
+      setSortDir(prev => (prev === 'asc' ? 'desc' : 'asc'))
     } else {
-      setSortKey(key);
-      setSortDir(key === "date" ? "desc" : "asc");
+      setSortKey(key)
+      setSortDir(key === 'date' ? 'desc' : 'asc')
     }
-  };
+  }
 
-  const openTicket = (booking) => {
-    const raw = booking.raw || booking;
-    const id = toIdString(raw.bookingId || raw._id || booking.id);
-    const eid = toIdString(raw?.event?._id || raw?.event?.id);
-    const qs = eid ? `?eventId=${encodeURIComponent(String(eid))}` : "";
+  const openTicket = booking => {
+    const raw = booking.raw || booking
+    const id = toIdString(raw.bookingId || raw._id || booking.id)
+    const eid = toIdString(raw?.event?._id || raw?.event?.id)
+    const qs = eid ? `?eventId=${encodeURIComponent(String(eid))}` : ''
     if (id) {
       router.push(
         `/discover-events/tickets-booked/view/${encodeURIComponent(
           String(id)
         )}${qs}`
-      );
-      setMenuOpenId(null);
-      return;
+      )
+      setMenuOpenId(null)
+      return
     }
-    setSelectedBooking(raw);
-    setTicketOpen(true);
-    setMenuOpenId(null);
-  };
+    setSelectedBooking(raw)
+    setTicketOpen(true)
+    setMenuOpenId(null)
+  }
 
-  const openCustomer = (booking) => {
-    setSelectedBooking(booking.raw || booking);
-    setCustomerOpen(true);
-  };
+  const openCustomer = booking => {
+    setSelectedBooking(booking.raw || booking)
+    setCustomerOpen(true)
+  }
 
-  const downloadReceipt = (booking) => {
-    const id = booking?.raw?.bookingId || booking?.raw?._id || booking?.id;
+  const downloadReceipt = booking => {
+    const id = booking?.raw?.bookingId || booking?.raw?._id || booking?.id
     const eid =
-      booking?.raw?.event?._id || booking?.raw?.event?.id || booking?.event?.id;
-    const inferExt = (type) => {
-      const t = String(type || "").toLowerCase();
-      if (t.includes("pdf")) return "pdf";
-      if (t.includes("png")) return "png";
-      if (t.includes("jpeg")) return "jpg";
-      if (t.includes("jpg")) return "jpg";
-      if (t.includes("webp")) return "webp";
-      if (t.includes("json")) return "json";
-      if (t.includes("text")) return "txt";
-      return "bin";
-    };
-    (async () => {
+      booking?.raw?.event?._id || booking?.raw?.event?.id || booking?.event?.id
+    const inferExt = type => {
+      const t = String(type || '').toLowerCase()
+      if (t.includes('pdf')) return 'pdf'
+      if (t.includes('png')) return 'png'
+      if (t.includes('jpeg')) return 'jpg'
+      if (t.includes('jpg')) return 'jpg'
+      if (t.includes('webp')) return 'webp'
+      if (t.includes('json')) return 'json'
+      if (t.includes('text')) return 'txt'
+      return 'bin'
+    }
+    ;(async () => {
       try {
-        if (String(downloadingId || "") === String(id)) return;
-        setDownloadingId(id);
-        const blob = await downloadBookingReceipt(id, eid);
-        const type = String(blob?.type || "").toLowerCase();
-        if (type.includes("json")) {
-          const txt = await blob.text();
+        if (String(downloadingId || '') === String(id)) return
+        setDownloadingId(id)
+        const blob = await downloadBookingReceipt(id, eid)
+        const type = String(blob?.type || '').toLowerCase()
+        if (type.includes('json')) {
+          const txt = await blob.text()
           try {
-            const j = JSON.parse(txt);
-            const msg = j?.message || "Failed to download receipt";
-            throw new Error(msg);
+            const j = JSON.parse(txt)
+            const msg = j?.message || 'Failed to download receipt'
+            throw new Error(msg)
           } catch {
-            throw new Error("Failed to download receipt");
+            throw new Error('Failed to download receipt')
           }
         }
-        const url = URL.createObjectURL(blob);
-        const ext = inferExt(type);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `receipt-${id}.${ext}`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+        const url = URL.createObjectURL(blob)
+        const ext = inferExt(type)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `receipt-${id}.${ext}`
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        URL.revokeObjectURL(url)
       } catch (e) {
         const msg =
           e?.response?.data?.message ||
           e?.message ||
-          "Failed to download receipt";
-        alert(msg);
+          'Failed to download receipt'
+        alert(msg)
       } finally {
-        setDownloadingId(null);
-        setMenuOpenId(null);
+        setDownloadingId(null)
+        setMenuOpenId(null)
       }
-    })();
-  };
+    })()
+  }
 
   const handleDownloadExcel = () => {
     if (!filteredBookings || filteredBookings.length === 0) {
-      return;
+      return
     }
-    const dataToExport = filteredBookings.map((booking) => {
-      const b = booking.raw || {};
-      const event = b.event || {};
-      const buyer = b.buyer || {};
-      const user = b.user || {};
+    const dataToExport = filteredBookings.map(booking => {
+      const b = booking.raw || {}
+      const event = b.event || {}
+      const buyer = b.buyer || {}
+      const user = b.user || {}
       // const attendees = Array.isArray(b.attendees)
       //   ? b.attendees.map((a) => `${a.fullName} (${a.email})`).join(", ")
       //   : "";
 
       return {
-        "Booking ID": b.bookingId || b._id,
-        "Created At": b.createdAt,
+        'Booking ID': b.bookingId || b._id,
+        'Created At': b.createdAt,
         Status: b.status,
-        "Payment Status": b.paymentStatus,
+        'Payment Status': b.paymentStatus,
 
         // Event Details
-        "Event ID": event._id,
-        "Event Name": event.eventName,
-        "Event Slug": event.slug,
-        "Event Location": event.location,
-        "Event Start Date": event.eventStartDate,
-        "Event End Date": event.eventEndDate,
-        "Event Image": event.image,
+        'Event ID': event._id,
+        'Event Name': event.eventName,
+        'Event Slug': event.slug,
+        'Event Location': event.location,
+        'Event Start Date': event.eventStartDate,
+        'Event End Date': event.eventEndDate,
+        'Event Image': event.image,
 
         // Buyer Details
-        "Buyer Name": buyer.fullName,
-        "Buyer Email": buyer.email,
-        "Buyer Country": buyer.country,
-        "Buyer City": buyer.city,
-        "Buyer Phone": buyer.phone,
+        'Buyer Name': buyer.fullName,
+        'Buyer Email': buyer.email,
+        'Buyer Country': buyer.country,
+        'Buyer City': buyer.city,
+        'Buyer Phone': buyer.phone,
 
         // User Details
-        "User ID": user._id,
-        "User Name": user.name,
-        "User Email": user.email,
-        "User Phone": user.phoneNumber,
+        'User ID': user._id,
+        'User Name': user.name,
+        'User Email': user.email,
+        'User Phone': user.phoneNumber,
 
         // Ticket Details
-        "Ticket ID": b.ticketId,
-        "Ticket Name": b.ticketName,
-        "Ticket Type": b.ticketType,
+        'Ticket ID': b.ticketId,
+        'Ticket Name': b.ticketName,
+        'Ticket Type': b.ticketType,
         Quantity: b.quantity,
-        "Per Ticket Price": b.perTicketPrice,
-        "Total Price": b.totalPrice,
+        'Per Ticket Price': b.perTicketPrice,
+        'Total Price': b.totalPrice
 
         // // Attendees
         // Attendees: attendees,
-      };
-    });
-    downloadExcel(dataToExport, "Event_Bookings.xlsx");
-  };
+      }
+    })
+    downloadExcel(dataToExport, 'Event_Bookings.xlsx')
+  }
 
-  const getEventStatusColor = (status) => {
-    const s = String(status || "")
+  const getEventStatusColor = status => {
+    const s = String(status || '')
       .trim()
-      .toLowerCase();
+      .toLowerCase()
     switch (s) {
-      case "scanned":
-      case "completed":
-      case "done":
-        return "bg-green-100 text-green-800";
-      case "ongoing":
-        return "bg-blue-100 text-blue-800";
-      case "pending":
-      case "upcoming":
-        return "bg-yellow-100 text-yellow-800";
-      case "tbl":
-        return "bg-gray-100 text-gray-800";
+      case 'scanned':
+      case 'completed':
+      case 'done':
+        return 'bg-green-100 text-green-800'
+      case 'ongoing':
+        return 'bg-blue-100 text-blue-800'
+      case 'pending':
+      case 'upcoming':
+        return 'bg-yellow-100 text-yellow-800'
+      case 'tbl':
+        return 'bg-gray-100 text-gray-800'
       default:
-        return "bg-gray-100 text-gray-800";
+        return 'bg-gray-100 text-gray-800'
     }
-  };
+  }
 
-  const TextCapitalize = (str) => {
-    if (!str) return "";
+  const TextCapitalize = str => {
+    if (!str) return ''
     return (
       String(str).charAt(0).toUpperCase() + String(str).slice(1).toLowerCase()
-    );
-  };
+    )
+  }
 
-  const getPaymentStatusColor = (status) => {
+  const getPaymentStatusColor = status => {
     switch (String(status).toUpperCase()) {
-      case "COMPLETED":
-      case "PAID":
-        return "bg-green-100 text-green-800";
-      case "INCOMPLETE":
-        return "bg-yellow-100 text-yellow-800";
+      case 'COMPLETED':
+      case 'PAID':
+        return 'bg-green-100 text-green-800'
+      case 'INCOMPLETE':
+        return 'bg-yellow-100 text-yellow-800'
       default:
-        return "bg-gray-100 text-gray-800";
+        return 'bg-gray-100 text-gray-800'
     }
-  };
-  const toIdString = (v) => {
-    if (!v) return "";
-    if (typeof v === "string") return v;
-    if (typeof v === "object") {
-      if (v.$oid) return String(v.$oid);
-      if (v.$id) return String(v.$id);
-      if (v.oid) return String(v.oid);
-      if (v._id) return toIdString(v._id);
+  }
+  const toIdString = v => {
+    if (!v) return ''
+    if (typeof v === 'string') return v
+    if (typeof v === 'object') {
+      if (v.$oid) return String(v.$oid)
+      if (v.$id) return String(v.$id)
+      if (v.oid) return String(v.oid)
+      if (v._id) return toIdString(v._id)
     }
-    return String(v);
-  };
+    return String(v)
+  }
   const handleToggleFilters = () => {
-    setFiltersOpen((v) => !v);
-  };
+    setFiltersOpen(v => !v)
+  }
 
   return (
-    <div className="p-4 h-full flex flex-col bg-white">
+    <div className='p-4 h-full flex flex-col bg-white'>
       {/* Header with Date Range */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-        <div className="mb-4">
-          <h1 className="text-xl font-bold text-gray-900 mb-1">
+      <div className='flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6'>
+        <div className='mb-4'>
+          <h1 className='text-xl font-bold text-gray-900 mb-1'>
             Gross Transaction Value
           </h1>
-          <nav className="text-sm text-gray-500">
+          <nav className='text-sm text-gray-500'>
             <span>Dashboard</span> / <span>Gross Transaction Value</span>
           </nav>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-2">
-            <div className="flex flex-col">
-              <label className="text-[10px] text-gray-500 font-medium ml-1">
+        <div className='flex items-center gap-2'>
+          <div className='flex items-center gap-2'>
+            <div className='flex flex-col'>
+              <label className='text-[10px] text-gray-500 font-medium ml-1'>
                 Start Date
               </label>
               <input
-                type="date"
-                max={new Date().toISOString().split("T")[0]}
+                type='date'
+                max={new Date().toISOString().split('T')[0]}
                 value={dateRange.start}
-                onChange={(e) =>
-                  setDateRange((prev) => ({ ...prev, start: e.target.value }))
+                onChange={e =>
+                  setDateRange(prev => ({ ...prev, start: e.target.value }))
                 }
-                className="h-9 px-3 border border-gray-300 rounded-lg text-xs text-gray-700 focus:outline-none focus:border-indigo-500"
+                className='h-9 px-3 border border-gray-300 rounded-lg text-xs text-gray-700 focus:outline-none focus:border-indigo-500'
               />
             </div>
-            <span className="text-gray-400 mt-4">-</span>
-            <div className="flex flex-col">
-              <label className="text-[10px] text-gray-500 font-medium ml-1">
+            <span className='text-gray-400 mt-4'>-</span>
+            <div className='flex flex-col'>
+              <label className='text-[10px] text-gray-500 font-medium ml-1'>
                 End Date
               </label>
               <input
-                type="date"
-                max={new Date().toISOString().split("T")[0]}
+                type='date'
+                max={new Date().toISOString().split('T')[0]}
                 value={dateRange.end}
-                onChange={(e) =>
-                  setDateRange((prev) => ({ ...prev, end: e.target.value }))
+                onChange={e =>
+                  setDateRange(prev => ({ ...prev, end: e.target.value }))
                 }
-                className="h-9 px-3 border border-gray-300 rounded-lg text-xs text-gray-700 focus:outline-none focus:border-indigo-500"
+                className='h-9 px-3 border border-gray-300 rounded-lg text-xs text-gray-700 focus:outline-none focus:border-indigo-500'
               />
             </div>
           </div>
           {(dateRange.start || dateRange.end) && (
             <button
-              onClick={() => setDateRange({ start: "", end: "" })}
-              className="mt-4 p-2 text-gray-500 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-              title="Clear Date Filter"
+              onClick={() => setDateRange({ start: '', end: '' })}
+              className='mt-4 p-2 text-gray-500 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors'
+              title='Clear Date Filter'
             >
               <X size={16} />
             </button>
@@ -971,21 +984,21 @@ export default function TransactionsForm() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <div className='grid grid-cols-1 md:grid-cols-3 gap-4 mb-6'>
         {/* Total Bookings Yesterday */}
-        <div className="bg-gradient-to-r from-[#E8EEFF] to-[#C5D5FF] p-4 rounded-lg shadow-md">
-          <div className="flex items-center justify-between">
-            <div className="bg-white p-2 rounded-lg">
-              <TbTicket className="w-6 h-6 text-indigo-600" />
+        <div className='bg-gradient-to-r from-[#E8EEFF] to-[#C5D5FF] p-4 rounded-lg shadow-md'>
+          <div className='flex items-center justify-between'>
+            <div className='bg-white p-2 rounded-lg'>
+              <TbTicket className='w-6 h-6 text-indigo-600' />
             </div>
-            <div className="text-right">
-              <p className="text-xs text-indigo-600 opacity-90">
-                Total Bookings Yesterday{" "}
-                <span className="text-[10px] opacity-75">
+            <div className='text-right'>
+              <p className='text-xs text-indigo-600 opacity-90'>
+                Total Bookings Yesterday{' '}
+                <span className='text-[10px] opacity-75'>
                   ({stats.yesterdayDateStr})
                 </span>
               </p>
-              <p className="text-2xl text-indigo-600 font-bold">
+              <p className='text-2xl text-indigo-600 font-bold'>
                 {stats.yesterdayCount}
               </p>
             </div>
@@ -993,27 +1006,27 @@ export default function TransactionsForm() {
         </div>
 
         {/* Avg Daily Growth (Count) */}
-        <div className="bg-gradient-to-r from-[#F3E8FF] to-[#DDD6FE] p-4 rounded-lg shadow-md">
-          <div className="flex items-center justify-between">
-            <div className="bg-white p-2 rounded-lg">
-              <TbTrendingUp className="w-6 h-6 text-purple-600" />
+        <div className='bg-gradient-to-r from-[#F3E8FF] to-[#DDD6FE] p-4 rounded-lg shadow-md'>
+          <div className='flex items-center justify-between'>
+            <div className='bg-white p-2 rounded-lg'>
+              <TbTrendingUp className='w-6 h-6 text-purple-600' />
             </div>
-            <div className="text-right">
-              <p className="text-xs text-purple-600 opacity-90">
+            <div className='text-right'>
+              <p className='text-xs text-purple-600 opacity-90'>
                 Avg Daily Growth (Count)
               </p>
-              <div className="flex items-end justify-end gap-2">
-                <p className="text-2xl text-purple-600 font-bold">
+              <div className='flex items-end justify-end gap-2'>
+                <p className='text-2xl text-purple-600 font-bold'>
                   {stats.avgGrowthCount}
                 </p>
                 {stats.isCountIncreasing ? (
-                  <span className="text-xs flex items-center mb-1 text-green-500">
-                    <TbTrendingUp className="w-3 h-3 mr-0.5" />
+                  <span className='text-xs flex items-center mb-1 text-green-500'>
+                    <TbTrendingUp className='w-3 h-3 mr-0.5' />
                     Increasing
                   </span>
                 ) : (
-                  <span className="text-xs flex items-center mb-1 text-red-500">
-                    <TbTrendingDown className="w-3 h-3 mr-0.5" />
+                  <span className='text-xs flex items-center mb-1 text-red-500'>
+                    <TbTrendingDown className='w-3 h-3 mr-0.5' />
                     Decreasing
                   </span>
                 )}
@@ -1023,27 +1036,27 @@ export default function TransactionsForm() {
         </div>
 
         {/* Avg Daily Growth (%) */}
-        <div className="bg-gradient-to-r from-[#CCFBF1] to-[#99F6E4] p-4 rounded-lg shadow-md">
-          <div className="flex items-center justify-between">
-            <div className="bg-white p-2 rounded-lg">
-              <FaChartColumn className="w-6 h-6 text-teal-600" />
+        <div className='bg-gradient-to-r from-[#CCFBF1] to-[#99F6E4] p-4 rounded-lg shadow-md'>
+          <div className='flex items-center justify-between'>
+            <div className='bg-white p-2 rounded-lg'>
+              <FaChartColumn className='w-6 h-6 text-teal-600' />
             </div>
-            <div className="text-right">
-              <p className="text-xs text-teal-600 opacity-90">
+            <div className='text-right'>
+              <p className='text-xs text-teal-600 opacity-90'>
                 Avg Daily Growth (%)
               </p>
-              <div className="flex items-end justify-end gap-2">
-                <p className="text-2xl text-teal-600 font-bold">
+              <div className='flex items-end justify-end gap-2'>
+                <p className='text-2xl text-teal-600 font-bold'>
                   {stats.avgGrowthPercent}
                 </p>
                 {stats.isPctIncreasing ? (
-                  <span className="text-xs flex items-center mb-1 text-green-500">
-                    <TbTrendingUp className="w-3 h-3 mr-0.5" />
+                  <span className='text-xs flex items-center mb-1 text-green-500'>
+                    <TbTrendingUp className='w-3 h-3 mr-0.5' />
                     Increasing
                   </span>
                 ) : (
-                  <span className="text-xs flex items-center mb-1 text-red-500">
-                    <TbTrendingDown className="w-3 h-3 mr-0.5" />
+                  <span className='text-xs flex items-center mb-1 text-red-500'>
+                    <TbTrendingDown className='w-3 h-3 mr-0.5' />
                     Decreasing
                   </span>
                 )}
@@ -1054,20 +1067,20 @@ export default function TransactionsForm() {
       </div>
 
       {/* Additional Stats Cards (Filtered) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+      <div className='grid grid-cols-1 md:grid-cols-2 gap-4 mb-6'>
         {/* Total Event Bookings (Filtered) */}
-        <div className="bg-gradient-to-r from-[#E8EEFF] to-[#C5D5FF] p-4 rounded-lg shadow-md">
-          <div className="flex items-center">
-            <div className="bg-white p-2 rounded-lg mr-3">
-              <TbTicket className="w-6 h-6 text-blue-600" />
+        <div className='bg-gradient-to-r from-[#E8EEFF] to-[#C5D5FF] p-4 rounded-lg shadow-md'>
+          <div className='flex items-center'>
+            <div className='bg-white p-2 rounded-lg mr-3'>
+              <TbTicket className='w-6 h-6 text-blue-600' />
             </div>
             <div>
-              <p className="text-xs text-black opacity-90">
+              <p className='text-xs text-black opacity-90'>
                 Total Event Bookings
               </p>
-              <p className="text-2xl text-black font-bold">
-                {filteredBookings.length}{" "}
-                <span className="text-lg font-semibold opacity-90">
+              <p className='text-2xl text-black font-bold'>
+                {filteredBookings.length}{' '}
+                <span className='text-lg font-semibold opacity-90'>
                   (₦
                   {filteredBookings
                     .reduce((acc, curr) => acc + (curr.amountNum || 0), 0)
@@ -1080,25 +1093,25 @@ export default function TransactionsForm() {
         </div>
 
         {/* New Bookings Today (Filtered) */}
-        <div className="bg-gradient-to-r from-[#FFF4E8] to-[#FFE4C5] p-4 rounded-lg shadow-md">
-          <div className="flex items-center">
-            <div className="bg-white p-2 rounded-lg mr-3">
-              <TbTrendingUp className="w-6 h-6 text-orange-600" />
+        <div className='bg-gradient-to-r from-[#FFF4E8] to-[#FFE4C5] p-4 rounded-lg shadow-md'>
+          <div className='flex items-center'>
+            <div className='bg-white p-2 rounded-lg mr-3'>
+              <TbTrendingUp className='w-6 h-6 text-orange-600' />
             </div>
             <div>
-              <p className="text-xs text-black opacity-90">
+              <p className='text-xs text-black opacity-90'>
                 New Bookings Today
               </p>
-              <p className="text-2xl text-black font-bold">
+              <p className='text-2xl text-black font-bold'>
                 {
-                  filteredBookings.filter((b) => {
-                    const d = new Date(b.bookedOnRaw);
-                    const now = new Date();
+                  filteredBookings.filter(b => {
+                    const d = new Date(b.bookedOnRaw)
+                    const now = new Date()
                     return (
                       d.getDate() === now.getDate() &&
                       d.getMonth() === now.getMonth() &&
                       d.getFullYear() === now.getFullYear()
-                    );
+                    )
                   }).length
                 }
               </p>
@@ -1107,106 +1120,106 @@ export default function TransactionsForm() {
         </div>
       </div>
 
-      <div className="bg-gray-200 p-5 rounded-xl">
+      <div className='bg-gray-200 p-5 rounded-xl'>
         {/* Main Content */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 flex-1 flex flex-col min-h-0">
+        <div className='bg-white rounded-lg shadow-sm border border-gray-200 flex-1 flex flex-col min-h-0'>
           {/* Header with Search and Filters */}
-          <div className="p-4 border-b border-gray-200 flex-shrink-0">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-semibold text-gray-900">
+          <div className='p-4 border-b border-gray-200 flex-shrink-0'>
+            <div className='flex justify-between items-center mb-4'>
+              <h2 className='text-lg font-semibold text-gray-900'>
                 Gross Transaction Value of Event
               </h2>
-              <div className="flex items-center space-x-3">
+              <div className='flex items-center space-x-3'>
                 {/* Search */}
-                <div className="relative">
+                <div className='relative'>
                   <input
-                    type="text"
-                    placeholder="Search"
+                    type='text'
+                    placeholder='Search'
                     value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="h-9 pl-10 pr-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs text-gray-900 placeholder-gray-500"
+                    onChange={e => setSearchTerm(e.target.value)}
+                    className='h-9 pl-10 pr-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs text-gray-900 placeholder-gray-500'
                   />
                   <svg
-                    className="w-4 h-4 text-gray-600 absolute left-3 top-2.5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
+                    className='w-4 h-4 text-gray-600 absolute left-3 top-2.5'
+                    fill='none'
+                    stroke='currentColor'
+                    viewBox='0 0 24 24'
                     strokeWidth={2}
                   >
                     <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                      strokeLinecap='round'
+                      strokeLinejoin='round'
+                      d='M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z'
                     />
                   </svg>
                 </div>
                 {/* Filters */}
                 {filtersOpen && (
-                  <div className="relative">
+                  <div className='relative'>
                     <select
                       value={paymentStatusFilter}
-                      onChange={(e) => setPaymentStatusFilter(e.target.value)}
-                      className="h-9 px-3 border border-gray-300 rounded-lg bg-white text-xs text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      onChange={e => setPaymentStatusFilter(e.target.value)}
+                      className='h-9 px-3 border border-gray-300 rounded-lg bg-white text-xs text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent'
                     >
-                      <option value="">All Payments</option>
-                      <option value="completed">Completed</option>
-                      <option value="pending">Pending</option>
-                      <option value="paid">Paid</option>
+                      <option value=''>All Payments</option>
+                      <option value='completed'>Completed</option>
+                      <option value='pending'>Pending</option>
+                      <option value='paid'>Paid</option>
                     </select>
                   </div>
                 )}
                 <button
                   onClick={handleToggleFilters}
-                  className="h-9 flex items-center px-4 border border-gray-300 rounded-lg hover:bg-gray-50 bg-white"
+                  className='h-9 flex items-center px-4 border border-gray-300 rounded-lg hover:bg-gray-50 bg-white'
                 >
                   <svg
-                    className="w-4 h-4 mr-2 text-gray-600"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
+                    className='w-4 h-4 mr-2 text-gray-600'
+                    fill='none'
+                    stroke='currentColor'
+                    viewBox='0 0 24 24'
                     strokeWidth={2}
                   >
                     <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 01-.659 1.591l-5.432 5.432a2.25 2.25 0 00-.659 1.591v2.927a2.25 2.25 0 01-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 00-.659-1.591L3.659 7.409A2.25 2.25 0 013 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0112 3z"
+                      strokeLinecap='round'
+                      strokeLinejoin='round'
+                      d='M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 01-.659 1.591l-5.432 5.432a2.25 2.25 0 00-.659 1.591v2.927a2.25 2.25 0 01-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 00-.659-1.591L3.659 7.409A2.25 2.25 0 013 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0112 3z'
                     />
                   </svg>
-                  <span className="text-xs text-gray-700 font-medium">
-                    {filtersOpen ? "Hide Filters" : "Filters"}
+                  <span className='text-xs text-gray-700 font-medium'>
+                    {filtersOpen ? 'Hide Filters' : 'Filters'}
                   </span>
                 </button>
 
                 {/* Download */}
                 <button
                   onClick={handleDownloadExcel}
-                  className="h-9 flex items-center px-4 border border-gray-300 rounded-lg hover:bg-gray-50 bg-white"
+                  className='h-9 flex items-center px-4 border border-gray-300 rounded-lg hover:bg-gray-50 bg-white'
                 >
                   <svg
-                    className="w-4 h-4 text-gray-600"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
+                    className='w-4 h-4 text-gray-600'
+                    fill='none'
+                    stroke='currentColor'
+                    viewBox='0 0 24 24'
                     strokeWidth={2}
                   >
                     <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"
+                      strokeLinecap='round'
+                      strokeLinejoin='round'
+                      d='M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3'
                     />
                   </svg>
-                  <span className="ml-2 text-xs text-gray-700 font-medium">
+                  <span className='ml-2 text-xs text-gray-700 font-medium'>
                     Export
                   </span>
                 </button>
 
-                <div className="flex items-center gap-2">
-                  <label className="flex items-center gap-1.5 text-xs text-[#2D3658]">
+                <div className='flex items-center gap-2'>
+                  <label className='flex items-center gap-1.5 text-xs text-[#2D3658]'>
                     Show
                     <select
                       value={limit}
-                      onChange={(e) => setLimit(Number(e.target.value) || 20)}
-                      className="h-8 px-2 border border-[#E5E6EF] rounded-lg text-xs"
+                      onChange={e => setLimit(Number(e.target.value) || 20)}
+                      className='h-8 px-2 border border-[#E5E6EF] rounded-lg text-xs'
                     >
                       <option value={10}>10</option>
                       <option value={20}>20</option>
@@ -1214,21 +1227,21 @@ export default function TransactionsForm() {
                       <option value={100}>100</option>
                     </select>
                   </label>
-                  <div className="flex items-center gap-2">
+                  <div className='flex items-center gap-2'>
                     <button
-                      onClick={() => setPage((p) => Math.max(1, p - 1))}
+                      onClick={() => setPage(p => Math.max(1, p - 1))}
                       disabled={page <= 1 || loading}
-                      className="h-8 px-3 py-1.5 border border-[#E5E6EF] rounded-lg bg-white text-xs font-medium text-[#2D3658] disabled:opacity-50 hover:bg-[#F6F7FD]"
+                      className='h-8 px-3 py-1.5 border border-[#E5E6EF] rounded-lg bg-white text-xs font-medium text-[#2D3658] disabled:opacity-50 hover:bg-[#F6F7FD]'
                     >
                       Prev
                     </button>
-                    <span className="text-xs text-[#2D3658]">
+                    <span className='text-xs text-[#2D3658]'>
                       Page {page} of {pageCount}
                     </span>
                     <button
-                      onClick={() => setPage((p) => Math.min(pageCount, p + 1))}
+                      onClick={() => setPage(p => Math.min(pageCount, p + 1))}
                       disabled={page >= pageCount || loading}
-                      className="h-8 px-3 py-1.5 border border-[#E5E6EF] rounded-lg bg-white text-xs font-medium text-[#2D3658] disabled:opacity-50 hover:bg-[#F6F7FD]"
+                      className='h-8 px-3 py-1.5 border border-[#E5E6EF] rounded-lg bg-white text-xs font-medium text-[#2D3658] disabled:opacity-50 hover:bg-[#F6F7FD]'
                     >
                       Next
                     </button>
@@ -1238,53 +1251,53 @@ export default function TransactionsForm() {
             </div>
 
             {/* Filter Tabs */}
-            <div className="flex flex-wrap gap-1.5">
-              {filterTabs.map((tab) => (
+            <div className='flex flex-wrap gap-1.5'>
+              {filterTabs.map(tab => (
                 <button
                   key={tab.id}
                   onClick={() => {
                     switch (tab.id) {
-                      case "bundle-orders":
-                        router.push("/users/bookings");
-                        break;
-                      case "event":
-                        router.push("/users/transactions");
-                        break;
-                      case "activities":
-                        router.push("/users/activities");
-                        break;
-                      case "accommodation":
-                        router.push("/users/accommodation");
-                        break;
-                      case "diy":
-                        router.push("/users/diy");
-                        break;
-                      case "merchandise":
-                        router.push("/users/merchandise");
-                        break;
-                      case "e-sim":
-                        router.push("/users/e-sim");
-                        break;
-                      case "med-plus":
-                        router.push("/med-orders");
-                        break;
-                      case "royal-concierge":
-                        router.push("/royal-concierge");
-                        break;
-                      case "rides":
-                        router.push("/users/rides");
-                        break;
-                      case "leadway":
-                        router.push("/leadway");
-                        break;
+                      case 'bundle-orders':
+                        router.push('/users/bookings')
+                        break
+                      case 'event':
+                        router.push('/users/transactions')
+                        break
+                      case 'activities':
+                        router.push('/users/activities')
+                        break
+                      case 'accommodation':
+                        router.push('/users/accommodation')
+                        break
+                      case 'diy':
+                        router.push('/users/diy')
+                        break
+                      case 'merchandise':
+                        router.push('/users/merchandise')
+                        break
+                      case 'e-sim':
+                        router.push('/users/e-sim')
+                        break
+                      case 'med-plus':
+                        router.push('/med-orders')
+                        break
+                      case 'royal-concierge':
+                        router.push('/royal-concierge')
+                        break
+                      case 'rides':
+                        router.push('/users/rides')
+                        break
+                      case 'leadway':
+                        router.push('/leadway')
+                        break
                       default:
-                        setActiveTab(tab.id);
+                        setActiveTab(tab.id)
                     }
                   }}
                   className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border whitespace-nowrap ${
                     tab.id === activeTab
-                      ? "bg-orange-500 text-white border-orange-500"
-                      : "bg-white text-gray-700 hover:bg-gray-50 border-gray-300"
+                      ? 'bg-orange-500 text-white border-orange-500'
+                      : 'bg-white text-gray-700 hover:bg-gray-50 border-gray-300'
                   }`}
                 >
                   {tab.label}
@@ -1294,179 +1307,179 @@ export default function TransactionsForm() {
           </div>
 
           {/* Table */}
-          <div className="flex-1 overflow-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 sticky top-0">
+          <div className='flex-1 overflow-auto'>
+            <table className='w-full'>
+              <thead className='bg-gray-50 sticky top-0'>
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className='px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
                     <button
-                      type="button"
-                      onClick={() => toggleSort("date")}
-                      className="flex items-center"
+                      type='button'
+                      onClick={() => toggleSort('date')}
+                      className='flex items-center'
                     >
                       <span>Booked On</span>
-                      <TbCaretUpDownFilled className="w-3 h-3 text-gray-400 ml-1" />
+                      <TbCaretUpDownFilled className='w-3 h-3 text-gray-400 ml-1' />
                     </button>
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 tracking-wider">
+                  <th className='px-4 py-3 text-left text-xs font-medium text-gray-500 tracking-wider'>
                     <span>Event Name</span>
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className='px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
                     <button
-                      type="button"
-                      onClick={() => toggleSort("userName")}
-                      className="flex items-center"
+                      type='button'
+                      onClick={() => toggleSort('userName')}
+                      className='flex items-center'
                     >
                       <span>User Name</span>
-                      <TbCaretUpDownFilled className="w-3 h-3 text-gray-400 ml-1" />
+                      <TbCaretUpDownFilled className='w-3 h-3 text-gray-400 ml-1' />
                     </button>
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className='px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
                     <button
-                      type="button"
-                      onClick={() => toggleSort("email")}
-                      className="flex items-center"
+                      type='button'
+                      onClick={() => toggleSort('email')}
+                      className='flex items-center'
                     >
                       <span>Contact Details</span>
-                      <TbCaretUpDownFilled className="w-3 h-3 text-gray-400 ml-1" />
+                      <TbCaretUpDownFilled className='w-3 h-3 text-gray-400 ml-1' />
                     </button>
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className='px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
                     <button
-                      type="button"
-                      onClick={() => toggleSort("tickets")}
-                      className="flex items-center"
+                      type='button'
+                      onClick={() => toggleSort('tickets')}
+                      className='flex items-center'
                     >
                       <span>Tickets Booked</span>
-                      <TbCaretUpDownFilled className="w-3 h-3 text-gray-400 ml-1" />
+                      <TbCaretUpDownFilled className='w-3 h-3 text-gray-400 ml-1' />
                     </button>
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className='px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
                     <button
-                      type="button"
-                      onClick={() => toggleSort("amount")}
-                      className="flex items-center"
+                      type='button'
+                      onClick={() => toggleSort('amount')}
+                      className='flex items-center'
                     >
                       <span>Amount</span>
-                      <TbCaretUpDownFilled className="w-3 h-3 text-gray-400 ml-1" />
+                      <TbCaretUpDownFilled className='w-3 h-3 text-gray-400 ml-1' />
                     </button>
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className='px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
                     <button
-                      type="button"
-                      onClick={() => toggleSort("amount")}
-                      className="flex items-center"
+                      type='button'
+                      onClick={() => toggleSort('amount')}
+                      className='flex items-center'
                     >
                       <span>Arrival Date</span>
-                      <TbCaretUpDownFilled className="w-3 h-3 text-gray-400 ml-1" />
+                      <TbCaretUpDownFilled className='w-3 h-3 text-gray-400 ml-1' />
                     </button>
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className='px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
                     <button
-                      type="button"
-                      onClick={() => toggleSort("paymentStatus")}
-                      className="flex items-center"
+                      type='button'
+                      onClick={() => toggleSort('paymentStatus')}
+                      className='flex items-center'
                     >
                       <span>Payment Status</span>
-                      <TbCaretUpDownFilled className="w-3 h-3 text-gray-400 ml-1" />
+                      <TbCaretUpDownFilled className='w-3 h-3 text-gray-400 ml-1' />
                     </button>
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className='px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
                     <button
-                      type="button"
-                      onClick={() => toggleSort("activityStatus")}
-                      className="flex items-center"
+                      type='button'
+                      onClick={() => toggleSort('activityStatus')}
+                      className='flex items-center'
                     >
                       <span>Activity Status</span>
-                      <TbCaretUpDownFilled className="w-3 h-3 text-gray-400 ml-1" />
+                      <TbCaretUpDownFilled className='w-3 h-3 text-gray-400 ml-1' />
                     </button>
                   </th>
-                  <th className="px-8 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-20"></th>
+                  <th className='px-8 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-20'></th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className='bg-white divide-y divide-gray-200'>
                 {paginatedBookings.length > 0 ? (
                   paginatedBookings.map((booking, i) => (
                     <tr
                       key={`${booking.rowKey || booking.id}-${i}`}
-                      className="hover:bg-gray-50"
+                      className='hover:bg-gray-50'
                     >
-                      <td className="px-4 py-4 whitespace-nowrap text-xs text-gray-500">
-                        {booking.bookedOn || "-"}
+                      <td className='px-4 py-4 whitespace-nowrap text-xs text-gray-500'>
+                        {booking.bookedOn || '-'}
                       </td>
 
-                      <td className="px-4 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <div className="flex-shrink-0 h-10 w-10">
+                      <td className='px-4 py-4 whitespace-nowrap'>
+                        <div className='flex items-center'>
+                          <div className='flex-shrink-0 h-10 w-10'>
                             {booking.eventImage ? (
                               <img
-                                className="h-10 w-10 rounded-lg object-cover"
+                                className='h-10 w-10 rounded-lg object-cover'
                                 src={booking.eventImage}
-                                alt={booking.eventName || "Event image"}
-                                onError={(e) => {
-                                  e.target.style.display = "none";
-                                  const fb = e.target.nextSibling;
-                                  if (fb) fb.style.display = "flex";
+                                alt={booking.eventName || 'Event image'}
+                                onError={e => {
+                                  e.target.style.display = 'none'
+                                  const fb = e.target.nextSibling
+                                  if (fb) fb.style.display = 'flex'
                                 }}
                               />
                             ) : null}
                             <div
-                              className="h-10 w-10 rounded-lg bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center"
+                              className='h-10 w-10 rounded-lg bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center'
                               style={{
-                                display: booking.eventImage ? "none" : "flex",
+                                display: booking.eventImage ? 'none' : 'flex'
                               }}
                             >
                               <svg
-                                className="w-5 h-5 text-white"
-                                fill="currentColor"
-                                viewBox="0 0 20 20"
+                                className='w-5 h-5 text-white'
+                                fill='currentColor'
+                                viewBox='0 0 20 20'
                               >
-                                <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                <path d='M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z' />
                               </svg>
                             </div>
                           </div>
-                          <div className="ml-3">
-                            <div className="text-xs font-medium text-gray-900">
+                          <div className='ml-3'>
+                            <div className='text-xs font-medium text-gray-900'>
                               {booking.eventName}
                             </div>
                           </div>
                         </div>
                       </td>
 
-                      <td className="px-4 py-4 whitespace-nowrap">
-                        <span className="text-xs font-medium text-gray-900">
-                          {booking.buyerName || "-"}
+                      <td className='px-4 py-4 whitespace-nowrap'>
+                        <span className='text-xs font-medium text-gray-900'>
+                          {booking.buyerName || '-'}
                         </span>
                       </td>
 
-                      <td className="px-4 py-4 whitespace-nowrap">
-                        <div className="text-xs font-medium text-gray-900">
-                          {booking.buyerEmail || "-"}
+                      <td className='px-4 py-4 whitespace-nowrap'>
+                        <div className='text-xs font-medium text-gray-900'>
+                          {booking.buyerEmail || '-'}
                         </div>
-                        <div className="text-xs text-gray-500">
-                          {booking.buyerPhone || "-"}
+                        <div className='text-xs text-gray-500'>
+                          {booking.buyerPhone || '-'}
                         </div>
                       </td>
 
-                      <td className="px-4 py-4 whitespace-nowrap text-xs text-gray-900">
+                      <td className='px-4 py-4 whitespace-nowrap text-xs text-gray-900'>
                         <div>{booking.ticketsBooked}</div>
-                        <div className="text-xs text-gray-500">
+                        <div className='text-xs text-gray-500'>
                           {booking.additionalInfo}
                         </div>
                       </td>
 
-                      <td className="px-4 py-4 whitespace-nowrap">
-                        <span className="text-xs font-semibold text-gray-900">
+                      <td className='px-4 py-4 whitespace-nowrap'>
+                        <span className='text-xs font-semibold text-gray-900'>
                           {booking.amount}
                         </span>
                       </td>
 
-                      <td className="px-4 py-4 whitespace-nowrap">
-                        <span className="text-xs font-semibold text-gray-900">
-                          {booking.arrivalDate || "-"}
+                      <td className='px-4 py-4 whitespace-nowrap'>
+                        <span className='text-xs font-semibold text-gray-900'>
+                          {booking.arrivalDate || '-'}
                         </span>
                       </td>
-                      <td className="px-4 py-4 whitespace-nowrap">
+                      <td className='px-4 py-4 whitespace-nowrap'>
                         <span
                           className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${getPaymentStatusColor(
                             booking.paymentStatus
@@ -1476,7 +1489,7 @@ export default function TransactionsForm() {
                         </span>
                       </td>
 
-                      <td className="px-4 py-4 whitespace-nowrap">
+                      <td className='px-4 py-4 whitespace-nowrap'>
                         <span
                           className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${getEventStatusColor(
                             booking.activityStatus
@@ -1486,124 +1499,124 @@ export default function TransactionsForm() {
                         </span>
                       </td>
 
-                      <td className="px-8 py-4 whitespace-nowrap text-right">
-                        <div className="relative">
+                      <td className='px-8 py-4 whitespace-nowrap text-right'>
+                        <div className='relative'>
                           <button
                             data-menu-button
-                            onClick={(e) => {
+                            onClick={e => {
                               const rect =
-                                e.currentTarget.getBoundingClientRect();
-                              const widthPx = 208;
-                              const top = Math.round(rect.bottom + 6);
-                              const left = Math.round(rect.right - widthPx);
-                              setMenuPos({ top, left });
-                              setMenuOpenId(booking.id);
+                                e.currentTarget.getBoundingClientRect()
+                              const widthPx = 208
+                              const top = Math.round(rect.bottom + 6)
+                              const left = Math.round(rect.right - widthPx)
+                              setMenuPos({ top, left })
+                              setMenuOpenId(booking.id)
                             }}
-                            className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+                            className='p-1 hover:bg-gray-100 rounded-full transition-colors'
                           >
                             <svg
-                              className="w-5 h-5 text-gray-600"
-                              fill="currentColor"
-                              viewBox="0 0 20 20"
+                              className='w-5 h-5 text-gray-600'
+                              fill='currentColor'
+                              viewBox='0 0 20 20'
                             >
-                              <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
+                              <path d='M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z' />
                             </svg>
                           </button>
 
                           {menuOpenId === booking.id && (
                             <div
                               data-menu-content
-                              className="fixed w-52 bg-white rounded-lg shadow-2xl border border-gray-200 z-50 py-2"
+                              className='fixed w-52 bg-white rounded-lg shadow-2xl border border-gray-200 z-50 py-2'
                               style={{
                                 top: `${menuPos.top}px`,
-                                left: `${menuPos.left}px`,
+                                left: `${menuPos.left}px`
                               }}
                             >
                               <button
                                 onClick={() => openTicket(booking)}
-                                className="flex items-center w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                                className='flex items-center w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors'
                               >
-                                <span className="mr-3 text-gray-500">
+                                <span className='mr-3 text-gray-500'>
                                   <svg
-                                    className="h-4 w-4"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
+                                    className='h-4 w-4'
+                                    fill='none'
+                                    stroke='currentColor'
+                                    viewBox='0 0 24 24'
                                   >
                                     <path
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
+                                      strokeLinecap='round'
+                                      strokeLinejoin='round'
                                       strokeWidth={2}
-                                      d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5"
+                                      d='M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5'
                                     />
                                   </svg>
                                 </span>
-                                <span className="text-gray-800">
+                                <span className='text-gray-800'>
                                   View Ticket
                                 </span>
                               </button>
 
                               <button
                                 onClick={() => openCustomer(booking)}
-                                className="flex items-center w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                                className='flex items-center w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors'
                               >
-                                <span className="mr-3 text-gray-500">
+                                <span className='mr-3 text-gray-500'>
                                   <svg
-                                    className="h-4 w-4"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
+                                    className='h-4 w-4'
+                                    fill='none'
+                                    stroke='currentColor'
+                                    viewBox='0 0 24 24'
                                   >
                                     <path
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
+                                      strokeLinecap='round'
+                                      strokeLinejoin='round'
                                       strokeWidth={2}
-                                      d="M5.121 17.804A2 2 0 016.999 17h10.002a2 2 0 011.878.804M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                                      d='M5.121 17.804A2 2 0 016.999 17h10.002a2 2 0 011.878.804M15 11a3 3 0 11-6 0 3 3 0 016 0z'
                                     />
                                   </svg>
                                 </span>
-                                <span className="text-gray-800">
+                                <span className='text-gray-800'>
                                   Customer Detail
                                 </span>
                               </button>
 
                               <button
                                 onClick={() => downloadReceipt(booking)}
-                                className="flex items-center w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                                className='flex items-center w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors'
                               >
-                                <span className="mr-3 text-gray-500">
-                                  {String(downloadingId || "") ===
+                                <span className='mr-3 text-gray-500'>
+                                  {String(downloadingId || '') ===
                                   String(booking.id) ? (
                                     <svg
-                                      className="h-4 w-4 animate-spin"
-                                      viewBox="0 0 24 24"
+                                      className='h-4 w-4 animate-spin'
+                                      viewBox='0 0 24 24'
                                     >
                                       <circle
-                                        cx="12"
-                                        cy="12"
-                                        r="10"
-                                        stroke="currentColor"
-                                        strokeWidth="4"
-                                        fill="none"
+                                        cx='12'
+                                        cy='12'
+                                        r='10'
+                                        stroke='currentColor'
+                                        strokeWidth='4'
+                                        fill='none'
                                       />
                                     </svg>
                                   ) : (
                                     <svg
-                                      className="w-4 h-4"
-                                      fill="none"
-                                      stroke="currentColor"
-                                      viewBox="0 0 24 24"
+                                      className='w-4 h-4'
+                                      fill='none'
+                                      stroke='currentColor'
+                                      viewBox='0 0 24 24'
                                     >
                                       <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
+                                        strokeLinecap='round'
+                                        strokeLinejoin='round'
                                         strokeWidth={2}
-                                        d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"
+                                        d='M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3'
                                       />
                                     </svg>
                                   )}
                                 </span>
-                                <span className="text-gray-800">
+                                <span className='text-gray-800'>
                                   Download Ticket
                                 </span>
                               </button>
@@ -1614,10 +1627,10 @@ export default function TransactionsForm() {
                     </tr>
                   ))
                 ) : (
-                  <tr key="no-booking">
+                  <tr key='no-booking'>
                     <td
-                      colSpan="8"
-                      className="px-4 py-4 text-center text-sm text-gray-500"
+                      colSpan='8'
+                      className='px-4 py-4 text-center text-sm text-gray-500'
                     >
                       No bookings found.
                     </td>
@@ -1632,63 +1645,63 @@ export default function TransactionsForm() {
       {ticketOpen && selectedBooking && (
         <Modal
           open={ticketOpen}
-          onOpenChange={(v) => {
+          onOpenChange={v => {
             if (!v) {
-              setTicketOpen(false);
-              setSelectedBooking(null);
+              setTicketOpen(false)
+              setSelectedBooking(null)
             }
           }}
-          title={"Ticket"}
+          title={'Ticket'}
         >
-          <div className="space-y-2 text-sm text-[#2D3658]">
-            <div className="flex justify-between">
+          <div className='space-y-2 text-sm text-[#2D3658]'>
+            <div className='flex justify-between'>
               <span>Booking ID</span>
               <span>
                 {selectedBooking._id ||
                   selectedBooking.id ||
                   selectedBooking.bookingId ||
-                  "-"}
+                  '-'}
               </span>
             </div>
-            <div className="flex justify-between">
+            <div className='flex justify-between'>
               <span>Booked On</span>
               <span>
                 {(() => {
                   const d =
                     selectedBooking.bookedOn ||
                     selectedBooking.createdAt ||
-                    selectedBooking.updatedAt;
+                    selectedBooking.updatedAt
                   const date = d
-                    ? new Date(typeof d === "object" && d.$date ? d.$date : d)
-                    : null;
-                  return date ? date.toLocaleString() : "-";
+                    ? new Date(typeof d === 'object' && d.$date ? d.$date : d)
+                    : null
+                  return date ? date.toLocaleString() : '-'
                 })()}
               </span>
             </div>
-            <div className="flex justify-between">
+            <div className='flex justify-between'>
               <span>Ticket</span>
               <span>
                 {selectedBooking.ticketsBooked ||
                   selectedBooking.ticketName ||
-                  "-"}
+                  '-'}
               </span>
             </div>
-            <div className="flex justify-between">
+            <div className='flex justify-between'>
               <span>Amount</span>
               <span>
-                {typeof selectedBooking.totalPrice === "number"
+                {typeof selectedBooking.totalPrice === 'number'
                   ? `₦${selectedBooking.totalPrice.toLocaleString()}`
-                  : selectedBooking.amount || "-"}
+                  : selectedBooking.amount || '-'}
               </span>
             </div>
           </div>
-          <div className="mt-6 flex justify-end gap-3">
+          <div className='mt-6 flex justify-end gap-3'>
             <button
               onClick={() => {
-                setTicketOpen(false);
-                setSelectedBooking(null);
+                setTicketOpen(false)
+                setSelectedBooking(null)
               }}
-              className="rounded-xl border border-[#E5E6EF] bg-white px-5 py-2.5 text-sm font-medium text-[#1A1F3F] shadow-sm transition hover:bg-[#F9FAFD]"
+              className='rounded-xl border border-[#E5E6EF] bg-white px-5 py-2.5 text-sm font-medium text-[#1A1F3F] shadow-sm transition hover:bg-[#F9FAFD]'
             >
               Close
             </button>
@@ -1699,28 +1712,28 @@ export default function TransactionsForm() {
       {customerOpen && selectedBooking && (
         <Modal
           open={customerOpen}
-          onOpenChange={(v) => {
+          onOpenChange={v => {
             if (!v) {
-              setCustomerOpen(false);
-              setSelectedBooking(null);
+              setCustomerOpen(false)
+              setSelectedBooking(null)
             }
           }}
-          title={"Customer Details"}
+          title={'Customer Details'}
         >
-          <div className="space-y-6">
-            <div className="rounded-xl bg-[#F8F9FC] p-4">
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div className="text-[#5E6582]">Full Name</div>
-                <div className="text-right font-semibold text-slate-900">
-                  {selectedBooking?.buyer?.fullName || "-"}
+          <div className='space-y-6'>
+            <div className='rounded-xl bg-[#F8F9FC] p-4'>
+              <div className='grid grid-cols-2 gap-4 text-sm'>
+                <div className='text-[#5E6582]'>Full Name</div>
+                <div className='text-right font-semibold text-slate-900'>
+                  {selectedBooking?.buyer?.fullName || '-'}
                 </div>
-                <div className="text-[#5E6582]">Email Address</div>
-                <div className="text-right font-semibold text-slate-900">
-                  {selectedBooking?.buyer?.email || "-"}
+                <div className='text-[#5E6582]'>Email Address</div>
+                <div className='text-right font-semibold text-slate-900'>
+                  {selectedBooking?.buyer?.email || '-'}
                 </div>
-                <div className="text-[#5E6582]">Phone</div>
-                <div className="text-right font-semibold text-slate-900">
-                  {selectedBooking?.buyer?.phone || "-"}
+                <div className='text-[#5E6582]'>Phone</div>
+                <div className='text-right font-semibold text-slate-900'>
+                  {selectedBooking?.buyer?.phone || '-'}
                 </div>
               </div>
             </div>
@@ -1728,5 +1741,5 @@ export default function TransactionsForm() {
         </Modal>
       )}
     </div>
-  );
+  )
 }

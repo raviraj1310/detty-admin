@@ -1,187 +1,187 @@
-"use client";
+'use client'
 
-import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
-import { Download } from "lucide-react";
-import { downloadExcel } from "@/utils/excelExport";
+import { useEffect, useMemo, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { Download } from 'lucide-react'
+import { downloadExcel } from '@/utils/excelExport'
 import {
   TbCaretUpDownFilled,
   TbTicket,
   TbTrendingUp,
-  TbTrendingDown,
-} from "react-icons/tb";
-import { FaChartColumn } from "react-icons/fa6";
-import Modal from "@/components/ui/Modal";
-import { getAllRideBookings } from "@/services/rides/ride.service";
+  TbTrendingDown
+} from 'react-icons/tb'
+import { FaChartColumn } from 'react-icons/fa6'
+import Modal from '@/components/ui/Modal'
+import { getAllRideBookings } from '@/services/rides/ride.service'
 
-function ActionDropdown({ onAction }) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [buttonPosition, setButtonPosition] = useState({ top: 0, right: 0 });
+function ActionDropdown ({ onAction }) {
+  const [isOpen, setIsOpen] = useState(false)
+  const [buttonPosition, setButtonPosition] = useState({ top: 0, right: 0 })
 
-  const handleButtonClick = (e) => {
-    e.stopPropagation(); // Prevent row click if any
+  const handleButtonClick = e => {
+    e.stopPropagation() // Prevent row click if any
     if (!isOpen) {
-      const rect = e.currentTarget.getBoundingClientRect();
-      const windowHeight = window.innerHeight;
-      const dropdownHeight = 100; // Approx height
+      const rect = e.currentTarget.getBoundingClientRect()
+      const windowHeight = window.innerHeight
+      const dropdownHeight = 100 // Approx height
 
-      let top = rect.bottom + 8;
-      let right = window.innerWidth - rect.right;
+      let top = rect.bottom + 8
+      let right = window.innerWidth - rect.right
 
       if (top + dropdownHeight > windowHeight) {
-        top = rect.top - dropdownHeight - 8;
+        top = rect.top - dropdownHeight - 8
       }
 
-      setButtonPosition({ top, right });
+      setButtonPosition({ top, right })
     }
-    setIsOpen(!isOpen);
-  };
+    setIsOpen(!isOpen)
+  }
 
   return (
-    <div className="relative">
+    <div className='relative'>
       <button
         data-menu-button
         onClick={handleButtonClick}
-        className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+        className='p-1 hover:bg-gray-100 rounded-full transition-colors'
       >
         <svg
-          className="w-5 h-5 text-gray-600"
-          fill="currentColor"
-          viewBox="0 0 20 20"
+          className='w-5 h-5 text-gray-600'
+          fill='currentColor'
+          viewBox='0 0 20 20'
         >
-          <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
+          <path d='M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z' />
         </svg>
       </button>
 
       {isOpen && (
         <>
           <div
-            className="fixed inset-0 z-40"
+            className='fixed inset-0 z-40'
             onClick={() => setIsOpen(false)}
           />
           <div
             data-menu-content
-            className="fixed w-48 bg-white rounded-lg shadow-2xl border border-gray-200 z-50 py-2"
+            className='fixed w-48 bg-white rounded-lg shadow-2xl border border-gray-200 z-50 py-2'
             style={{
               top: `${buttonPosition.top}px`,
-              right: `${buttonPosition.right}px`,
+              right: `${buttonPosition.right}px`
             }}
           >
             <button
-              className="flex items-center w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+              className='flex items-center w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors'
               onClick={() => {
-                onAction("view");
-                setIsOpen(false);
+                onAction('view')
+                setIsOpen(false)
               }}
             >
-              <span className="mr-3 text-gray-500">
+              <span className='mr-3 text-gray-500'>
                 <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
+                  className='w-4 h-4'
+                  fill='none'
+                  stroke='currentColor'
+                  viewBox='0 0 24 24'
                 >
                   <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
+                    strokeLinecap='round'
+                    strokeLinejoin='round'
                     strokeWidth={2}
-                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                    d='M15 12a3 3 0 11-6 0 3 3 0 016 0z'
                   />
                   <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
+                    strokeLinecap='round'
+                    strokeLinejoin='round'
                     strokeWidth={2}
-                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                    d='M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z'
                   />
                 </svg>
               </span>
-              <span className="text-gray-800">View Detail</span>
+              <span className='text-gray-800'>View Detail</span>
             </button>
           </div>
         </>
       )}
     </div>
-  );
+  )
 }
 
 const filterTabs = [
   // { id: 'bundle-orders', label: 'Bundle Orders', active: true },
-  { id: "event", label: "Event", active: false },
-  { id: "activities", label: "Places to Visit", active: false },
-  { id: "merchandise", label: "Merchandise", active: false },
-  { id: "e-sim", label: "Internet Connectivity", active: false },
-  { id: "accommodation", label: "Accommodation", active: false },
-  { id: "med-plus", label: "Med Plus", active: false },
-  { id: "royal-concierge", label: "Royal Concierge", active: false },
-  { id: "rides", label: "Rides", active: true },
-  { id: "leadway", label: "Leadway", active: false },
+  { id: 'event', label: 'Event', active: false },
+  { id: 'activities', label: 'Places to Visit', active: false },
+  { id: 'merchandise', label: 'Merchandise', active: false },
+  { id: 'e-sim', label: 'Internet Connectivity', active: false },
+  { id: 'accommodation', label: 'Accommodation', active: false },
+  { id: 'med-plus', label: 'Med Plus', active: false },
+  { id: 'royal-concierge', label: 'Royal Concierge', active: false },
+  { id: 'rides', label: 'Rides', active: true },
+  { id: 'leadway', label: 'Leadway', active: false }
   // { id: 'diy', label: 'DIY', active: false },
-];
+]
 
-export default function RidesForm({ dateRange = { start: "", end: "" } }) {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [activeTab, setActiveTab] = useState("rides");
-  const router = useRouter();
-  const [rides, setRides] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [apiStats, setApiStats] = useState(null);
+export default function RidesForm ({ dateRange = { start: '', end: '' } }) {
+  const [searchTerm, setSearchTerm] = useState('')
+  const [activeTab, setActiveTab] = useState('rides')
+  const router = useRouter()
+  const [rides, setRides] = useState([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [apiStats, setApiStats] = useState(null)
   const [stats, setStats] = useState({
     yesterdayCount: 0,
-    yesterdayDateStr: "",
+    yesterdayDateStr: '',
     avgGrowthCount: 0,
     isCountIncreasing: false,
-    avgGrowthPercent: "0%",
+    avgGrowthPercent: '0%',
     isPctIncreasing: false,
     filteredTotalCount: 0,
-    newCountToday: 0,
-  });
-  const [limit, setLimit] = useState(20);
-  const [pageCount, setPageCount] = useState(1);
-  const [page, setPage] = useState(1);
+    newCountToday: 0
+  })
+  const [limit, setLimit] = useState(50)
+  const [pageCount, setPageCount] = useState(1)
+  const [page, setPage] = useState(1)
 
   // Modal states
-  const [selectedRide, setSelectedRide] = useState(null);
-  const [detailOpen, setDetailOpen] = useState(false);
+  const [selectedRide, setSelectedRide] = useState(null)
+  const [detailOpen, setDetailOpen] = useState(false)
 
-  const [sortKey, setSortKey] = useState("name");
-  const [sortDir, setSortDir] = useState("asc");
+  const [sortKey, setSortKey] = useState('name')
+  const [sortDir, setSortDir] = useState('asc')
 
-  const cleanString = (str) =>
-    String(str || "")
-      .replace(/[`]/g, "")
-      .trim();
+  const cleanString = str =>
+    String(str || '')
+      .replace(/[`]/g, '')
+      .trim()
 
   useEffect(() => {
     const fetchData = async () => {
-      setLoading(true);
-      setError("");
+      setLoading(true)
+      setError('')
       try {
         const res = await getAllRideBookings({
           startDate: dateRange?.start || undefined,
-          endDate: dateRange?.end || undefined,
-        });
+          endDate: dateRange?.end || undefined
+        })
         // API structure: { success: true, data: { data: [...] } }
 
-        const d = res?.data || {};
-        const yesterdayCount = Number(d.totalPurchasingYesterday || 0);
+        const d = res?.data || {}
+        const yesterdayCount = Number(d.totalPurchasingYesterday || 0)
 
-        const yesterday = new Date();
-        yesterday.setDate(yesterday.getDate() - 1);
-        const yesterdayDateStr = yesterday.toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-        });
+        const yesterday = new Date()
+        yesterday.setDate(yesterday.getDate() - 1)
+        const yesterdayDateStr = yesterday.toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric'
+        })
 
         const avgGrowthCount = Number(
           d.growthCount ?? d.avgDailyGrowthCount ?? 0
-        );
-        const gp = d.growthPercent ?? d.avgDailyGrowthPercent ?? "0%";
+        )
+        const gp = d.growthPercent ?? d.avgDailyGrowthPercent ?? '0%'
         const avgGrowthPercentStr =
-          typeof gp === "number" ? `${gp}%` : String(gp);
+          typeof gp === 'number' ? `${gp}%` : String(gp)
         const avgGrowthPercentVal = parseFloat(
-          avgGrowthPercentStr.replace("%", "")
-        );
+          avgGrowthPercentStr.replace('%', '')
+        )
 
         const initialStats = {
           yesterdayCount,
@@ -191,164 +191,161 @@ export default function RidesForm({ dateRange = { start: "", end: "" } }) {
           avgGrowthPercent: avgGrowthPercentStr,
           isPctIncreasing: avgGrowthPercentVal >= 0,
           filteredTotalCount: 0,
-          newCountToday: 0,
-        };
+          newCountToday: 0
+        }
 
-        setStats(initialStats);
-        setApiStats(initialStats);
+        setStats(initialStats)
+        setApiStats(initialStats)
 
-        const rawList = res?.data?.data || [];
+        const rawList = res?.data?.data || []
 
-        const list = rawList.map((item) => {
-          const images = (item.images || []).map(cleanString);
-          const amenities = (item.amenities || []).map((a) => ({
+        const list = rawList.map(item => {
+          const images = (item.images || []).map(cleanString)
+          const amenities = (item.amenities || []).map(a => ({
             ...a,
-            image: cleanString(a.image),
-          }));
-          const amountNum = Number(item.price || 0);
+            image: cleanString(a.image)
+          }))
+          const amountNum = Number(item.price || 0)
 
           return {
             ...item,
             amountNum,
             cleanImages: images,
-            mainImage: images[0] || "",
+            mainImage: images[0] || '',
             cleanAmenities: amenities,
             priceFormatted: item.currency
               ? `${item.currency.symbol}${Number(item.price).toLocaleString()}`
-              : `₦${Number(item.price).toLocaleString()}`,
-          };
-        });
+              : `₦${Number(item.price).toLocaleString()}`
+          }
+        })
 
-        setRides(list);
+        setRides(list)
       } catch (e) {
-        console.error(e);
-        setError("Failed to load rides");
-        setRides([]);
+        console.error(e)
+        setError('Failed to load rides')
+        setRides([])
       } finally {
-        setLoading(false);
+        setLoading(false)
       }
-    };
-    fetchData();
-  }, [dateRange?.start, dateRange?.end]);
+    }
+    fetchData()
+  }, [dateRange?.start, dateRange?.end])
 
   const filteredRides = useMemo(() => {
     return rides
-      .filter((ride) => {
-        const term = searchTerm.toLowerCase().trim();
+      .filter(ride => {
+        const term = searchTerm.toLowerCase().trim()
 
         // Date Range Filtering
-        const bookingTime = new Date(ride.created_at).getTime();
+        const bookingTime = new Date(ride.created_at).getTime()
         const startTime = dateRange.start
           ? new Date(dateRange.start).setHours(0, 0, 0, 0)
-          : null;
+          : null
         const endTime = dateRange.end
           ? new Date(dateRange.end).setHours(23, 59, 59, 999)
-          : null;
+          : null
 
         const matchesDate =
           (!startTime || bookingTime >= startTime) &&
-          (!endTime || bookingTime <= endTime);
+          (!endTime || bookingTime <= endTime)
 
-        if (!term) return matchesDate;
+        if (!term) return matchesDate
 
         const matchesTerm =
           ride.name?.toLowerCase().includes(term) ||
           String(ride.price).includes(term) ||
-          String(ride.seats).includes(term);
+          String(ride.seats).includes(term)
 
-        return matchesDate && matchesTerm;
+        return matchesDate && matchesTerm
       })
       .sort((a, b) => {
-        const dir = sortDir === "asc" ? 1 : -1;
+        const dir = sortDir === 'asc' ? 1 : -1
 
         switch (sortKey) {
-          case "name":
-            return dir * a.name.localeCompare(b.name);
-          case "price":
-            return dir * (Number(a.price) - Number(b.price));
-          case "seats":
-            return dir * (Number(a.seats) - Number(b.seats));
-          case "quantity":
-            return dir * (Number(a.quantity) - Number(b.quantity));
+          case 'name':
+            return dir * a.name.localeCompare(b.name)
+          case 'price':
+            return dir * (Number(a.price) - Number(b.price))
+          case 'seats':
+            return dir * (Number(a.seats) - Number(b.seats))
+          case 'quantity':
+            return dir * (Number(a.quantity) - Number(b.quantity))
           default:
-            return 0;
+            return 0
         }
-      });
-  }, [rides, searchTerm, sortKey, sortDir, dateRange]);
+      })
+  }, [rides, searchTerm, sortKey, sortDir, dateRange])
 
   const paginatedBookings = useMemo(() => {
-    const startIndex = (page - 1) * limit;
-    const endIndex = startIndex + limit;
-    return filteredRides.slice(startIndex, endIndex);
-  }, [filteredRides, page, limit]);
+    const startIndex = (page - 1) * limit
+    const endIndex = startIndex + limit
+    return filteredRides.slice(startIndex, endIndex)
+  }, [filteredRides, page, limit])
 
   useEffect(() => {
-    const totalPages = Math.ceil(filteredRides.length / limit) || 1;
-    setPageCount(totalPages);
+    const totalPages = Math.ceil(filteredRides.length / limit) || 1
+    setPageCount(totalPages)
 
     if (page > totalPages) {
-      setPage(1);
+      setPage(1)
     }
-  }, [filteredRides.length, limit]);
+  }, [filteredRides.length, limit])
 
   useEffect(() => {
-    if (!apiStats) return;
+    if (!apiStats) return
 
     const isFiltered =
-      dateRange.start ||
-      dateRange.end ||
-      searchTerm ||
-      filteredRides.length > 0;
+      dateRange.start || dateRange.end || searchTerm || filteredRides.length > 0
 
     if (!dateRange.start && !dateRange.end && !searchTerm) {
-      const todayStr = new Date().toISOString().split("T")[0];
-      const newToday = rides.filter((r) =>
+      const todayStr = new Date().toISOString().split('T')[0]
+      const newToday = rides.filter(r =>
         r.created_at?.startsWith(todayStr)
-      ).length;
+      ).length
 
       setStats({
         ...apiStats,
         filteredTotalCount: rides.length,
-        newCountToday: newToday,
-      });
-      return;
+        newCountToday: newToday
+      })
+      return
     }
 
     // Recalculate based on filteredRides
-    const currentData = filteredRides;
-    const totalCount = currentData.length;
+    const currentData = filteredRides
+    const totalCount = currentData.length
 
-    const todayStr = new Date().toISOString().split("T")[0];
-    const newToday = currentData.filter((r) =>
+    const todayStr = new Date().toISOString().split('T')[0]
+    const newToday = currentData.filter(r =>
       r.created_at?.startsWith(todayStr)
-    ).length;
+    ).length
 
     // Trends (First Half vs Second Half)
-    let growthCount = 0;
-    let growthPercent = 0;
+    let growthCount = 0
+    let growthPercent = 0
 
     if (currentData.length > 1) {
       // Sort by date for trend calculation
       const sorted = [...currentData].sort(
         (a, b) => new Date(a.created_at) - new Date(b.created_at)
-      );
-      const mid = Math.floor(sorted.length / 2);
-      const firstHalf = sorted.slice(0, mid);
-      const secondHalf = sorted.slice(mid);
+      )
+      const mid = Math.floor(sorted.length / 2)
+      const firstHalf = sorted.slice(0, mid)
+      const secondHalf = sorted.slice(mid)
 
-      const firstCount = firstHalf.length;
-      const secondCount = secondHalf.length;
+      const firstCount = firstHalf.length
+      const secondCount = secondHalf.length
 
-      growthCount = secondCount - firstCount;
+      growthCount = secondCount - firstCount
       if (firstCount > 0) {
-        growthPercent = ((secondCount - firstCount) / firstCount) * 100;
+        growthPercent = ((secondCount - firstCount) / firstCount) * 100
       } else {
-        growthPercent = secondCount > 0 ? 100 : 0;
+        growthPercent = secondCount > 0 ? 100 : 0
       }
     }
 
     // Cap at 100%
-    if (growthPercent > 100) growthPercent = 100;
+    if (growthPercent > 100) growthPercent = 100
 
     setStats({
       ...apiStats, // Preserve yesterdayCount from API
@@ -357,99 +354,99 @@ export default function RidesForm({ dateRange = { start: "", end: "" } }) {
       avgGrowthPercent: `${growthPercent.toFixed(1)}%`,
       isPctIncreasing: growthPercent >= 0,
       filteredTotalCount: totalCount,
-      newCountToday: newToday,
-    });
-  }, [filteredRides, dateRange, searchTerm, apiStats, rides]);
+      newCountToday: newToday
+    })
+  }, [filteredRides, dateRange, searchTerm, apiStats, rides])
 
-  const toggleSort = (key) => {
+  const toggleSort = key => {
     if (sortKey === key) {
-      setSortDir((prev) => (prev === "asc" ? "desc" : "asc"));
+      setSortDir(prev => (prev === 'asc' ? 'desc' : 'asc'))
     } else {
-      setSortKey(key);
-      setSortDir("asc");
+      setSortKey(key)
+      setSortDir('asc')
     }
-  };
+  }
 
-  const handleViewDetail = (ride) => {
-    setSelectedRide(ride);
-    setDetailOpen(true);
-  };
+  const handleViewDetail = ride => {
+    setSelectedRide(ride)
+    setDetailOpen(true)
+  }
 
   const handleDownloadExcel = () => {
     if (!filteredRides || filteredRides.length === 0) {
-      return;
+      return
     }
-    const dataToExport = filteredRides.map((ride) => ({
+    const dataToExport = filteredRides.map(ride => ({
       ID: ride.id,
       Name: ride.name,
-      Description: ride.description || "-",
+      Description: ride.description || '-',
       Price: ride.price,
       Seats: ride.seats,
       Quantity: ride.quantity,
       Margin: ride.margin,
-      "Currency Name": ride.currency?.name,
-      "Currency Short": ride.currency?.shortName,
-      "Currency Symbol": ride.currency?.symbol,
-      "Selected For Website": ride.selected_for_website ? "Yes" : "No",
-      "Is Security Vehicle": ride.is_security_vehicle ? "Yes" : "No",
-      "Personnel Station Cost": ride.personnel_station_unit_cost,
-      "Personnel Off Station Cost": ride.personnel_off_station_unit_cost,
-      "Vehicle Off Station Cost": ride.vehicle_off_station_unit_cost,
-      "City ID": ride.city_id || "-",
-      Amenities: ride.cleanAmenities?.map((a) => a.name).join(", ") || "-",
-      Images: ride.cleanImages?.join(", ") || "-",
-      "Created At": ride.created_at,
-      "Updated At": ride.updated_at,
-    }));
-    downloadExcel(dataToExport, "Rides_Bookings.xlsx");
-  };
+      'Currency Name': ride.currency?.name,
+      'Currency Short': ride.currency?.shortName,
+      'Currency Symbol': ride.currency?.symbol,
+      'Selected For Website': ride.selected_for_website ? 'Yes' : 'No',
+      'Is Security Vehicle': ride.is_security_vehicle ? 'Yes' : 'No',
+      'Personnel Station Cost': ride.personnel_station_unit_cost,
+      'Personnel Off Station Cost': ride.personnel_off_station_unit_cost,
+      'Vehicle Off Station Cost': ride.vehicle_off_station_unit_cost,
+      'City ID': ride.city_id || '-',
+      Amenities: ride.cleanAmenities?.map(a => a.name).join(', ') || '-',
+      Images: ride.cleanImages?.join(', ') || '-',
+      'Created At': ride.created_at,
+      'Updated At': ride.updated_at
+    }))
+    downloadExcel(dataToExport, 'Rides_Bookings.xlsx')
+  }
 
   return (
-    <div className="p-4 h-full flex flex-col bg-white">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div className="bg-gradient-to-r from-[#E8EEFF] to-[#C5D5FF] p-4 rounded-lg">
-          <div className="flex items-center justify-between">
-            <div className="bg-white p-2 rounded-lg">
-              <TbTicket className="w-6 h-6 text-indigo-600" />
+    <div className='p-4 h-full flex flex-col bg-white'>
+      <div className='grid grid-cols-1 md:grid-cols-3 gap-4 mb-6'>
+        <div className='bg-gradient-to-r from-[#E8EEFF] to-[#C5D5FF] p-4 rounded-lg'>
+          <div className='flex items-center justify-between'>
+            <div className='bg-white p-2 rounded-lg'>
+              <TbTicket className='w-6 h-6 text-indigo-600' />
             </div>
-            <div className="text-right">
-              <p className="text-xs text-indigo-600 opacity-90">
-                Total Purchasing Yesterday{" "}
-                <span className="text-[10px] opacity-75">
+            <div className='text-right'>
+              <p className='text-xs text-indigo-600 opacity-90'>
+                Total Purchasing Yesterday{' '}
+                <span className='text-[10px] opacity-75'>
                   ({stats.yesterdayDateStr})
                 </span>
               </p>
-              <p className="text-2xl text-indigo-600 font-bold">
+              <p className='text-2xl text-indigo-600 font-bold'>
                 {stats.yesterdayCount}
               </p>
             </div>
           </div>
         </div>
-        <div className="bg-gradient-to-r from-[#F3E8FF] to-[#DDD6FE] p-4 rounded-lg">
-          <div className="flex items-center justify-between">
-            <div className="bg-white p-2 rounded-lg">
-              <TbTrendingUp className="w-6 h-6 text-purple-600" />
+        <div className='bg-gradient-to-r from-[#F3E8FF] to-[#DDD6FE] p-4 rounded-lg'>
+          <div className='flex items-center justify-between'>
+            <div className='bg-white p-2 rounded-lg'>
+              <TbTrendingUp className='w-6 h-6 text-purple-600' />
             </div>
-            <div className="text-right">
-              <p className="text-xs text-purple-600 opacity-90">
+            <div className='text-right'>
+              <p className='text-xs text-purple-600 opacity-90'>
                 Avg Daily Growth (Count)
               </p>
-              <div className="flex items-end justify-end gap-2">
-                <p className="text-2xl text-purple-600 font-bold">
+              <div className='flex items-end justify-end gap-2'>
+                <p className='text-2xl text-purple-600 font-bold'>
                   {stats.avgGrowthCount}
                 </p>
                 {stats.isCountIncreasing ? (
-                  <span className="text-xs flex items-center mb-1 text-green-500">
-                    <TbTrendingUp className="w-3 h-3 mr-0.5" />
+                  <span className='text-xs flex items-center mb-1 text-green-500'>
+                    <TbTrendingUp className='w-3 h-3 mr-0.5' />
                     Increasing
                   </span>
                 ) : (
                   <>
-                    <p className="text-2xl text-red-600 font-bold">
+                    <p className='text-2xl text-red-600 font-bold'>
                       {stats.avgGrowthCount}
                     </p>
-                    <span className="text-xs flex items-center mb-1 text-red-600">
-                      <TbTrendingDown className="w-3 h-3 mr-0.5" />
+                    <span className='text-xs flex items-center mb-1 text-red-600'>
+                      <TbTrendingDown className='w-3 h-3 mr-0.5' />
                       Decreasing
                     </span>
                   </>
@@ -458,31 +455,31 @@ export default function RidesForm({ dateRange = { start: "", end: "" } }) {
             </div>
           </div>
         </div>
-        <div className="bg-gradient-to-r from-[#CCFBF1] to-[#99F6E4] p-4 rounded-lg">
-          <div className="flex items-center justify-between">
-            <div className="bg-white p-2 rounded-lg">
-              <FaChartColumn className="w-6 h-6 text-teal-600" />
+        <div className='bg-gradient-to-r from-[#CCFBF1] to-[#99F6E4] p-4 rounded-lg'>
+          <div className='flex items-center justify-between'>
+            <div className='bg-white p-2 rounded-lg'>
+              <FaChartColumn className='w-6 h-6 text-teal-600' />
             </div>
-            <div className="text-right">
-              <p className="text-xs text-teal-600 opacity-90">
+            <div className='text-right'>
+              <p className='text-xs text-teal-600 opacity-90'>
                 Avg Daily Growth (%)
               </p>
-              <div className="flex items-end justify-end gap-2">
-                <p className="text-2xl text-teal-600 font-bold">
+              <div className='flex items-end justify-end gap-2'>
+                <p className='text-2xl text-teal-600 font-bold'>
                   {stats.avgGrowthPercent}
                 </p>
                 {stats.isPctIncreasing ? (
-                  <span className="text-xs flex items-center mb-1 text-green-500">
-                    <TbTrendingUp className="w-3 h-3 mr-0.5" />
+                  <span className='text-xs flex items-center mb-1 text-green-500'>
+                    <TbTrendingUp className='w-3 h-3 mr-0.5' />
                     Increasing
                   </span>
                 ) : (
                   <>
-                    <p className="text-2xl text-red-600 font-bold">
+                    <p className='text-2xl text-red-600 font-bold'>
                       {stats.avgGrowthPercent}
                     </p>
-                    <span className="text-xs flex items-center mb-1 text-red-600">
-                      <TbTrendingDown className="w-3 h-3 mr-0.5" />
+                    <span className='text-xs flex items-center mb-1 text-red-600'>
+                      <TbTrendingDown className='w-3 h-3 mr-0.5' />
                       Decreasing
                     </span>
                   </>
@@ -493,29 +490,29 @@ export default function RidesForm({ dateRange = { start: "", end: "" } }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-        <div className="bg-blue-300 p-4 rounded-lg">
-          <div className="flex items-center">
-            <div className="bg-white p-2 rounded-lg mr-3">
-              <TbTicket className="w-6 h-6 text-blue-600" />
+      <div className='grid grid-cols-1 md:grid-cols-2 gap-4 mb-6'>
+        <div className='bg-blue-300 p-4 rounded-lg'>
+          <div className='flex items-center'>
+            <div className='bg-white p-2 rounded-lg mr-3'>
+              <TbTicket className='w-6 h-6 text-blue-600' />
             </div>
             <div>
-              <p className="text-xs text-gray-600">Total Rides Bookings</p>
-              <p className="text-2xl font-bold text-gray-900">
+              <p className='text-xs text-gray-600'>Total Rides Bookings</p>
+              <p className='text-2xl font-bold text-gray-900'>
                 {stats.filteredTotalCount}
               </p>
             </div>
           </div>
         </div>
 
-        <div className="bg-orange-300 p-4 rounded-lg">
-          <div className="flex items-center">
-            <div className="bg-white p-2 rounded-lg mr-3">
-              <TbTicket className="w-6 h-6 text-orange-600" />
+        <div className='bg-orange-300 p-4 rounded-lg'>
+          <div className='flex items-center'>
+            <div className='bg-white p-2 rounded-lg mr-3'>
+              <TbTicket className='w-6 h-6 text-orange-600' />
             </div>
             <div>
-              <p className="text-xs text-gray-600">New Bookings Today</p>
-              <p className="text-2xl font-bold text-gray-900">
+              <p className='text-xs text-gray-600'>New Bookings Today</p>
+              <p className='text-2xl font-bold text-gray-900'>
                 {stats.newCountToday}
               </p>
             </div>
@@ -523,56 +520,56 @@ export default function RidesForm({ dateRange = { start: "", end: "" } }) {
         </div>
       </div>
 
-      <div className="bg-gray-200 p-5 rounded-xl flex-1 flex flex-col min-h-0">
+      <div className='bg-gray-200 p-5 rounded-xl flex-1 flex flex-col min-h-0'>
         {/* Main Content */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 flex-1 flex flex-col min-h-0">
+        <div className='bg-white rounded-lg shadow-sm border border-gray-200 flex-1 flex flex-col min-h-0'>
           {/* Header with Search and Filters */}
-          <div className="p-4 border-b border-gray-200 flex-shrink-0">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-semibold text-gray-900">
+          <div className='p-4 border-b border-gray-200 flex-shrink-0'>
+            <div className='flex justify-between items-center mb-4'>
+              <h2 className='text-lg font-semibold text-gray-900'>
                 Gross Transaction Value of Rides
               </h2>
-              <div className="flex items-center space-x-3">
+              <div className='flex items-center space-x-3'>
                 {/* Search */}
-                <div className="relative">
+                <div className='relative'>
                   <input
-                    type="text"
-                    placeholder="Search rides..."
+                    type='text'
+                    placeholder='Search rides...'
                     value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="h-9 pl-10 pr-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs text-gray-900 placeholder-gray-500"
+                    onChange={e => setSearchTerm(e.target.value)}
+                    className='h-9 pl-10 pr-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs text-gray-900 placeholder-gray-500'
                   />
                   <svg
-                    className="w-4 h-4 text-gray-600 absolute left-3 top-2.5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
+                    className='w-4 h-4 text-gray-600 absolute left-3 top-2.5'
+                    fill='none'
+                    stroke='currentColor'
+                    viewBox='0 0 24 24'
                     strokeWidth={2}
                   >
                     <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                      strokeLinecap='round'
+                      strokeLinejoin='round'
+                      d='M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z'
                     />
                   </svg>
                 </div>
 
                 {/* Filters Button (Visual only for now as per previous form) */}
-                <button className="h-9 flex items-center px-4 border border-gray-300 rounded-lg hover:bg-gray-50 bg-white">
+                <button className='h-9 flex items-center px-4 border border-gray-300 rounded-lg hover:bg-gray-50 bg-white'>
                   <svg
-                    className="w-4 h-4 mr-2 text-gray-600"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
+                    className='w-4 h-4 mr-2 text-gray-600'
+                    fill='none'
+                    stroke='currentColor'
+                    viewBox='0 0 24 24'
                     strokeWidth={2}
                   >
                     <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 01-.659 1.591l-5.432 5.432a2.25 2.25 0 00-.659 1.591v2.927a2.25 2.25 0 01-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 00-.659-1.591L3.659 7.409A2.25 2.25 0 013 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0112 3z"
+                      strokeLinecap='round'
+                      strokeLinejoin='round'
+                      d='M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 01-.659 1.591l-5.432 5.432a2.25 2.25 0 00-.659 1.591v2.927a2.25 2.25 0 01-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 00-.659-1.591L3.659 7.409A2.25 2.25 0 013 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0112 3z'
                     />
                   </svg>
-                  <span className="text-xs text-gray-700 font-medium">
+                  <span className='text-xs text-gray-700 font-medium'>
                     Filters
                   </span>
                 </button>
@@ -580,21 +577,21 @@ export default function RidesForm({ dateRange = { start: "", end: "" } }) {
                 {/* Download */}
                 <button
                   onClick={handleDownloadExcel}
-                  className="h-9 flex items-center px-4 border border-gray-300 rounded-lg hover:bg-gray-50 bg-white"
+                  className='h-9 flex items-center px-4 border border-gray-300 rounded-lg hover:bg-gray-50 bg-white'
                 >
-                  <Download className="h-4 w-4 text-gray-600 mr-2" />
-                  <span className="text-xs text-gray-700 font-medium">
+                  <Download className='h-4 w-4 text-gray-600 mr-2' />
+                  <span className='text-xs text-gray-700 font-medium'>
                     Export
                   </span>
                 </button>
 
-                <div className="flex items-center gap-2">
-                  <label className="flex items-center gap-1.5 text-xs text-[#2D3658]">
+                <div className='flex items-center gap-2'>
+                  <label className='flex items-center gap-1.5 text-xs text-[#2D3658]'>
                     Show
                     <select
                       value={limit}
-                      onChange={(e) => setLimit(Number(e.target.value) || 20)}
-                      className="h-8 px-2 border border-[#E5E6EF] rounded-lg text-xs"
+                      onChange={e => setLimit(Number(e.target.value) || 20)}
+                      className='h-8 px-2 border border-[#E5E6EF] rounded-lg text-xs'
                     >
                       <option value={10}>10</option>
                       <option value={20}>20</option>
@@ -602,21 +599,21 @@ export default function RidesForm({ dateRange = { start: "", end: "" } }) {
                       <option value={100}>100</option>
                     </select>
                   </label>
-                  <div className="flex items-center gap-2">
+                  <div className='flex items-center gap-2'>
                     <button
-                      onClick={() => setPage((p) => Math.max(1, p - 1))}
+                      onClick={() => setPage(p => Math.max(1, p - 1))}
                       disabled={page <= 1}
-                      className="h-8 px-3 py-1.5 border border-[#E5E6EF] rounded-lg bg-white text-xs font-medium text-[#2D3658] disabled:opacity-50 hover:bg-[#F6F7FD]"
+                      className='h-8 px-3 py-1.5 border border-[#E5E6EF] rounded-lg bg-white text-xs font-medium text-[#2D3658] disabled:opacity-50 hover:bg-[#F6F7FD]'
                     >
                       Prev
                     </button>
-                    <span className="text-xs text-[#2D3658]">
+                    <span className='text-xs text-[#2D3658]'>
                       Page {page} of {pageCount}
                     </span>
                     <button
-                      onClick={() => setPage((p) => Math.min(pageCount, p + 1))}
+                      onClick={() => setPage(p => Math.min(pageCount, p + 1))}
                       disabled={page >= pageCount}
-                      className="h-8 px-3 py-1.5 border border-[#E5E6EF] rounded-lg bg-white text-xs font-medium text-[#2D3658] disabled:opacity-50 hover:bg-[#F6F7FD]"
+                      className='h-8 px-3 py-1.5 border border-[#E5E6EF] rounded-lg bg-white text-xs font-medium text-[#2D3658] disabled:opacity-50 hover:bg-[#F6F7FD]'
                     >
                       Next
                     </button>
@@ -626,53 +623,53 @@ export default function RidesForm({ dateRange = { start: "", end: "" } }) {
             </div>
 
             {/* Filter Tabs */}
-            <div className="flex flex-wrap gap-1.5">
-              {filterTabs.map((tab) => (
+            <div className='flex flex-wrap gap-1.5'>
+              {filterTabs.map(tab => (
                 <button
                   key={tab.id}
                   onClick={() => {
                     switch (tab.id) {
-                      case "bundle-orders":
-                        router.push("/users/bookings");
-                        break;
-                      case "event":
-                        router.push("/users/transactions");
-                        break;
-                      case "activities":
-                        router.push("/users/activities");
-                        break;
-                      case "accommodation":
-                        router.push("/users/accommodation");
-                        break;
-                      case "diy":
-                        router.push("/users/diy");
-                        break;
-                      case "merchandise":
-                        router.push("/users/merchandise");
-                        break;
-                      case "e-sim":
-                        router.push("/users/e-sim");
-                        break;
-                      case "med-plus":
-                        router.push("/med-orders");
-                        break;
-                      case "royal-concierge":
-                        router.push("/royal-concierge");
-                        break;
-                      case "rides":
-                        router.push("/users/rides");
-                        break;
-                      case "leadway":
-                        router.push("/leadway");
-                        break;
+                      case 'bundle-orders':
+                        router.push('/users/bookings')
+                        break
+                      case 'event':
+                        router.push('/users/transactions')
+                        break
+                      case 'activities':
+                        router.push('/users/activities')
+                        break
+                      case 'accommodation':
+                        router.push('/users/accommodation')
+                        break
+                      case 'diy':
+                        router.push('/users/diy')
+                        break
+                      case 'merchandise':
+                        router.push('/users/merchandise')
+                        break
+                      case 'e-sim':
+                        router.push('/users/e-sim')
+                        break
+                      case 'med-plus':
+                        router.push('/med-orders')
+                        break
+                      case 'royal-concierge':
+                        router.push('/royal-concierge')
+                        break
+                      case 'rides':
+                        router.push('/users/rides')
+                        break
+                      case 'leadway':
+                        router.push('/leadway')
+                        break
                       default:
-                        setActiveTab(tab.id);
+                        setActiveTab(tab.id)
                     }
                   }}
                   className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border whitespace-nowrap ${
                     tab.id === activeTab
-                      ? "bg-orange-500 text-white border-orange-500"
-                      : "bg-white text-gray-700 hover:bg-gray-50 border-gray-300"
+                      ? 'bg-orange-500 text-white border-orange-500'
+                      : 'bg-white text-gray-700 hover:bg-gray-50 border-gray-300'
                   }`}
                 >
                   {tab.label}
@@ -682,102 +679,102 @@ export default function RidesForm({ dateRange = { start: "", end: "" } }) {
           </div>
 
           {/* Table */}
-          <div className="flex-1 overflow-auto">
+          <div className='flex-1 overflow-auto'>
             {loading ? (
-              <div className="flex justify-center items-center h-40">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+              <div className='flex justify-center items-center h-40'>
+                <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900'></div>
               </div>
             ) : error ? (
-              <div className="flex justify-center items-center h-40 text-red-500">
+              <div className='flex justify-center items-center h-40 text-red-500'>
                 {error}
               </div>
             ) : (
-              <table className="w-full">
-                <thead className="bg-gray-50 sticky top-0 z-10">
+              <table className='w-full'>
+                <thead className='bg-gray-50 sticky top-0 z-10'>
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className='px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
                       Image
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className='px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
                       <button
-                        type="button"
-                        onClick={() => toggleSort("name")}
-                        className="flex items-center"
+                        type='button'
+                        onClick={() => toggleSort('name')}
+                        className='flex items-center'
                       >
                         <span>Name</span>
-                        <TbCaretUpDownFilled className="w-3 h-3 text-gray-400 ml-1" />
+                        <TbCaretUpDownFilled className='w-3 h-3 text-gray-400 ml-1' />
                       </button>
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className='px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
                       <button
-                        type="button"
-                        onClick={() => toggleSort("price")}
-                        className="flex items-center"
+                        type='button'
+                        onClick={() => toggleSort('price')}
+                        className='flex items-center'
                       >
                         <span>Price</span>
-                        <TbCaretUpDownFilled className="w-3 h-3 text-gray-400 ml-1" />
+                        <TbCaretUpDownFilled className='w-3 h-3 text-gray-400 ml-1' />
                       </button>
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className='px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
                       <button
-                        type="button"
-                        onClick={() => toggleSort("seats")}
-                        className="flex items-center"
+                        type='button'
+                        onClick={() => toggleSort('seats')}
+                        className='flex items-center'
                       >
                         <span>Seats</span>
-                        <TbCaretUpDownFilled className="w-3 h-3 text-gray-400 ml-1" />
+                        <TbCaretUpDownFilled className='w-3 h-3 text-gray-400 ml-1' />
                       </button>
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className='px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
                       <button
-                        type="button"
-                        onClick={() => toggleSort("quantity")}
-                        className="flex items-center"
+                        type='button'
+                        onClick={() => toggleSort('quantity')}
+                        className='flex items-center'
                       >
                         <span>Quantity</span>
-                        <TbCaretUpDownFilled className="w-3 h-3 text-gray-400 ml-1" />
+                        <TbCaretUpDownFilled className='w-3 h-3 text-gray-400 ml-1' />
                       </button>
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className='px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
                       Action
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className='bg-white divide-y divide-gray-200'>
                   {paginatedBookings.length > 0 ? (
-                    paginatedBookings?.map((ride) => (
-                      <tr key={ride.id} className="hover:bg-gray-50">
-                        <td className="px-4 py-4 whitespace-nowrap">
-                          <div className="w-16 h-12 relative rounded overflow-hidden bg-gray-100">
+                    paginatedBookings?.map(ride => (
+                      <tr key={ride.id} className='hover:bg-gray-50'>
+                        <td className='px-4 py-4 whitespace-nowrap'>
+                          <div className='w-16 h-12 relative rounded overflow-hidden bg-gray-100'>
                             {ride.mainImage ? (
                               <img
                                 src={ride.mainImage}
                                 alt={ride.name}
-                                className="w-full h-full object-cover"
+                                className='w-full h-full object-cover'
                               />
                             ) : (
-                              <div className="flex items-center justify-center h-full text-xs text-gray-400">
+                              <div className='flex items-center justify-center h-full text-xs text-gray-400'>
                                 No Img
                               </div>
                             )}
                           </div>
                         </td>
-                        <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        <td className='px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900'>
                           {ride.name}
                         </td>
-                        <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td className='px-4 py-4 whitespace-nowrap text-sm text-gray-500'>
                           {ride.priceFormatted}
                         </td>
-                        <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td className='px-4 py-4 whitespace-nowrap text-sm text-gray-500'>
                           {ride.seats}
                         </td>
-                        <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td className='px-4 py-4 whitespace-nowrap text-sm text-gray-500'>
                           {ride.quantity}
                         </td>
-                        <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td className='px-4 py-4 whitespace-nowrap text-sm text-gray-500'>
                           <ActionDropdown
-                            onAction={(action) => {
-                              if (action === "view") handleViewDetail(ride);
+                            onAction={action => {
+                              if (action === 'view') handleViewDetail(ride)
                             }}
                           />
                         </td>
@@ -786,8 +783,8 @@ export default function RidesForm({ dateRange = { start: "", end: "" } }) {
                   ) : (
                     <tr>
                       <td
-                        colSpan="6"
-                        className="px-4 py-12 text-center text-gray-500"
+                        colSpan='6'
+                        className='px-4 py-12 text-center text-gray-500'
                       >
                         No rides found
                       </td>
@@ -804,128 +801,128 @@ export default function RidesForm({ dateRange = { start: "", end: "" } }) {
       <Modal
         open={detailOpen}
         onOpenChange={setDetailOpen}
-        title="Ride Details"
-        maxWidth="max-w-6xl"
-        className="!p-5"
+        title='Ride Details'
+        maxWidth='max-w-6xl'
+        className='!p-5'
       >
         {selectedRide && (
-          <div className="max-h-[70vh] overflow-y-auto pr-2">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-4">
+          <div className='max-h-[70vh] overflow-y-auto pr-2'>
+            <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+              <div className='space-y-4'>
                 {/* General Info */}
-                <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
-                  <h3 className="font-semibold text-slate-900 mb-2 border-b border-slate-200 pb-2">
+                <div className='bg-slate-50 p-3 rounded-lg border border-slate-200'>
+                  <h3 className='font-semibold text-slate-900 mb-2 border-b border-slate-200 pb-2'>
                     General Information
                   </h3>
-                  <div className="grid grid-cols-2 gap-y-2 gap-x-4 text-sm">
-                    <div className="text-slate-600">Name</div>
-                    <div className="font-medium text-right text-slate-900">
-                      {selectedRide.name || "-"}
+                  <div className='grid grid-cols-2 gap-y-2 gap-x-4 text-sm'>
+                    <div className='text-slate-600'>Name</div>
+                    <div className='font-medium text-right text-slate-900'>
+                      {selectedRide.name || '-'}
                     </div>
 
-                    <div className="text-slate-600">Price</div>
-                    <div className="font-medium text-right text-slate-900">
-                      {selectedRide.priceFormatted || "-"}
+                    <div className='text-slate-600'>Price</div>
+                    <div className='font-medium text-right text-slate-900'>
+                      {selectedRide.priceFormatted || '-'}
                     </div>
 
-                    <div className="text-slate-600">Seats</div>
-                    <div className="font-medium text-right text-slate-900">
-                      {selectedRide.seats || "-"}
+                    <div className='text-slate-600'>Seats</div>
+                    <div className='font-medium text-right text-slate-900'>
+                      {selectedRide.seats || '-'}
                     </div>
 
-                    <div className="text-slate-600">Quantity</div>
-                    <div className="font-medium text-right text-slate-900">
-                      {selectedRide.quantity || "-"}
+                    <div className='text-slate-600'>Quantity</div>
+                    <div className='font-medium text-right text-slate-900'>
+                      {selectedRide.quantity || '-'}
                     </div>
 
-                    <div className="text-slate-600">Margin</div>
-                    <div className="font-medium text-right text-slate-900">
-                      {selectedRide.margin || "0"}%
+                    <div className='text-slate-600'>Margin</div>
+                    <div className='font-medium text-right text-slate-900'>
+                      {selectedRide.margin || '0'}%
                     </div>
 
-                    <div className="text-slate-600">Currency</div>
-                    <div className="font-medium text-right text-slate-900">
+                    <div className='text-slate-600'>Currency</div>
+                    <div className='font-medium text-right text-slate-900'>
                       {selectedRide.currency?.shortName ||
                         selectedRide.currency?.name ||
-                        "NGN"}
+                        'NGN'}
                     </div>
                   </div>
                 </div>
 
                 {/* Status & Dates */}
-                <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
-                  <h3 className="font-semibold text-slate-900 mb-2 border-b border-slate-200 pb-2">
+                <div className='bg-slate-50 p-3 rounded-lg border border-slate-200'>
+                  <h3 className='font-semibold text-slate-900 mb-2 border-b border-slate-200 pb-2'>
                     Status & Dates
                   </h3>
-                  <div className="grid grid-cols-2 gap-y-2 gap-x-4 text-sm">
-                    <div className="text-slate-600">Created At</div>
-                    <div className="font-medium text-right text-slate-900">
+                  <div className='grid grid-cols-2 gap-y-2 gap-x-4 text-sm'>
+                    <div className='text-slate-600'>Created At</div>
+                    <div className='font-medium text-right text-slate-900'>
                       {selectedRide.created_at
                         ? new Date(selectedRide.created_at).toLocaleString()
-                        : "-"}
+                        : '-'}
                     </div>
 
-                    <div className="text-slate-600">Updated At</div>
-                    <div className="font-medium text-right text-slate-900">
+                    <div className='text-slate-600'>Updated At</div>
+                    <div className='font-medium text-right text-slate-900'>
                       {selectedRide.updated_at
                         ? new Date(selectedRide.updated_at).toLocaleString()
-                        : "-"}
+                        : '-'}
                     </div>
 
-                    <div className="text-slate-600">Selected For Website</div>
-                    <div className="font-medium text-right">
+                    <div className='text-slate-600'>Selected For Website</div>
+                    <div className='font-medium text-right'>
                       <span
                         className={`px-2 py-0.5 rounded-full text-xs ${
                           selectedRide.selected_for_website
-                            ? "bg-green-100 text-green-800"
-                            : "bg-slate-200 text-slate-800"
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-slate-200 text-slate-800'
                         }`}
                       >
-                        {selectedRide.selected_for_website ? "Yes" : "No"}
+                        {selectedRide.selected_for_website ? 'Yes' : 'No'}
                       </span>
                     </div>
 
-                    <div className="text-slate-600">Security Vehicle</div>
-                    <div className="font-medium text-right">
+                    <div className='text-slate-600'>Security Vehicle</div>
+                    <div className='font-medium text-right'>
                       <span
                         className={`px-2 py-0.5 rounded-full text-xs ${
                           selectedRide.is_security_vehicle
-                            ? "bg-blue-100 text-blue-800"
-                            : "bg-slate-200 text-slate-800"
+                            ? 'bg-blue-100 text-blue-800'
+                            : 'bg-slate-200 text-slate-800'
                         }`}
                       >
-                        {selectedRide.is_security_vehicle ? "Yes" : "No"}
+                        {selectedRide.is_security_vehicle ? 'Yes' : 'No'}
                       </span>
                     </div>
                   </div>
                 </div>
 
                 {/* Costing */}
-                <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
-                  <h3 className="font-semibold text-slate-900 mb-2 border-b border-slate-200 pb-2">
+                <div className='bg-slate-50 p-3 rounded-lg border border-slate-200'>
+                  <h3 className='font-semibold text-slate-900 mb-2 border-b border-slate-200 pb-2'>
                     Costing
                   </h3>
-                  <div className="grid grid-cols-2 gap-y-2 gap-x-4 text-sm">
-                    <div className="text-slate-600">Personnel Station Cost</div>
-                    <div className="font-medium text-right text-slate-900">
+                  <div className='grid grid-cols-2 gap-y-2 gap-x-4 text-sm'>
+                    <div className='text-slate-600'>Personnel Station Cost</div>
+                    <div className='font-medium text-right text-slate-900'>
                       {Number(
                         selectedRide.personnel_station_unit_cost
                       ).toLocaleString()}
                     </div>
 
-                    <div className="text-slate-600">
+                    <div className='text-slate-600'>
                       Personnel Off Station Cost
                     </div>
-                    <div className="font-medium text-right text-slate-900">
+                    <div className='font-medium text-right text-slate-900'>
                       {Number(
                         selectedRide.personnel_off_station_unit_cost
                       ).toLocaleString()}
                     </div>
 
-                    <div className="text-slate-600">
+                    <div className='text-slate-600'>
                       Vehicle Off Station Cost
                     </div>
-                    <div className="font-medium text-right text-slate-900">
+                    <div className='font-medium text-right text-slate-900'>
                       {Number(
                         selectedRide.vehicle_off_station_unit_cost
                       ).toLocaleString()}
@@ -934,14 +931,14 @@ export default function RidesForm({ dateRange = { start: "", end: "" } }) {
                 </div>
               </div>
 
-              <div className="space-y-4">
+              <div className='space-y-4'>
                 {/* Description */}
                 {selectedRide.description && (
-                  <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
-                    <h3 className="font-semibold text-slate-900 mb-2 border-b border-slate-200 pb-2">
+                  <div className='bg-slate-50 p-3 rounded-lg border border-slate-200'>
+                    <h3 className='font-semibold text-slate-900 mb-2 border-b border-slate-200 pb-2'>
                       Description
                     </h3>
-                    <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap">
+                    <p className='text-sm text-slate-600 leading-relaxed whitespace-pre-wrap'>
                       {selectedRide.description}
                     </p>
                   </div>
@@ -950,30 +947,30 @@ export default function RidesForm({ dateRange = { start: "", end: "" } }) {
                 {/* Amenities */}
                 {selectedRide.cleanAmenities &&
                   selectedRide.cleanAmenities.length > 0 && (
-                    <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
-                      <h3 className="font-semibold text-slate-900 mb-2 border-b border-slate-200 pb-2">
+                    <div className='bg-slate-50 p-3 rounded-lg border border-slate-200'>
+                      <h3 className='font-semibold text-slate-900 mb-2 border-b border-slate-200 pb-2'>
                         Amenities
                       </h3>
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className='grid grid-cols-2 gap-3'>
                         {selectedRide.cleanAmenities.map((amenity, idx) => (
                           <div
                             key={idx}
-                            className="flex items-center p-2 rounded-lg bg-white border border-slate-100"
+                            className='flex items-center p-2 rounded-lg bg-white border border-slate-100'
                           >
                             {amenity.image && (
                               <img
                                 src={amenity.image}
                                 alt={amenity.name}
-                                className="w-8 h-8 object-contain mr-3"
+                                className='w-8 h-8 object-contain mr-3'
                               />
                             )}
                             <div>
-                              <p className="text-sm font-medium text-slate-900">
+                              <p className='text-sm font-medium text-slate-900'>
                                 {amenity.name}
                               </p>
                               {amenity.short_name &&
                                 amenity.short_name !== amenity.name && (
-                                  <p className="text-xs text-slate-500">
+                                  <p className='text-xs text-slate-500'>
                                     {amenity.short_name}
                                   </p>
                                 )}
@@ -987,20 +984,20 @@ export default function RidesForm({ dateRange = { start: "", end: "" } }) {
                 {/* Images */}
                 {selectedRide.cleanImages &&
                   selectedRide.cleanImages.length > 0 && (
-                    <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
-                      <h3 className="font-semibold text-slate-900 mb-2 border-b border-slate-200 pb-2">
+                    <div className='bg-slate-50 p-3 rounded-lg border border-slate-200'>
+                      <h3 className='font-semibold text-slate-900 mb-2 border-b border-slate-200 pb-2'>
                         Images
                       </h3>
-                      <div className="grid grid-cols-2 gap-2">
+                      <div className='grid grid-cols-2 gap-2'>
                         {selectedRide.cleanImages.map((img, idx) => (
                           <div
                             key={idx}
-                            className="relative aspect-video rounded-lg overflow-hidden bg-slate-100 border border-slate-200"
+                            className='relative aspect-video rounded-lg overflow-hidden bg-slate-100 border border-slate-200'
                           >
                             <img
                               src={img}
                               alt={`${selectedRide.name} ${idx + 1}`}
-                              className="w-full h-full object-cover"
+                              className='w-full h-full object-cover'
                             />
                           </div>
                         ))}
@@ -1013,5 +1010,5 @@ export default function RidesForm({ dateRange = { start: "", end: "" } }) {
         )}
       </Modal>
     </div>
-  );
+  )
 }

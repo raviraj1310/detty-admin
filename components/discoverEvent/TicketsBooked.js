@@ -111,7 +111,7 @@ export default function TicketsBooked () {
   const [customerOpen, setCustomerOpen] = useState(false)
   const [downloadingId, setDownloadingId] = useState(null)
   const [menuPos, setMenuPos] = useState({ top: 0, left: 0 })
-  const [limit, setLimit] = useState(20)
+  const [limit, setLimit] = useState(50)
   const [pageCount, setPageCount] = useState(1)
   const [page, setPage] = useState(1)
 

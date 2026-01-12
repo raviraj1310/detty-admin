@@ -655,7 +655,7 @@ export default function UsersForm ({
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [statusFilter, setStatusFilter] = useState(defaultStatus)
   const [page, setPage] = useState(1)
-  const [limit, setLimit] = useState(20)
+  const [limit, setLimit] = useState(50)
   const [totalCount, setTotalCount] = useState(0)
   const [pageCount, setPageCount] = useState(1)
   const [allCachedUsers, setAllCachedUsers] = useState(null)
