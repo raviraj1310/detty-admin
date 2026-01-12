@@ -868,13 +868,8 @@ export default function UsersForm ({
   useEffect(() => {
     const load = async () => {
       // If we have cached users, use them for instant client-side search/filtering
-      // BUT if date range is present, we must hit the API as caching doesn't account for it
-      if (
-        allCachedUsers &&
-        allCachedUsers.length > 0 &&
-        !dateRange.start &&
-        !dateRange.end
-      ) {
+      // This allows searching by formatted fields (like Date) which the server might not support
+      if (allCachedUsers && allCachedUsers.length > 0) {
         setUsers(allCachedUsers)
         setLoading(false)
         return
@@ -1100,9 +1095,19 @@ export default function UsersForm ({
     if (statusFilter) {
       base = base.filter(u => u.status === statusFilter)
     }
-    // Date range filtering is now handled by API
+
+    // Date range filtering (client-side)
+    if (dateRange.start) {
+      const startTs = new Date(dateRange.start).setHours(0, 0, 0, 0)
+      base = base.filter(u => u.createdTs >= startTs)
+    }
+    if (dateRange.end) {
+      const endTs = new Date(dateRange.end).setHours(23, 59, 59, 999)
+      base = base.filter(u => u.createdTs <= endTs)
+    }
+
     return base
-  }, [users, searchTerm, statusFilter])
+  }, [users, searchTerm, statusFilter, dateRange])
 
   const sortedUsers = useMemo(() => {
     const arr = [...filteredUsers]
