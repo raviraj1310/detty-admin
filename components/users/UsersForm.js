@@ -868,7 +868,8 @@ export default function UsersForm ({
   useEffect(() => {
     const load = async () => {
       // If we have cached users, use them for instant client-side search/filtering
-      // This allows searching by formatted fields (like Date) which the server might not support
+      // This enables fuzzy search on formatted dates (which backend doesn't support)
+      // and fast filtering without API calls
       if (allCachedUsers && allCachedUsers.length > 0) {
         setUsers(allCachedUsers)
         setLoading(false)
@@ -1066,6 +1067,8 @@ export default function UsersForm ({
     const term = String(searchTerm || '')
       .trim()
       .toLowerCase()
+      .replace(/\s+/g, ' ')
+    const termClean = term.replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ')
     const termDigits = term.replace(/[^0-9]/g, '')
     let base = users
     if (term) {
@@ -1084,12 +1087,25 @@ export default function UsersForm ({
         const statusStr = String(u.status || '').toLowerCase()
         const idStr = String(u.id || '').toLowerCase()
         const rawIdStr = String(u.rawId || '').toLowerCase()
-        const haystack = `${name} ${email} ${phoneLc} ${walletStr} ${created} ${statusStr} ${idStr} ${rawIdStr}`
+
+        // Original haystack with spaces normalized
+        const haystack =
+          `${name} ${email} ${phoneLc} ${walletStr} ${created} ${statusStr} ${idStr} ${rawIdStr}`.replace(
+            /\s+/g,
+            ' '
+          )
+
+        // Cleaned haystack (punctuation removed) for fuzzy match
+        // This helps with dates like "Mon, January 12" matching "Mon January 12"
+        // and handles invisible characters
+        const haystackClean = haystack.replace(/[^a-z0-9\s]/g, '')
+
         const matchesText = haystack.includes(term)
+        const matchesClean = termClean && haystackClean.includes(termClean)
         const matchesDigits =
           (termDigits && phoneDigits.includes(termDigits)) ||
           (termDigits && walletDigits.includes(termDigits))
-        return matchesText || matchesDigits
+        return matchesText || matchesClean || matchesDigits
       })
     }
     if (statusFilter) {
