@@ -66,6 +66,11 @@ export default function ReferralReportsPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [exporting, setExporting] = useState(false);
+  const [limit, setLimit] = useState(50);
+  const [eventPage, setEventPage] = useState(1);
+  const [eventPageCount, setEventPageCount] = useState(1);
+  const [activityPage, setActivityPage] = useState(1);
+  const [activityPageCount, setActivityPageCount] = useState(1);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -204,6 +209,30 @@ export default function ReferralReportsPage() {
       return s.includes(t);
     });
   }, [searchTerm, activityRows]);
+
+  const paginatedEvent = useMemo(() => {
+    const startIndex = (eventPage - 1) * limit;
+    const endIndex = startIndex + limit;
+    return filteredEvent.slice(startIndex, endIndex);
+  }, [filteredEvent, eventPage, limit]);
+
+  const paginatedActivity = useMemo(() => {
+    const startIndex = (activityPage - 1) * limit;
+    const endIndex = startIndex + limit;
+    return filteredActivity.slice(startIndex, endIndex);
+  }, [filteredActivity, activityPage, limit]);
+
+  useEffect(() => {
+    const totalEventPages = Math.ceil(filteredEvent.length / limit) || 1;
+    setEventPageCount(totalEventPages);
+    if (eventPage > totalEventPages) setEventPage(1);
+  }, [filteredEvent.length, limit]);
+
+  useEffect(() => {
+    const totalActivityPages = Math.ceil(filteredActivity.length / limit) || 1;
+    setActivityPageCount(totalActivityPages);
+    if (activityPage > totalActivityPages) setActivityPage(1);
+  }, [filteredActivity.length, limit]);
 
   const toCsvCell = (v) => {
     const s = String(v ?? "");
@@ -400,6 +429,11 @@ export default function ReferralReportsPage() {
       setExporting(false);
     }
   };
+  const currentPage = activeTab === "event" ? eventPage : activityPage;
+  const currentPageCount =
+    activeTab === "event" ? eventPageCount : activityPageCount;
+
+  const setCurrentPage = activeTab === "event" ? setEventPage : setActivityPage;
 
   return (
     <div className="min-h-full bg-[#F4F6FB]">
@@ -465,12 +499,45 @@ export default function ReferralReportsPage() {
                   </button>
                 )}
 
-                {/* <button
-                  onClick={handleDownload}
-                  className="flex h-8 items-center gap-1.5 rounded-lg border border-[#E5E6EF] bg-white px-3 text-xs font-medium text-[#2D3658] transition hover:bg-[#F6F7FD]"
-                >
-                  <Download className="h-3.5 w-3.5 text-[#8B93AF]" />
-                </button> */}
+                <div className="flex items-center gap-2">
+                  {/* LIMIT */}
+                  <label className="flex items-center gap-1.5 text-xs text-[#2D3658]">
+                    Show
+                    <select
+                      value={limit}
+                      onChange={(e) => setLimit(Number(e.target.value) || 20)}
+                      className="h-8 px-2 border border-[#E5E6EF] rounded-lg text-xs"
+                    >
+                      <option value={10}>10</option>
+                      <option value={20}>20</option>
+                      <option value={50}>50</option>
+                      <option value={100}>100</option>
+                    </select>
+                  </label>
+
+                  {/* CONTROLS */}
+                  <button
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    disabled={currentPage <= 1}
+                    className="h-8 px-3 py-1.5 border border-[#E5E6EF] rounded-lg bg-white text-xs font-medium text-[#2D3658] disabled:opacity-50 hover:bg-[#F6F7FD]"
+                  >
+                    Prev
+                  </button>
+
+                  <span className="text-xs text-[#2D3658]">
+                    Page {currentPage} of {currentPageCount}
+                  </span>
+
+                  <button
+                    onClick={() =>
+                      setCurrentPage((p) => Math.min(currentPageCount, p + 1))
+                    }
+                    disabled={currentPage >= currentPageCount}
+                    className="h-8 px-3 py-1.5 border border-[#E5E6EF] rounded-lg bg-white text-xs font-medium text-[#2D3658] disabled:opacity-50 hover:bg-[#F6F7FD]"
+                  >
+                    Next
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -514,7 +581,7 @@ export default function ReferralReportsPage() {
                       {error ? error : "No records found"}
                     </div>
                   ) : (
-                    filteredEvent.map((row) => (
+                    paginatedEvent?.map((row) => (
                       <div
                         key={row.id}
                         className="grid grid-cols-[16%_16%_10%_8%_14%_9%_12%_12%] gap-2 px-3 py-2.5 hover:bg-[#F9FAFD]"
@@ -602,7 +669,7 @@ export default function ReferralReportsPage() {
                       {error ? error : "No records found"}
                     </div>
                   ) : (
-                    filteredActivity.map((row) => (
+                    paginatedActivity.map((row) => (
                       <div
                         key={row.id}
                         className="grid grid-cols-[16%_16%_10%_8%_14%_9%_12%_12%] gap-2 px-3 py-2.5 hover:bg-[#F9FAFD]"
