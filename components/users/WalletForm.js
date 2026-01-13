@@ -125,9 +125,10 @@ export default function WalletForm () {
   const [activeDropdown, setActiveDropdown] = useState(null)
   const dropdownRef = useRef(null)
   const [exporting, setExporting] = useState(false)
-
+  const [limit, setLimit] = useState(50)
+  const [pageCount, setPageCount] = useState(1)
   const [page, setPage] = useState(1)
-  const [limit, setLimit] = useState(10)
+
   const [totalPages, setTotalPages] = useState(0)
   const [totalTransactions, setTotalTransactions] = useState(0)
 
@@ -245,6 +246,21 @@ export default function WalletForm () {
       }
     })
   }, [filteredTransactions, sortKey, sortDir])
+
+  const paginatedBookings = useMemo(() => {
+    const startIndex = (page - 1) * limit
+    const endIndex = startIndex + limit
+    return sortedTransactions.slice(startIndex, endIndex)
+  }, [sortedTransactions, page, limit])
+
+  useEffect(() => {
+    const totalPages = Math.ceil(sortedTransactions.length / limit) || 1
+    setPageCount(totalPages)
+
+    if (page > totalPages) {
+      setPage(1)
+    }
+  }, [sortedTransactions.length, limit])
 
   const counts = useMemo(() => {
     const c = { completed: 0, pending: 0, failed: 0 }
@@ -427,6 +443,40 @@ export default function WalletForm () {
             >
               <Download className='h-3.5 w-3.5 text-[#8B93AF]' />
             </button>
+            <div className='flex items-center gap-2'>
+              <label className='flex items-center gap-1.5 text-xs text-[#2D3658]'>
+                Show
+                <select
+                  value={limit}
+                  onChange={e => setLimit(Number(e.target.value) || 20)}
+                  className='h-8 px-2 border border-[#E5E6EF] rounded-lg text-xs'
+                >
+                  <option value={10}>10</option>
+                  <option value={20}>20</option>
+                  <option value={50}>50</option>
+                  <option value={100}>100</option>
+                </select>
+              </label>
+              <div className='flex items-center gap-2'>
+                <button
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                  disabled={page <= 1}
+                  className='h-8 px-3 py-1.5 border border-[#E5E6EF] rounded-lg bg-white text-xs font-medium text-[#2D3658] disabled:opacity-50 hover:bg-[#F6F7FD]'
+                >
+                  Prev
+                </button>
+                <span className='text-xs text-[#2D3658]'>
+                  Page {page} of {pageCount}
+                </span>
+                <button
+                  onClick={() => setPage(p => Math.min(pageCount, p + 1))}
+                  disabled={page >= pageCount}
+                  className='h-8 px-3 py-1.5 border border-[#E5E6EF] rounded-lg bg-white text-xs font-medium text-[#2D3658] disabled:opacity-50 hover:bg-[#F6F7FD]'
+                >
+                  Next
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -472,7 +522,7 @@ export default function WalletForm () {
               )}
               {!loading &&
                 !error &&
-                sortedTransactions.map((transaction, idx) => (
+                sortedTransactions?.map((transaction, idx) => (
                   <div
                     key={transaction.id || idx}
                     className='grid grid-cols-[18%_22%_12%_18%_15%_15%] gap-0 px-3 py-3 hover:bg-[#F9FAFD]'

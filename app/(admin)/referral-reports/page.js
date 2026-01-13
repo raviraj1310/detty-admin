@@ -509,12 +509,45 @@ export default function ReferralReportsPage () {
                   </button>
                 )}
 
-                {/* <button
-                  onClick={handleDownload}
-                  className="flex h-8 items-center gap-1.5 rounded-lg border border-[#E5E6EF] bg-white px-3 text-xs font-medium text-[#2D3658] transition hover:bg-[#F6F7FD]"
-                >
-                  <Download className="h-3.5 w-3.5 text-[#8B93AF]" />
-                </button> */}
+                <div className="flex items-center gap-2">
+                  {/* LIMIT */}
+                  <label className="flex items-center gap-1.5 text-xs text-[#2D3658]">
+                    Show
+                    <select
+                      value={limit}
+                      onChange={(e) => setLimit(Number(e.target.value) || 20)}
+                      className="h-8 px-2 border border-[#E5E6EF] rounded-lg text-xs"
+                    >
+                      <option value={10}>10</option>
+                      <option value={20}>20</option>
+                      <option value={50}>50</option>
+                      <option value={100}>100</option>
+                    </select>
+                  </label>
+
+                  {/* CONTROLS */}
+                  <button
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    disabled={currentPage <= 1}
+                    className="h-8 px-3 py-1.5 border border-[#E5E6EF] rounded-lg bg-white text-xs font-medium text-[#2D3658] disabled:opacity-50 hover:bg-[#F6F7FD]"
+                  >
+                    Prev
+                  </button>
+
+                  <span className="text-xs text-[#2D3658]">
+                    Page {currentPage} of {currentPageCount}
+                  </span>
+
+                  <button
+                    onClick={() =>
+                      setCurrentPage((p) => Math.min(currentPageCount, p + 1))
+                    }
+                    disabled={currentPage >= currentPageCount}
+                    className="h-8 px-3 py-1.5 border border-[#E5E6EF] rounded-lg bg-white text-xs font-medium text-[#2D3658] disabled:opacity-50 hover:bg-[#F6F7FD]"
+                  >
+                    Next
+                  </button>
+                </div>
               </div>
             </div>
 
