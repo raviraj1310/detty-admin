@@ -648,6 +648,11 @@ export default function TransactionsForm () {
       const bookedOnRawText = String(booking.bookedOnRaw || '').toLowerCase()
       const dateText = `${bookedOnText} ${bookedOnRawText}`
       const dateDigits = dateText.replace(/[^0-9]/g, '')
+      const amountText = String(booking.amount || '').toLowerCase()
+      const amountDigits = String(booking.amount ?? ''
+      ).replace(/[^0-9]/g, '')
+
+
 
       const dateStr = String(
         booking.eventDateText || booking.bookedOn || ''
@@ -660,12 +665,13 @@ export default function TransactionsForm () {
         buyerName.includes(term) ||
         buyerEmail.includes(term) ||
         buyerPhone.includes(term) ||
-        dateText.includes(term)
+        dateText.includes(term) || 
+        amountText.includes(term)         
 
       const matchesDigits =
         termDigits &&
         (dateDigits.includes(termDigits) ||
-          buyerPhoneDigits.includes(termDigits))
+          buyerPhoneDigits.includes(termDigits) || amountDigits.includes(termDigits))
 
       return matchesText || matchesDigits
     })
