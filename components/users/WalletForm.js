@@ -126,6 +126,11 @@ export default function WalletForm () {
   const dropdownRef = useRef(null)
   const [exporting, setExporting] = useState(false)
 
+  const [page, setPage] = useState(1)
+  const [limit, setLimit] = useState(10)
+  const [totalPages, setTotalPages] = useState(0)
+  const [totalTransactions, setTotalTransactions] = useState(0)
+
   useEffect(() => {
     const handleClickOutside = event => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -141,12 +146,16 @@ export default function WalletForm () {
       setLoading(true)
       setError('')
       try {
-        const res = await getAllUsersWallet()
+        const res = await getAllUsersWallet(page, limit)
         const data = res?.data || res || {}
         const transactionsList = Array.isArray(data?.transactions)
           ? data.transactions
           : []
         setTransactions(transactionsList.map(mapTransaction))
+
+        setTotalPages(data?.totalPages || 0)
+        setTotalTransactions(data?.totalTransactions || 0)
+
         const total = Number(data?.grandTotalBalance ?? 0)
         setGrandTotalBalance(total)
       } catch (e) {
@@ -157,12 +166,14 @@ export default function WalletForm () {
         setError(msg)
         setTransactions([])
         setGrandTotalBalance(0)
+        setTotalPages(0)
+        setTotalTransactions(0)
       } finally {
         setLoading(false)
       }
     }
     loadData()
-  }, [])
+  }, [page, limit])
 
   const filteredTransactions = useMemo(() => {
     const term = String(searchTerm || '')
@@ -545,6 +556,117 @@ export default function WalletForm () {
                 </div>
               )}
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Pagination Controls */}
+      <div className='flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6 mt-4 rounded-lg shadow-sm'>
+        <div className='flex flex-1 justify-between sm:hidden'>
+          <button
+            onClick={() => setPage(p => Math.max(1, p - 1))}
+            disabled={page === 1}
+            className='relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50'
+          >
+            Previous
+          </button>
+          <button
+            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+            disabled={page === totalPages}
+            className='relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50'
+          >
+            Next
+          </button>
+        </div>
+        <div className='hidden sm:flex sm:flex-1 sm:items-center sm:justify-between'>
+          <div>
+            <p className='text-sm text-gray-700'>
+              Showing{' '}
+              <span className='font-medium'>{(page - 1) * limit + 1}</span> to{' '}
+              <span className='font-medium'>
+                {Math.min(page * limit, totalTransactions)}
+              </span>{' '}
+              of <span className='font-medium'>{totalTransactions}</span>{' '}
+              results
+            </p>
+          </div>
+          <div>
+            <nav
+              className='isolate inline-flex -space-x-px rounded-md shadow-sm'
+              aria-label='Pagination'
+            >
+              <button
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className='relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50'
+              >
+                <span className='sr-only'>Previous</span>
+                <svg
+                  className='h-5 w-5'
+                  viewBox='0 0 20 20'
+                  fill='currentColor'
+                  aria-hidden='true'
+                >
+                  <path
+                    fillRule='evenodd'
+                    d='M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z'
+                    clipRule='evenodd'
+                  />
+                </svg>
+              </button>
+              {Array.from({ length: totalPages }, (_, i) => i + 1)
+                .filter(
+                  p =>
+                    p === 1 ||
+                    p === totalPages ||
+                    (p >= page - 1 && p <= page + 1)
+                )
+                .map((p, i, arr) => {
+                  if (i > 0 && arr[i - 1] !== p - 1) {
+                    return (
+                      <span
+                        key={`ellipsis-${p}`}
+                        className='relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-700 ring-1 ring-inset ring-gray-300 focus:outline-offset-0'
+                      >
+                        ...
+                      </span>
+                    )
+                  }
+                  return (
+                    <button
+                      key={p}
+                      onClick={() => setPage(p)}
+                      aria-current={page === p ? 'page' : undefined}
+                      className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold ${
+                        page === p
+                          ? 'bg-indigo-600 text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600'
+                          : 'text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:outline-offset-0'
+                      }`}
+                    >
+                      {p}
+                    </button>
+                  )
+                })}
+              <button
+                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                disabled={page === totalPages}
+                className='relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50'
+              >
+                <span className='sr-only'>Next</span>
+                <svg
+                  className='h-5 w-5'
+                  viewBox='0 0 20 20'
+                  fill='currentColor'
+                  aria-hidden='true'
+                >
+                  <path
+                    fillRule='evenodd'
+                    d='M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z'
+                    clipRule='evenodd'
+                  />
+                </svg>
+              </button>
+            </nav>
           </div>
         </div>
       </div>

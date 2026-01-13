@@ -1,20 +1,51 @@
 'use client'
 
 import { useEffect, useMemo, useState, useRef } from 'react'
-import { Search, MoreVertical, Loader2, Pencil, Trash2, AlertCircle } from 'lucide-react'
+import {
+  Search,
+  MoreVertical,
+  Loader2,
+  Pencil,
+  Trash2,
+  AlertCircle,
+  ChevronLeft,
+  ChevronRight
+} from 'lucide-react'
 import { TbCaretUpDownFilled } from 'react-icons/tb'
-import { getAllStates, getStateById, createState, updateState, deleteState } from '@/services/state/state.service'
+import {
+  getAllStates,
+  getStateById,
+  createState,
+  updateState,
+  deleteState
+} from '@/services/state/state.service'
 import { getAllCountries } from '@/services/country/country.service'
 import Toast from '@/components/ui/Toast'
 
-const TableHeaderCell = ({ children, align = 'left', onClick, active = false, order = 'desc' }) => (
-  <button type='button' onClick={onClick} className={`flex items-center gap-1 text-xs font-medium uppercase tracking-wide whitespace-nowrap ${align === 'right' ? 'justify-end' : 'justify-start'} ${active ? 'text-[#2D3658]' : 'text-[#8A92AC]'}`}>
+const TableHeaderCell = ({
+  children,
+  align = 'left',
+  onClick,
+  active = false,
+  order = 'desc'
+}) => (
+  <button
+    type='button'
+    onClick={onClick}
+    className={`flex items-center gap-1 text-xs font-medium uppercase tracking-wide whitespace-nowrap ${
+      align === 'right' ? 'justify-end' : 'justify-start'
+    } ${active ? 'text-[#2D3658]' : 'text-[#8A92AC]'}`}
+  >
     {children}
-    <TbCaretUpDownFilled className={`h-3 w-3 ${active ? 'text-[#4F46E5]' : 'text-[#CBCFE2]'} ${order === 'asc' ? 'rotate-180' : ''}`} />
+    <TbCaretUpDownFilled
+      className={`h-3 w-3 ${active ? 'text-[#4F46E5]' : 'text-[#CBCFE2]'} ${
+        order === 'asc' ? 'rotate-180' : ''
+      }`}
+    />
   </button>
 )
 
-export default function StateMaster() {
+export default function StateMaster () {
   const formSectionRef = useRef(null)
   const nameInputRef = useRef(null)
   const countryDropdownRef = useRef(null)
@@ -22,7 +53,12 @@ export default function StateMaster() {
   const [searchTerm, setSearchTerm] = useState('')
   const [errors, setErrors] = useState({})
   const [submitting, setSubmitting] = useState(false)
-  const [toast, setToast] = useState({ open: false, title: '', description: '', variant: 'success' })
+  const [toast, setToast] = useState({
+    open: false,
+    title: '',
+    description: '',
+    variant: 'success'
+  })
   const [states, setStates] = useState([])
   const [countries, setCountries] = useState([])
   const [loading, setLoading] = useState(false)
@@ -38,20 +74,40 @@ export default function StateMaster() {
   const [sortOrder, setSortOrder] = useState('desc')
   const [countryDropdownOpen, setCountryDropdownOpen] = useState(false)
   const [countrySearchTerm, setCountrySearchTerm] = useState('')
+  const [page, setPage] = useState(1)
+  const [limit, setLimit] = useState(10)
+  const [totalPages, setTotalPages] = useState(0)
+  const [total, setTotal] = useState(0)
 
-  const normalizeState = (d) => {
+  const normalizeState = d => {
     const countryIdObj = d?.countryId
-    const countryIdValue = typeof countryIdObj === 'object' && countryIdObj !== null ? countryIdObj._id || countryIdObj.id || '' : d?.countryId || d?.country?._id || d?.country?.id || ''
-    const countryNameValue = typeof countryIdObj === 'object' && countryIdObj !== null ? countryIdObj.name || '' : d?.country?.name || ''
-    return { _id: d?._id || d?.id || '', name: d?.name || '', countryId: countryIdValue, countryName: countryNameValue, createdAt: d?.createdAt || d?.updatedAt || '' }
+    const countryIdValue =
+      typeof countryIdObj === 'object' && countryIdObj !== null
+        ? countryIdObj._id || countryIdObj.id || ''
+        : d?.countryId || d?.country?._id || d?.country?.id || ''
+    const countryNameValue =
+      typeof countryIdObj === 'object' && countryIdObj !== null
+        ? countryIdObj.name || ''
+        : d?.country?.name || ''
+    return {
+      _id: d?._id || d?.id || '',
+      name: d?.name || '',
+      countryId: countryIdValue,
+      countryName: countryNameValue,
+      createdAt: d?.createdAt || d?.updatedAt || ''
+    }
   }
 
-  const handleInputChange = (field, value) => { setFormData((prev) => ({ ...prev, [field]: value })) }
+  const handleInputChange = (field, value) => {
+    setFormData(prev => ({ ...prev, [field]: value }))
+  }
 
   const validate = () => {
     const errs = {}
-    if (!formData.name || formData.name.trim().length < 2) errs.name = 'Enter a valid state name'
-    if (!formData.countryId || formData.countryId.trim() === '') errs.countryId = 'Select a country'
+    if (!formData.name || formData.name.trim().length < 2)
+      errs.name = 'Enter a valid state name'
+    if (!formData.countryId || formData.countryId.trim() === '')
+      errs.countryId = 'Select a country'
     return errs
   }
 
@@ -59,7 +115,11 @@ export default function StateMaster() {
     setLoadingCountries(true)
     try {
       const res = await getAllCountries()
-      const list = Array.isArray(res?.data) ? res.data : Array.isArray(res) ? res : []
+      const list = Array.isArray(res?.data)
+        ? res.data
+        : Array.isArray(res)
+        ? res
+        : []
       setCountries(list)
     } catch (e) {
       console.error('Failed to load countries', e)
@@ -72,8 +132,25 @@ export default function StateMaster() {
     setLoading(true)
     setError('')
     try {
-      const res = await getAllStates()
-      const list = Array.isArray(res?.data) ? res.data : Array.isArray(res) ? res : []
+      const res = await getAllStates({ page, limit, search: searchTerm })
+      let list = []
+      if (res?.docs) {
+        list = res.docs
+        setTotalPages(res.totalPages || 1)
+        setTotal(res.totalDocs || 0)
+      } else if (res?.data?.docs) {
+        list = res.data.docs
+        setTotalPages(res.data.totalPages || 1)
+        setTotal(res.data.totalDocs || 0)
+      } else {
+        list = Array.isArray(res?.data)
+          ? res.data
+          : Array.isArray(res)
+          ? res
+          : []
+        setTotalPages(1)
+        setTotal(list.length)
+      }
       setStates(list.map(normalizeState))
     } catch (e) {
       setError('Failed to load states')
@@ -83,33 +160,47 @@ export default function StateMaster() {
     }
   }
 
-  useEffect(() => { fetchCountries(); fetchStates() }, [])
+  useEffect(() => {
+    fetchCountries()
+  }, [])
 
   useEffect(() => {
-    const handleClickOutside = (event) => {
+    fetchStates()
+  }, [page, limit, searchTerm])
+
+  useEffect(() => {
+    const handleClickOutside = event => {
       if (menuOpenId !== null) {
         const target = event.target
         const isMenuButton = target.closest('button[data-menu-button]')
         const isMenuContent = target.closest('[data-menu-content]')
         if (!isMenuButton && !isMenuContent) setMenuOpenId(null)
       }
-      if (countryDropdownOpen && countryDropdownRef.current && !countryDropdownRef.current.contains(event.target)) {
+      if (
+        countryDropdownOpen &&
+        countryDropdownRef.current &&
+        !countryDropdownRef.current.contains(event.target)
+      ) {
         setCountryDropdownOpen(false)
         setCountrySearchTerm('')
       }
     }
-    if (menuOpenId !== null || countryDropdownOpen) document.addEventListener('mousedown', handleClickOutside)
+    if (menuOpenId !== null || countryDropdownOpen)
+      document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [menuOpenId, countryDropdownOpen])
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async e => {
     e.preventDefault()
     const errs = validate()
     setErrors(errs)
     if (Object.keys(errs).length > 0) return
     try {
       setSubmitting(true)
-      const payload = { name: formData.name.trim(), countryId: formData.countryId }
+      const payload = {
+        name: formData.name.trim(),
+        countryId: formData.countryId
+      }
       if (editingId) await updateState(editingId, payload)
       else await createState(payload)
       await fetchStates()
@@ -118,32 +209,55 @@ export default function StateMaster() {
       setEditingId(null)
       setCountryDropdownOpen(false)
       setCountrySearchTerm('')
-      setToast({ open: true, title: editingId ? 'State updated' : 'State created', description: editingId ? 'Changes have been saved' : 'Your state has been added', variant: 'success' })
+      setToast({
+        open: true,
+        title: editingId ? 'State updated' : 'State created',
+        description: editingId
+          ? 'Changes have been saved'
+          : 'Your state has been added',
+        variant: 'success'
+      })
     } catch (e) {
       setError(editingId ? 'Failed to update state' : 'Failed to create state')
-      setToast({ open: true, title: 'Error', description: e?.response?.data?.message || e?.message || (editingId ? 'Failed to update state' : 'Failed to create state'), variant: 'error' })
+      setToast({
+        open: true,
+        title: 'Error',
+        description:
+          e?.response?.data?.message ||
+          e?.message ||
+          (editingId ? 'Failed to update state' : 'Failed to create state'),
+        variant: 'error'
+      })
     } finally {
       setSubmitting(false)
     }
   }
 
-  const startEdit = async (id) => {
+  const startEdit = async id => {
     setRowActionLoading(id)
     try {
       const res = await getStateById(id)
       const state = res?.data || res || {}
       const countryIdObj = state.countryId
       let countryIdValue = ''
-      if (typeof countryIdObj === 'object' && countryIdObj !== null) countryIdValue = String(countryIdObj._id || countryIdObj.id || '')
+      if (typeof countryIdObj === 'object' && countryIdObj !== null)
+        countryIdValue = String(countryIdObj._id || countryIdObj.id || '')
       else if (state.countryId) countryIdValue = String(state.countryId)
-      else if (state.country) countryIdValue = String(state.country._id || state.country.id || '')
+      else if (state.country)
+        countryIdValue = String(state.country._id || state.country.id || '')
       setFormData({ name: String(state.name || ''), countryId: countryIdValue })
       setEditingId(id)
       setMenuOpenId(null)
       setCountryDropdownOpen(false)
       setCountrySearchTerm('')
       setErrors({})
-      setTimeout(() => { formSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }); nameInputRef.current?.focus() }, 50)
+      setTimeout(() => {
+        formSectionRef.current?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start'
+        })
+        nameInputRef.current?.focus()
+      }, 50)
     } catch (e) {
       setError('Failed to load state')
     } finally {
@@ -157,7 +271,12 @@ export default function StateMaster() {
     try {
       await deleteState(confirmId)
       await fetchStates()
-      setToast({ open: true, title: 'State deleted', description: 'The state has been removed', variant: 'success' })
+      setToast({
+        open: true,
+        title: 'State deleted',
+        description: 'The state has been removed',
+        variant: 'success'
+      })
     } catch (e) {
       setError('Failed to delete state')
     } finally {
@@ -168,13 +287,16 @@ export default function StateMaster() {
   }
 
   const filteredStates = useMemo(() => {
-    const base = Array.isArray(states) ? states : []
-    const term = String(searchTerm || '').trim().toLowerCase()
-    return base.filter((state) => String(state.name || '').toLowerCase().includes(term) || String(state.countryName || '').toLowerCase().includes(term))
-  }, [states, searchTerm])
+    return Array.isArray(states) ? states : []
+  }, [states])
 
   const getSortValue = (state, key) => {
-    if (key === 'addedOn') { const d = state.createdAt; return d ? new Date(typeof d === 'object' && d.$date ? d.$date : d).getTime() : 0 }
+    if (key === 'addedOn') {
+      const d = state.createdAt
+      return d
+        ? new Date(typeof d === 'object' && d.$date ? d.$date : d).getTime()
+        : 0
+    }
     if (key === 'name') return String(state.name || '').toLowerCase()
     if (key === 'country') return String(state.countryName || '').toLowerCase()
     return 0
@@ -185,28 +307,48 @@ export default function StateMaster() {
     arr.sort((a, b) => {
       const va = getSortValue(a, sortKey)
       const vb = getSortValue(b, sortKey)
-      if (typeof va === 'string' && typeof vb === 'string') return sortOrder === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va)
+      if (typeof va === 'string' && typeof vb === 'string')
+        return sortOrder === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va)
       return sortOrder === 'asc' ? va - vb : vb - va
     })
     return arr
   }, [filteredStates, sortKey, sortOrder])
 
-  const toggleSort = (key) => {
-    if (sortKey === key) setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'))
-    else { setSortKey(key); setSortOrder('desc') }
+  const toggleSort = key => {
+    if (sortKey === key) setSortOrder(prev => (prev === 'asc' ? 'desc' : 'asc'))
+    else {
+      setSortKey(key)
+      setSortOrder('desc')
+    }
   }
 
   const filteredCountries = useMemo(() => {
-    const term = String(countrySearchTerm || '').trim().toLowerCase()
+    const term = String(countrySearchTerm || '')
+      .trim()
+      .toLowerCase()
     if (!term) return countries
-    return countries.filter((country) => String(country.name || '').toLowerCase().includes(term))
+    return countries.filter(country =>
+      String(country.name || '')
+        .toLowerCase()
+        .includes(term)
+    )
   }, [countries, countrySearchTerm])
 
-  const selectedCountry = countries.find((c) => String(c._id || c.id) === String(formData.countryId || ''))
+  const selectedCountry = countries.find(
+    c => String(c._id || c.id) === String(formData.countryId || '')
+  )
 
   return (
     <div className='space-y-5 py-2 px-3'>
-      <Toast open={toast.open} onOpenChange={(v) => setToast((prev) => ({ ...prev, open: v }))} title={toast.title} description={toast.description} variant={toast.variant} duration={2500} position='top-right' />
+      <Toast
+        open={toast.open}
+        onOpenChange={v => setToast(prev => ({ ...prev, open: v }))}
+        title={toast.title}
+        description={toast.description}
+        variant={toast.variant}
+        duration={2500}
+        position='top-right'
+      />
 
       <div className='flex flex-col gap-1 md:flex-row md:items-start md:justify-between'>
         <div className='flex flex-col gap-1'>
@@ -218,37 +360,110 @@ export default function StateMaster() {
       <div className='bg-gray-100 rounded-xl p-2'>
         <div className='rounded-xl border border-[#E1E6F7] bg-white p-5 shadow-[0_24px_60px_-40px_rgba(15,23,42,0.55)]'>
           <div className='flex items-center justify-between mb-4'>
-            <h2 className='text-sm font-semibold text-slate-900'>State Details</h2>
-            <button onClick={handleSubmit} disabled={submitting} className='rounded-xl bg-[#FF5B2C] px-4 py-2 text-xs font-semibold text-white shadow-[0_14px_30px_-20px_rgba(248,113,72,0.65)] transition hover:bg-[#F0481A] disabled:opacity-60 disabled:cursor-not-allowed'>
-              {submitting ? <span className='flex items-center gap-2'><Loader2 className='h-3.5 w-3.5 animate-spin' />{editingId ? 'Updating...' : 'Adding...'}</span> : editingId ? 'Update' : 'Add'}
+            <h2 className='text-sm font-semibold text-slate-900'>
+              State Details
+            </h2>
+            <button
+              onClick={handleSubmit}
+              disabled={submitting}
+              className='rounded-xl bg-[#FF5B2C] px-4 py-2 text-xs font-semibold text-white shadow-[0_14px_30px_-20px_rgba(248,113,72,0.65)] transition hover:bg-[#F0481A] disabled:opacity-60 disabled:cursor-not-allowed'
+            >
+              {submitting ? (
+                <span className='flex items-center gap-2'>
+                  <Loader2 className='h-3.5 w-3.5 animate-spin' />
+                  {editingId ? 'Updating...' : 'Adding...'}
+                </span>
+              ) : editingId ? (
+                'Update'
+              ) : (
+                'Add'
+              )}
             </button>
           </div>
 
           <form onSubmit={handleSubmit} ref={formSectionRef}>
             <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
               <div className='space-y-1'>
-                <label className='text-xs font-medium text-slate-700'>Country</label>
+                <label className='text-xs font-medium text-slate-700'>
+                  Country
+                </label>
                 <div className='relative' ref={countryDropdownRef}>
-                  <button type='button' onClick={() => { setCountryDropdownOpen(!countryDropdownOpen); setCountrySearchTerm('') }} disabled={loadingCountries} className={`w-full h-9 rounded-lg border border-[#E5E6EF] bg-[#F8F9FC] px-3 pr-8 text-left text-xs text-slate-700 focus:border-[#C5CAE3] focus:outline-none focus:ring-2 focus:ring-[#C2C8E4] ${loadingCountries ? 'opacity-60 cursor-not-allowed' : ''} ${errors.countryId ? 'border-red-500' : ''}`}>
-                    <span className={selectedCountry ? '' : 'text-[#B0B7D0]'}>{selectedCountry ? selectedCountry.name : 'Select a country'}</span>
+                  <button
+                    type='button'
+                    onClick={() => {
+                      setCountryDropdownOpen(!countryDropdownOpen)
+                      setCountrySearchTerm('')
+                    }}
+                    disabled={loadingCountries}
+                    className={`w-full h-9 rounded-lg border border-[#E5E6EF] bg-[#F8F9FC] px-3 pr-8 text-left text-xs text-slate-700 focus:border-[#C5CAE3] focus:outline-none focus:ring-2 focus:ring-[#C2C8E4] ${
+                      loadingCountries ? 'opacity-60 cursor-not-allowed' : ''
+                    } ${errors.countryId ? 'border-red-500' : ''}`}
+                  >
+                    <span className={selectedCountry ? '' : 'text-[#B0B7D0]'}>
+                      {selectedCountry
+                        ? selectedCountry.name
+                        : 'Select a country'}
+                    </span>
                   </button>
                   <div className='absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none'>
-                    <svg className={`w-3.5 h-3.5 text-[#99A1BC] transition-transform ${countryDropdownOpen ? 'rotate-180' : ''}`} fill='none' stroke='currentColor' viewBox='0 0 24 24'><path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M19 9l-7 7-7-7' /></svg>
+                    <svg
+                      className={`w-3.5 h-3.5 text-[#99A1BC] transition-transform ${
+                        countryDropdownOpen ? 'rotate-180' : ''
+                      }`}
+                      fill='none'
+                      stroke='currentColor'
+                      viewBox='0 0 24 24'
+                    >
+                      <path
+                        strokeLinecap='round'
+                        strokeLinejoin='round'
+                        strokeWidth={2}
+                        d='M19 9l-7 7-7-7'
+                      />
+                    </svg>
                   </div>
                   {countryDropdownOpen && (
                     <div className='absolute z-50 w-full mt-1 bg-white border border-[#E5E6EF] rounded-lg shadow-lg max-h-60 overflow-hidden'>
                       <div className='p-2 border-b border-[#E5E6EF]'>
                         <div className='relative'>
                           <Search className='absolute left-2.5 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-[#A6AEC7]' />
-                          <input type='text' placeholder='Search country...' value={countrySearchTerm} onChange={(e) => setCountrySearchTerm(e.target.value)} onClick={(e) => e.stopPropagation()} className='w-full h-8 pl-8 pr-3 rounded-lg border border-[#E5E6EF] bg-[#F8F9FC] text-xs text-slate-700 placeholder:text-[#B0B7D0] focus:border-[#C5CAE3] focus:outline-none focus:ring-2 focus:ring-[#C2C8E4]' autoFocus />
+                          <input
+                            type='text'
+                            placeholder='Search country...'
+                            value={countrySearchTerm}
+                            onChange={e => setCountrySearchTerm(e.target.value)}
+                            onClick={e => e.stopPropagation()}
+                            className='w-full h-8 pl-8 pr-3 rounded-lg border border-[#E5E6EF] bg-[#F8F9FC] text-xs text-slate-700 placeholder:text-[#B0B7D0] focus:border-[#C5CAE3] focus:outline-none focus:ring-2 focus:ring-[#C2C8E4]'
+                            autoFocus
+                          />
                         </div>
                       </div>
                       <div className='max-h-40 overflow-y-auto'>
                         {filteredCountries.length === 0 ? (
-                          <div className='px-3 py-2 text-xs text-[#5E6582] text-center'>No countries found</div>
+                          <div className='px-3 py-2 text-xs text-[#5E6582] text-center'>
+                            No countries found
+                          </div>
                         ) : (
-                          filteredCountries.map((country) => (
-                            <button key={country._id || country.id} type='button' onClick={() => { handleInputChange('countryId', country._id || country.id); setCountryDropdownOpen(false); setCountrySearchTerm(''); setErrors((prev) => ({ ...prev, countryId: '' })) }} className={`w-full text-left px-3 py-2 text-xs hover:bg-[#F6F7FD] transition-colors ${String(formData.countryId || '') === String(country._id || country.id || '') ? 'bg-[#F6F7FD] text-[#2D3658] font-medium' : 'text-slate-700'}`}>
+                          filteredCountries.map(country => (
+                            <button
+                              key={country._id || country.id}
+                              type='button'
+                              onClick={() => {
+                                handleInputChange(
+                                  'countryId',
+                                  country._id || country.id
+                                )
+                                setCountryDropdownOpen(false)
+                                setCountrySearchTerm('')
+                                setErrors(prev => ({ ...prev, countryId: '' }))
+                              }}
+                              className={`w-full text-left px-3 py-2 text-xs hover:bg-[#F6F7FD] transition-colors ${
+                                String(formData.countryId || '') ===
+                                String(country._id || country.id || '')
+                                  ? 'bg-[#F6F7FD] text-[#2D3658] font-medium'
+                                  : 'text-slate-700'
+                              }`}
+                            >
                               {country.name}
                             </button>
                           ))
@@ -257,13 +472,26 @@ export default function StateMaster() {
                     </div>
                   )}
                 </div>
-                {errors.countryId && <p className='text-xs text-red-600'>{errors.countryId}</p>}
+                {errors.countryId && (
+                  <p className='text-xs text-red-600'>{errors.countryId}</p>
+                )}
               </div>
 
               <div className='space-y-1'>
-                <label className='text-xs font-medium text-slate-700'>State Name</label>
-                <input type='text' ref={nameInputRef} value={formData.name} onChange={(e) => handleInputChange('name', e.target.value)} className='w-full h-9 rounded-lg border border-[#E5E6EF] bg-[#F8F9FC] px-3 text-xs text-slate-700 placeholder:text-[#B0B7D0] focus:border-[#C5CAE3] focus:outline-none focus:ring-2 focus:ring-[#C2C8E4]' placeholder='Enter state name' />
-                {errors.name && <p className='text-xs text-red-600'>{errors.name}</p>}
+                <label className='text-xs font-medium text-slate-700'>
+                  State Name
+                </label>
+                <input
+                  type='text'
+                  ref={nameInputRef}
+                  value={formData.name}
+                  onChange={e => handleInputChange('name', e.target.value)}
+                  className='w-full h-9 rounded-lg border border-[#E5E6EF] bg-[#F8F9FC] px-3 text-xs text-slate-700 placeholder:text-[#B0B7D0] focus:border-[#C5CAE3] focus:outline-none focus:ring-2 focus:ring-[#C2C8E4]'
+                  placeholder='Enter state name'
+                />
+                {errors.name && (
+                  <p className='text-xs text-red-600'>{errors.name}</p>
+                )}
               </div>
             </div>
           </form>
@@ -275,68 +503,278 @@ export default function StateMaster() {
           <div className='mb-4 flex flex-wrap items-center justify-between gap-2'>
             <h2 className='text-sm font-semibold text-slate-900'>State List</h2>
             <div className='relative flex items-center'>
-              <input type='text' placeholder='Search' value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className='h-8 rounded-lg border border-[#E5E6EF] bg-[#F8F9FC] pl-8 pr-3 text-xs text-slate-700 placeholder:text-[#B0B7D0] focus:border-[#C5CAE3] focus:outline-none focus:ring-2 focus:ring-[#C2C8E4]' />
+              <input
+                type='text'
+                placeholder='Search'
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                className='h-8 rounded-lg border border-[#E5E6EF] bg-[#F8F9FC] pl-8 pr-3 text-xs text-slate-700 placeholder:text-[#B0B7D0] focus:border-[#C5CAE3] focus:outline-none focus:ring-2 focus:ring-[#C2C8E4]'
+              />
               <Search className='absolute left-2.5 h-3.5 w-3.5 text-[#A6AEC7]' />
             </div>
           </div>
 
           <div className='overflow-hidden rounded-xl border border-[#E5E8F5]'>
             <div className='grid grid-cols-12 gap-4 bg-[#F7F9FD] px-4 py-3'>
-              <div className='col-span-4'><TableHeaderCell onClick={() => toggleSort('addedOn')} active={sortKey === 'addedOn'} order={sortOrder}>Added On</TableHeaderCell></div>
-              <div className='col-span-3'><TableHeaderCell onClick={() => toggleSort('country')} active={sortKey === 'country'} order={sortOrder}>Country</TableHeaderCell></div>
-              <div className='col-span-3'><TableHeaderCell onClick={() => toggleSort('name')} active={sortKey === 'name'} order={sortOrder}>State Name</TableHeaderCell></div>
-              <div className='col-span-2'><TableHeaderCell align='right'>Action</TableHeaderCell></div>
+              <div className='col-span-4'>
+                <TableHeaderCell
+                  onClick={() => toggleSort('addedOn')}
+                  active={sortKey === 'addedOn'}
+                  order={sortOrder}
+                >
+                  Added On
+                </TableHeaderCell>
+              </div>
+              <div className='col-span-3'>
+                <TableHeaderCell
+                  onClick={() => toggleSort('country')}
+                  active={sortKey === 'country'}
+                  order={sortOrder}
+                >
+                  Country
+                </TableHeaderCell>
+              </div>
+              <div className='col-span-3'>
+                <TableHeaderCell
+                  onClick={() => toggleSort('name')}
+                  active={sortKey === 'name'}
+                  order={sortOrder}
+                >
+                  State Name
+                </TableHeaderCell>
+              </div>
+              <div className='col-span-2'>
+                <TableHeaderCell align='right'>Action</TableHeaderCell>
+              </div>
             </div>
 
             <div className='divide-y divide-[#EEF1FA] bg-white'>
-              {loading && <div className='px-4 py-3 text-xs text-[#5E6582]'>Loading...</div>}
-              {error && !loading && <div className='px-4 py-3 text-xs text-red-600'>{error}</div>}
-              {!loading && !error && sortedStates.length === 0 && <div className='px-4 py-3 text-center text-xs text-[#5E6582]'>No states found</div>}
-              {!loading && !error && sortedStates.map((state, idx) => (
-                <div key={state._id || idx} className='grid grid-cols-12 gap-4 px-4 py-3 hover:bg-[#F9FAFD]'>
-                  <div className='col-span-4 self-center text-xs text-[#5E6582] whitespace-nowrap'>
-                    {state.createdAt ? new Date(state.createdAt).toLocaleString(undefined, { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-'}
-                  </div>
-                  <div className='col-span-3 self-center text-xs text-[#5E6582]'>{state.countryName || '-'}</div>
-                  <div className='col-span-3 self-center text-xs font-semibold text-slate-900'>{state.name || '-'}</div>
-                  <div className='col-span-2 flex items-center justify-end'>
-                    <div className='relative'>
-                      <button data-menu-button onClick={() => setMenuOpenId(menuOpenId === (state._id || idx) ? null : state._id || idx)} className='rounded-full border border-transparent p-1.5 text-[#8C93AF] transition hover:border-[#E5E8F6] hover:bg-[#F5F7FD] hover:text-[#2D3658]'>
-                        <MoreVertical className='h-4 w-4' />
-                      </button>
-                      {menuOpenId === (state._id || idx) && (
-                        <div data-menu-content className='absolute right-0 mt-1 w-32 rounded-md border border-[#E5E8F6] bg-white shadow-lg z-20'>
-                          <button onClick={() => startEdit(state._id)} className='flex w-full items-center gap-2 px-3 py-1.5 text-xs text-[#2D3658] hover:bg-[#F6F7FD]' disabled={rowActionLoading === state._id}>
-                            {rowActionLoading === state._id ? <Loader2 className='h-3.5 w-3.5 animate-spin' /> : <Pencil className='h-3.5 w-3.5' />}Edit
-                          </button>
-                          <button onClick={() => { setConfirmId(state._id); setConfirmOpen(true); setMenuOpenId(null) }} className='flex w-full items-center gap-2 px-3 py-1.5 text-xs text-red-600 hover:bg-red-50'>
-                            <Trash2 className='h-3.5 w-3.5' />Delete
-                          </button>
-                        </div>
-                      )}
+              {loading && (
+                <div className='px-4 py-3 text-xs text-[#5E6582]'>
+                  Loading...
+                </div>
+              )}
+              {error && !loading && (
+                <div className='px-4 py-3 text-xs text-red-600'>{error}</div>
+              )}
+              {!loading && !error && sortedStates.length === 0 && (
+                <div className='px-4 py-3 text-center text-xs text-[#5E6582]'>
+                  No states found
+                </div>
+              )}
+              {!loading &&
+                !error &&
+                sortedStates.map((state, idx) => (
+                  <div
+                    key={state._id || idx}
+                    className='grid grid-cols-12 gap-4 px-4 py-3 hover:bg-[#F9FAFD]'
+                  >
+                    <div className='col-span-4 self-center text-xs text-[#5E6582] whitespace-nowrap'>
+                      {state.createdAt
+                        ? new Date(state.createdAt).toLocaleString(undefined, {
+                            weekday: 'short',
+                            day: '2-digit',
+                            month: 'short',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })
+                        : '-'}
+                    </div>
+                    <div className='col-span-3 self-center text-xs text-[#5E6582]'>
+                      {state.countryName || '-'}
+                    </div>
+                    <div className='col-span-3 self-center text-xs font-semibold text-slate-900'>
+                      {state.name || '-'}
+                    </div>
+                    <div className='col-span-2 flex items-center justify-end'>
+                      <div className='relative'>
+                        <button
+                          data-menu-button
+                          onClick={() =>
+                            setMenuOpenId(
+                              menuOpenId === (state._id || idx)
+                                ? null
+                                : state._id || idx
+                            )
+                          }
+                          className='rounded-full border border-transparent p-1.5 text-[#8C93AF] transition hover:border-[#E5E8F6] hover:bg-[#F5F7FD] hover:text-[#2D3658]'
+                        >
+                          <MoreVertical className='h-4 w-4' />
+                        </button>
+                        {menuOpenId === (state._id || idx) && (
+                          <div
+                            data-menu-content
+                            className='absolute right-0 mt-1 w-32 rounded-md border border-[#E5E8F6] bg-white shadow-lg z-20'
+                          >
+                            <button
+                              onClick={() => startEdit(state._id)}
+                              className='flex w-full items-center gap-2 px-3 py-1.5 text-xs text-[#2D3658] hover:bg-[#F6F7FD]'
+                              disabled={rowActionLoading === state._id}
+                            >
+                              {rowActionLoading === state._id ? (
+                                <Loader2 className='h-3.5 w-3.5 animate-spin' />
+                              ) : (
+                                <Pencil className='h-3.5 w-3.5' />
+                              )}
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => {
+                                setConfirmId(state._id)
+                                setConfirmOpen(true)
+                                setMenuOpenId(null)
+                              }}
+                              className='flex w-full items-center gap-2 px-3 py-1.5 text-xs text-red-600 hover:bg-red-50'
+                            >
+                              <Trash2 className='h-3.5 w-3.5' />
+                              Delete
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
+                ))}
+            </div>
+
+            {/* Pagination Controls */}
+            <div className='flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6'>
+              <div className='flex flex-1 justify-between sm:hidden'>
+                <button
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                  className='relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50'
+                >
+                  Previous
+                </button>
+                <button
+                  onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                  disabled={page === totalPages}
+                  className='relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50'
+                >
+                  Next
+                </button>
+              </div>
+              <div className='hidden sm:flex sm:flex-1 sm:items-center sm:justify-between'>
+                <div>
+                  <p className='text-sm text-gray-700'>
+                    Showing{' '}
+                    <span className='font-medium'>
+                      {(page - 1) * limit + 1}
+                    </span>{' '}
+                    to{' '}
+                    <span className='font-medium'>
+                      {Math.min(page * limit, total)}
+                    </span>{' '}
+                    of <span className='font-medium'>{total}</span> results
+                  </p>
                 </div>
-              ))}
+                <div>
+                  <nav
+                    className='isolate inline-flex -space-x-px rounded-md shadow-sm'
+                    aria-label='Pagination'
+                  >
+                    <button
+                      onClick={() => setPage(p => Math.max(1, p - 1))}
+                      disabled={page === 1}
+                      className='relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50'
+                    >
+                      <span className='sr-only'>Previous</span>
+                      <ChevronLeft className='h-5 w-5' aria-hidden='true' />
+                    </button>
+                    {Array.from({ length: totalPages }, (_, i) => i + 1)
+                      .filter(
+                        p =>
+                          p === 1 ||
+                          p === totalPages ||
+                          (p >= page - 1 && p <= page + 1)
+                      )
+                      .map((p, i, arr) => (
+                        <span key={p}>
+                          {i > 0 && arr[i - 1] !== p - 1 && (
+                            <span className='relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-700 ring-1 ring-inset ring-gray-300 focus:outline-offset-0'>
+                              ...
+                            </span>
+                          )}
+                          <button
+                            onClick={() => setPage(p)}
+                            className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold ${
+                              page === p
+                                ? 'z-10 bg-[#FF5B2C] text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF5B2C]'
+                                : 'text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:outline-offset-0'
+                            }`}
+                          >
+                            {p}
+                          </button>
+                        </span>
+                      ))}
+                    <button
+                      onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                      disabled={page === totalPages}
+                      className='relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50'
+                    >
+                      <span className='sr-only'>Next</span>
+                      <ChevronRight className='h-5 w-5' aria-hidden='true' />
+                    </button>
+                  </nav>
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
         {confirmOpen && (
           <div className='fixed inset-0 z-40 flex items-center justify-center'>
-            <div className='absolute inset-0 bg-black/40' onClick={() => { if (!deleting) { setConfirmOpen(false); setConfirmId(null) } }} />
+            <div
+              className='absolute inset-0 bg-black/40'
+              onClick={() => {
+                if (!deleting) {
+                  setConfirmOpen(false)
+                  setConfirmId(null)
+                }
+              }}
+            />
             <div className='relative z-50 w-full max-w-sm rounded-xl border border-[#E5E8F6] bg-white p-5 shadow-lg'>
               <div className='flex items-start gap-3'>
-                <div className='rounded-full bg-red-100 p-2'><AlertCircle className='h-5 w-5 text-red-600' /></div>
+                <div className='rounded-full bg-red-100 p-2'>
+                  <AlertCircle className='h-5 w-5 text-red-600' />
+                </div>
                 <div className='flex-1'>
-                  <div className='text-sm font-semibold text-slate-900'>Delete this state?</div>
-                  <div className='mt-1 text-xs text-[#5E6582]'>This action cannot be undone.</div>
+                  <div className='text-sm font-semibold text-slate-900'>
+                    Delete this state?
+                  </div>
+                  <div className='mt-1 text-xs text-[#5E6582]'>
+                    This action cannot be undone.
+                  </div>
                 </div>
               </div>
               <div className='mt-4 flex justify-end gap-2'>
-                <button onClick={() => { if (!deleting) { setConfirmOpen(false); setConfirmId(null) } }} className='rounded-lg border border-[#E5E6EF] bg-white px-4 py-1.5 text-xs font-medium text-[#1A1F3F] transition hover:bg-[#F9FAFD]' disabled={deleting}>Cancel</button>
-                <button onClick={confirmDelete} disabled={deleting} className='rounded-lg bg-red-600 px-4 py-1.5 text-xs font-semibold text-white transition hover:bg-red-700 disabled:opacity-60 disabled:cursor-not-allowed'>
-                  {deleting ? <span className='flex items-center gap-1'><Loader2 className='h-3.5 w-3.5 animate-spin' />Deleting...</span> : 'Delete'}
+                <button
+                  onClick={() => {
+                    if (!deleting) {
+                      setConfirmOpen(false)
+                      setConfirmId(null)
+                    }
+                  }}
+                  className='rounded-lg border border-[#E5E6EF] bg-white px-4 py-1.5 text-xs font-medium text-[#1A1F3F] transition hover:bg-[#F9FAFD]'
+                  disabled={deleting}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmDelete}
+                  disabled={deleting}
+                  className='rounded-lg bg-red-600 px-4 py-1.5 text-xs font-semibold text-white transition hover:bg-red-700 disabled:opacity-60 disabled:cursor-not-allowed'
+                >
+                  {deleting ? (
+                    <span className='flex items-center gap-1'>
+                      <Loader2 className='h-3.5 w-3.5 animate-spin' />
+                      Deleting...
+                    </span>
+                  ) : (
+                    'Delete'
+                  )}
                 </button>
               </div>
             </div>

@@ -1,8 +1,10 @@
 import api from '@/src/axois/axois'
 
-export const getRequests = async () => {
+export const getRequests = async (page = 1, limit = 10) => {
   try {
-    const response = await api.get('/user/get-deactivation-requests')
+    const response = await api.get('/user/get-deactivation-requests', {
+      params: { page, limit }
+    })
     return response.data
   } catch (error) {
     console.error('Error fetching contacts:', error)

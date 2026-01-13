@@ -342,8 +342,20 @@ export default function MerchandiseList () {
     const name = String(r.name || '').toLowerCase()
     const cat = String(r.category || '').toLowerCase()
     const dateStr = String(r.addedOn || '').toLowerCase()
+    const priceStr = String(r.priceText || '').toLowerCase()
+    // Allow searching price without commas/currency (e.g. "9500" matches "9,500.00")
+    const priceRaw = priceStr.replace(/[^0-9.]/g, '')
+    const sizesStr = String(r.sizes || '').toLowerCase()
+    const stockLeftStr = String(r.stockLeftText || '').toLowerCase()
+
     const matchesText =
-      name.includes(term) || cat.includes(term) || dateStr.includes(term)
+      name.includes(term) ||
+      cat.includes(term) ||
+      dateStr.includes(term) ||
+      priceStr.includes(term) ||
+      priceRaw.includes(term) ||
+      sizesStr.includes(term) ||
+      stockLeftStr.includes(term)
     return matchesText && categoryOk && statusOk
   })
 

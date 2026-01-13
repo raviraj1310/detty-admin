@@ -57,9 +57,11 @@ export const getAllActivityBookings = async userId => {
   }
 }
 
-export const getAllUsersWallet = async () => {
+export const getAllUsersWallet = async (page = 1, limit = 10) => {
   try {
-    const response = await api.get(`wallet/get-all-users-wallet`)
+    const response = await api.get(`wallet/get-all-users-wallet`, {
+      params: { page, limit }
+    })
     return response.data
   } catch (error) {
     console.error('Error fetching user wallet history:', error)

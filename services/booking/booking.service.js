@@ -44,18 +44,22 @@ export const getActivityBookedTickets = async (activityId, params = {}) => {
   }
 }
 
-export const eventReferralReport = async () => {
+export const eventReferralReport = async (page = 1, limit = 10) => {
   try {
-    const response = await api.get(`event/get-all-referral-events`)
+    const response = await api.get(`event/get-all-referral-events`, {
+      params: { page, limit }
+    })
     return response.data
   } catch (error) {
     console.error('Error fetching event referral report:', error)
     throw error
   }
 }
-export const activityReferralReport = async () => {
+export const activityReferralReport = async (page = 1, limit = 10) => {
   try {
-    const response = await api.get(`/user-activity/get-all-referral-activities`)
+    const response = await api.get(`/user-activity/get-all-referral-activities`, {
+      params: { page, limit }
+    })
     return response.data
   } catch (error) {
     console.error('Error fetching activity referral report:', error)
