@@ -221,7 +221,13 @@ export default function LeadwayPage () {
 
     // Recalculate based on filtered data
     const currentData = filtered
-    const totalCount = currentData.length
+    const successRows = currentData.filter(r => {
+      const s = String(r.status || '')
+        .toLowerCase()
+        .trim()
+      return s === 'paid' || s === 'success'
+    })
+    const totalCount = successRows.length
 
     const todayStr = new Date().toISOString().split('T')[0]
     const newToday = currentData.filter(r =>
@@ -605,7 +611,20 @@ export default function LeadwayPage () {
             <div>
               <p className='text-xs text-gray-600'>Total Leadway Bookings</p>
               <p className='text-2xl font-bold text-gray-900'>
-                {stats.filteredTotalCount}
+                {stats.filteredTotalCount}{' '}
+                <span className='text-lg font-semibold opacity-90'>
+                  (₦
+                  {filtered
+                    .reduce((acc, curr) => {
+                      const s = String(curr.status || '')
+                        .toLowerCase()
+                        .trim()
+                      const ok = s === 'paid' || s === 'success'
+                      return acc + (ok ? Number(curr.amount) || 0 : 0)
+                    }, 0)
+                    .toLocaleString()}
+                  )
+                </span>
               </p>
             </div>
           </div>
@@ -841,7 +860,7 @@ export default function LeadwayPage () {
                     onClick={() => toggleSort('status')}
                   >
                     <div className='flex items-center'>
-                      <span>Status</span>
+                      <span>Payment Status</span>
                       <TbCaretUpDownFilled className='w-3 h-3 text-gray-400 ml-1' />
                     </div>
                   </th>
@@ -972,7 +991,7 @@ export default function LeadwayPage () {
                       {selected?._id || '-'}
                     </div>
 
-                    <div className='text-slate-600'>Status</div>
+                    <div className='text-slate-600'>Payment Status</div>
                     <div className='font-medium text-right'>
                       <span
                         className={`px-2 py-0.5 rounded-full text-xs ${

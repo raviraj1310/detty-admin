@@ -883,11 +883,29 @@ export default function MerchandisePage () {
                 Total Merchandise Bookings
               </p>
               <p className='text-2xl text-black font-bold'>
-                {filteredMerchandise.length}{' '}
+                {
+                  filteredMerchandise.filter(b => {
+                    const status = String(
+                      b.paymentStatus || b.rawOrder?.paymentStatus || ''
+                    )
+                      .toLowerCase()
+                      .trim()
+                    return status === 'success' || status === 'paid'
+                  }).length
+                }{' '}
                 <span className='text-lg font-semibold opacity-90'>
                   (₦
                   {filteredMerchandise
-                    .reduce((acc, curr) => acc + (curr.amountNum || 0), 0)
+                    .reduce((acc, curr) => {
+                      const status = String(
+                        curr.paymentStatus || curr.rawOrder?.paymentStatus || ''
+                      )
+                        .toLowerCase()
+                        .trim()
+                      const isSuccessful =
+                        status === 'success' || status === 'paid'
+                      return acc + (isSuccessful ? curr.amountNum || 0 : 0)
+                    }, 0)
                     .toLocaleString()}
                   )
                 </span>

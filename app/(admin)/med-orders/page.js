@@ -982,14 +982,35 @@ export default function MedOrdersPage () {
                 Total MedPlus Bookings
               </p>
               <p className='text-2xl text-black font-bold'>
-                {filteredRows.length}{' '}
+                {
+                  filteredRows.filter(b => {
+                    const status = String(
+                      b.paymentStatus ||
+                        b.raw?.api_response?.data?.payment_status ||
+                        ''
+                    )
+                      .toLowerCase()
+                      .trim()
+                    return status === 'success' || status === 'paid'
+                  }).length
+                }{' '}
                 <span className='text-lg font-semibold opacity-90'>
                   (₦
                   {filteredRows
-                    .reduce(
-                      (acc, curr) => acc + (Number(curr.amountNum) || 0),
-                      0
-                    )
+                    .reduce((acc, curr) => {
+                      const status = String(
+                        curr.paymentStatus ||
+                          curr.raw?.api_response?.data?.payment_status ||
+                          ''
+                      )
+                        .toLowerCase()
+                        .trim()
+                      const isSuccessful =
+                        status === 'success' || status === 'paid'
+                      return (
+                        acc + (isSuccessful ? Number(curr.amountNum) || 0 : 0)
+                      )
+                    }, 0)
                     .toLocaleString()}
                   )
                 </span>

@@ -11,6 +11,10 @@ export default function DashboardPage () {
   const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(true)
   const [dateRange, setDateRange] = useState({ start: '', end: '' })
+  const [year, setYear] = useState('')
+
+  const currentYear = new Date().getFullYear()
+  const years = Array.from({ length: 5 }, (_, i) => String(currentYear - i))
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -19,6 +23,7 @@ export default function DashboardPage () {
         const params = {}
         if (dateRange.start) params.startDate = dateRange.start
         if (dateRange.end) params.endDate = dateRange.end
+        if (year) params.year = year
 
         const response = await dashboardData(params)
         if (response?.success) {
@@ -32,7 +37,7 @@ export default function DashboardPage () {
     }
 
     fetchStats()
-  }, [dateRange.start, dateRange.end])
+  }, [dateRange.start, dateRange.end, year])
 
   if (loading && !stats) {
     return (
@@ -51,46 +56,64 @@ export default function DashboardPage () {
           <p className='text-sm text-gray-500 mt-1'>Admin / Dashboard</p>
         </div>
 
-        {/* Date Filter */}
         <div className='flex items-center gap-2'>
           <div className='flex flex-col'>
             <label className='text-[10px] text-gray-500 font-medium ml-1'>
-              Start Date
+              Year
             </label>
-            <input
-              type='date'
-              max={new Date().toISOString().split('T')[0]}
-              value={dateRange.start}
-              onChange={e =>
-                setDateRange(prev => ({ ...prev, start: e.target.value }))
-              }
+            <select
+              value={year}
+              onChange={e => setYear(e.target.value)}
               className='h-9 px-3 border border-gray-300 rounded-lg text-xs text-gray-700 focus:outline-none focus:border-indigo-500'
-            />
-          </div>
-          <span className='text-gray-400 mt-4'>-</span>
-          <div className='flex flex-col'>
-            <label className='text-[10px] text-gray-500 font-medium ml-1'>
-              End Date
-            </label>
-            <input
-              type='date'
-              max={new Date().toISOString().split('T')[0]}
-              value={dateRange.end}
-              onChange={e =>
-                setDateRange(prev => ({ ...prev, end: e.target.value }))
-              }
-              className='h-9 px-3 border border-gray-300 rounded-lg text-xs text-gray-700 focus:outline-none focus:border-indigo-500'
-            />
-          </div>
-          {(dateRange.start || dateRange.end) && (
-            <button
-              onClick={() => setDateRange({ start: '', end: '' })}
-              className='mt-4 p-2 text-gray-500 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors'
-              title='Clear Date Filter'
             >
-              <X size={16} />
-            </button>
-          )}
+              <option value=''>All</option>
+              {years.map(y => (
+                <option key={y} value={y}>
+                  {y}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className='flex items-center gap-2'>
+            <div className='flex flex-col'>
+              <label className='text-[10px] text-gray-500 font-medium ml-1'>
+                Start Date
+              </label>
+              <input
+                type='date'
+                max={new Date().toISOString().split('T')[0]}
+                value={dateRange.start}
+                onChange={e =>
+                  setDateRange(prev => ({ ...prev, start: e.target.value }))
+                }
+                className='h-9 px-3 border border-gray-300 rounded-lg text-xs text-gray-700 focus:outline-none focus:border-indigo-500'
+              />
+            </div>
+            <span className='text-gray-400 mt-4'>-</span>
+            <div className='flex flex-col'>
+              <label className='text-[10px] text-gray-500 font-medium ml-1'>
+                End Date
+              </label>
+              <input
+                type='date'
+                max={new Date().toISOString().split('T')[0]}
+                value={dateRange.end}
+                onChange={e =>
+                  setDateRange(prev => ({ ...prev, end: e.target.value }))
+                }
+                className='h-9 px-3 border border-gray-300 rounded-lg text-xs text-gray-700 focus:outline-none focus:border-indigo-500'
+              />
+            </div>
+            {(dateRange.start || dateRange.end) && (
+              <button
+                onClick={() => setDateRange({ start: '', end: '' })}
+                className='mt-4 p-2 text-gray-500 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors'
+                title='Clear Date Filter'
+              >
+                <X size={16} />
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -102,7 +125,7 @@ export default function DashboardPage () {
         )}
         {!loading && (
           <>
-            <AdminDashboard stats={stats} />
+            <AdminDashboard stats={stats} year={year} />
             <MerchandiseDashboard
               stats={stats}
               startDate={dateRange.start}

@@ -633,11 +633,29 @@ export default function RoyalConciergeList () {
                 Total Royal Concierge Bookings
               </p>
               <p className='text-2xl text-black font-bold'>
-                {filtered.length}{' '}
+                {
+                  filtered.filter(b => {
+                    const status = String(
+                      b.status || b.raw?.paymentStatus || ''
+                    )
+                      .toLowerCase()
+                      .trim()
+                    return status === 'success' || status === 'paid'
+                  }).length
+                }{' '}
                 <span className='text-lg font-semibold opacity-90'>
                   (₦
                   {filtered
-                    .reduce((acc, curr) => acc + (curr.amountNum || 0), 0)
+                    .reduce((acc, curr) => {
+                      const status = String(
+                        curr.status || curr.raw?.paymentStatus || ''
+                      )
+                        .toLowerCase()
+                        .trim()
+                      const isSuccessful =
+                        status === 'success' || status === 'paid'
+                      return acc + (isSuccessful ? curr.amountNum || 0 : 0)
+                    }, 0)
                     .toLocaleString()}
                   )
                 </span>

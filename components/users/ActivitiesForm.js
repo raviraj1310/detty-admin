@@ -43,15 +43,19 @@ const ticketsText = tList => {
 }
 const ticketsTotal = b => {
   const list = Array.isArray(b?.tickets) ? b.tickets : []
-  return list.reduce(
-    (sum, t) =>
-      sum +
-      (Number(
-        t.totalPrice ||
-          (Number(t.perTicketPrice) || 0) * (Number(t.quantity) || 0)
-      ) || 0),
-    0
-  )
+  return list.reduce((sum, t) => {
+    const tq =
+      typeof t.quantity === 'number' ? t.quantity : Number(t.quantity) || 0
+    const tp =
+      typeof t.perTicketPrice === 'number'
+        ? t.perTicketPrice
+        : Number(t.perTicketPrice) || 0
+    const tt =
+      typeof t.totalPrice === 'number'
+        ? t.totalPrice
+        : Number(t.totalPrice) || 0
+    return sum + (tp * tq || tt)
+  }, 0)
 }
 const toIdString = v => {
   if (!v) return ''
@@ -80,7 +84,7 @@ const toImageUrl = p => {
 
 function statusClass (v) {
   const s = String(v || '').toLowerCase()
-  if (s === 'paid' || s === 'completed')
+  if (s === 'paid' || s === 'completed' || s === 'success')
     return 'bg-emerald-50 text-emerald-600 border border-emerald-200'
   if (s === 'pending' || s === 'incomplete')
     return 'bg-orange-50 text-orange-600 border border-orange-200'
@@ -380,6 +384,13 @@ export default function Activities () {
 
           const createdTs = bookedOnRaw ? new Date(bookedOnRaw).getTime() : 0
 
+          const amountTickets = ticketsTotal(b)
+          const apiTotal =
+            typeof b.totalPrice === 'number'
+              ? b.totalPrice
+              : Number(b.totalPrice) || 0
+          const amountNum = amountTickets > 0 ? amountTickets : apiTotal
+
           return {
             id: b._id || b.id || b.bookingId || `booking-${idx}`,
             bookedOn,
@@ -390,7 +401,8 @@ export default function Activities () {
             type: type,
             ticketsBooked: ticketsText(b?.tickets),
             additionalInfo: '',
-            amount: fmtCurrency(ticketsTotal(b)),
+            amount: fmtCurrency(amountNum),
+            amountNum,
             activityStatus: String(b?.status || b?.bookingStatus || 'Pending'),
             paymentStatus: payNice,
             paymentStatusClass: statusClass(b?.paymentStatus),
@@ -425,7 +437,6 @@ export default function Activities () {
   }, [])
 
   const filteredActivities = rows.filter(r => {
-    // Date Range Filter
     const bookedDate = r.bookedOnRaw ? new Date(r.bookedOnRaw) : null
     let matchesDate = true
     if (dateRange.start) {
@@ -527,11 +538,7 @@ export default function Activities () {
           ) * dir
         )
       case 'amount':
-        return (
-          (Number(String(a.amount).replace(/[^0-9.-]/g, '')) -
-            Number(String(b.amount).replace(/[^0-9.-]/g, ''))) *
-          dir
-        )
+        return ((a.amountNum || 0) - (b.amountNum || 0)) * dir
       case 'arrivalDate':
         return (
           String(a.arrivalDate || '').localeCompare(
@@ -826,11 +833,25 @@ export default function Activities () {
                 Total Activity Bookings
               </p>
               <p className='text-2xl text-black font-bold'>
-                {filteredActivities.length}{' '}
+                {
+                  filteredActivities.filter(b => {
+                    const status = String(b.paymentStatus || '')
+                      .toLowerCase()
+                      .trim()
+                    return status === 'success' || status === 'paid'
+                  }).length
+                }{' '}
                 <span className='text-lg font-semibold opacity-90'>
                   (₦
                   {filteredActivities
-                    .reduce((acc, curr) => acc + (curr.amountNum || 0), 0)
+                    .reduce((acc, curr) => {
+                      const status = String(curr.paymentStatus || '')
+                        .toLowerCase()
+                        .trim()
+                      const isSuccessful =
+                        status === 'success' || status === 'paid'
+                      return acc + (isSuccessful ? curr.amountNum || 0 : 0)
+                    }, 0)
                     .toLocaleString()}
                   )
                 </span>

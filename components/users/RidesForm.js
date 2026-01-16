@@ -206,10 +206,12 @@ export default function RidesForm ({ dateRange = { start: '', end: '' } }) {
             image: cleanString(a.image)
           }))
           const amountNum = Number(item.price || 0)
+          const paymentStatus = String(item.paymentStatus || item.status || '')
 
           return {
             ...item,
             amountNum,
+            paymentStatus,
             cleanImages: images,
             mainImage: images[0] || '',
             cleanAmenities: amenities,
@@ -313,7 +315,10 @@ export default function RidesForm ({ dateRange = { start: '', end: '' } }) {
 
     // Recalculate based on filteredRides
     const currentData = filteredRides
-    const totalCount = currentData.length
+    const totalCount = currentData.filter(r => {
+      const s = String(r.paymentStatus || '').toLowerCase().trim()
+      return s === 'paid' || s === 'success'
+    }).length
 
     const todayStr = new Date().toISOString().split('T')[0]
     const newToday = currentData.filter(r =>
@@ -499,7 +504,20 @@ export default function RidesForm ({ dateRange = { start: '', end: '' } }) {
             <div>
               <p className='text-xs text-gray-600'>Total Rides Bookings</p>
               <p className='text-2xl font-bold text-gray-900'>
-                {stats.filteredTotalCount}
+                {stats.filteredTotalCount}{' '}
+                <span className='text-lg font-semibold opacity-90'>
+                  (₦
+                  {filteredRides
+                    .reduce((acc, curr) => {
+                      const s = String(curr.paymentStatus || '')
+                        .toLowerCase()
+                        .trim()
+                      const ok = s === 'paid' || s === 'success'
+                      return acc + (ok ? Number(curr.amountNum) || 0 : 0)
+                    }, 0)
+                    .toLocaleString()}
+                  )
+                </span>
               </p>
             </div>
           </div>

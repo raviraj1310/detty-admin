@@ -13,7 +13,7 @@ import {
 } from 'lucide-react'
 import { TbCaretUpDownFilled } from 'react-icons/tb'
 import {
-  getAllCountries,
+  getAllCountriesData,
   getCountryById,
   createCountry,
   updateCountry,
@@ -94,7 +94,7 @@ export default function CountryMaster () {
     setLoading(true)
     setError('')
     try {
-      const res = await getAllCountries({ page, limit, search: searchTerm })
+      const res = await getAllCountriesData({ page, limit, search: searchTerm })
       let list = []
       if (res?.docs) {
         list = res.docs

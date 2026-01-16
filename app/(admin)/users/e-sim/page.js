@@ -670,25 +670,25 @@ export default function EsimUsersPage () {
                 Avg Daily Growth (Count)
               </p>
               <div className='flex items-end justify-end gap-2'>
-                <p className='text-2xl text-purple-600 font-bold'>
+                <p
+                  className={`text-2xl font-bold ${
+                    stats.isCountIncreasing ? 'text-purple-600' : 'text-red-600'
+                  }`}
+                >
                   {stats.avgGrowthCount}
                 </p>
-                {stats.isCountIncreasing ? (
-                  <span className='text-xs flex items-center mb-1 text-green-500'>
+                <span
+                  className={`text-xs flex items-center mb-1 ${
+                    stats.isCountIncreasing ? 'text-green-500' : 'text-red-600'
+                  }`}
+                >
+                  {stats.isCountIncreasing ? (
                     <TbTrendingUp className='w-3 h-3 mr-0.5' />
-                    Increasing
-                  </span>
-                ) : (
-                  <>
-                    <p className='text-2xl text-red-600 font-bold'>
-                      {stats.avgGrowthCount}
-                    </p>
-                    <span className='text-xs flex items-center mb-1 text-red-600'>
-                      <TbTrendingDown className='w-3 h-3 mr-0.5' />
-                      Decreasing
-                    </span>
-                  </>
-                )}
+                  ) : (
+                    <TbTrendingDown className='w-3 h-3 mr-0.5' />
+                  )}
+                  {stats.isCountIncreasing ? 'Increasing' : 'Decreasing'}
+                </span>
               </div>
             </div>
           </div>
@@ -703,25 +703,25 @@ export default function EsimUsersPage () {
                 Avg Daily Growth (%)
               </p>
               <div className='flex items-end justify-end gap-2'>
-                <p className='text-2xl text-teal-600 font-bold'>
+                <p
+                  className={`text-2xl font-bold ${
+                    stats.isPctIncreasing ? 'text-teal-600' : 'text-red-600'
+                  }`}
+                >
                   {stats.avgGrowthPercent}
                 </p>
-                {stats.isPctIncreasing ? (
-                  <span className='text-xs flex items-center mb-1 text-green-500'>
+                <span
+                  className={`text-xs flex items-center mb-1 ${
+                    stats.isPctIncreasing ? 'text-green-500' : 'text-red-600'
+                  }`}
+                >
+                  {stats.isPctIncreasing ? (
                     <TbTrendingUp className='w-3 h-3 mr-0.5' />
-                    Increasing
-                  </span>
-                ) : (
-                  <>
-                    <p className='text-2xl text-red-600 font-bold'>
-                      {stats.avgGrowthPercent}
-                    </p>
-                    <span className='text-xs flex items-center mb-1 text-red-600'>
-                      <TbTrendingDown className='w-3 h-3 mr-0.5' />
-                      Decreasing
-                    </span>
-                  </>
-                )}
+                  ) : (
+                    <TbTrendingDown className='w-3 h-3 mr-0.5' />
+                  )}
+                  {stats.isPctIncreasing ? 'Increasing' : 'Decreasing'}
+                </span>
               </div>
             </div>
           </div>
@@ -741,11 +741,29 @@ export default function EsimUsersPage () {
                 Total E-Sim Bookings
               </p>
               <p className='text-2xl text-black font-bold'>
-                {filteredRows.length}{' '}
+                {
+                  filteredRows.filter(b => {
+                    const status = String(
+                      b.paymentStatus || b.raw?.paymentStatus || ''
+                    )
+                      .toLowerCase()
+                      .trim()
+                    return status === 'success' || status === 'paid'
+                  }).length
+                }{' '}
                 <span className='text-lg font-semibold opacity-90'>
                   (₦
                   {filteredRows
-                    .reduce((acc, curr) => acc + (curr.amountNum || 0), 0)
+                    .reduce((acc, curr) => {
+                      const status = String(
+                        curr.paymentStatus || curr.raw?.paymentStatus || ''
+                      )
+                        .toLowerCase()
+                        .trim()
+                      const isSuccessful =
+                        status === 'success' || status === 'paid'
+                      return acc + (isSuccessful ? curr.amountNum || 0 : 0)
+                    }, 0)
                     .toLocaleString()}
                   )
                 </span>

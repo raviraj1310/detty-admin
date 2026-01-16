@@ -540,14 +540,71 @@ export default function TransactionsForm () {
           } x ${b.ticketName || 'Regular'}`,
           ticketsQty: typeof b.quantity === 'number' ? b.quantity : 0,
           additionalInfo: '',
-          amount:
-            typeof b.totalPrice === 'number'
-              ? `₦${b.totalPrice.toLocaleString()}`
-              : '-',
-          amountNum:
-            typeof b.totalPrice === 'number'
-              ? b.totalPrice
-              : Number(b.totalPrice) || 0,
+          amount: (() => {
+            const qty =
+              typeof b.quantity === 'number'
+                ? b.quantity
+                : Number(b.quantity) || 0
+            const price =
+              typeof b.perTicketPrice === 'number'
+                ? b.perTicketPrice
+                : Number(b.perTicketPrice) || 0
+            const ticketsTotal = Array.isArray(b.tickets)
+              ? b.tickets.reduce((sum, t) => {
+                  const tq =
+                    typeof t.quantity === 'number'
+                      ? t.quantity
+                      : Number(t.quantity) || 0
+                  const tp =
+                    typeof t.perTicketPrice === 'number'
+                      ? t.perTicketPrice
+                      : Number(t.perTicketPrice) || 0
+                  const tt =
+                    typeof t.totalPrice === 'number'
+                      ? t.totalPrice
+                      : Number(t.totalPrice) || 0
+                  return sum + (tp * tq || tt)
+                }, 0)
+              : qty * price
+            const apiTotal =
+              typeof b.totalPrice === 'number'
+                ? b.totalPrice
+                : Number(b.totalPrice) || 0
+            const total = ticketsTotal > 0 ? ticketsTotal : apiTotal
+            return total > 0 ? `₦${total.toLocaleString()}` : '-'
+          })(),
+          amountNum: (() => {
+            const qty =
+              typeof b.quantity === 'number'
+                ? b.quantity
+                : Number(b.quantity) || 0
+            const price =
+              typeof b.perTicketPrice === 'number'
+                ? b.perTicketPrice
+                : Number(b.perTicketPrice) || 0
+            const ticketsTotal = Array.isArray(b.tickets)
+              ? b.tickets.reduce((sum, t) => {
+                  const tq =
+                    typeof t.quantity === 'number'
+                      ? t.quantity
+                      : Number(t.quantity) || 0
+                  const tp =
+                    typeof t.perTicketPrice === 'number'
+                      ? t.perTicketPrice
+                      : Number(t.perTicketPrice) || 0
+                  const tt =
+                    typeof t.totalPrice === 'number'
+                      ? t.totalPrice
+                      : Number(t.totalPrice) || 0
+                  return sum + (tp * tq || tt)
+                }, 0)
+              : qty * price
+            const apiTotal =
+              typeof b.totalPrice === 'number'
+                ? b.totalPrice
+                : Number(b.totalPrice) || 0
+            return ticketsTotal > 0 ? ticketsTotal : apiTotal
+          })(),
           activityStatus: TextCapitalize(b.status || 'Pending'),
           paymentStatus:
             (typeof b.totalPrice === 'number' && b.totalPrice === 0) ||
@@ -649,10 +706,7 @@ export default function TransactionsForm () {
       const dateText = `${bookedOnText} ${bookedOnRawText}`
       const dateDigits = dateText.replace(/[^0-9]/g, '')
       const amountText = String(booking.amount || '').toLowerCase()
-      const amountDigits = String(booking.amount ?? ''
-      ).replace(/[^0-9]/g, '')
-
-
+      const amountDigits = String(booking.amount ?? '').replace(/[^0-9]/g, '')
 
       const dateStr = String(
         booking.eventDateText || booking.bookedOn || ''
@@ -665,13 +719,14 @@ export default function TransactionsForm () {
         buyerName.includes(term) ||
         buyerEmail.includes(term) ||
         buyerPhone.includes(term) ||
-        dateText.includes(term) || 
-        amountText.includes(term)         
+        dateText.includes(term) ||
+        amountText.includes(term)
 
       const matchesDigits =
         termDigits &&
         (dateDigits.includes(termDigits) ||
-          buyerPhoneDigits.includes(termDigits) || amountDigits.includes(termDigits))
+          buyerPhoneDigits.includes(termDigits) ||
+          amountDigits.includes(termDigits))
 
       return matchesText || matchesDigits
     })
@@ -1085,11 +1140,25 @@ export default function TransactionsForm () {
                 Total Event Bookings
               </p>
               <p className='text-2xl text-black font-bold'>
-                {filteredBookings.length}{' '}
+                {
+                  filteredBookings.filter(b => {
+                    const status = String(b.paymentStatus || '')
+                      .toLowerCase()
+                      .trim()
+                    return status === 'success' || status === 'paid'
+                  }).length
+                }{' '}
                 <span className='text-lg font-semibold opacity-90'>
                   (₦
                   {filteredBookings
-                    .reduce((acc, curr) => acc + (curr.amountNum || 0), 0)
+                    .reduce((acc, curr) => {
+                      const status = String(curr.paymentStatus || '')
+                        .toLowerCase()
+                        .trim()
+                      const isSuccessful =
+                        status === 'success' || status === 'paid'
+                      return acc + (isSuccessful ? curr.amountNum || 0 : 0)
+                    }, 0)
                     .toLocaleString()}
                   )
                 </span>

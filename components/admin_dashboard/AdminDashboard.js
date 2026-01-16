@@ -68,7 +68,7 @@ const DashboardSection = ({ section }) => (
 
 // --- 4. Main Dashboard Component ---
 
-export default function AdminDashboard ({ stats }) {
+export default function AdminDashboard ({ stats, year }) {
   const [userCounts, setUserCounts] = useState({
     totalUsers: 0,
     totalActiveUsers: 0,
@@ -88,7 +88,9 @@ export default function AdminDashboard ({ stats }) {
   useEffect(() => {
     const load = async () => {
       try {
-        const res = await dashboardUserActiveInactiveCounts()
+        const params = {}
+        if (year) params.year = year
+        const res = await dashboardUserActiveInactiveCounts(params)
         setUserCounts({
           totalUsers: Number(res?.data?.totalUserCount || 0),
           totalActiveUsers: Number(res?.data?.activeUserCount || 0),
@@ -120,7 +122,7 @@ export default function AdminDashboard ({ stats }) {
       }
     }
     load()
-  }, [])
+  }, [year])
   // Calculate total bookings and revenue if needed
   const totalBookings =
     (stats?.totalEvents || 0) +
