@@ -1,4 +1,4 @@
-"use client";
+'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -11,8 +11,8 @@ import { AiOutlineMinusCircle } from 'react-icons/ai'
 import {
   getVisaApplications,
   downloadVisaApplicationsCSV,
-  updateStatus,
-} from "@/services/visa/visa.service";
+  updateStatus
+} from '@/services/visa/visa.service'
 
 const cardDefs = [
   {
@@ -24,12 +24,12 @@ const cardDefs = [
     iconColor: 'text-indigo-600'
   },
   {
-    id: "total",
-    title: "Total Visa Applications",
-    bg: "bg-gradient-to-r from-[#E8EEFF] to-[#C5D5FF]",
-    iconBg: "bg-white",
-    textColor: "text-indigo-600",
-    iconColor: "text-indigo-600",
+    id: 'completed',
+    title: 'Completed Visa Applications',
+    bg: 'bg-gradient-to-r from-[#E8FFF5] to-[#C5FFE5]',
+    iconBg: 'bg-white',
+    textColor: 'text-emerald-600',
+    iconColor: 'text-emerald-600'
   },
   {
     id: 'pending',
@@ -41,38 +41,38 @@ const cardDefs = [
   }
 ]
 
-const toName = (a) =>
+const toName = a =>
   [a?.firstName, a?.middleName, a?.lastName]
-    .map((s) => String(s || "").trim())
+    .map(s => String(s || '').trim())
     .filter(Boolean)
-    .join(" ");
-const toStatus = (v) => {
-  const s = String(v || "")
+    .join(' ')
+const toStatus = v => {
+  const s = String(v || '')
     .trim()
-    .toLowerCase();
-  if (s === "processed") return "Processed";
-  if (s === "completed") return "Completed";
-  return "Pending";
-};
+    .toLowerCase()
+  if (s === 'processed') return 'Processed'
+  if (s === 'completed') return 'Completed'
+  return 'Pending'
+}
 
-const statusClass = (s) => {
-  const v = String(s || "").toLowerCase();
-  if (v === "processed")
-    return "bg-emerald-50 text-emerald-600 border border-emerald-200";
-  if (v === "pending") return "bg-red-50 text-red-600 border border-red-200";
-  return "bg-gray-100 text-gray-600 border border-gray-200";
-};
+const statusClass = s => {
+  const v = String(s || '').toLowerCase()
+  if (v === 'processed')
+    return 'bg-emerald-50 text-emerald-600 border border-emerald-200'
+  if (v === 'pending') return 'bg-red-50 text-red-600 border border-red-200'
+  return 'bg-gray-100 text-gray-600 border border-gray-200'
+}
 
 const TableHeaderCell = ({ children, onClick }) => (
   <button
-    type="button"
+    type='button'
     onClick={onClick}
-    className="flex items-center gap-1 text-xs font-medium capitalize tracking-wider text-gray-500 hover:text-gray-700"
+    className='flex items-center gap-1 text-xs font-medium capitalize tracking-wider text-gray-500 hover:text-gray-700'
   >
     {children}
-    <TbCaretUpDownFilled className="h-3.5 w-3.5 text-[#CBCFE2]" />
+    <TbCaretUpDownFilled className='h-3.5 w-3.5 text-[#CBCFE2]' />
   </button>
-);
+)
 
 export default function VisaApplications () {
   const router = useRouter()
@@ -92,8 +92,8 @@ export default function VisaApplications () {
   const [totalApplications, setTotalApplications] = useState(0)
 
   const loadApplications = async () => {
-    setLoading(true);
-    setError("");
+    setLoading(true)
+    setError('')
     try {
       const res = await getVisaApplications(page, limit)
       const list = Array.isArray(res?.data?.applications)
@@ -106,14 +106,14 @@ export default function VisaApplications () {
         id: a._id,
         createdOn: a.createdAt || a.updatedAt,
         createdTs: (() => {
-          const d = a.createdAt || a.updatedAt;
-          const v = d && d.$date ? d.$date : d;
-          const dt = v ? new Date(v) : null;
-          return dt ? dt.getTime() : 0;
+          const d = a.createdAt || a.updatedAt
+          const v = d && d.$date ? d.$date : d
+          const dt = v ? new Date(v) : null
+          return dt ? dt.getTime() : 0
         })(),
-        name: toName(a) || "-",
-        email: a?.email || "-",
-        phone: a?.mobile || "-",
+        name: toName(a) || '-',
+        email: a?.email || '-',
+        phone: a?.mobile || '-',
         status: toStatus(a.status),
         avatar: null
       }))
@@ -122,207 +122,189 @@ export default function VisaApplications () {
       // For now, we only have the current page's data, so we can't calculate full stats accurately on client side
       // Assuming metrics are not provided in this specific response based on user input
     } catch (e) {
-      setError("Failed to load applications");
-      setApplications([]);
-      setMetrics({ total: 0, completed: 0, pending: 0 });
+      setError('Failed to load applications')
+      setApplications([])
+      setMetrics({ total: 0, completed: 0, pending: 0 })
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   useEffect(() => {
     loadApplications()
   }, [page, limit])
 
   useEffect(() => {
-    const handleClickOutside = (e) => {
+    const handleClickOutside = e => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
-        setActiveDropdown(null);
+        setActiveDropdown(null)
       }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   const filtered = useMemo(() => {
-    const term = String(searchTerm || "")
+    const term = String(searchTerm || '')
       .trim()
-      .toLowerCase();
-    if (!term) return applications;
-    const termDigits = term.replace(/[^0-9]/g, "");
-    const fmtCreated = (d) => {
-      if (!d) return "-";
-      const v = typeof d === "object" && d.$date ? d.$date : d;
-      const date = v ? new Date(v) : null;
+      .toLowerCase()
+    if (!term) return applications
+    const termDigits = term.replace(/[^0-9]/g, '')
+    const fmtCreated = d => {
+      if (!d) return '-'
+      const v = typeof d === 'object' && d.$date ? d.$date : d
+      const date = v ? new Date(v) : null
       return date
         ? date.toLocaleString(undefined, {
-            weekday: "short",
-            day: "2-digit",
-            month: "long",
-            year: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
+            weekday: 'short',
+            day: '2-digit',
+            month: 'long',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
           })
-        : "-";
-    };
-    return applications.filter((a) => {
-      const name = String(a.name || "").toLowerCase();
-      const email = String(a.email || "").toLowerCase();
-      const phone = String(a.phone || a.mobile || "").toLowerCase();
-      const status = String(a.status || "").toLowerCase();
-      const createdStr = String(fmtCreated(a.createdOn)).toLowerCase();
-      const createdDigits = String(createdStr).replace(/[^0-9]/g, "");
+        : '-'
+    }
+    return applications.filter(a => {
+      const name = String(a.name || '').toLowerCase()
+      const email = String(a.email || '').toLowerCase()
+      const phone = String(a.phone || a.mobile || '').toLowerCase()
+      const status = String(a.status || '').toLowerCase()
+      const createdStr = String(fmtCreated(a.createdOn)).toLowerCase()
+      const createdDigits = String(createdStr).replace(/[^0-9]/g, '')
       const matchesText =
         name.includes(term) ||
         email.includes(term) ||
         phone.includes(term) ||
         status.includes(term) ||
-        createdStr.includes(term);
-      const matchesDigits = termDigits && createdDigits.includes(termDigits);
-      return matchesText || matchesDigits;
-    });
-  }, [applications, searchTerm]);
+        createdStr.includes(term)
+      const matchesDigits = termDigits && createdDigits.includes(termDigits)
+      return matchesText || matchesDigits
+    })
+  }, [applications, searchTerm])
 
-  const toggleSort = (key) => {
+  const toggleSort = key => {
     if (sortKey === key) {
-      setSortDir((prev) => (prev === "asc" ? "desc" : "asc"));
+      setSortDir(prev => (prev === 'asc' ? 'desc' : 'asc'))
     } else {
-      setSortKey(key);
-      setSortDir(key === "date" ? "desc" : "asc");
+      setSortKey(key)
+      setSortDir(key === 'date' ? 'desc' : 'asc')
     }
-  };
+  }
 
   const sorted = useMemo(() => {
-    const dir = sortDir === "asc" ? 1 : -1;
+    const dir = sortDir === 'asc' ? 1 : -1
     return [...filtered].sort((a, b) => {
       switch (sortKey) {
-        case "date":
-          return (a.createdTs - b.createdTs) * dir;
-        case "name":
-          return String(a.name || "").localeCompare(String(b.name || "")) * dir;
-        case "email":
+        case 'date':
+          return (a.createdTs - b.createdTs) * dir
+        case 'name':
+          return String(a.name || '').localeCompare(String(b.name || '')) * dir
+        case 'email':
           return (
-            String(a.email || "").localeCompare(String(b.email || "")) * dir
-          );
-        case "phone":
+            String(a.email || '').localeCompare(String(b.email || '')) * dir
+          )
+        case 'phone':
           return (
-            String(a.phone || "").localeCompare(String(b.phone || "")) * dir
-          );
-        case "status":
+            String(a.phone || '').localeCompare(String(b.phone || '')) * dir
+          )
+        case 'status':
           return (
-            String(a.status || "").localeCompare(String(b.status || "")) * dir
-          );
+            String(a.status || '').localeCompare(String(b.status || '')) * dir
+          )
         default:
-          return 0;
+          return 0
       }
-    });
-  }, [filtered, sortKey, sortDir]);
+    })
+  }, [filtered, sortKey, sortDir])
 
-  const paginatedBookings = useMemo(() => {
-    const startIndex = (page - 1) * limit;
-    const endIndex = startIndex + limit;
-    return sorted.slice(startIndex, endIndex);
-  }, [sorted, page, limit]);
-
-  useEffect(() => {
-    const totalPages = Math.ceil(sorted.length / limit) || 1;
-    setPageCount(totalPages);
-
-    if (page > totalPages) {
-      setPage(1);
-    }
-  }, [sorted.length, limit]);
-
-  const isSelected = (id) => selectedIds.includes(String(id || ""));
-  const toggleRowSelect = (id) => {
-    const key = String(id || "");
-    setSelectedIds((prev) =>
-      prev.includes(key) ? prev.filter((x) => x !== key) : [...prev, key]
-    );
-  };
-  const allRowIds = useMemo(
-    () => sorted.map((a) => String(a.id || "")),
-    [sorted]
-  );
+  const isSelected = id => selectedIds.includes(String(id || ''))
+  const toggleRowSelect = id => {
+    const key = String(id || '')
+    setSelectedIds(prev =>
+      prev.includes(key) ? prev.filter(x => x !== key) : [...prev, key]
+    )
+  }
+  const allRowIds = useMemo(() => sorted.map(a => String(a.id || '')), [sorted])
   const isAllSelected =
-    allRowIds.length > 0 && allRowIds.every((id) => selectedIds.includes(id));
+    allRowIds.length > 0 && allRowIds.every(id => selectedIds.includes(id))
   const toggleSelectAll = () => {
-    setSelectedIds((prev) => (isAllSelected ? [] : [...allRowIds]));
-  };
+    setSelectedIds(prev => (isAllSelected ? [] : [...allRowIds]))
+  }
   const markSelectedAsProcess = async (ids = null) => {
-    const targetIds = Array.isArray(ids) ? ids : selectedIds;
-    if (!targetIds || targetIds.length === 0) return;
+    const targetIds = Array.isArray(ids) ? ids : selectedIds
+    if (!targetIds || targetIds.length === 0) return
 
     try {
-      setLoading(true);
-      await updateStatus({ ids: targetIds });
-      await loadApplications();
-      setSelectedIds([]);
-      setActiveDropdown(null);
+      setLoading(true)
+      await updateStatus({ ids: targetIds })
+      await loadApplications()
+      setSelectedIds([])
+      setActiveDropdown(null)
     } catch (e) {
-      console.error("Failed to update status", e);
+      console.error('Failed to update status', e)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   const handleDownloadExcel = () => {
     if (!filtered || filtered.length === 0) {
-      return;
+      return
     }
-    const dataToExport = filtered.map((a) => ({
-      "Created On":
-        a.createdOn && a.createdOn !== "-"
+    const dataToExport = filtered.map(a => ({
+      'Created On':
+        a.createdOn && a.createdOn !== '-'
           ? new Date(a.createdOn).toLocaleString()
-          : "-",
-      "User Name": a.name,
+          : '-',
+      'User Name': a.name,
       Email: a.email,
-      "Phone Number": a.phone,
-      Status: a.status,
-    }));
-    downloadExcel(dataToExport, "Visa_Applications.xlsx");
-  };
+      'Phone Number': a.phone,
+      Status: a.status
+    }))
+    downloadExcel(dataToExport, 'Visa_Applications.xlsx')
+  }
 
   const downloadCsv = async () => {
     try {
-      const blob = await downloadVisaApplicationsCSV();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "visa-applications.csv";
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      const blob = await downloadVisaApplicationsCSV()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = 'visa-applications.csv'
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
     } catch (e) {
       const msg =
-        e?.response?.data?.message || e?.message || "Failed to download CSV";
-      setError(msg);
+        e?.response?.data?.message || e?.message || 'Failed to download CSV'
+      setError(msg)
     }
-  };
+  }
 
   return (
-    <div className="space-y-4 py-4 px-4">
-      <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
-        <div className="flex flex-col gap-1">
-          <h1 className="text-xl font-semibold text-slate-900">
+    <div className='space-y-4 py-4 px-4'>
+      <div className='flex flex-col gap-2 md:flex-row md:items-start md:justify-between'>
+        <div className='flex flex-col gap-1'>
+          <h1 className='text-xl font-semibold text-slate-900'>
             Visa Applications
           </h1>
-          <p className="text-xs text-[#99A1BC]">
+          <p className='text-xs text-[#99A1BC]'>
             Dashboard / Visa Applications
           </p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
-        {cardDefs.map((card) => (
+      <div className='grid grid-cols-1 md:grid-cols-3 gap-3 mb-4'>
+        {cardDefs.map(card => (
           <div
             key={card.id}
             className={`${card.bg} rounded-xl p-3 relative overflow-hidden border border-gray-100 shadow-md`}
           >
-            <div className="flex items-center justify-between">
+            <div className='flex items-center justify-between'>
               <div className={`${card.iconBg} p-2.5 rounded-xl flex-shrink-0`}>
-                {card.id === "completed" ? (
+                {card.id === 'completed' ? (
                   <FiCheckCircle className={`h-6 w-6 ${card.iconColor}`} />
                 ) : card.id === 'pending' ? (
                   <AiOutlineMinusCircle
@@ -342,9 +324,9 @@ export default function VisaApplications () {
                 </p>
                 <p className={`text-2xl font-bold ${card.textColor}`}>
                   {String(
-                    card.id === "total"
+                    card.id === 'total'
                       ? metrics.total
-                      : card.id === "completed"
+                      : card.id === 'completed'
                       ? metrics.completed
                       : metrics.pending
                   )}
@@ -355,48 +337,48 @@ export default function VisaApplications () {
         ))}
       </div>
 
-      <div className="rounded-2xl border border-[#E1E6F7] bg-white p-4 shadow-[0_24px_60px_-40px_rgba(15,23,42,0.55)]">
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-sm font-semibold text-slate-900">
+      <div className='rounded-2xl border border-[#E1E6F7] bg-white p-4 shadow-[0_24px_60px_-40px_rgba(15,23,42,0.55)]'>
+        <div className='mb-4 flex flex-wrap items-center justify-between gap-2'>
+          <h2 className='text-sm font-semibold text-slate-900'>
             Visa Applications List
           </h2>
-          <div className="flex flex-wrap items-center gap-2">
+          <div className='flex flex-wrap items-center gap-2'>
             {selectedIds.length > 0 && (
               <button
                 onClick={markSelectedAsProcess}
-                className="flex h-8 items-center gap-1.5 rounded-lg bg-[#FF5B2C] px-3 text-xs font-semibold text-white transition hover:bg-[#F0481A]"
+                className='flex h-8 items-center gap-1.5 rounded-lg bg-[#FF5B2C] px-3 text-xs font-semibold text-white transition hover:bg-[#F0481A]'
               >
                 Mark as process
               </button>
             )}
-            <div className="relative flex items-center">
+            <div className='relative flex items-center'>
               <input
-                type="text"
-                placeholder="Search"
+                type='text'
+                placeholder='Search'
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="h-8 rounded-lg border border-[#E5E6EF] bg-[#F8F9FC] pl-8 pr-3 text-xs text-slate-700 placeholder:text-[#B0B7D0] focus:border-[#C5CAE3] focus:outline-none focus:ring-2 focus:ring-[#C2C8E4]"
+                onChange={e => setSearchTerm(e.target.value)}
+                className='h-8 rounded-lg border border-[#E5E6EF] bg-[#F8F9FC] pl-8 pr-3 text-xs text-slate-700 placeholder:text-[#B0B7D0] focus:border-[#C5CAE3] focus:outline-none focus:ring-2 focus:ring-[#C2C8E4]'
               />
-              <Search className="absolute left-2.5 h-3.5 w-3.5 text-[#A6AEC7]" />
+              <Search className='absolute left-2.5 h-3.5 w-3.5 text-[#A6AEC7]' />
             </div>
-            <button className="flex h-8 items-center gap-1.5 rounded-lg border border-[#E5E6EF] bg-white px-3 text-xs font-medium text-[#2D3658] transition hover:bg-[#F6F7FD]">
-              <IoFilterSharp className="h-3.5 w-3.5 text-[#8B93AF]" />
+            <button className='flex h-8 items-center gap-1.5 rounded-lg border border-[#E5E6EF] bg-white px-3 text-xs font-medium text-[#2D3658] transition hover:bg-[#F6F7FD]'>
+              <IoFilterSharp className='h-3.5 w-3.5 text-[#8B93AF]' />
               Filters
             </button>
             <button
               onClick={handleDownloadExcel}
-              className="flex h-8 items-center gap-1.5 rounded-lg border border-[#E5E6EF] bg-white px-3 text-xs font-medium text-[#2D3658] transition hover:bg-[#F6F7FD]"
+              className='flex h-8 items-center gap-1.5 rounded-lg border border-[#E5E6EF] bg-white px-3 text-xs font-medium text-[#2D3658] transition hover:bg-[#F6F7FD]'
             >
-              <Download className="h-3.5 w-3.5 text-[#8B93AF]" />
+              <Download className='h-3.5 w-3.5 text-[#8B93AF]' />
               Export
             </button>
-            <div className="flex items-center gap-2">
-              <label className="flex items-center gap-1.5 text-xs text-[#2D3658]">
+            <div className='flex items-center gap-2'>
+              <label className='flex items-center gap-1.5 text-xs text-[#2D3658]'>
                 Show
                 <select
                   value={limit}
-                  onChange={(e) => setLimit(Number(e.target.value) || 20)}
-                  className="h-8 px-2 border border-[#E5E6EF] rounded-lg text-xs"
+                  onChange={e => setLimit(Number(e.target.value) || 20)}
+                  className='h-8 px-2 border border-[#E5E6EF] rounded-lg text-xs'
                 >
                   <option value={10}>10</option>
                   <option value={20}>20</option>
@@ -404,21 +386,21 @@ export default function VisaApplications () {
                   <option value={100}>100</option>
                 </select>
               </label>
-              <div className="flex items-center gap-2">
+              <div className='flex items-center gap-2'>
                 <button
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
                   disabled={page <= 1}
-                  className="h-8 px-3 py-1.5 border border-[#E5E6EF] rounded-lg bg-white text-xs font-medium text-[#2D3658] disabled:opacity-50 hover:bg-[#F6F7FD]"
+                  className='h-8 px-3 py-1.5 border border-[#E5E6EF] rounded-lg bg-white text-xs font-medium text-[#2D3658] disabled:opacity-50 hover:bg-[#F6F7FD]'
                 >
                   Prev
                 </button>
-                <span className="text-xs text-[#2D3658]">
-                  Page {page} of {pageCount}
+                <span className='text-xs text-[#2D3658]'>
+                  Page {page} of {totalPages}
                 </span>
                 <button
-                  onClick={() => setPage((p) => Math.min(pageCount, p + 1))}
-                  disabled={page >= pageCount}
-                  className="h-8 px-3 py-1.5 border border-[#E5E6EF] rounded-lg bg-white text-xs font-medium text-[#2D3658] disabled:opacity-50 hover:bg-[#F6F7FD]"
+                  onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                  disabled={page >= totalPages}
+                  className='h-8 px-3 py-1.5 border border-[#E5E6EF] rounded-lg bg-white text-xs font-medium text-[#2D3658] disabled:opacity-50 hover:bg-[#F6F7FD]'
                 >
                   Next
                 </button>
@@ -427,33 +409,33 @@ export default function VisaApplications () {
           </div>
         </div>
 
-        <div className="overflow-visible rounded-xl border border-[#E5E8F5]">
-          <div className="grid grid-cols-[4%_14%_18%_22%_14%_10%_10%_8%] bg-[#F7F9FD] px-3 py-2.5">
-            <div className="flex items-center">
+        <div className='overflow-visible rounded-xl border border-[#E5E8F5]'>
+          <div className='grid grid-cols-[4%_14%_18%_22%_14%_10%_10%_8%] bg-[#F7F9FD] px-3 py-2.5'>
+            <div className='flex items-center'>
               <input
-                type="checkbox"
+                type='checkbox'
                 checked={isAllSelected}
                 onChange={toggleSelectAll}
-                className="h-3.5 w-3.5 rounded border-[#D0D5DD] text-[#FF5B2C] focus:ring-[#FF5B2C]"
+                className='h-3.5 w-3.5 rounded border-[#D0D5DD] text-[#FF5B2C] focus:ring-[#FF5B2C]'
               />
             </div>
             <div>
-              <TableHeaderCell onClick={() => toggleSort("date")}>
+              <TableHeaderCell onClick={() => toggleSort('date')}>
                 Created On
               </TableHeaderCell>
             </div>
             <div>
-              <TableHeaderCell onClick={() => toggleSort("name")}>
+              <TableHeaderCell onClick={() => toggleSort('name')}>
                 User Name
               </TableHeaderCell>
             </div>
             <div>
-              <TableHeaderCell onClick={() => toggleSort("email")}>
+              <TableHeaderCell onClick={() => toggleSort('email')}>
                 Email
               </TableHeaderCell>
             </div>
             <div>
-              <TableHeaderCell onClick={() => toggleSort("phone")}>
+              <TableHeaderCell onClick={() => toggleSort('phone')}>
                 Phone Number
               </TableHeaderCell>
             </div>
@@ -461,77 +443,77 @@ export default function VisaApplications () {
               <TableHeaderCell>Action</TableHeaderCell>
             </div>
             <div>
-              <TableHeaderCell onClick={() => toggleSort("status")}>
+              <TableHeaderCell onClick={() => toggleSort('status')}>
                 Status
               </TableHeaderCell>
             </div>
             <div></div>
           </div>
 
-          <div className="divide-y divide-[#EEF1FA] bg-white">
+          <div className='divide-y divide-[#EEF1FA] bg-white'>
             {loading && (
-              <div className="px-3 py-3 text-xs text-[#5E6582]">Loading...</div>
+              <div className='px-3 py-3 text-xs text-[#5E6582]'>Loading...</div>
             )}
             {error && !loading && (
-              <div className="px-3 py-3 text-xs text-red-600">{error}</div>
+              <div className='px-3 py-3 text-xs text-red-600'>{error}</div>
             )}
             {!loading &&
               !error &&
-              paginatedBookings?.map((app, idx) => (
+              sorted?.map((app, idx) => (
                 <div
                   key={app.id || idx}
-                  className="grid grid-cols-[4%_14%_18%_22%_14%_10%_10%_8%] px-3 py-2.5 hover:bg-[#F9FAFD]"
+                  className='grid grid-cols-[4%_14%_18%_22%_14%_10%_10%_8%] px-3 py-2.5 hover:bg-[#F9FAFD]'
                 >
-                  <div className="self-center">
+                  <div className='self-center'>
                     <input
-                      type="checkbox"
+                      type='checkbox'
                       checked={isSelected(app.id)}
                       onChange={() => toggleRowSelect(app.id)}
-                      className="h-3.5 w-3.5 rounded border-[#D0D5DD] text-[#FF5B2C] focus:ring-[#FF5B2C]"
+                      className='h-3.5 w-3.5 rounded border-[#D0D5DD] text-[#FF5B2C] focus:ring-[#FF5B2C]'
                     />
                   </div>
-                  <div className="self-center text-xs text-[#5E6582] line-clamp-2">
+                  <div className='self-center text-xs text-[#5E6582] line-clamp-2'>
                     {(() => {
-                      const d = app.createdOn;
-                      if (!d || d === "-") return "-";
-                      const date = new Date(d);
+                      const d = app.createdOn
+                      if (!d || d === '-') return '-'
+                      const date = new Date(d)
                       return date.toLocaleString(undefined, {
-                        weekday: "short",
-                        day: "2-digit",
-                        month: "short",
-                        year: "numeric",
-                      });
+                        weekday: 'short',
+                        day: '2-digit',
+                        month: 'short',
+                        year: 'numeric'
+                      })
                     })()}
                   </div>
-                  <div className="flex items-center gap-2 min-w-0">
-                    <div className="relative h-8 w-8 overflow-hidden rounded-full border-2 border-red-500 flex-shrink-0">
+                  <div className='flex items-center gap-2 min-w-0'>
+                    <div className='relative h-8 w-8 overflow-hidden rounded-full border-2 border-red-500 flex-shrink-0'>
                       {app.avatar ? (
                         <img
                           src={app.avatar}
                           alt={app.name}
-                          className="h-full w-full object-cover"
+                          className='h-full w-full object-cover'
                         />
                       ) : (
-                        <span className="flex h-full w-full items-center justify-center bg-[#F0F2F8] text-xs font-semibold text-[#2D3658]">
-                          {app.name?.charAt(0) || "?"}
+                        <span className='flex h-full w-full items-center justify-center bg-[#F0F2F8] text-xs font-semibold text-[#2D3658]'>
+                          {app.name?.charAt(0) || '?'}
                         </span>
                       )}
                     </div>
-                    <div className="min-w-0">
-                      <p className="text-xs font-medium text-slate-900 leading-tight line-clamp-2">
+                    <div className='min-w-0'>
+                      <p className='text-xs font-medium text-slate-900 leading-tight line-clamp-2'>
                         {app.name}
                       </p>
                     </div>
                   </div>
-                  <div className="self-center text-xs text-[#5E6582] truncate">
+                  <div className='self-center text-xs text-[#5E6582] truncate'>
                     {app.email}
                   </div>
-                  <div className="self-center text-xs text-[#5E6582]">
+                  <div className='self-center text-xs text-[#5E6582]'>
                     {app.phone}
                   </div>
-                  <div className="self-center text-xs text-[#5E6582]">
+                  <div className='self-center text-xs text-[#5E6582]'>
                     <button
-                      className="text-[10px] font-semibold text-[#0F4EF1] hover:underline"
+                      className='text-[10px] font-semibold text-[#0F4EF1] hover:underline'
                       onClick={() =>
                         router.push(`/visa/applications/${app.id}`)
                       }
@@ -539,7 +521,7 @@ export default function VisaApplications () {
                       View
                     </button>
                   </div>
-                  <div className="flex items-center self-center">
+                  <div className='flex items-center self-center'>
                     <span
                       className={`inline-flex items-center justify-center rounded-full px-2 py-0.5 text-[10px] font-semibold ${statusClass(
                         app.status
@@ -548,7 +530,7 @@ export default function VisaApplications () {
                       {app.status}
                     </span>
                   </div>
-                  <div className="flex items-center justify-center self-center relative">
+                  <div className='flex items-center justify-center self-center relative'>
                     <button
                       onClick={() =>
                         setActiveDropdown(
@@ -557,18 +539,18 @@ export default function VisaApplications () {
                             : app.id || idx
                         )
                       }
-                      className="rounded-full border border-transparent p-1.5 text-[#8C93AF] transition hover:border-[#E5E8F6] hover:bg-[#F5F7FD] hover:text-[#2D3658]"
+                      className='rounded-full border border-transparent p-1.5 text-[#8C93AF] transition hover:border-[#E5E8F6] hover:bg-[#F5F7FD] hover:text-[#2D3658]'
                     >
-                      <MoreVertical className="h-3.5 w-3.5" />
+                      <MoreVertical className='h-3.5 w-3.5' />
                     </button>
                     {activeDropdown === (app.id || idx) && (
                       <div
                         ref={dropdownRef}
-                        className="absolute right-0 mt-2 w-44 rounded-lg border border-[#E5E8F5] bg-white shadow-[0_14px_30px_-20px_rgba(15,23,42,0.25)] z-50"
+                        className='absolute right-0 mt-2 w-44 rounded-lg border border-[#E5E8F5] bg-white shadow-[0_14px_30px_-20px_rgba(15,23,42,0.25)] z-50'
                       >
-                        <div className="py-1">
+                        <div className='py-1'>
                           <button
-                            className="block w-full text-left px-3 py-1.5 text-xs text-[#2D3658] hover:bg-[#F6F7FD]"
+                            className='block w-full text-left px-3 py-1.5 text-xs text-[#2D3658] hover:bg-[#F6F7FD]'
                             onClick={() =>
                               router.push(`/visa/applications/${app.id}`)
                             }
@@ -576,7 +558,7 @@ export default function VisaApplications () {
                             View Application
                           </button>
                           <button
-                            className="block w-full text-left px-3 py-1.5 text-xs text-[#2D3658] hover:bg-[#F6F7FD]"
+                            className='block w-full text-left px-3 py-1.5 text-xs text-[#2D3658] hover:bg-[#F6F7FD]'
                             onClick={() => markSelectedAsProcess([app.id])}
                           >
                             Mark as process
@@ -701,5 +683,5 @@ export default function VisaApplications () {
         </div>
       </div>
     </div>
-  );
+  )
 }

@@ -445,6 +445,13 @@ export default function ReferralReportsPage () {
     }
   }
 
+  const currentLimit = activeTab === 'event' ? eventLimit : activityLimit
+  const setLimit = activeTab === 'event' ? setEventLimit : setActivityLimit
+  const currentPage = activeTab === 'event' ? eventPage : activityPage
+  const setPage = activeTab === 'event' ? setEventPage : setActivityPage
+  const currentTotalPages =
+    activeTab === 'event' ? eventTotalPages : activityTotalPages
+
   return (
     <div className='min-h-full bg-[#F4F6FB]'>
       <div className='rounded-[30px] border border-white/80 bg-white'>
@@ -509,14 +516,14 @@ export default function ReferralReportsPage () {
                   </button>
                 )}
 
-                <div className="flex items-center gap-2">
+                <div className='flex items-center gap-2'>
                   {/* LIMIT */}
-                  <label className="flex items-center gap-1.5 text-xs text-[#2D3658]">
+                  <label className='flex items-center gap-1.5 text-xs text-[#2D3658]'>
                     Show
                     <select
-                      value={limit}
-                      onChange={(e) => setLimit(Number(e.target.value) || 20)}
-                      className="h-8 px-2 border border-[#E5E6EF] rounded-lg text-xs"
+                      value={currentLimit}
+                      onChange={e => setLimit(Number(e.target.value) || 20)}
+                      className='h-8 px-2 border border-[#E5E6EF] rounded-lg text-xs'
                     >
                       <option value={10}>10</option>
                       <option value={20}>20</option>
@@ -527,23 +534,23 @@ export default function ReferralReportsPage () {
 
                   {/* CONTROLS */}
                   <button
-                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    onClick={() => setPage(p => Math.max(1, p - 1))}
                     disabled={currentPage <= 1}
-                    className="h-8 px-3 py-1.5 border border-[#E5E6EF] rounded-lg bg-white text-xs font-medium text-[#2D3658] disabled:opacity-50 hover:bg-[#F6F7FD]"
+                    className='h-8 px-3 py-1.5 border border-[#E5E6EF] rounded-lg bg-white text-xs font-medium text-[#2D3658] disabled:opacity-50 hover:bg-[#F6F7FD]'
                   >
                     Prev
                   </button>
 
-                  <span className="text-xs text-[#2D3658]">
-                    Page {currentPage} of {currentPageCount}
+                  <span className='text-xs text-[#2D3658]'>
+                    Page {currentPage} of {currentTotalPages}
                   </span>
 
                   <button
                     onClick={() =>
-                      setCurrentPage((p) => Math.min(currentPageCount, p + 1))
+                      setPage(p => Math.min(currentTotalPages, p + 1))
                     }
-                    disabled={currentPage >= currentPageCount}
-                    className="h-8 px-3 py-1.5 border border-[#E5E6EF] rounded-lg bg-white text-xs font-medium text-[#2D3658] disabled:opacity-50 hover:bg-[#F6F7FD]"
+                    disabled={currentPage >= currentTotalPages}
+                    className='h-8 px-3 py-1.5 border border-[#E5E6EF] rounded-lg bg-white text-xs font-medium text-[#2D3658] disabled:opacity-50 hover:bg-[#F6F7FD]'
                   >
                     Next
                   </button>
