@@ -14,7 +14,7 @@ export default function DashboardPage () {
   const [year, setYear] = useState('')
 
   const currentYear = new Date().getFullYear()
-  const years = Array.from({ length: 5 }, (_, i) => String(currentYear - i))
+  const years = Array.from({ length: 2 }, (_, i) => String(currentYear - i))
 
   useEffect(() => {
     const fetchStats = async () => {

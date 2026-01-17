@@ -1,8 +1,14 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { TrendingUp, TrendingDown } from 'lucide-react'
+import {
+  accommodationCount,
+  esimCount,
+  leadwayCount,
+  rideCount
+} from '@/services/auth/login.service'
 
 const MetricCard = ({
   label,
@@ -23,9 +29,7 @@ const MetricCard = ({
       <p className='text-[10px] font-medium text-gray-600 mb-0.5'>{label}</p>
       <p className={`text-lg font-bold ${textColor} truncate`}>{value}</p>
       {subText && (
-        <p className='text-[9px] text-gray-500 whitespace-nowrap'>
-          {subText}
-        </p>
+        <p className='text-[9px] text-gray-500 whitespace-nowrap'>{subText}</p>
       )}
       {trend && (
         <div
@@ -89,7 +93,11 @@ const EngagementCard = ({
       className='px-2 py-1 text-[10px] font-medium text-gray-700 bg-white hover:bg-gray-50 rounded-lg transition-colors flex items-center gap-1'
     >
       View List
-      <img src='/images/dashboard/arrow.svg' alt='Arrow' className='w-2.5 h-2.5' />
+      <img
+        src='/images/dashboard/arrow.svg'
+        alt='Arrow'
+        className='w-2.5 h-2.5'
+      />
     </Link>
   </div>
 )
@@ -105,14 +113,102 @@ const formatCurrency = amount => {
 }
 
 export default function AdditionalDashboard ({ stats }) {
-  const accommodations = stats?.totalAccommodations || 0
-  const accommodationRevenue = formatCurrency(stats?.totalAccommodationRevenue)
-  const esims = stats?.totalEsims || 0
-  const esimRevenue = formatCurrency(stats?.totalEsimRevenue)
-  const rides = stats?.totalRide || 0
-  const rideRevenue = formatCurrency(stats?.totalRideRevenue)
-  const leadway = stats?.totalLeadWay || 0
-  const leadwayRevenue = formatCurrency(stats?.totalLeadWayRevenue)
+  const [staySummary, setStaySummary] = useState(null)
+  const [esimSummary, setEsimSummary] = useState(null)
+  const [rideSummary, setRideSummary] = useState(null)
+  const [leadwaySummary, setLeadwaySummary] = useState(null)
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const res = await accommodationCount({})
+        if (res?.success && res?.data) {
+          setStaySummary({
+            totalBookingCount: Number(res.data.totalBookingCount || 0),
+            totalRevenue: Number(res.data.totalRevenue || 0)
+          })
+        } else {
+          setStaySummary(null)
+        }
+      } catch (error) {
+        console.error('Error loading stay dashboard data:', error)
+        setStaySummary(null)
+      }
+
+      try {
+        const resEsim = await esimCount({})
+        if (resEsim?.success && resEsim?.data) {
+          setEsimSummary({
+            totalBookingCount: Number(resEsim.data.totalBookingCount || 0),
+            totalRevenue: Number(resEsim.data.totalRevenue || 0)
+          })
+        } else {
+          setEsimSummary(null)
+        }
+      } catch (error) {
+        console.error('Error loading esim dashboard data:', error)
+        setEsimSummary(null)
+      }
+
+      try {
+        const resRide = await rideCount({})
+        if (resRide?.success && resRide?.data) {
+          setRideSummary({
+            totalBookingCount: Number(resRide.data.totalBookingCount || 0),
+            totalRevenue: Number(resRide.data.totalRevenue || 0)
+          })
+        } else {
+          setRideSummary(null)
+        }
+      } catch (error) {
+        console.error('Error loading ride dashboard data:', error)
+        setRideSummary(null)
+      }
+
+      try {
+        const resLeadway = await leadwayCount({})
+        if (resLeadway?.success && resLeadway?.data) {
+          setLeadwaySummary({
+            totalBookingCount: Number(resLeadway.data.totalBookingCount || 0),
+            totalRevenue: Number(resLeadway.data.totalRevenue || 0)
+          })
+        } else {
+          setLeadwaySummary(null)
+        }
+      } catch (error) {
+        console.error('Error loading leadway dashboard data:', error)
+        setLeadwaySummary(null)
+      }
+    }
+    load()
+  }, [])
+
+  const accommodations =
+    (staySummary && staySummary.totalBookingCount) ||
+    stats?.totalAccommodations ||
+    0
+  const accommodationRevenue = formatCurrency(
+    (staySummary && staySummary.totalRevenue) ||
+      stats?.totalAccommodationRevenue
+  )
+  const esims =
+    (esimSummary && esimSummary.totalBookingCount) || stats?.totalEsims || 0
+  const esimRevenue = formatCurrency(
+    (esimSummary && esimSummary.totalRevenue) || stats?.totalEsimRevenue
+  )
+  const rides =
+    (rideSummary && rideSummary.totalBookingCount) || stats?.totalRide || 0
+  const rideRevenue = formatCurrency(
+    (rideSummary && rideSummary.totalRevenue) || stats?.totalRideRevenue
+  )
+  const leadway =
+    (leadwaySummary && leadwaySummary.totalBookingCount) ||
+    stats?.totalLeadWay ||
+    0
+  const leadwayRevenue = formatCurrency(
+    (leadwaySummary && leadwaySummary.totalRevenue) ||
+      stats?.totalLeadWayRevenue
+  )
   const drugStore = stats?.totalMed || 0
   const drugStoreRevenue = formatCurrency(stats?.totalMedRevenue)
   const royalConcierge = stats?.totalRoyal || 0

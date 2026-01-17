@@ -80,3 +80,79 @@ export const transactionCounts = async () => {
     throw error
   }
 }
+
+export const eventCount = async (params = {}) => {
+  try {
+    const response = await api.get('/admin/dashboard-event-booking', { params })
+    return response.data
+  } catch (error) {
+    console.error('Error fetching event counts:', error)
+    throw error
+  }
+}
+export const activityCount = async (params = {}) => {
+  try {
+    const response = await api.get('/admin/dashboard-activity-booking', {
+      params
+    })
+    return response.data
+  } catch (error) {
+    console.error('Error fetching activity counts:', error)
+    throw error
+  }
+}
+export const merchandiseCount = async (params = {}) => {
+  try {
+    const response = await api.get('/admin/dashboard-merchandise-booking', {
+      params
+    })
+    return response.data
+  } catch (error) {
+    console.error('Error fetching merchandise counts:', error)
+    throw error
+  }
+}
+export const accommodationCount = async (params = {}) => {
+  try {
+    const response = await api.get('/admin/dashboard-stay-booking', {
+      params
+    })
+    return response.data
+  } catch (error) {
+    console.error('Error fetching stay counts:', error)
+    throw error
+  }
+}
+export const esimCount = async (params = {}) => {
+  try {
+    const response = await api.get('/admin/dashboard-esim-booking', {
+      params
+    })
+    return response.data
+  } catch (error) {
+    console.error('Error fetching esim counts:', error)
+    throw error
+  }
+}
+export const leadwayCount = async (params = {}) => {
+  try {
+    const response = await api.get('/admin/dashboard-leadway-booking', {
+      params
+    })
+    return response.data
+  } catch (error) {
+    console.error('Error fetching leadway counts:', error)
+    throw error
+  }
+}
+export const rideCount = async (params = {}) => {
+  try {
+    const response = await api.get('/admin/dashboard-ride-booking', {
+      params
+    })
+    return response.data
+  } catch (error) {
+    console.error('Error fetching ride counts:', error)
+    throw error
+  }
+}

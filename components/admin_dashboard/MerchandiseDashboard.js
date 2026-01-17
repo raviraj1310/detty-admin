@@ -2,7 +2,10 @@
 
 import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { dashboardMerchandise } from '@/services/auth/login.service'
+import {
+  dashboardMerchandise,
+  merchandiseCount
+} from '@/services/auth/login.service'
 
 const formatCurrency = amount => {
   return (
@@ -14,14 +17,16 @@ const formatCurrency = amount => {
   )
 }
 
-const MerchandiseStats = ({ stats: apiStats, summary }) => {
+const MerchandiseStats = ({ stats: apiStats, summary, counts }) => {
   const skuCount =
     (summary && Number(summary.skuCount || 0)) ||
+    (counts && Number(counts.totalProducts || 0)) ||
     Number(apiStats?.totalProducts || 0)
   const totalQuantity =
     (summary && Number(summary.totalProductsQuantity || 0)) || 0
   const totalValue =
     (summary && formatCurrency(summary.totalProductsValue)) ||
+    (counts && formatCurrency(counts.totalRevenue)) ||
     formatCurrency(apiStats?.totalProductsRevenue)
   const unsoldProducts =
     (summary && Number(summary?.unsold?.productsCount || 0)) || 0
@@ -32,6 +37,9 @@ const MerchandiseStats = ({ stats: apiStats, summary }) => {
     (summary && Number(summary?.sold?.productsCount || 0)) || 0
   const soldUnits = (summary && Number(summary?.sold?.units || 0)) || 0
   const soldValue = (summary && formatCurrency(summary?.sold?.revenue)) || '₦0'
+  const orderCount = (counts && Number(counts.totalOrderCount || 0)) || 0
+  const totalRevenueDisplay =
+    (counts && formatCurrency(counts.totalRevenue)) || totalValue
 
   const stats = {
     skuCount,
@@ -93,10 +101,10 @@ const MerchandiseStats = ({ stats: apiStats, summary }) => {
           </div>
           <div>
             <p className='text-[10px] font-medium text-gray-600 mb-0.5'>
-              Total Products Quantity
+              Total Orders
             </p>
             <p className='text-lg font-bold text-gray-900'>
-              {stats.totalQuantity}({stats.totalValue})
+              {orderCount}({totalRevenueDisplay})
             </p>
           </div>
         </div>
@@ -110,7 +118,9 @@ const MerchandiseStats = ({ stats: apiStats, summary }) => {
             />
           </div>
           <div>
-            <p className='text-[10px] font-medium text-gray-600 mb-0.5'>Growth</p>
+            <p className='text-[10px] font-medium text-gray-600 mb-0.5'>
+              Growth
+            </p>
             <p className='text-lg font-bold text-gray-900'>
               {growthData.newYesterday || 0}
             </p>
@@ -172,9 +182,7 @@ const MerchandiseStats = ({ stats: apiStats, summary }) => {
 
             {/* Left side - Unsold */}
             <div className='absolute left-1 top-1/2 -translate-y-1/2 text-center'>
-              <p className='text-[9px] text-gray-500 mb-0.5'>
-                Unsold Products
-              </p>
+              <p className='text-[9px] text-gray-500 mb-0.5'>Unsold Products</p>
               <p className='text-sm font-bold text-gray-900'>
                 {stats.unsoldProducts}
               </p>
@@ -341,6 +349,7 @@ export default function MerchandiseDashboard ({ stats, startDate, endDate }) {
     leastSellingProducts: [],
     merchandiseSummary: null
   })
+  const [merchCounts, setMerchCounts] = useState(null)
 
   useEffect(() => {
     const fetchMerchandiseData = async () => {
@@ -360,6 +369,25 @@ export default function MerchandiseDashboard ({ stats, startDate, endDate }) {
       } catch (error) {
         console.error('Failed to fetch merchandise data:', error)
       }
+
+      try {
+        const countParams = {}
+        if (startDate) countParams.startDate = startDate
+        if (endDate) countParams.endDate = endDate
+        const countRes = await merchandiseCount(countParams)
+        if (countRes?.success && countRes?.data) {
+          setMerchCounts({
+            totalProducts: Number(countRes.data.totalProducts || 0),
+            totalOrderCount: Number(countRes.data.totalOrderCount || 0),
+            totalRevenue: Number(countRes.data.totalRevenue || 0)
+          })
+        } else {
+          setMerchCounts(null)
+        }
+      } catch (error) {
+        console.error('Failed to fetch merchandise counts:', error)
+        setMerchCounts(null)
+      }
     }
 
     fetchMerchandiseData()
@@ -371,6 +399,7 @@ export default function MerchandiseDashboard ({ stats, startDate, endDate }) {
         <MerchandiseStats
           stats={stats}
           summary={merchandiseData.merchandiseSummary}
+          counts={merchCounts}
         />
       </div>
       <div className='flex flex-col sm:flex-row flex-1 bg-white p-3 rounded-xl gap-3 min-w-0 overflow-hidden'>

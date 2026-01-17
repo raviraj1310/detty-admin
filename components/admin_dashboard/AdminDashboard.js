@@ -4,7 +4,9 @@ import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
 import {
   dashboardUserActiveInactiveCounts,
-  transactionCounts
+  transactionCounts,
+  eventCount,
+  activityCount
 } from '@/services/auth/login.service'
 
 const formatCurrency = amount => {
@@ -84,6 +86,8 @@ export default function AdminDashboard ({ stats, year }) {
     royalConcierge: 0,
     esim: 0
   })
+  const [eventSummary, setEventSummary] = useState(null)
+  const [activitySummary, setActivitySummary] = useState(null)
 
   useEffect(() => {
     const load = async () => {
@@ -102,6 +106,42 @@ export default function AdminDashboard ({ stats, year }) {
           totalActiveUsers: Number(stats?.totalActiveUsers || 0),
           totalInactiveUsers: Number(stats?.totalInactiveUsers || 0)
         })
+      }
+
+      try {
+        const eventParams = {}
+        if (year) eventParams.year = year
+        const eventRes = await eventCount(eventParams)
+        if (eventRes?.success && eventRes?.data) {
+          setEventSummary({
+            totalEvent: Number(eventRes.data.totalEvent || 0),
+            totalBookingCount: Number(eventRes.data.totalBookingCount || 0),
+            totalRevenue: Number(eventRes.data.totalRevenue || 0)
+          })
+        } else {
+          setEventSummary(null)
+        }
+      } catch (error) {
+        console.error('Error loading event summary:', error)
+        setEventSummary(null)
+      }
+
+      try {
+        const activityParams = {}
+        if (year) activityParams.year = year
+        const activityRes = await activityCount(activityParams)
+        if (activityRes?.success && activityRes?.data) {
+          setActivitySummary({
+            totalActivity: Number(activityRes.data.totalActivity || 0),
+            totalBookingCount: Number(activityRes.data.totalBookingCount || 0),
+            totalRevenue: Number(activityRes.data.totalRevenue || 0)
+          })
+        } else {
+          setActivitySummary(null)
+        }
+      } catch (error) {
+        console.error('Error loading activity summary:', error)
+        setActivitySummary(null)
       }
 
       try {
@@ -326,7 +366,7 @@ export default function AdminDashboard ({ stats, year }) {
         {
           id: 'te',
           title: 'Total Events',
-          value: stats?.totalEvents || 0,
+          value: eventSummary?.totalEvent ?? (stats?.totalEvents || 0),
           iconSrc: '/images/dashboard/icons (15).svg',
           bg: 'bg-[#FFE8F5]',
           iconBg: 'bg-gradient-to-r from-[#FFADD2] to-[#E91E8C]'
@@ -334,7 +374,9 @@ export default function AdminDashboard ({ stats, year }) {
         {
           id: 'er',
           title: 'Revenue',
-          value: formatCurrency(stats?.totalEventRevenue),
+          value: formatCurrency(
+            eventSummary?.totalRevenue ?? (stats?.totalEventRevenue || 0)
+          ),
           iconSrc: '/images/dashboard/icons (1).svg',
           bg: 'bg-[#E8F8F0]',
           iconBg: 'bg-gradient-to-r from-[#8EEDC7] to-[#3FA574]'
@@ -349,7 +391,7 @@ export default function AdminDashboard ({ stats, year }) {
         {
           id: 'ta',
           title: 'Total Activities',
-          value: stats?.totalActivity || 0,
+          value: activitySummary?.totalActivity ?? (stats?.totalActivity || 0),
           iconSrc: '/images/dashboard/icons (4).svg',
           bg: 'bg-[#FFF4E8]',
           iconBg: 'bg-gradient-to-r from-[#FFD8A8] to-[#F76707]'
@@ -357,7 +399,9 @@ export default function AdminDashboard ({ stats, year }) {
         {
           id: 'ar',
           title: 'Revenue',
-          value: formatCurrency(stats?.totalActivityRevenue),
+          value: formatCurrency(
+            activitySummary?.totalRevenue ?? (stats?.totalActivityRevenue || 0)
+          ),
           iconSrc: '/images/dashboard/icons (1).svg',
           bg: 'bg-[#E8F8F0]',
           iconBg: 'bg-gradient-to-r from-[#8EEDC7] to-[#3FA574]'
