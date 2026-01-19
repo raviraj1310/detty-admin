@@ -167,7 +167,7 @@ const MerchandiseStats = ({ stats: apiStats, summary, counts }) => {
                 className='text-xs fill-gray-500'
                 fontSize='11'
               >
-                Total
+                Total Stock
               </text>
               <text
                 x='100'

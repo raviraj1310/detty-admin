@@ -374,9 +374,11 @@ export default function AdminDashboard ({ stats, year }) {
         {
           id: 'er',
           title: 'Revenue',
-          value: formatCurrency(
+          value: `${
+            eventSummary?.totalBookingCount ?? stats?.totalEvents ?? 0
+          } (${formatCurrency(
             eventSummary?.totalRevenue ?? (stats?.totalEventRevenue || 0)
-          ),
+          )})`,
           iconSrc: '/images/dashboard/icons (1).svg',
           bg: 'bg-[#E8F8F0]',
           iconBg: 'bg-gradient-to-r from-[#8EEDC7] to-[#3FA574]'
@@ -399,9 +401,11 @@ export default function AdminDashboard ({ stats, year }) {
         {
           id: 'ar',
           title: 'Revenue',
-          value: formatCurrency(
+          value: `${
+            activitySummary?.totalBookingCount ?? stats?.totalActivity ?? 0
+          } (${formatCurrency(
             activitySummary?.totalRevenue ?? (stats?.totalActivityRevenue || 0)
-          ),
+          )})`,
           iconSrc: '/images/dashboard/icons (1).svg',
           bg: 'bg-[#E8F8F0]',
           iconBg: 'bg-gradient-to-r from-[#8EEDC7] to-[#3FA574]'

@@ -7,7 +7,9 @@ import {
   accommodationCount,
   esimCount,
   leadwayCount,
-  rideCount
+  rideCount,
+  royalCount,
+  medCount
 } from '@/services/auth/login.service'
 
 const MetricCard = ({
@@ -117,6 +119,8 @@ export default function AdditionalDashboard ({ stats }) {
   const [esimSummary, setEsimSummary] = useState(null)
   const [rideSummary, setRideSummary] = useState(null)
   const [leadwaySummary, setLeadwaySummary] = useState(null)
+  const [medSummary, setMedSummary] = useState(null)
+  const [royalSummary, setRoyalSummary] = useState(null)
 
   useEffect(() => {
     const load = async () => {
@@ -179,46 +183,79 @@ export default function AdditionalDashboard ({ stats }) {
         console.error('Error loading leadway dashboard data:', error)
         setLeadwaySummary(null)
       }
+
+      try {
+        const resMed = await medCount({})
+        if (resMed?.success && resMed?.data) {
+          setMedSummary({
+            totalBookingCount: Number(resMed.data.totalOrderCount || 0),
+            totalRevenue: Number(resMed.data.totalRevenue || 0)
+          })
+        } else {
+          setMedSummary(null)
+        }
+      } catch (error) {
+        console.error('Error loading med dashboard data:', error)
+        setMedSummary(null)
+      }
+
+      try {
+        const resRoyal = await royalCount({})
+        if (resRoyal?.success && resRoyal?.data) {
+          setRoyalSummary({
+            totalBookingCount: Number(resRoyal.data.totalBookingCount || 0),
+            totalRevenue: Number(resRoyal.data.totalRevenue || 0)
+          })
+        } else {
+          setRoyalSummary(null)
+        }
+      } catch (error) {
+        console.error('Error loading royal dashboard data:', error)
+        setRoyalSummary(null)
+      }
     }
     load()
   }, [])
 
   const accommodations =
-    (staySummary && staySummary.totalBookingCount) ||
-    stats?.totalAccommodations ||
-    0
+    staySummary?.totalBookingCount ?? stats?.totalAccommodations ?? 0
   const accommodationRevenue = formatCurrency(
-    (staySummary && staySummary.totalRevenue) ||
-      stats?.totalAccommodationRevenue
+    staySummary?.totalRevenue ?? stats?.totalAccommodationRevenue ?? 0
   )
-  const esims =
-    (esimSummary && esimSummary.totalBookingCount) || stats?.totalEsims || 0
+  const esims = esimSummary?.totalBookingCount ?? stats?.totalEsims ?? 0
   const esimRevenue = formatCurrency(
-    (esimSummary && esimSummary.totalRevenue) || stats?.totalEsimRevenue
+    esimSummary?.totalRevenue ?? stats?.totalEsimRevenue ?? 0
   )
-  const rides =
-    (rideSummary && rideSummary.totalBookingCount) || stats?.totalRide || 0
+  const rides = rideSummary?.totalBookingCount ?? stats?.totalRide ?? 0
   const rideRevenue = formatCurrency(
-    (rideSummary && rideSummary.totalRevenue) || stats?.totalRideRevenue
+    rideSummary?.totalRevenue ?? stats?.totalRideRevenue ?? 0
   )
-  const leadway =
-    (leadwaySummary && leadwaySummary.totalBookingCount) ||
-    stats?.totalLeadWay ||
-    0
+  const leadway = leadwaySummary?.totalBookingCount ?? stats?.totalLeadWay ?? 0
   const leadwayRevenue = formatCurrency(
-    (leadwaySummary && leadwaySummary.totalRevenue) ||
-      stats?.totalLeadWayRevenue
+    leadwaySummary?.totalRevenue ?? stats?.totalLeadWayRevenue ?? 0
   )
-  const drugStore = stats?.totalMed || 0
-  const drugStoreRevenue = formatCurrency(stats?.totalMedRevenue)
-  const royalConcierge = stats?.totalRoyal || 0
-  const royalConciergeRevenue = formatCurrency(stats?.totalRoyalRevenue)
+  const drugStore = medSummary?.totalBookingCount ?? stats?.totalMed ?? 0
+  const drugStoreRevenue = formatCurrency(
+    medSummary?.totalRevenue ?? stats?.totalMedRevenue ?? 0
+  )
+  const royalConcierge =
+    royalSummary?.totalBookingCount ?? stats?.totalRoyal ?? 0
+  const royalConciergeRevenue = formatCurrency(
+    royalSummary?.totalRevenue ?? stats?.totalRoyalRevenue ?? 0
+  )
   const visaApplications = stats?.totalVisaAppition || 0
   const visaSettled = stats?.totalVisaSettled || 0
   const walletAmount = '₦0' // Not provided in API
   const emailSubscribers = stats?.totalEmailSubscribers || 0
   const contactEnquiries = stats?.totalContacts || 0
   const eventEnquiries = stats?.totalInquiries || 0
+
+  const accommodationRevenueDisplay = `${accommodations} (${accommodationRevenue})`
+  const esimRevenueDisplay = `${esims} (${esimRevenue})`
+  const rideRevenueDisplay = `${rides} (${rideRevenue})`
+  const leadwayRevenueDisplay = `${leadway} (${leadwayRevenue})`
+  const drugStoreRevenueDisplay = `${drugStore} (${drugStoreRevenue})`
+  const royalConciergeRevenueDisplay = `${royalConcierge} (${royalConciergeRevenue})`
 
   const getGrowthCards = (key, title = 'New Yesterday') => {
     const data = stats?.growth?.[key] || {}
@@ -286,7 +323,7 @@ export default function AdditionalDashboard ({ stats }) {
             ))}
             <MetricCard
               label='Revenue'
-              value={accommodationRevenue}
+              value={accommodationRevenueDisplay}
               bgColor='bg-[#E8F8F0]'
               iconBg='bg-gradient-to-r from-[#8EEDC7] to-[#3FA574]'
               iconSrc='/images/dashboard/icons (1).svg'
@@ -309,7 +346,7 @@ export default function AdditionalDashboard ({ stats }) {
             ))}
             <MetricCard
               label='Revenue'
-              value={esimRevenue}
+              value={esimRevenueDisplay}
               bgColor='bg-[#E8F8F0]'
               iconBg='bg-gradient-to-r from-[#8EEDC7] to-[#3FA574]'
               iconSrc='/images/dashboard/icons (1).svg'
@@ -335,7 +372,7 @@ export default function AdditionalDashboard ({ stats }) {
             ))}
             <MetricCard
               label='Revenue'
-              value={rideRevenue}
+              value={rideRevenueDisplay}
               bgColor='bg-[#E8F8F0]'
               iconBg='bg-gradient-to-r from-[#8EEDC7] to-[#3FA574]'
               iconSrc='/images/dashboard/icons (1).svg'
@@ -358,7 +395,7 @@ export default function AdditionalDashboard ({ stats }) {
             ))}
             <MetricCard
               label='Revenue'
-              value={leadwayRevenue}
+              value={leadwayRevenueDisplay}
               bgColor='bg-[#E8F8F0]'
               iconBg='bg-gradient-to-r from-[#8EEDC7] to-[#3FA574]'
               iconSrc='/images/dashboard/icons (1).svg'
@@ -384,7 +421,7 @@ export default function AdditionalDashboard ({ stats }) {
             ))}
             <MetricCard
               label='Revenue'
-              value={drugStoreRevenue}
+              value={drugStoreRevenueDisplay}
               bgColor='bg-[#E8F8F0]'
               iconBg='bg-gradient-to-r from-[#8EEDC7] to-[#3FA574]'
               iconSrc='/images/dashboard/icons (1).svg'
@@ -407,7 +444,7 @@ export default function AdditionalDashboard ({ stats }) {
             ))}
             <MetricCard
               label='Revenue'
-              value={royalConciergeRevenue}
+              value={royalConciergeRevenueDisplay}
               bgColor='bg-[#E8F8F0]'
               iconBg='bg-gradient-to-r from-[#8EEDC7] to-[#3FA574]'
               iconSrc='/images/dashboard/icons (1).svg'

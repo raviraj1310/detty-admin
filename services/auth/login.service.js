@@ -156,3 +156,25 @@ export const rideCount = async (params = {}) => {
     throw error
   }
 }
+export const royalCount = async (params = {}) => {
+  try {
+    const response = await api.get('/admin/dashboard-rc-booking', {
+      params
+    })
+    return response.data
+  } catch (error) {
+    console.error('Error fetching royal counts:', error)
+    throw error
+  }
+}
+export const medCount = async (params = {}) => {
+  try {
+    const response = await api.get('/admin/dashboard-med-booking', {
+      params
+    })
+    return response.data
+  } catch (error) {
+    console.error('Error fetching med counts:', error)
+    throw error
+  }
+}
