@@ -21,6 +21,7 @@ import { FaChartColumn } from 'react-icons/fa6'
 import { getRoyalBookingList } from '@/services/royal-concierge/royal.service'
 import Modal from '@/components/ui/Modal'
 import { downloadExcel } from '@/utils/excelExport'
+import TransactionStatsCards from '../users/TransactionStatsCards'
 
 const filterTabs = [
   // { id: 'bundle-orders', label: 'Bundle Orders', active: false },
@@ -489,6 +490,7 @@ export default function RoyalConciergeList () {
               </span>
             </nav>
           </div>
+          <TransactionStatsCards dateRange={dateRange} />
           <div className='flex items-center gap-2'>
             <div className='flex items-center gap-2'>
               <div className='flex flex-col'>

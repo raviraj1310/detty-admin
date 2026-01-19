@@ -7,6 +7,7 @@ import { TbTicket, TbTrendingUp, TbTrendingDown } from 'react-icons/tb'
 import { FaChartColumn } from 'react-icons/fa6'
 import { downloadExcel } from '@/utils/excelExport'
 import { getAllAccommodationOrders } from '@/services/merchandise/order.service'
+import TransactionStatsCards from './TransactionStatsCards'
 
 const toCurrency = n => {
   const num = typeof n === 'number' ? n : Number(n || 0)
@@ -660,6 +661,7 @@ export default function AccommodationPage () {
             <span>Dashboard</span> / <span>Gross Transaction Value</span>
           </nav>
         </div>
+         <TransactionStatsCards dateRange={dateRange} />
         <div className='flex items-center gap-2'>
           <div className='flex items-center gap-2'>
             <div className='flex flex-col'>

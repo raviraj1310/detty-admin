@@ -16,6 +16,7 @@ import {
   getAllOrders,
   downloadOrderReceipt
 } from '@/services/merchandise/order.service'
+import TransactionStatsCards from '@/components/users/TransactionStatsCards'
 
 const toCurrency = n => {
   try {
@@ -735,6 +736,7 @@ export default function MerchandisePage () {
             <span>Dashboard</span> / <span>Gross Transaction Value</span>
           </nav>
         </div>
+         <TransactionStatsCards dateRange={dateRange} />
         <div className='flex items-center gap-2'>
           <div className='flex items-center gap-2'>
             <div className='flex flex-col'>

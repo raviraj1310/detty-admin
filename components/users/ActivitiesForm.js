@@ -14,6 +14,7 @@ import { getActivityBookedTickets } from '../../services/booking/booking.service
 import { activityCount } from '@/services/auth/login.service'
 import { downloadActivityBookedTicket } from '@/services/places-to-visit/placesToVisit.service'
 import { downloadExcel } from '@/utils/excelExport'
+import TransactionStatsCards from './TransactionStatsCards'
 
 const fmtCurrency = n => `₦${Number(n || 0).toLocaleString('en-NG')}`
 
@@ -706,6 +707,7 @@ export default function Activities () {
             <span>Dashboard</span> / <span>Gross Transaction Value</span>
           </nav>
         </div>
+         <TransactionStatsCards dateRange={dateRange} />
         <div className='flex items-center gap-2'>
           <div className='flex items-center gap-2'>
             <div className='flex flex-col'>

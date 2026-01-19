@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { X } from 'lucide-react'
 import RidesForm from '@/components/users/RidesForm'
+import TransactionStatsCards from '@/components/users/TransactionStatsCards'
 
 export default function RidesPage () {
   const [dateRange, setDateRange] = useState({ start: '', end: '' })
@@ -23,6 +24,7 @@ export default function RidesPage () {
               </span>
             </nav>
           </div>
+          <TransactionStatsCards dateRange={dateRange} />
           <div className='flex items-center gap-2'>
             <div className='flex items-center gap-2'>
               <div className='flex flex-col'>

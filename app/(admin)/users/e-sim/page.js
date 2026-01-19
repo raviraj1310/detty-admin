@@ -12,6 +12,7 @@ import {
 import { FaChartColumn } from 'react-icons/fa6'
 import { getAllEsimBookingList } from '@/services/booking/booking.service'
 import { downloadExcel } from '@/utils/excelExport'
+import TransactionStatsCards from '@/components/users/TransactionStatsCards'
 
 const toCurrency = n => {
   try {
@@ -597,6 +598,7 @@ export default function EsimUsersPage () {
             <span>Dashboard</span> / <span>Gross Transaction Value</span>
           </nav>
         </div>
+         <TransactionStatsCards dateRange={dateRange} />
         <div className='flex items-center gap-2'>
           <div className='flex items-center gap-2'>
             <div className='flex flex-col'>

@@ -13,6 +13,7 @@ import { FaChartColumn } from 'react-icons/fa6'
 import { getLeadwayList } from '@/services/leadway/leadway.service'
 import { downloadExcel } from '@/utils/excelExport'
 import Modal from '@/components/ui/Modal'
+import TransactionStatsCards from '@/components/users/TransactionStatsCards'
 
 const filterTabs = [
   // { id: 'bundle-orders', label: 'Bundle Orders', active: false },
@@ -470,6 +471,7 @@ export default function LeadwayPage () {
               <span className='text-gray-900 font-medium'>Users</span>
             </nav>
           </div>
+           <TransactionStatsCards dateRange={dateRange} />
           <div className='flex items-center gap-2'>
             <div className='flex items-center gap-2'>
               <div className='flex flex-col'>

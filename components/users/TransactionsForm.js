@@ -16,7 +16,7 @@ import {
 } from '../../services/booking/booking.service'
 import { downloadExcel } from '@/utils/excelExport'
 import Modal from '@/components/ui/Modal'
-import { overallBookingCounts } from '@/services/auth/login.service'
+import TransactionStatsCards from './TransactionStatsCards'
 function ActionDropdown ({ transactionId }) {
   const [isOpen, setIsOpen] = useState(false)
   const [buttonPosition, setButtonPosition] = useState({ top: 0, right: 0 })
@@ -191,10 +191,6 @@ export default function TransactionsForm () {
   const [limit, setLimit] = useState(50)
   const [pageCount, setPageCount] = useState(1)
   const [page, setPage] = useState(1)
-  const [overallStats, setOverallStats] = useState({
-    totalBookingCount: 0,
-    totalRevenue: 0
-  })
 
   const [stats, setStats] = useState({
     yesterdayCount: 0,
@@ -204,27 +200,6 @@ export default function TransactionsForm () {
     avgGrowthPercent: '0%',
     isPctIncreasing: false
   })
-
-  useEffect(() => {
-    const fetchOverallStats = async () => {
-      try {
-        const params = {}
-        if (dateRange.start) params.startDate = dateRange.start
-        if (dateRange.end) params.endDate = dateRange.end
-
-        const res = await overallBookingCounts(params)
-        if (res?.success && res?.data) {
-          setOverallStats({
-            totalBookingCount: res.data.totalBookingCount || 0,
-            totalRevenue: res.data.totalRevenue || 0
-          })
-        }
-      } catch (error) {
-        console.error('Error fetching overall stats:', error)
-      }
-    }
-    fetchOverallStats()
-  }, [dateRange])
 
   useEffect(() => {
     if (!bookings) return
@@ -1025,20 +1000,7 @@ export default function TransactionsForm () {
             <span>Dashboard</span> / <span>Gross Transaction Value</span>
           </nav>
         </div>
-        <div className='flex gap-4'>
-          <div className='bg-purple-50 p-3 rounded-lg border border-purple-100 min-w-[150px]'>
-            <p className='text-xs text-purple-600 mb-1'>Total Bookings</p>
-            <p className='text-lg font-bold text-purple-700'>
-              {overallStats.totalBookingCount}
-            </p>
-          </div>
-          <div className='bg-green-50 p-3 rounded-lg border border-green-100 min-w-[150px]'>
-            <p className='text-xs text-green-600 mb-1'>Total Revenue</p>
-            <p className='text-lg font-bold text-green-700'>
-              ₦{overallStats.totalRevenue.toLocaleString()}
-            </p>
-          </div>
-        </div>
+        <TransactionStatsCards dateRange={dateRange} />
         <div className='flex items-center gap-2'>
           <div className='flex items-center gap-2'>
             <div className='flex flex-col'>
