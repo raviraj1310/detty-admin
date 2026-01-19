@@ -11,6 +11,7 @@ import {
 import { FaChartColumn } from 'react-icons/fa6'
 import { Search, MoreVertical, Download, User, Loader2, X } from 'lucide-react'
 import { getActivityBookedTickets } from '../../services/booking/booking.service'
+import { activityCount } from '@/services/auth/login.service'
 import { downloadActivityBookedTicket } from '@/services/places-to-visit/placesToVisit.service'
 import { downloadExcel } from '@/utils/excelExport'
 
@@ -142,6 +143,27 @@ export default function Activities () {
     avgGrowthPercent: '0%',
     isPctIncreasing: false
   })
+
+  useEffect(() => {
+    const fetchActivityStats = async () => {
+      try {
+        const params = {}
+        if (dateRange.start) params.startDate = dateRange.start
+        if (dateRange.end) params.endDate = dateRange.end
+
+        const res = await activityCount(params)
+        if (res?.success && res?.data) {
+          setActivityStats({
+            totalBookingCount: res.data.totalBookingCount || 0,
+            totalRevenue: res.data.totalRevenue || 0
+          })
+        }
+      } catch (error) {
+        console.error('Error fetching activity stats:', error)
+      }
+    }
+    fetchActivityStats()
+  }, [dateRange])
 
   useEffect(() => {
     // If stats are already loaded from API, skip client-side calc

@@ -6,7 +6,8 @@ import {
   dashboardUserActiveInactiveCounts,
   transactionCounts,
   eventCount,
-  activityCount
+  activityCount,
+  overallBookingCounts
 } from '@/services/auth/login.service'
 
 const formatCurrency = amount => {
@@ -88,6 +89,7 @@ export default function AdminDashboard ({ stats, year }) {
   })
   const [eventSummary, setEventSummary] = useState(null)
   const [activitySummary, setActivitySummary] = useState(null)
+  const [overallDashboardStats, setOverallDashboardStats] = useState(null)
 
   useEffect(() => {
     const load = async () => {
@@ -145,6 +147,23 @@ export default function AdminDashboard ({ stats, year }) {
       }
 
       try {
+        const overallParams = {}
+        if (year) overallParams.year = year
+        const overallRes = await overallBookingCounts(overallParams)
+        if (overallRes?.success && overallRes?.data) {
+          setOverallDashboardStats({
+            totalBookingCount: Number(overallRes.data.totalBookingCount || 0),
+            totalRevenue: Number(overallRes.data.totalRevenue || 0)
+          })
+        } else {
+          setOverallDashboardStats(null)
+        }
+      } catch (error) {
+        console.error('Error loading overall dashboard data:', error)
+        setOverallDashboardStats(null)
+      }
+
+      try {
         const txnRes = await transactionCounts()
         const counts = txnRes?.data?.counts || {}
         setTxnCounts({
@@ -165,26 +184,28 @@ export default function AdminDashboard ({ stats, year }) {
   }, [year])
   // Calculate total bookings and revenue if needed
   const totalBookings =
+    overallDashboardStats?.totalBookingCount ??
     (stats?.totalEvents || 0) +
-    (stats?.totalActivity || 0) +
-    (stats?.totalAccommodations || 0) +
-    (stats?.totalEsims || 0) +
-    (stats?.totalRide || 0) +
-    (stats?.totalLeadWay || 0) +
-    (stats?.totalMed || 0) +
-    (stats?.totalRoyal || 0) +
-    (stats?.totalVisaAppition || 0)
+      (stats?.totalActivity || 0) +
+      (stats?.totalAccommodations || 0) +
+      (stats?.totalEsims || 0) +
+      (stats?.totalRide || 0) +
+      (stats?.totalLeadWay || 0) +
+      (stats?.totalMed || 0) +
+      (stats?.totalRoyal || 0) +
+      (stats?.totalVisaAppition || 0)
 
   const totalRevenue =
+    overallDashboardStats?.totalRevenue ??
     (stats?.totalEventRevenue || 0) +
-    (stats?.totalActivityRevenue || 0) +
-    (stats?.totalProductsRevenue || 0) +
-    (stats?.totalAccommodationRevenue || 0) +
-    (stats?.totalEsimRevenue || 0) +
-    (stats?.totalRideRevenue || 0) +
-    (stats?.totalLeadWayRevenue || 0) +
-    (stats?.totalMedRevenue || 0) +
-    (stats?.totalRoyalRevenue || 0)
+      (stats?.totalActivityRevenue || 0) +
+      (stats?.totalProductsRevenue || 0) +
+      (stats?.totalAccommodationRevenue || 0) +
+      (stats?.totalEsimRevenue || 0) +
+      (stats?.totalRideRevenue || 0) +
+      (stats?.totalLeadWayRevenue || 0) +
+      (stats?.totalMedRevenue || 0) +
+      (stats?.totalRoyalRevenue || 0)
 
   const getGrowthCards = (key, title = 'New Yesterday') => {
     const data = stats?.growth?.[key] || {}

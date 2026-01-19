@@ -178,3 +178,16 @@ export const medCount = async (params = {}) => {
     throw error
   }
 }
+
+
+export const overallBookingCounts = async (params = {}) => {
+  try {
+    const response = await api.get('/admin/dashboard-overall-booking', {
+      params
+    })
+    return response.data
+  } catch (error) {
+    console.error('Error fetching overall booking counts:', error)
+    throw error
+  }
+}
