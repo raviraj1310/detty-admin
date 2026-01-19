@@ -616,7 +616,7 @@ export default function TicketsIdBooked ({ activityId }) {
           </div>
 
           <div className='overflow-hidden rounded-xl border border-[#E5E8F5]'>
-            <div className='grid grid-cols-[1.2fr_1.2fr_1.8fr_1.2fr_1.8fr_0.9fr_1.1fr_0.9fr_1fr_40px] gap-2 bg-[#F7F9FD] px-4 py-3'>
+            <div className='grid grid-cols-[1.2fr_1.2fr_1.8fr_1.2fr_1.8fr_0.9fr_0.9fr_1.1fr_0.9fr_1fr_40px] gap-2 bg-[#F7F9FD] px-4 py-3'>
               <div>
                 <TableHeaderCell>
                   {formatHeaderText('Booked on')}
@@ -644,6 +644,11 @@ export default function TicketsIdBooked ({ activityId }) {
               </div>
               <div>
                 <TableHeaderCell>{formatHeaderText('Amount')}</TableHeaderCell>
+              </div>
+              <div>
+                <TableHeaderCell>
+                  {formatHeaderText('Discount Applied')}
+                </TableHeaderCell>
               </div>
               <div>
                 <TableHeaderCell>
@@ -677,7 +682,7 @@ export default function TicketsIdBooked ({ activityId }) {
                 rows.map(booking => (
                   <div
                     key={booking.id}
-                    className='grid grid-cols-[1.2fr_1.2fr_1.8fr_1.2fr_1.8fr_0.9fr_1.1fr_0.9fr_1fr_40px] gap-2 px-4 py-3 hover:bg-[#F9FAFD]'
+                    className='grid grid-cols-[1.2fr_1.2fr_1.8fr_1.2fr_1.8fr_0.9fr_0.9fr_1.1fr_0.9fr_1fr_40px] gap-2 px-4 py-3 hover:bg-[#F9FAFD]'
                   >
                     <div className='self-center text-xs text-[#5E6582]'>
                       {booking.bookedOn}
@@ -696,6 +701,11 @@ export default function TicketsIdBooked ({ activityId }) {
                     </div>
                     <div className='self-center text-xs font-semibold text-slate-900'>
                       {booking.amount}
+                    </div>
+                    <div className='self-center text-xs font-semibold text-slate-900'>
+                      {typeof booking.discountApplied === 'number'
+                        ? `₦${booking.discountApplied.toLocaleString()}`
+                        : '-'}
                     </div>
                     <div className='self-center text-xs font-semibold text-slate-900'>
                       {booking.arrivalDate}

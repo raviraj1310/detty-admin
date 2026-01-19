@@ -180,6 +180,7 @@ export default function TicketsBooked () {
           activityStatusClass: activityStatusClass(
             b?.status || b?.bookingStatus
           ),
+          discountApplied: b?.pricing?.discountApplied || 0,
           raw: b
         }))
         setRows(mapped)
@@ -641,6 +642,9 @@ export default function TicketsBooked () {
               <TableHeaderCell>Amount</TableHeaderCell>
             </div>
             <div>
+              <TableHeaderCell>Discount</TableHeaderCell>
+            </div>
+            <div>
               <TableHeaderCell>Arrival</TableHeaderCell>
             </div>
             <div>
@@ -664,7 +668,7 @@ export default function TicketsBooked () {
               paginatedBookings?.map(booking => (
                 <div
                   key={booking.id}
-                  className='grid grid-cols-[0.9fr_0.8fr_1.2fr_0.9fr_1.3fr_0.7fr_0.9fr_0.7fr_0.7fr_32px] gap-1.5 px-3 py-3 hover:bg-[#F9FAFD]'
+                  className='grid grid-cols-[0.9fr_0.8fr_1.2fr_0.9fr_1.3fr_0.7fr_0.7fr_0.9fr_0.7fr_0.7fr_32px] gap-1.5 px-3 py-3 hover:bg-[#F9FAFD]'
                 >
                   <div className='self-center text-xs text-[#5E6582] line-clamp-2'>
                     {booking.bookedOn}
@@ -683,6 +687,11 @@ export default function TicketsBooked () {
                   </div>
                   <div className='self-center text-xs font-semibold text-slate-900 line-clamp-2'>
                     {booking.amount}
+                  </div>
+                  <div className='self-center text-xs font-semibold text-slate-900 line-clamp-2'>
+                    {typeof booking.discountApplied === 'number'
+                      ? `₦${booking.discountApplied.toLocaleString()}`
+                      : '-'}
                   </div>
                   <div className='self-center text-xs font-semibold text-slate-900 line-clamp-2'>
                     {booking.arrivalDate}

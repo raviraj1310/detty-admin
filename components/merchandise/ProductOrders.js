@@ -432,7 +432,7 @@ export default function ProductOrders () {
         </div>
 
         <div className='rounded-2xl border border-[#E5E8F5] overflow-visible'>
-          <div className='grid grid-cols-[1.5fr_1.3fr_1.8fr_1.3fr_1.5fr_1fr_1.2fr_50px] gap-3 bg-[#F7F9FD] px-6 py-4'>
+          <div className='grid grid-cols-[1.5fr_1.3fr_1.8fr_1.3fr_1.5fr_1fr_1fr_1.2fr_50px] gap-3 bg-[#F7F9FD] px-6 py-4'>
             <div>
               <div className='text-xs font-medium capitalize tracking-wide text-[#8A92AC]'>
                 Ordered on
@@ -460,6 +460,11 @@ export default function ProductOrders () {
             </div>
             <div>
               <div className='text-xs font-medium capitalize tracking-wide text-[#8A92AC]'>
+                Discount
+              </div>
+            </div>
+            <div>
+              <div className='text-xs font-medium capitalize tracking-wide text-[#8A92AC]'>
                 Amount
               </div>
             </div>
@@ -479,7 +484,7 @@ export default function ProductOrders () {
             {filtered.map(o => (
               <div
                 key={o.id}
-                className='grid grid-cols-[1.5fr_1.3fr_1.8fr_1.3fr_1.5fr_1fr_1.2fr_50px] gap-3 px-6 py-5 hover:bg-[#F9FAFD] relative'
+                className='grid grid-cols-[1.5fr_1.3fr_1.8fr_1.3fr_1.5fr_1fr_1fr_1.2fr_50px] gap-3 px-6 py-5 hover:bg-[#F9FAFD] relative'
               >
                 <div className='self-center text-sm text-[#5E6582] line-clamp-2'>
                   {o.date}
@@ -498,6 +503,9 @@ export default function ProductOrders () {
                   title={o.details}
                 >
                   {o.details}
+                </div>
+                <div className='self-center text-sm font-semibold text-slate-900 whitespace-nowrap'>
+                  {toCurrency(o.discount)}
                 </div>
                 <div className='self-center text-sm font-semibold text-slate-900 whitespace-nowrap'>
                   {toCurrency(o.amount)}

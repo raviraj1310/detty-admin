@@ -245,7 +245,8 @@ export default function TicketsBooked () {
             event: b.event || null,
             arrivalDate: b.arrivalDate || null,
             quantity: b.quantity,
-            ticketId: b.ticketId
+            ticketId: b.ticketId,
+            discountApplied: b.discountApplied
           }))
 
           // Calculate stats from unique ticket types in the list
@@ -663,7 +664,7 @@ export default function TicketsBooked () {
           onScroll={() => setMenuOpenId(null)}
         >
           <div className='min-w-[1300px]'>
-            <div className='grid grid-cols-[14%_14%_16%_12%_14%_10%_10%_10%_10%] gap-2 bg-[#F7F9FD] px-6 py-4'>
+            <div className='grid grid-cols-[12%_12%_14%_10%_12%_8%_8%_8%_8%_8%] gap-2 bg-[#F7F9FD] px-6 py-4'>
               <div>
                 <TableHeaderCell>Booked On</TableHeaderCell>
               </div>
@@ -687,6 +688,9 @@ export default function TicketsBooked () {
               </div>
               <div>
                 <TableHeaderCell>Payment Status</TableHeaderCell>
+              </div>
+              <div>
+                <TableHeaderCell>Discount Applied</TableHeaderCell>
               </div>
               <div className='flex justify-end'>
                 <TableHeaderCell align='right'>Activity Status</TableHeaderCell>
@@ -716,7 +720,7 @@ export default function TicketsBooked () {
                         booking.bookingId ||
                         'booking'
                       }-${idx}`}
-                      className='grid grid-cols-[14%_14%_16%_12%_14%_10%_10%_10%_10%] gap-2 px-6 py-5 hover:bg-[#F9FAFD]'
+                      className='grid grid-cols-[12%_12%_14%_10%_12%_8%_8%_8%_8%_8%] gap-2 px-6 py-5 hover:bg-[#F9FAFD]'
                     >
                       <div className='text-sm text-[#5E6582] truncate'>
                         {(() => {
@@ -831,6 +835,11 @@ export default function TicketsBooked () {
                             </span>
                           )
                         })()}
+                      </div>
+                      <div className='text-sm font-semibold text-slate-900 whitespace-nowrap'>
+                        {typeof booking.discountApplied === 'number'
+                          ? `₦${booking.discountApplied.toLocaleString()}`
+                          : '-'}
                       </div>
                       <div className='flex items-center justify-end gap-3'>
                         {(() => {

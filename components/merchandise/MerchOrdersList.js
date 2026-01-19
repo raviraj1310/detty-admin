@@ -1,7 +1,7 @@
-"use client";
+'use client'
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import Toast from "@/components/ui/Toast";
+import { useEffect, useMemo, useRef, useState } from 'react'
+import Toast from '@/components/ui/Toast'
 import {
   Search,
   Download,
@@ -9,71 +9,71 @@ import {
   Ticket,
   User,
   Loader2,
-  MoreVertical,
-} from "lucide-react";
-import { useRouter } from "next/navigation";
-import { IoFilterSharp } from "react-icons/io5";
+  MoreVertical
+} from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { IoFilterSharp } from 'react-icons/io5'
 import {
   getAllOrders,
-  downloadOrderReceipt,
-} from "@/services/merchandise/order.service";
-import { downloadExcel } from "@/utils/excelExport";
-import Modal from "@/components/ui/Modal";
-import CustomerDetailsModal from "@/components/common/CustomerDetailsModal";
-const toCurrency = (n) => {
+  downloadOrderReceipt
+} from '@/services/merchandise/order.service'
+import { downloadExcel } from '@/utils/excelExport'
+import Modal from '@/components/ui/Modal'
+import CustomerDetailsModal from '@/components/common/CustomerDetailsModal'
+const toCurrency = n => {
   try {
-    return new Intl.NumberFormat("en-NG", {
-      style: "currency",
-      currency: "NGN",
-    }).format(Number(n) || 0);
+    return new Intl.NumberFormat('en-NG', {
+      style: 'currency',
+      currency: 'NGN'
+    }).format(Number(n) || 0)
   } catch {
-    const x = Number(n) || 0;
-    return `₦${x.toLocaleString("en-NG")}`;
+    const x = Number(n) || 0
+    return `₦${x.toLocaleString('en-NG')}`
   }
-};
+}
 
-export default function MerchOrdersList() {
-  const router = useRouter();
-  const [toastOpen, setToastOpen] = useState(false);
-  const [filtersOpen, setFiltersOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
-  const [menuOpenId, setMenuOpenId] = useState(null);
-  const menuRef = useRef(null);
-  const [ordersRaw, setOrdersRaw] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [selectedOrder, setSelectedOrder] = useState(null);
-  const [orderOpen, setOrderOpen] = useState(false);
-  const [customerOpen, setCustomerOpen] = useState(false);
-  const [downloadingId, setDownloadingId] = useState(null);
-  const [limit, setLimit] = useState(50);
-  const [pageCount, setPageCount] = useState(1);
-  const [page, setPage] = useState(1);
+export default function MerchOrdersList () {
+  const router = useRouter()
+  const [toastOpen, setToastOpen] = useState(false)
+  const [filtersOpen, setFiltersOpen] = useState(false)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [statusFilter, setStatusFilter] = useState('')
+  const [menuOpenId, setMenuOpenId] = useState(null)
+  const menuRef = useRef(null)
+  const [ordersRaw, setOrdersRaw] = useState([])
+  const [loading, setLoading] = useState(false)
+  const [selectedOrder, setSelectedOrder] = useState(null)
+  const [orderOpen, setOrderOpen] = useState(false)
+  const [customerOpen, setCustomerOpen] = useState(false)
+  const [downloadingId, setDownloadingId] = useState(null)
+  const [limit, setLimit] = useState(50)
+  const [pageCount, setPageCount] = useState(1)
+  const [page, setPage] = useState(1)
 
   useEffect(() => {
-    const handler = (e) => {
+    const handler = e => {
       if (menuRef.current && !menuRef.current.contains(e.target))
-        setMenuOpenId(null);
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
+        setMenuOpenId(null)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
 
   const handleDownloadExcel = () => {
-    if (!ordersRaw || ordersRaw.length === 0) return;
+    if (!ordersRaw || ordersRaw.length === 0) return
 
-    const formatDate = (d) => {
-      if (!d) return "-";
-      return new Date(d).toLocaleString();
-    };
+    const formatDate = d => {
+      if (!d) return '-'
+      return new Date(d).toLocaleString()
+    }
 
-    const dataToExport = [];
+    const dataToExport = []
 
-    ordersRaw.forEach((order) => {
-      const buyer = order.userId || {};
+    ordersRaw.forEach(order => {
+      const buyer = order.userId || {}
 
-      (order.items || []).forEach((item) => {
-        const product = item.productId || {};
+      ;(order.items || []).forEach(item => {
+        const product = item.productId || {}
 
         dataToExport.push({
           /* ===== Order Info ===== */
@@ -83,15 +83,15 @@ export default function MerchOrdersList() {
           Updated_On: formatDate(order.updatedAt),
 
           /* ===== Buyer Info ===== */
-          User_Name: order.userName || buyer.name || "",
-          Email: order.email || buyer.email || "",
-          Phone_Number: order.phoneNumber || "",
+          User_Name: order.userName || buyer.name || '',
+          Email: order.email || buyer.email || '',
+          Phone_Number: order.phoneNumber || '',
 
           /* ===== Product Info ===== */
           Product_ID: product._id,
           Product_Title: product.title,
           Product_Price: product.price,
-          Size: item.size && String(item.size).trim() ? item.size : "N/A",
+          Size: item.size && String(item.size).trim() ? item.size : 'N/A',
 
           Quantity: item.quantity,
           Item_Total: item.price * item.quantity,
@@ -110,261 +110,260 @@ export default function MerchOrdersList() {
           /* ===== Transaction Info ===== */
           Transaction_Ref: order.transactionRef || order.transacionId,
           Transaction_ID: order.transactionId,
-          Payment_Reference: order.paymentReference,
-        });
-      });
-    });
+          Payment_Reference: order.paymentReference
+        })
+      })
+    })
 
-    downloadExcel(dataToExport, "Merchandise_Orders.xlsx");
-  };
+    downloadExcel(dataToExport, 'Merchandise_Orders.xlsx')
+  }
 
-  const formatDate = (iso) => {
-    const d = new Date(iso);
-    if (!Number.isFinite(d.getTime())) return "";
+  const formatDate = iso => {
+    const d = new Date(iso)
+    if (!Number.isFinite(d.getTime())) return ''
     try {
       const opts = {
-        weekday: "short",
-        day: "2-digit",
-        month: "long",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: true,
-      };
-      const s = d.toLocaleString("en-NG", opts);
-      return s;
+        weekday: 'short',
+        day: '2-digit',
+        month: 'long',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+      }
+      const s = d.toLocaleString('en-NG', opts)
+      return s
     } catch {
-      return d.toISOString();
+      return d.toISOString()
     }
-  };
+  }
 
   const orders = useMemo(
     () =>
       Array.isArray(ordersRaw)
-        ? ordersRaw.map((o) => {
+        ? ordersRaw.map(o => {
             const details = Array.isArray(o?.items)
               ? o.items
-                  .map((i) => {
-                    const title = i?.productId?.title || "-";
-                    const qty = Number(i?.quantity || 0);
-                    const price = i?.price ?? i?.productId?.price;
-                    const size = i?.size ? ` | Size: ${i.size}` : ""; // ✅ ADD SIZE
-                    return `${qty} x ${title}${size} (${toCurrency(price)})`;
+                  .map(i => {
+                    const title = i?.productId?.title || '-'
+                    const qty = Number(i?.quantity || 0)
+                    const price = i?.price ?? i?.productId?.price
+                    const size = i?.size ? ` | Size: ${i.size}` : '' // ✅ ADD SIZE
+                    return `${qty} x ${title}${size} (${toCurrency(price)})`
                   })
-                  .join(", ")
-              : "";
+                  .join(', ')
+              : ''
             return {
-              id: o?._id || o?.orderId || "",
+              id: o?._id || o?.orderId || '',
               date: formatDate(o?.createdAt),
-              userName: o?.userName || "-",
-              email: o?.email || "-",
-              phone: o?.phoneNumber || "-",
+              userName: o?.userName || '-',
+              email: o?.email || '-',
+              phone: o?.phoneNumber || '-',
               details,
               amount: Number(o?.totalAmount || 0),
-              status: o?.status || "Pending",
-            };
+              status: o?.status || 'Pending'
+            }
           })
         : [],
     [ordersRaw]
-  );
-  console.log(orders, "Orders");
+  )
+  console.log(orders, 'Orders')
   const filtered = useMemo(() => {
-    const term = String(searchTerm || "")
+    const term = String(searchTerm || '')
       .trim()
-      .toLowerCase();
-    return orders.filter((o) => {
+      .toLowerCase()
+    return orders.filter(o => {
       const statusOk = statusFilter
-        ? String(o.status || "").toLowerCase() ===
+        ? String(o.status || '').toLowerCase() ===
           String(statusFilter).toLowerCase()
-        : true;
-      if (!term) return statusOk;
-      const t = term;
+        : true
+      if (!term) return statusOk
+      const t = term
       const text = `${o.userName} ${o.email} ${o.phone} ${o.details} ${
         o.date
-      } ${o.amount} ${toCurrency(o.amount)} ${o.status}`.toLowerCase();
-      return text.includes(t) && statusOk;
-    });
-  }, [orders, searchTerm, statusFilter]);
+      } ${o.amount} ${toCurrency(o.amount)} ${o.status}`.toLowerCase()
+      return text.includes(t) && statusOk
+    })
+  }, [orders, searchTerm, statusFilter])
 
   const paginatedBookings = useMemo(() => {
-    const startIndex = (page - 1) * limit;
-    const endIndex = startIndex + limit;
-    return filtered.slice(startIndex, endIndex);
-  }, [filtered, page, limit]);
+    const startIndex = (page - 1) * limit
+    const endIndex = startIndex + limit
+    return filtered.slice(startIndex, endIndex)
+  }, [filtered, page, limit])
 
   useEffect(() => {
-    const totalPages = Math.ceil(filtered.length / limit) || 1;
-    setPageCount(totalPages);
+    const totalPages = Math.ceil(filtered.length / limit) || 1
+    setPageCount(totalPages)
 
     if (page > totalPages) {
-      setPage(1);
+      setPage(1)
     }
-  }, [filtered.length, limit]);
+  }, [filtered.length, limit])
 
   const metrics = useMemo(() => {
-    const totalAmt = filtered.reduce((s, o) => s + (o.amount || 0), 0);
+    const totalAmt = filtered.reduce((s, o) => s + (o.amount || 0), 0)
     const completed = filtered.filter(
-      (o) => String(o.status).toLowerCase() === "paid"
-    );
+      o => String(o.status).toLowerCase() === 'paid'
+    )
     const pending = filtered.filter(
-      (o) => String(o.status).toLowerCase() === "pending"
-    );
+      o => String(o.status).toLowerCase() === 'pending'
+    )
     return {
       totalCount: filtered.length,
       totalAmount: totalAmt,
       completedCount: completed.length,
       completedAmount: completed.reduce((s, o) => s + (o.amount || 0), 0),
       pendingCount: pending.length,
-      pendingAmount: pending.reduce((s, o) => s + (o.amount || 0), 0),
-    };
-  }, [filtered]);
+      pendingAmount: pending.reduce((s, o) => s + (o.amount || 0), 0)
+    }
+  }, [filtered])
 
   useEffect(() => {
-    (async () => {
+    ;(async () => {
       try {
-        setLoading(true);
-        const res = await getAllOrders();
-        console.log(res, "response");
+        setLoading(true)
+        const res = await getAllOrders()
+        console.log(res, 'response')
         const list = Array.isArray(res?.data)
           ? res.data
           : Array.isArray(res?.message)
           ? res.message
           : Array.isArray(res)
           ? res
-          : [];
-        setOrdersRaw(list);
-        setToastOpen(true);
+          : []
+        setOrdersRaw(list)
+        setToastOpen(true)
       } finally {
-        setLoading(false);
+        setLoading(false)
       }
-    })();
-  }, []);
+    })()
+  }, [])
 
-  const toIdString = (v) => {
-    if (!v) return "";
-    if (typeof v === "string") return v;
-    if (typeof v === "object") {
-      if (v.$oid) return String(v.$oid);
-      if (v.$id) return String(v.$id);
-      if (v.oid) return String(v.oid);
-      if (v._id) return toIdString(v._id);
+  const toIdString = v => {
+    if (!v) return ''
+    if (typeof v === 'string') return v
+    if (typeof v === 'object') {
+      if (v.$oid) return String(v.$oid)
+      if (v.$id) return String(v.$id)
+      if (v.oid) return String(v.oid)
+      if (v._id) return toIdString(v._id)
     }
-    return String(v);
-  };
+    return String(v)
+  }
 
-  const openOrder = (order) => {
-    const o = order || {};
-    setSelectedOrder(o);
-    setOrderOpen(true);
-    setMenuOpenId(null);
-  };
+  const openOrder = order => {
+    const o = order || {}
+    setSelectedOrder(o)
+    setOrderOpen(true)
+    setMenuOpenId(null)
+  }
 
-  const openCustomer = (order) => {
-    const o = order || {};
-    setSelectedOrder(o);
-    setCustomerOpen(true);
-    setMenuOpenId(null);
-  };
+  const openCustomer = order => {
+    const o = order || {}
+    setSelectedOrder(o)
+    setCustomerOpen(true)
+    setMenuOpenId(null)
+  }
 
-  const downloadReceipt = async (order) => {
-    const o = order || {};
+  const downloadReceipt = async order => {
+    const o = order || {}
     const raw =
-      ordersRaw.find((r) => String(r?._id || r?.orderId) === String(o.id)) ||
-      {};
-    const id = toIdString(raw?._id || raw?.orderId || o.id);
-    if (!id) return;
+      ordersRaw.find(r => String(r?._id || r?.orderId) === String(o.id)) || {}
+    const id = toIdString(raw?._id || raw?.orderId || o.id)
+    if (!id) return
     try {
-      if (String(downloadingId || "") === String(id)) return;
-      setDownloadingId(id);
-      const blob = await downloadOrderReceipt(id);
-      const a = document.createElement("a");
-      const objectUrl = URL.createObjectURL(blob);
-      a.href = objectUrl;
-      a.download = `order-${id}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(objectUrl);
+      if (String(downloadingId || '') === String(id)) return
+      setDownloadingId(id)
+      const blob = await downloadOrderReceipt(id)
+      const a = document.createElement('a')
+      const objectUrl = URL.createObjectURL(blob)
+      a.href = objectUrl
+      a.download = `order-${id}.pdf`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(objectUrl)
     } catch (e) {
     } finally {
-      setDownloadingId(null);
-      setMenuOpenId(null);
+      setDownloadingId(null)
+      setMenuOpenId(null)
     }
-  };
+  }
 
   const summaryCards = [
     {
-      id: "total",
-      title: "Total Orders",
+      id: 'total',
+      title: 'Total Orders',
       count: metrics.totalCount,
       amount: metrics.totalAmount,
-      iconSrc: "/images/backend/icons/icons (3).svg",
-      bg: "bg-gradient-to-r from-[#E8EEFF] to-[#C5D5FF]",
-      iconBg: "bg-white",
-      textColor: "text-indigo-600",
+      iconSrc: '/images/backend/icons/icons (3).svg',
+      bg: 'bg-gradient-to-r from-[#E8EEFF] to-[#C5D5FF]',
+      iconBg: 'bg-white',
+      textColor: 'text-indigo-600'
     },
     {
-      id: "completed",
-      title: "Completed Orders",
+      id: 'completed',
+      title: 'Completed Orders',
       count: metrics.completedCount,
       amount: metrics.completedAmount,
-      iconSrc: "/images/backend/icons/icons (5).svg",
-      bg: "bg-gradient-to-r from-[#E8F8F0] to-[#B8EDD0]",
-      iconBg: "bg-white",
-      textColor: "text-emerald-600",
+      iconSrc: '/images/backend/icons/icons (5).svg',
+      bg: 'bg-gradient-to-r from-[#E8F8F0] to-[#B8EDD0]',
+      iconBg: 'bg-white',
+      textColor: 'text-emerald-600'
     },
     {
-      id: "pending",
-      title: "Pending Orders",
+      id: 'pending',
+      title: 'Pending Orders',
       count: metrics.pendingCount,
       amount: metrics.pendingAmount,
-      iconSrc: "/images/backend/icons/icons (4).svg",
-      bg: "bg-gradient-to-r from-[#FFE8E8] to-[#FFC5C5]",
-      iconBg: "bg-white",
-      textColor: "text-red-600",
-    },
-  ];
+      iconSrc: '/images/backend/icons/icons (4).svg',
+      bg: 'bg-gradient-to-r from-[#FFE8E8] to-[#FFC5C5]',
+      iconBg: 'bg-white',
+      textColor: 'text-red-600'
+    }
+  ]
 
   return (
-    <div className="space-y-7 py-12 px-6 lg:px-12">
+    <div className='space-y-7 py-12 px-6 lg:px-12'>
       <Toast
         open={toastOpen}
         onOpenChange={setToastOpen}
-        title="Orders loaded"
-        description="The orders list has been updated"
-        variant="success"
+        title='Orders loaded'
+        description='The orders list has been updated'
+        variant='success'
         duration={2500}
-        position="top-right"
+        position='top-right'
       />
-      <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
-        <div className="flex flex-col gap-2">
-          <h1 className="text-2xl font-semibold text-slate-900">Orders</h1>
-          <p className="text-sm text-[#99A1BC]">Dashboard / Orders</p>
+      <div className='flex flex-col gap-2 md:flex-row md:items-start md:justify-between'>
+        <div className='flex flex-col gap-2'>
+          <h1 className='text-2xl font-semibold text-slate-900'>Orders</h1>
+          <p className='text-sm text-[#99A1BC]'>Dashboard / Orders</p>
         </div>
-        <div className="flex items-center">
+        <div className='flex items-center'>
           <button
-            onClick={() => router.push("/merchandise")}
-            className="rounded-xl border border-[#E5E6EF] bg-white px-4 py-2 text-xs font-medium text-[#1A1F3F] shadow-sm transition hover:bg-[#F9FAFD]"
+            onClick={() => router.push('/merchandise')}
+            className='rounded-xl border border-[#E5E6EF] bg-white px-4 py-2 text-xs font-medium text-[#1A1F3F] shadow-sm transition hover:bg-[#F9FAFD]'
           >
-            <span className="flex items-center gap-1.5">
-              <ArrowLeft className="h-4 w-4" />
+            <span className='flex items-center gap-1.5'>
+              <ArrowLeft className='h-4 w-4' />
               Back to Merchandise
             </span>
           </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mb-2">
-        {summaryCards.map((card) => (
+      <div className='grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mb-2'>
+        {summaryCards.map(card => (
           <div
             key={card.id}
             className={`${card.bg} rounded-xl p-3 relative overflow-hidden border border-gray-100`}
           >
-            <div className="flex items-center justify-between">
+            <div className='flex items-center justify-between'>
               <div className={`${card.iconBg} p-2.5 rounded-xl flex-shrink-0`}>
-                <img src={card.iconSrc} alt={card.title} className="w-6 h-6" />
+                <img src={card.iconSrc} alt={card.title} className='w-6 h-6' />
               </div>
-              <div className="text-right">
+              <div className='text-right'>
                 <p
                   className={`${card.textColor} opacity-80 text-xs font-medium mb-1`}
                 >
@@ -384,55 +383,55 @@ export default function MerchOrdersList() {
         ))}
       </div>
 
-      <div className="rounded-[30px] border border-[#E1E6F7] bg-white p-6 shadow-[0_24px_60px_-40px_rgba(15,23,42,0.55)] overflow-visible">
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-          <h2 className="text-lg font-semibold text-slate-900">Order List</h2>
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="relative flex items-center">
+      <div className='rounded-[30px] border border-[#E1E6F7] bg-white p-6 shadow-[0_24px_60px_-40px_rgba(15,23,42,0.55)] overflow-visible'>
+        <div className='mb-6 flex flex-wrap items-center justify-between gap-4'>
+          <h2 className='text-lg font-semibold text-slate-900'>Order List</h2>
+          <div className='flex flex-wrap items-center gap-3'>
+            <div className='relative flex items-center'>
               <input
-                type="text"
-                placeholder="Search"
+                type='text'
+                placeholder='Search'
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="h-10 rounded-xl border border-[#E5E6EF] bg-[#F8F9FC] pl-10 pr-4 text-sm text-slate-700 placeholder:text-[#B0B7D0] focus:border-[#C5CAE3] focus:outline-none focus:ring-2 focus:ring-[#C2C8E4]"
+                onChange={e => setSearchTerm(e.target.value)}
+                className='h-10 rounded-xl border border-[#E5E6EF] bg-[#F8F9FC] pl-10 pr-4 text-sm text-slate-700 placeholder:text-[#B0B7D0] focus:border-[#C5CAE3] focus:outline-none focus:ring-2 focus:ring-[#C2C8E4]'
               />
-              <Search className="absolute left-3 h-4 w-4 text-[#A6AEC7]" />
+              <Search className='absolute left-3 h-4 w-4 text-[#A6AEC7]' />
             </div>
             {filtersOpen && (
-              <div className="relative">
+              <div className='relative'>
                 <select
                   value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                  className="h-10 rounded-xl border border-[#E5E6EF] bg-white px-3 text-sm text-slate-700 focus:border-[#C5CAE3] focus:outline-none"
+                  onChange={e => setStatusFilter(e.target.value)}
+                  className='h-10 rounded-xl border border-[#E5E6EF] bg-white px-3 text-sm text-slate-700 focus:border-[#C5CAE3] focus:outline-none'
                 >
-                  <option value="">All Status</option>
-                  <option value="Completed">Completed</option>
-                  <option value="Pending">Pending</option>
+                  <option value=''>All Status</option>
+                  <option value='Completed'>Completed</option>
+                  <option value='Pending'>Pending</option>
                 </select>
               </div>
             )}
             <button
-              onClick={() => setFiltersOpen((prev) => !prev)}
-              className="flex h-10 items-center gap-2 rounded-xl border border-[#E5E6EF] bg-white px-4 text-sm font-medium text-[#2D3658] transition hover:bg-[#F6F7FD]"
+              onClick={() => setFiltersOpen(prev => !prev)}
+              className='flex h-10 items-center gap-2 rounded-xl border border-[#E5E6EF] bg-white px-4 text-sm font-medium text-[#2D3658] transition hover:bg-[#F6F7FD]'
             >
-              <IoFilterSharp className="h-4 w-4 text-[#8B93AF]" />
-              {filtersOpen ? "Hide Filters" : "Filters"}
+              <IoFilterSharp className='h-4 w-4 text-[#8B93AF]' />
+              {filtersOpen ? 'Hide Filters' : 'Filters'}
             </button>
             <button
               onClick={handleDownloadExcel}
-              className="flex h-10 items-center gap-2 rounded-xl border border-[#E5E6EF] bg-white px-4 text-sm font-medium text-[#2D3658] transition hover:bg-[#F6F7FD]"
+              className='flex h-10 items-center gap-2 rounded-xl border border-[#E5E6EF] bg-white px-4 text-sm font-medium text-[#2D3658] transition hover:bg-[#F6F7FD]'
             >
-              <Download className="h-4 w-4 text-[#8B93AF]" />
+              <Download className='h-4 w-4 text-[#8B93AF]' />
               <span>Export</span>
             </button>
 
-            <div className="flex items-center gap-2">
-              <label className="flex items-center gap-1.5 text-xs text-[#2D3658]">
+            <div className='flex items-center gap-2'>
+              <label className='flex items-center gap-1.5 text-xs text-[#2D3658]'>
                 Show
                 <select
                   value={limit}
-                  onChange={(e) => setLimit(Number(e.target.value) || 20)}
-                  className="h-8 px-2 border border-[#E5E6EF] rounded-lg text-xs"
+                  onChange={e => setLimit(Number(e.target.value) || 20)}
+                  className='h-8 px-2 border border-[#E5E6EF] rounded-lg text-xs'
                 >
                   <option value={10}>10</option>
                   <option value={20}>20</option>
@@ -440,21 +439,21 @@ export default function MerchOrdersList() {
                   <option value={100}>100</option>
                 </select>
               </label>
-              <div className="flex items-center gap-2">
+              <div className='flex items-center gap-2'>
                 <button
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
                   disabled={page <= 1 || loading}
-                  className="h-8 px-3 py-1.5 border border-[#E5E6EF] rounded-lg bg-white text-xs font-medium text-[#2D3658] disabled:opacity-50 hover:bg-[#F6F7FD]"
+                  className='h-8 px-3 py-1.5 border border-[#E5E6EF] rounded-lg bg-white text-xs font-medium text-[#2D3658] disabled:opacity-50 hover:bg-[#F6F7FD]'
                 >
                   Prev
                 </button>
-                <span className="text-xs text-[#2D3658]">
+                <span className='text-xs text-[#2D3658]'>
                   Page {page} of {pageCount}
                 </span>
                 <button
-                  onClick={() => setPage((p) => Math.min(pageCount, p + 1))}
+                  onClick={() => setPage(p => Math.min(pageCount, p + 1))}
                   disabled={page >= pageCount || loading}
-                  className="h-8 px-3 py-1.5 border border-[#E5E6EF] rounded-lg bg-white text-xs font-medium text-[#2D3658] disabled:opacity-50 hover:bg-[#F6F7FD]"
+                  className='h-8 px-3 py-1.5 border border-[#E5E6EF] rounded-lg bg-white text-xs font-medium text-[#2D3658] disabled:opacity-50 hover:bg-[#F6F7FD]'
                 >
                   Next
                 </button>
@@ -463,173 +462,181 @@ export default function MerchOrdersList() {
           </div>
         </div>
 
-        <div className="overflow-visible rounded-2xl border border-[#E5E8F5]">
-          <div className="grid grid-cols-[1.5fr_1.5fr_2fr_1.5fr_2fr_1fr_1.2fr_50px] gap-3 bg-[#F7F9FD] px-6 py-4">
+        <div className='overflow-visible rounded-2xl border border-[#E5E8F5]'>
+          <div className='grid grid-cols-[1.5fr_1.5fr_2fr_1.5fr_2fr_1fr_1.2fr_50px] gap-3 bg-[#F7F9FD] px-6 py-4'>
             <div>
-              <div className="text-xs font-medium capitalize tracking-wide text-[#8A92AC]">
+              <div className='text-xs font-medium capitalize tracking-wide text-[#8A92AC]'>
                 Ordered on
               </div>
             </div>
             <div>
-              <div className="text-xs font-medium capitalize tracking-wide text-[#8A92AC]">
+              <div className='text-xs font-medium capitalize tracking-wide text-[#8A92AC]'>
                 User name
               </div>
             </div>
             <div>
-              <div className="text-xs font-medium capitalize tracking-wide text-[#8A92AC]">
+              <div className='text-xs font-medium capitalize tracking-wide text-[#8A92AC]'>
                 Email id
               </div>
             </div>
             <div>
-              <div className="text-xs font-medium capitalize tracking-wide text-[#8A92AC]">
+              <div className='text-xs font-medium capitalize tracking-wide text-[#8A92AC]'>
                 Phone number
               </div>
             </div>
             <div>
-              <div className="text-xs font-medium capitalize tracking-wide text-[#8A92AC]">
+              <div className='text-xs font-medium capitalize tracking-wide text-[#8A92AC]'>
                 Order details
               </div>
             </div>
             <div>
-              <div className="text-xs font-medium capitalize tracking-wide text-[#8A92AC]">
+              <div className='text-xs font-medium capitalize tracking-wide text-[#8A92AC]'>
+                Discount
+              </div>
+            </div>
+            <div>
+              <div className='text-xs font-medium capitalize tracking-wide text-[#8A92AC]'>
                 Amount
               </div>
             </div>
             <div>
-              <div className="text-xs font-medium capitalize tracking-wide text-[#8A92AC]">
+              <div className='text-xs font-medium capitalize tracking-wide text-[#8A92AC]'>
                 Order status
               </div>
             </div>
             <div>
-              <div className="text-xs font-medium capitalize tracking-wide text-[#8A92AC]">
+              <div className='text-xs font-medium capitalize tracking-wide text-[#8A92AC]'>
                 Action
               </div>
             </div>
           </div>
 
-          <div className="divide-y divide-[#EEF1FA] bg-white">
+          <div className='divide-y divide-[#EEF1FA] bg-white'>
             {loading && (
-              <div className="px-6 py-5 text-sm text-[#5E6582]">
+              <div className='px-6 py-5 text-sm text-[#5E6582]'>
                 Loading orders...
               </div>
             )}
             {!loading &&
-              paginatedBookings?.map((o) => (
+              paginatedBookings?.map(o => (
                 <div
                   key={o.id}
-                  className="grid grid-cols-[1.5fr_1.5fr_2fr_1.5fr_2fr_1fr_1.2fr_50px] gap-3 px-6 py-5 hover:bg-[#F9FAFD]"
+                  className='grid grid-cols-[1.5fr_1.5fr_2fr_1.5fr_2fr_1fr_1fr_1.2fr_50px] gap-3 px-6 py-5 hover:bg-[#F9FAFD]'
                 >
-                  <div className="self-center text-sm text-[#5E6582]">
+                  <div className='self-center text-sm text-[#5E6582]'>
                     {o.date}
                   </div>
-                  <div className="self-center text-sm text-[#1A1F3F]">
+                  <div className='self-center text-sm text-[#1A1F3F]'>
                     {o.userName}
                   </div>
-                  <div className="self-center text-sm text-[#5E6582]">
+                  <div className='self-center text-sm text-[#5E6582]'>
                     {o.email}
                   </div>
-                  <div className="self-center text-sm text-[#5E6582]">
+                  <div className='self-center text-sm text-[#5E6582]'>
                     {o.phone}
                   </div>
-                  <div className="self-center text-sm text-[#5E6582]">
+                  <div className='self-center text-sm text-[#5E6582]'>
                     {o.details}
                   </div>
-                  <div className="self-center text-sm font-semibold text-slate-900">
+                  <div className='self-center text-sm font-semibold text-slate-900'>
+                    {toCurrency(o.discount)}
+                  </div>
+                  <div className='self-center text-sm font-semibold text-slate-900'>
                     {toCurrency(o.amount)}
                   </div>
-                  <div className="self-center">
+                  <div className='self-center'>
                     <span
                       className={`inline-flex items-center justify-center rounded-full px-3 py-1 text-xs font-semibold ${
-                        String(o.status).toLowerCase() === "completed"
-                          ? "bg-emerald-50 text-emerald-600 border border-emerald-200"
-                          : "bg-orange-50 text-orange-600 border border-orange-200"
+                        String(o.status).toLowerCase() === 'completed'
+                          ? 'bg-emerald-50 text-emerald-600 border border-emerald-200'
+                          : 'bg-orange-50 text-orange-600 border border-orange-200'
                       }`}
                     >
                       {o.status}
                     </span>
                   </div>
-                  <div className="self-center flex items-center justify-center">
-                    <div className="relative z-[2]">
+                  <div className='self-center flex items-center justify-center'>
+                    <div className='relative z-[2]'>
                       <button
                         onClick={() =>
                           setMenuOpenId(menuOpenId === o.id ? null : o.id)
                         }
-                        className="rounded-full border border-transparent p-2 text-[#8C93AF] hover:border-[#E5E8F6] hover:bg-[#F5F7FD]"
+                        className='rounded-full border border-transparent p-2 text-[#8C93AF] hover:border-[#E5E8F6] hover:bg-[#F5F7FD]'
                       >
-                        <MoreVertical className="h-4 w-4" />
+                        <MoreVertical className='h-4 w-4' />
                       </button>
                       {menuOpenId === o.id && (
                         <div
                           ref={menuRef}
-                          className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white z-[99999]"
+                          className='absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white z-[99999]'
                         >
-                          <div className="py-1">
+                          <div className='py-1'>
                             <a
                               href={`/merchandise/order-view/${o.id}`}
-                              className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                              className='flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100'
                             >
-                              <span className="mr-3 text-gray-500">
+                              <span className='mr-3 text-gray-500'>
                                 <svg
-                                  className="w-4 h-4"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  viewBox="0 0 24 24"
+                                  className='w-4 h-4'
+                                  fill='none'
+                                  stroke='currentColor'
+                                  viewBox='0 0 24 24'
                                 >
                                   <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
+                                    strokeLinecap='round'
+                                    strokeLinejoin='round'
                                     strokeWidth={2}
-                                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                                    d='M15 12a3 3 0 11-6 0 3 3 0 016 0z'
                                   />
                                   <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
+                                    strokeLinecap='round'
+                                    strokeLinejoin='round'
                                     strokeWidth={2}
-                                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                                    d='M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z'
                                   />
                                 </svg>
                               </span>
-                              <span className="text-gray-800">View Detail</span>
+                              <span className='text-gray-800'>View Detail</span>
                             </a>
 
                             <button
                               onClick={() => openCustomer(o)}
-                              className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                              className='flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100'
                             >
-                              <span className="mr-3 text-gray-500">
-                                <User className="h-4 w-4" />
+                              <span className='mr-3 text-gray-500'>
+                                <User className='h-4 w-4' />
                               </span>
-                              <span className="text-gray-800">
+                              <span className='text-gray-800'>
                                 Customer Detail
                               </span>
                             </button>
                             {(() => {
                               const isDownloading =
-                                String(downloadingId || "") === String(o.id);
+                                String(downloadingId || '') === String(o.id)
                               return (
                                 <button
                                   onClick={() => downloadReceipt(o)}
                                   disabled={isDownloading}
                                   className={`flex items-center w-full px-4 py-2 text-sm ${
                                     isDownloading
-                                      ? "text-[#8C93AF] cursor-not-allowed opacity-70"
-                                      : "text-gray-700 hover:bg-gray-100"
+                                      ? 'text-[#8C93AF] cursor-not-allowed opacity-70'
+                                      : 'text-gray-700 hover:bg-gray-100'
                                   }`}
                                 >
-                                  <span className="mr-3 text-gray-500">
+                                  <span className='mr-3 text-gray-500'>
                                     {isDownloading ? (
-                                      <Loader2 className="h-4 w-4 animate-spin" />
+                                      <Loader2 className='h-4 w-4 animate-spin' />
                                     ) : (
-                                      <Download className="h-4 w-4" />
+                                      <Download className='h-4 w-4' />
                                     )}
                                   </span>
-                                  <span className="text-gray-800">
+                                  <span className='text-gray-800'>
                                     {isDownloading
-                                      ? "Processing…"
-                                      : "Download Receipt"}
+                                      ? 'Processing…'
+                                      : 'Download Receipt'}
                                   </span>
                                 </button>
-                              );
+                              )
                             })()}
                           </div>
                         </div>
@@ -639,7 +646,7 @@ export default function MerchOrdersList() {
                 </div>
               ))}
             {!loading && filtered.length === 0 && (
-              <div className="px-6 py-5 text-sm text-[#5E6582]">
+              <div className='px-6 py-5 text-sm text-[#5E6582]'>
                 No orders found
               </div>
             )}
@@ -649,57 +656,57 @@ export default function MerchOrdersList() {
       {orderOpen && selectedOrder && (
         <Modal
           open={orderOpen}
-          onOpenChange={(v) => {
+          onOpenChange={v => {
             if (!v) {
-              setOrderOpen(false);
-              setSelectedOrder(null);
+              setOrderOpen(false)
+              setSelectedOrder(null)
             }
           }}
-          title={"Order Details"}
+          title={'Order Details'}
         >
           {(() => {
             const raw =
               ordersRaw.find(
-                (r) => String(r?._id || r?.orderId) === String(selectedOrder.id)
-              ) || {};
-            const buyerName = raw?.userName || "-";
-            const email = raw?.email || "-";
-            const phone = raw?.phoneNumber || "-";
-            const created = raw?.createdAt;
-            const items = Array.isArray(raw?.items) ? raw.items : [];
-            const total = Number(raw?.totalAmount || 0);
+                r => String(r?._id || r?.orderId) === String(selectedOrder.id)
+              ) || {}
+            const buyerName = raw?.userName || '-'
+            const email = raw?.email || '-'
+            const phone = raw?.phoneNumber || '-'
+            const created = raw?.createdAt
+            const items = Array.isArray(raw?.items) ? raw.items : []
+            const total = Number(raw?.totalAmount || 0)
             return (
-              <div className="space-y-6">
-                <div className="rounded-xl bg-[#F8F9FC] p-4">
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div className="text-[#5E6582]">Order ID</div>
-                    <div className="text-right font-semibold text-slate-900">
-                      {raw?._id || raw?.orderId || "-"}
+              <div className='space-y-6'>
+                <div className='rounded-xl bg-[#F8F9FC] p-4'>
+                  <div className='grid grid-cols-2 gap-4 text-sm'>
+                    <div className='text-[#5E6582]'>Order ID</div>
+                    <div className='text-right font-semibold text-slate-900'>
+                      {raw?._id || raw?.orderId || '-'}
                     </div>
-                    <div className="text-[#5E6582]">Ordered On</div>
-                    <div className="text-right font-semibold text-slate-900">
-                      {formatDate(created) || "-"}
+                    <div className='text-[#5E6582]'>Ordered On</div>
+                    <div className='text-right font-semibold text-slate-900'>
+                      {formatDate(created) || '-'}
                     </div>
-                    <div className="text-[#5E6582]">Customer</div>
-                    <div className="text-right font-semibold text-slate-900">
+                    <div className='text-[#5E6582]'>Customer</div>
+                    <div className='text-right font-semibold text-slate-900'>
                       {buyerName}
                     </div>
                   </div>
                 </div>
-                <div className="rounded-xl border border-[#E5E8F6] bg-white p-4">
-                  <div className="text-sm font-semibold text-slate-900 mb-3">
+                <div className='rounded-xl border border-[#E5E8F6] bg-white p-4'>
+                  <div className='text-sm font-semibold text-slate-900 mb-3'>
                     Items
                   </div>
-                  <div className="space-y-2">
+                  <div className='space-y-2'>
                     {items.length > 0 ? (
                       items.map((it, i) => (
                         <div
                           key={i}
-                          className="flex items-center justify-between text-sm"
+                          className='flex items-center justify-between text-sm'
                         >
                           <span>
-                            {Number(it?.quantity || 0)} x{" "}
-                            {it?.productId?.title || "-"}
+                            {Number(it?.quantity || 0)} x{' '}
+                            {it?.productId?.title || '-'}
                           </span>
                           <span>
                             {toCurrency(it?.price ?? it?.productId?.price)}
@@ -707,20 +714,20 @@ export default function MerchOrdersList() {
                         </div>
                       ))
                     ) : (
-                      <div className="text-sm text-[#5E6582]">No items</div>
+                      <div className='text-sm text-[#5E6582]'>No items</div>
                     )}
                   </div>
-                  <div className="py-3 flex items-center justify-between">
-                    <span className="text-sm font-semibold text-slate-900">
+                  <div className='py-3 flex items-center justify-between'>
+                    <span className='text-sm font-semibold text-slate-900'>
                       Total
                     </span>
-                    <span className="text-base font-bold text-slate-900">
+                    <span className='text-base font-bold text-slate-900'>
                       {toCurrency(total)}
                     </span>
                   </div>
                 </div>
               </div>
-            );
+            )
           })()}
         </Modal>
       )}
@@ -728,20 +735,20 @@ export default function MerchOrdersList() {
       {customerOpen && selectedOrder && (
         <CustomerDetailsModal
           open={customerOpen}
-          onOpenChange={(v) => {
+          onOpenChange={v => {
             if (!v) {
-              setCustomerOpen(false);
-              setSelectedOrder(null);
+              setCustomerOpen(false)
+              setSelectedOrder(null)
             }
           }}
           order={
             ordersRaw.find(
-              (r) => String(r?._id || r?.orderId) === String(selectedOrder.id)
+              r => String(r?._id || r?.orderId) === String(selectedOrder.id)
             ) || null
           }
           selected={selectedOrder}
         />
       )}
     </div>
-  );
+  )
 }
