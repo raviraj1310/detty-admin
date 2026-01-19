@@ -145,6 +145,11 @@ export default function Activities () {
     isPctIncreasing: false
   })
 
+  const [activityStats, setActivityStats] = useState({
+    totalBookingCount: 0,
+    totalRevenue: 0
+  })
+
   useEffect(() => {
     const fetchActivityStats = async () => {
       try {
@@ -707,7 +712,7 @@ export default function Activities () {
             <span>Dashboard</span> / <span>Gross Transaction Value</span>
           </nav>
         </div>
-         <TransactionStatsCards dateRange={dateRange} />
+        <TransactionStatsCards dateRange={dateRange} />
         <div className='flex items-center gap-2'>
           <div className='flex items-center gap-2'>
             <div className='flex flex-col'>
@@ -857,27 +862,9 @@ export default function Activities () {
                 Total Activity Bookings
               </p>
               <p className='text-2xl text-black font-bold'>
-                {
-                  filteredActivities.filter(b => {
-                    const status = String(b.paymentStatus || '')
-                      .toLowerCase()
-                      .trim()
-                    return status === 'success' || status === 'paid'
-                  }).length
-                }{' '}
+                {activityStats.totalBookingCount}{' '}
                 <span className='text-lg font-semibold opacity-90'>
-                  (₦
-                  {filteredActivities
-                    .reduce((acc, curr) => {
-                      const status = String(curr.paymentStatus || '')
-                        .toLowerCase()
-                        .trim()
-                      const isSuccessful =
-                        status === 'success' || status === 'paid'
-                      return acc + (isSuccessful ? curr.amountNum || 0 : 0)
-                    }, 0)
-                    .toLocaleString()}
-                  )
+                  ({fmtCurrency(activityStats.totalRevenue)})
                 </span>
               </p>
             </div>

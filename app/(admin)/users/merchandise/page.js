@@ -16,6 +16,7 @@ import {
   getAllOrders,
   downloadOrderReceipt
 } from '@/services/merchandise/order.service'
+import { merchandiseCount } from '@/services/auth/login.service'
 import TransactionStatsCards from '@/components/users/TransactionStatsCards'
 
 const toCurrency = n => {
@@ -242,6 +243,30 @@ export default function MerchandisePage () {
     avgGrowthPercent: '0%',
     isPctIncreasing: false
   })
+
+  const [merchandiseStats, setMerchandiseStats] = useState({
+    totalOrderCount: 0,
+    totalRevenue: 0
+  })
+
+  useEffect(() => {
+    ;(async () => {
+      try {
+        const res = await merchandiseCount({
+          startDate: dateRange.start || undefined,
+          endDate: dateRange.end || undefined
+        })
+        if (res?.success && res?.data) {
+          setMerchandiseStats({
+            totalOrderCount: res.data.totalOrderCount || 0,
+            totalRevenue: res.data.totalRevenue || 0
+          })
+        }
+      } catch (error) {
+        console.error('Failed to fetch merchandise stats', error)
+      }
+    })()
+  }, [dateRange.start, dateRange.end])
 
   useEffect(() => {
     ;(async () => {
@@ -736,7 +761,7 @@ export default function MerchandisePage () {
             <span>Dashboard</span> / <span>Gross Transaction Value</span>
           </nav>
         </div>
-         <TransactionStatsCards dateRange={dateRange} />
+        <TransactionStatsCards dateRange={dateRange} />
         <div className='flex items-center gap-2'>
           <div className='flex items-center gap-2'>
             <div className='flex flex-col'>
@@ -885,31 +910,9 @@ export default function MerchandisePage () {
                 Total Merchandise Bookings
               </p>
               <p className='text-2xl text-black font-bold'>
-                {
-                  filteredMerchandise.filter(b => {
-                    const status = String(
-                      b.paymentStatus || b.rawOrder?.paymentStatus || ''
-                    )
-                      .toLowerCase()
-                      .trim()
-                    return status === 'success' || status === 'paid'
-                  }).length
-                }{' '}
+                {merchandiseStats.totalOrderCount}{' '}
                 <span className='text-lg font-semibold opacity-90'>
-                  (₦
-                  {filteredMerchandise
-                    .reduce((acc, curr) => {
-                      const status = String(
-                        curr.paymentStatus || curr.rawOrder?.paymentStatus || ''
-                      )
-                        .toLowerCase()
-                        .trim()
-                      const isSuccessful =
-                        status === 'success' || status === 'paid'
-                      return acc + (isSuccessful ? curr.amountNum || 0 : 0)
-                    }, 0)
-                    .toLocaleString()}
-                  )
+                  ({toCurrency(merchandiseStats.totalRevenue)})
                 </span>
               </p>
             </div>
