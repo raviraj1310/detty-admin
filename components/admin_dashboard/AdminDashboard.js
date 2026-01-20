@@ -183,29 +183,29 @@ export default function AdminDashboard ({ stats, year }) {
     load()
   }, [year])
   // Calculate total bookings and revenue if needed
-  const totalBookings =
-    overallDashboardStats?.totalBookingCount ??
-    (stats?.totalEvents || 0) +
-      (stats?.totalActivity || 0) +
-      (stats?.totalAccommodations || 0) +
-      (stats?.totalEsims || 0) +
-      (stats?.totalRide || 0) +
-      (stats?.totalLeadWay || 0) +
-      (stats?.totalMed || 0) +
-      (stats?.totalRoyal || 0) +
-      (stats?.totalVisaAppition || 0)
+  const totalBookings = overallDashboardStats?.totalBookingCount
+  // ??
+  // (stats?.totalEvents || 0) +
+  //   (stats?.totalActivity || 0) +
+  //   (stats?.totalAccommodations || 0) +
+  //   (stats?.totalEsims || 0) +
+  //   (stats?.totalRide || 0) +
+  //   (stats?.totalLeadWay || 0) +
+  //   (stats?.totalMed || 0) +
+  //   (stats?.totalRoyal || 0) +
+  //   (stats?.totalVisaAppition || 0)
 
-  const totalRevenue =
-    overallDashboardStats?.totalRevenue ??
-    (stats?.totalEventRevenue || 0) +
-      (stats?.totalActivityRevenue || 0) +
-      (stats?.totalProductsRevenue || 0) +
-      (stats?.totalAccommodationRevenue || 0) +
-      (stats?.totalEsimRevenue || 0) +
-      (stats?.totalRideRevenue || 0) +
-      (stats?.totalLeadWayRevenue || 0) +
-      (stats?.totalMedRevenue || 0) +
-      (stats?.totalRoyalRevenue || 0)
+  const totalRevenue = overallDashboardStats?.totalRevenue
+  // ??
+  // (stats?.totalEventRevenue || 0) +
+  //   (stats?.totalActivityRevenue || 0) +
+  //   (stats?.totalProductsRevenue || 0) +
+  //   (stats?.totalAccommodationRevenue || 0) +
+  //   (stats?.totalEsimRevenue || 0) +
+  //   (stats?.totalRideRevenue || 0) +
+  //   (stats?.totalLeadWayRevenue || 0) +
+  //   (stats?.totalMedRevenue || 0) +
+  //   (stats?.totalRoyalRevenue || 0)
 
   const getGrowthCards = (key, title = 'New Yesterday') => {
     const data = stats?.growth?.[key] || {}
