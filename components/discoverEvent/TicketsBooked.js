@@ -693,7 +693,7 @@ export default function TicketsBooked () {
                 <TableHeaderCell>Discount Applied</TableHeaderCell>
               </div>
               <div className='flex justify-end'>
-                <TableHeaderCell align='right'>Activity Status</TableHeaderCell>
+                <TableHeaderCell align='right'>Ticket Status</TableHeaderCell>
               </div>
             </div>
 

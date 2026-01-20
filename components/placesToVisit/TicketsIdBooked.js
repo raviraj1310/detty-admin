@@ -662,7 +662,7 @@ export default function TicketsIdBooked ({ activityId }) {
               </div>
               <div>
                 <TableHeaderCell>
-                  {formatHeaderText('Activity status')}
+                  {formatHeaderText('Ticket status')}
                 </TableHeaderCell>
               </div>
               <div></div>

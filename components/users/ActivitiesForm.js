@@ -1137,7 +1137,7 @@ export default function Activities () {
                       onClick={() => toggleSort('activityStatus')}
                       className='flex items-center'
                     >
-                      <span>Activity Status</span>
+                      <span>Ticket Status</span>
                       <TbCaretUpDownFilled className='w-3 h-3 text-gray-400 ml-1' />
                     </button>
                   </th>
