@@ -33,6 +33,47 @@ function SortHeader ({ title, sortKey, activeKey, direction, onSort }) {
   )
 }
 
+function PaginationControls ({
+  pagination,
+  setPagination,
+  loading,
+  className = ''
+}) {
+  return (
+    <div className={`flex items-center justify-between px-2 ${className}`}>
+      <div className='text-sm text-gray-500'>
+        Page {pagination.page} of {pagination.totalPages}
+      </div>
+      <div className='flex gap-2'>
+        <button
+          onClick={() =>
+            setPagination(prev => ({
+              ...prev,
+              page: Math.max(1, prev.page - 1)
+            }))
+          }
+          disabled={pagination.page <= 1 || loading}
+          className='px-3 py-1 border border-gray-300 rounded text-sm text-gray-700 font-medium disabled:opacity-50 hover:bg-gray-50 bg-white transition-colors'
+        >
+          Previous
+        </button>
+        <button
+          onClick={() =>
+            setPagination(prev => ({
+              ...prev,
+              page: Math.min(pagination.totalPages, prev.page + 1)
+            }))
+          }
+          disabled={pagination.page >= pagination.totalPages || loading}
+          className='px-3 py-1 border border-gray-300 rounded text-sm text-gray-700 font-medium disabled:opacity-50 hover:bg-gray-50 bg-white transition-colors'
+        >
+          Next
+        </button>
+      </div>
+    </div>
+  )
+}
+
 export default function ActiveUsersPage () {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
@@ -45,13 +86,18 @@ export default function ActiveUsersPage () {
   })
   const [search, setSearch] = useState('')
   const [sort, setSort] = useState({ key: 'name', dir: 'asc' })
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 20,
+    totalPages: 1
+  })
 
   useEffect(() => {
     const load = async () => {
       setLoading(true)
       setError('')
       try {
-        const res = await getActiveUsers()
+        const res = await getActiveUsers(pagination.page, pagination.limit)
         // res is the response body containing counts and data array
         const list = Array.isArray(res?.data)
           ? res.data
@@ -63,6 +109,13 @@ export default function ActiveUsersPage () {
           totalUsers: Number(res?.totalUsers || 0),
           activeUsers: Number(res?.activeUsers || 0)
         })
+
+        if (res?.pages) {
+          setPagination(prev => ({
+            ...prev,
+            totalPages: res.pages
+          }))
+        }
 
         const mapped = list.map(it => {
           const u = it?.user || {}
@@ -115,7 +168,7 @@ export default function ActiveUsersPage () {
       }
     }
     load()
-  }, [])
+  }, [pagination.page, pagination.limit])
 
   const filtered = useMemo(() => {
     const t = String(search || '')
@@ -258,6 +311,13 @@ export default function ActiveUsersPage () {
         </div>
       </div>
 
+      <PaginationControls
+        pagination={pagination}
+        setPagination={setPagination}
+        loading={loading}
+        className='mb-4'
+      />
+
       <div className='bg-white border border-gray-200 rounded-xl overflow-hidden'>
         <div className='overflow-x-auto'>
           <table className='min-w-full divide-y divide-gray-200'>
@@ -398,6 +458,13 @@ export default function ActiveUsersPage () {
           </table>
         </div>
       </div>
+
+      {/* <PaginationControls
+        pagination={pagination}
+        setPagination={setPagination}
+        loading={loading}
+        className='mt-4'
+      /> */}
     </div>
   )
 }

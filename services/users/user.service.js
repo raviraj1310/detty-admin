@@ -211,9 +211,11 @@ export const getMyLeadPlans = async id => {
   }
 }
 
-export const getActiveUsers = async () => {
+export const getActiveUsers = async (page = 1, limit = 50) => {
   try {
-    const response = await api.get(`/user/get-active-users`)
+    const response = await api.get(`/user/get-active-users`, {
+      params: { page, limit }
+    })
     return response.data
   } catch (error) {
     console.error('Error fetching active users:', error)
