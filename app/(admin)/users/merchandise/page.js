@@ -531,6 +531,7 @@ export default function MerchandisePage () {
           ? statusRaw.charAt(0).toUpperCase() + statusRaw.slice(1).toLowerCase()
           : 'Pending'
       const activity = statusUC === 'PAID' ? 'Done' : 'Ongoing'
+      const discount = Number(o?.discount || 0)
       items.forEach((it, idx) => {
         const qty = Number(it?.quantity || 0)
         const title = it?.productId?.title || '-'
@@ -553,6 +554,7 @@ export default function MerchandisePage () {
             : `${toCurrency(unitPrice)}`,
           totalAmount: toCurrency(total),
           amountNum: total,
+          discount,
           activityStatus: activity,
           paymentStatus: payment,
           rawOrder: o,
@@ -1134,6 +1136,13 @@ export default function MerchandisePage () {
 
                   <th className='px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
                     <div className='flex items-center'>
+                      <span>Discount</span>
+                      <TbCaretUpDownFilled className='w-3 h-3 text-gray-400 ml-1' />
+                    </div>
+                  </th>
+
+                  <th className='px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                    <div className='flex items-center'>
                       <span>Payment Status</span>
                       <TbCaretUpDownFilled className='w-3 h-3 text-gray-400 ml-1' />
                     </div>
@@ -1195,6 +1204,14 @@ export default function MerchandisePage () {
                     <td className='px-3 py-3 whitespace-nowrap'>
                       <span className='text-sm font-semibold text-gray-900'>
                         {merchandise.totalAmount}
+                      </span>
+                    </td>
+
+                    <td className='px-3 py-3 whitespace-nowrap'>
+                      <span className='text-sm font-semibold text-gray-900'>
+                        {merchandise.discount > 0
+                          ? toCurrency(merchandise.discount)
+                          : '-'}
                       </span>
                     </td>
 

@@ -605,6 +605,7 @@ export default function TransactionsForm () {
                 : Number(b.totalPrice) || 0
             return ticketsTotal > 0 ? ticketsTotal : apiTotal
           })(),
+          discount: b.discountApplied || 0,
           activityStatus: TextCapitalize(b.status || 'Pending'),
           paymentStatus:
             (typeof b.totalPrice === 'number' && b.totalPrice === 0) ||
@@ -1443,6 +1444,16 @@ export default function TransactionsForm () {
                   <th className='px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
                     <button
                       type='button'
+                      onClick={() => toggleSort('discount')}
+                      className='flex items-center'
+                    >
+                      <span>Discount</span>
+                      <TbCaretUpDownFilled className='w-3 h-3 text-gray-400 ml-1' />
+                    </button>
+                  </th>
+                  <th className='px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                    <button
+                      type='button'
                       onClick={() => toggleSort('amount')}
                       className='flex items-center'
                     >
@@ -1547,6 +1558,14 @@ export default function TransactionsForm () {
                       <td className='px-4 py-4 whitespace-nowrap'>
                         <span className='text-xs font-semibold text-gray-900'>
                           {booking.amount}
+                        </span>
+                      </td>
+
+                      <td className='px-4 py-4 whitespace-nowrap'>
+                        <span className='text-xs font-semibold text-gray-900'>
+                          {booking.discount > 0
+                            ? `₦${booking.discount.toLocaleString()}`
+                            : '-'}
                         </span>
                       </td>
 
