@@ -343,7 +343,12 @@ const LeastMovingProducts = ({ products = [] }) => {
   )
 }
 
-export default function MerchandiseDashboard ({ stats, startDate, endDate }) {
+export default function MerchandiseDashboard ({
+  stats,
+  startDate,
+  endDate,
+  year
+}) {
   const [merchandiseData, setMerchandiseData] = useState({
     bestSellingProducts: [],
     leastSellingProducts: [],
@@ -393,7 +398,7 @@ export default function MerchandiseDashboard ({ stats, startDate, endDate }) {
     }
 
     fetchMerchandiseData()
-  }, [startDate, endDate])
+  }, [startDate, endDate, year])
 
   return (
     <div className='flex flex-col lg:flex-row w-full gap-3 items-stretch overflow-hidden'>

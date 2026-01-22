@@ -225,7 +225,7 @@ export default function AdditionalDashboard ({
       }
     }
     load()
-  }, [])
+  }, [year, startDate, endDate])
 
   const accommodations =
     staySummary?.totalBookingCount ?? stats?.totalAccommodations ?? 0
