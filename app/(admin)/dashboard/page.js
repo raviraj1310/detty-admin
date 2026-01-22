@@ -125,7 +125,12 @@ export default function DashboardPage () {
         )}
         {!loading && (
           <>
-            <AdminDashboard stats={stats} year={year} />
+            <AdminDashboard
+              stats={stats}
+              year={year}
+              startDate={dateRange.start}
+              endDate={dateRange.end}
+            />
             <MerchandiseDashboard
               stats={stats}
               startDate={dateRange.start}

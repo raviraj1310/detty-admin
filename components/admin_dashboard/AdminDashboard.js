@@ -71,7 +71,7 @@ const DashboardSection = ({ section }) => (
 
 // --- 4. Main Dashboard Component ---
 
-export default function AdminDashboard ({ stats, year }) {
+export default function AdminDashboard ({ stats, year, startDate, endDate }) {
   const [userCounts, setUserCounts] = useState({
     totalUsers: 0,
     totalActiveUsers: 0,
@@ -96,6 +96,9 @@ export default function AdminDashboard ({ stats, year }) {
       try {
         const params = {}
         if (year) params.year = year
+        if (startDate) params.startDate = startDate
+        if (endDate) params.endDate = endDate
+
         const res = await dashboardUserActiveInactiveCounts(params)
         setUserCounts({
           totalUsers: Number(res?.data?.totalUserCount || 0),
@@ -113,6 +116,9 @@ export default function AdminDashboard ({ stats, year }) {
       try {
         const eventParams = {}
         if (year) eventParams.year = year
+        if (startDate) eventParams.startDate = startDate
+        if (endDate) eventParams.endDate = endDate
+
         const eventRes = await eventCount(eventParams)
         if (eventRes?.success && eventRes?.data) {
           setEventSummary({
@@ -131,6 +137,9 @@ export default function AdminDashboard ({ stats, year }) {
       try {
         const activityParams = {}
         if (year) activityParams.year = year
+        if (startDate) activityParams.startDate = startDate
+        if (endDate) activityParams.endDate = endDate
+
         const activityRes = await activityCount(activityParams)
         if (activityRes?.success && activityRes?.data) {
           setActivitySummary({
@@ -149,6 +158,9 @@ export default function AdminDashboard ({ stats, year }) {
       try {
         const overallParams = {}
         if (year) overallParams.year = year
+        if (startDate) overallParams.startDate = startDate
+        if (endDate) overallParams.endDate = endDate
+
         const overallRes = await overallBookingCounts(overallParams)
         if (overallRes?.success && overallRes?.data) {
           setOverallDashboardStats({
@@ -181,7 +193,7 @@ export default function AdminDashboard ({ stats, year }) {
       }
     }
     load()
-  }, [year])
+  }, [year, startDate, endDate])
   // Calculate total bookings and revenue if needed
   const totalBookings = overallDashboardStats?.totalBookingCount
   // ??
