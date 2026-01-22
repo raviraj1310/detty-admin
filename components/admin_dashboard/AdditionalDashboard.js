@@ -114,7 +114,12 @@ const formatCurrency = amount => {
   )
 }
 
-export default function AdditionalDashboard ({ stats }) {
+export default function AdditionalDashboard ({
+  stats,
+  year,
+  startDate,
+  endDate
+}) {
   const [staySummary, setStaySummary] = useState(null)
   const [esimSummary, setEsimSummary] = useState(null)
   const [rideSummary, setRideSummary] = useState(null)
@@ -124,8 +129,13 @@ export default function AdditionalDashboard ({ stats }) {
 
   useEffect(() => {
     const load = async () => {
+      const params = {}
+      if (year) params.year = year
+      if (startDate) params.startDate = startDate
+      if (endDate) params.endDate = endDate
+
       try {
-        const res = await accommodationCount({})
+        const res = await accommodationCount(params)
         if (res?.success && res?.data) {
           setStaySummary({
             totalBookingCount: Number(res.data.totalBookingCount || 0),
@@ -140,7 +150,7 @@ export default function AdditionalDashboard ({ stats }) {
       }
 
       try {
-        const resEsim = await esimCount({})
+        const resEsim = await esimCount(params)
         if (resEsim?.success && resEsim?.data) {
           setEsimSummary({
             totalBookingCount: Number(resEsim.data.totalBookingCount || 0),
@@ -155,7 +165,7 @@ export default function AdditionalDashboard ({ stats }) {
       }
 
       try {
-        const resRide = await rideCount({})
+        const resRide = await rideCount(params)
         if (resRide?.success && resRide?.data) {
           setRideSummary({
             totalBookingCount: Number(resRide.data.totalBookingCount || 0),
@@ -185,7 +195,7 @@ export default function AdditionalDashboard ({ stats }) {
       }
 
       try {
-        const resMed = await medCount({})
+        const resMed = await medCount(params)
         if (resMed?.success && resMed?.data) {
           setMedSummary({
             totalBookingCount: Number(resMed.data.totalOrderCount || 0),
@@ -200,7 +210,7 @@ export default function AdditionalDashboard ({ stats }) {
       }
 
       try {
-        const resRoyal = await royalCount({})
+        const resRoyal = await royalCount(params)
         if (resRoyal?.success && resRoyal?.data) {
           setRoyalSummary({
             totalBookingCount: Number(resRoyal.data.totalBookingCount || 0),

@@ -357,6 +357,7 @@ export default function MerchandiseDashboard ({ stats, startDate, endDate }) {
         const params = {}
         if (startDate) params.startDate = startDate
         if (endDate) params.endDate = endDate
+        if (year) params.year = year
 
         const response = await dashboardMerchandise(params)
         if (response?.success && response?.data) {
@@ -374,6 +375,7 @@ export default function MerchandiseDashboard ({ stats, startDate, endDate }) {
         const countParams = {}
         if (startDate) countParams.startDate = startDate
         if (endDate) countParams.endDate = endDate
+        if (year) countParams.year = year
         const countRes = await merchandiseCount(countParams)
         if (countRes?.success && countRes?.data) {
           setMerchCounts({

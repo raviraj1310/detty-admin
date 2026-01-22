@@ -135,8 +135,14 @@ export default function DashboardPage () {
               stats={stats}
               startDate={dateRange.start}
               endDate={dateRange.end}
+              year={year}
             />
-            <AdditionalDashboard stats={stats} />
+            <AdditionalDashboard
+              stats={stats}
+              startDate={dateRange.start}
+              endDate={dateRange.end}
+              year={year}
+            />
           </>
         )}
       </div>
