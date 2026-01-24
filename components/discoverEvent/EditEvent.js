@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Loader2, AlertCircle } from 'lucide-react'
+import { ArrowLeft, Loader2, AlertCircle, Plus, Trash2 } from 'lucide-react'
 import Toast from '@/components/ui/Toast'
 import { convertToWebp } from '@/src/utils/image'
 import ImageCropper from '@/components/ui/ImageCropper'
@@ -55,6 +55,38 @@ export default function EditEvent ({ eventId }) {
   const [rawImageFile, setRawImageFile] = useState(null)
   const [imageUrl, setImageUrl] = useState('')
   const [imageUrlAlt, setImageUrlAlt] = useState('')
+  const [tickets, setTickets] = useState([
+    { slotName: '', date: '', time: '', inventory: '', price: '' }
+  ])
+
+  const handleTicketChange = (index, field, value) => {
+    const newTickets = [...tickets]
+    if (!newTickets[index]) {
+      newTickets[index] = {
+        slotName: '',
+        date: '',
+        time: '',
+        inventory: '',
+        price: ''
+      }
+    }
+    newTickets[index][field] = value
+    setTickets(newTickets)
+  }
+
+  const addTicket = () => {
+    setTickets([
+      ...tickets,
+      { slotName: '', date: '', time: '', inventory: '', price: '' }
+    ])
+  }
+
+  const removeTicket = index => {
+    if (tickets.length > 1) {
+      const newTickets = tickets.filter((_, i) => i !== index)
+      setTickets(newTickets)
+    }
+  }
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({
@@ -178,6 +210,15 @@ export default function EditEvent ({ eventId }) {
       fd.append('imageFormat', imageMeta.format || 'webp')
     }
     fd.append('hostedBy', selectedVendorId)
+    const formattedTickets = tickets.map(t => ({
+      slotName: t.slotName || t.ticketName || '', // Fallback for existing data
+      date: t.date,
+      time: t.time,
+      inventory: Number(t.inventory) || 0,
+      price: Number(t.price) || 0
+    }))
+    fd.append('tickets', JSON.stringify(formattedTickets))
+    fd.append('slots', JSON.stringify(formattedTickets))
     try {
       setSubmitting(true)
       const res = await updateEvent(eventId, fd)
@@ -295,6 +336,13 @@ export default function EditEvent ({ eventId }) {
         setImageUrlAlt(urls.alt)
 
         setSelectedVendorId(hostedById || '')
+
+        // Populate tickets/slots if available in event data
+        if (d.tickets && Array.isArray(d.tickets) && d.tickets.length > 0) {
+          setTickets(d.tickets)
+        } else if (d.slots && Array.isArray(d.slots) && d.slots.length > 0) {
+          setTickets(d.slots)
+        }
       } catch (e) {
         setErrors({ load: 'Failed to load event' })
       } finally {
@@ -594,6 +642,124 @@ export default function EditEvent ({ eventId }) {
               </div>
             </div>
 
+            {/* Ticket Slots */}
+            <div className='space-y-4 pt-4 border-t border-slate-100'>
+              <div className='flex items-center justify-between'>
+                <h3 className='text-sm font-medium text-slate-700'>
+                  Ticket Slots
+                </h3>
+                <button
+                  type='button'
+                  onClick={addTicket}
+                  className='flex items-center gap-2 text-sm font-medium text-[#FF5B2C] hover:text-[#F0481A]'
+                >
+                  <Plus className='w-4 h-4' />
+                  Add Slot
+                </button>
+              </div>
+
+              <div className='space-y-3'>
+                {tickets.map((ticket, index) => (
+                  <div
+                    key={index}
+                    className='grid grid-cols-1 md:grid-cols-6 gap-4 items-end p-4 bg-slate-50 rounded-xl border border-slate-200'
+                  >
+                    {/* Slot Name */}
+                    <div className='space-y-1'>
+                      <label className='text-xs font-medium text-slate-500'>
+                        Slot Name
+                      </label>
+                      <input
+                        type='text'
+                        value={ticket.slotName || ''}
+                        onChange={e =>
+                          handleTicketChange(
+                            index,
+                            'slotName',
+                            e.target.value
+                          )
+                        }
+                        placeholder='Enter Slot Name'
+                        className='w-full h-10 rounded-lg border border-[#E5E6EF] bg-white px-3 text-sm text-slate-700 focus:border-[#C5CAE3] focus:outline-none focus:ring-2 focus:ring-[#C2C8E4]'
+                      />
+                    </div>
+                    {/* Date */}
+                    <div className='space-y-1'>
+                      <label className='text-xs font-medium text-slate-500'>
+                        Date
+                      </label>
+                      <input
+                        type='date'
+                        value={ticket.date || ''}
+                        onChange={e =>
+                          handleTicketChange(index, 'date', e.target.value)
+                        }
+                        className='w-full h-10 rounded-lg border border-[#E5E6EF] bg-white px-3 text-sm text-slate-700 focus:border-[#C5CAE3] focus:outline-none focus:ring-2 focus:ring-[#C2C8E4]'
+                      />
+                    </div>
+                    {/* Time */}
+                    <div className='space-y-1'>
+                      <label className='text-xs font-medium text-slate-500'>
+                        Time
+                      </label>
+                      <input
+                        type='time'
+                        value={ticket.time || ''}
+                        onChange={e =>
+                          handleTicketChange(index, 'time', e.target.value)
+                        }
+                        className='w-full h-10 rounded-lg border border-[#E5E6EF] bg-white px-3 text-sm text-slate-700 focus:border-[#C5CAE3] focus:outline-none focus:ring-2 focus:ring-[#C2C8E4]'
+                      />
+                    </div>
+                    {/* Inventory */}
+                    <div className='space-y-1'>
+                      <label className='text-xs font-medium text-slate-500'>
+                        Inventory
+                      </label>
+                      <input
+                        type='number'
+                        placeholder='0'
+                        value={ticket?.inventory || ''}
+                        onChange={e =>
+                          handleTicketChange(index, 'inventory', e.target.value)
+                        }
+                        className='w-full h-10 rounded-lg border border-[#E5E6EF] bg-white px-3 text-sm text-slate-700 focus:border-[#C5CAE3] focus:outline-none focus:ring-2 focus:ring-[#C2C8E4]'
+                      />
+                    </div>
+                    {/* Price */}
+                    <div className='space-y-1'>
+                      <label className='text-xs font-medium text-slate-500'>
+                        Price
+                      </label>
+                      <input
+                        type='number'
+                        placeholder='0.00'
+                        value={ticket?.price || ''}
+                        onChange={e =>
+                          handleTicketChange(index, 'price', e.target.value)
+                        }
+                        className='w-full h-10 rounded-lg border border-[#E5E6EF] bg-white px-3 text-sm text-slate-700 focus:border-[#C5CAE3] focus:outline-none focus:ring-2 focus:ring-[#C2C8E4]'
+                      />
+                    </div>
+
+                    {/* Remove */}
+                    <div className='pb-1 flex justify-center md:justify-start'>
+                      {tickets.length > 1 && (
+                        <button
+                          type='button'
+                          onClick={() => removeTicket(index)}
+                          className='p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors'
+                          title='Remove slot'
+                        >
+                          <Trash2 className='w-5 h-5' />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
             <div className='grid grid-cols-1 md:grid-cols-3 gap-6'>
               <div className='space-y-2 md:col-span-3'>
                 <label className='text-sm font-medium text-slate-700'>
@@ -611,6 +777,7 @@ export default function EditEvent ({ eventId }) {
                   {!vendorsLoading && vendors.length === 0 && (
                     <option value=''>No vendors</option>
                   )}
+                  <option value=''>Select a vendor</option>
                   {!vendorsLoading &&
                     vendors.map(v => (
                       <option
@@ -774,6 +941,7 @@ export default function EditEvent ({ eventId }) {
           </div>
         </div>
       </form>
+
       <ImageCropper
         open={cropOpen}
         file={rawImageFile}
