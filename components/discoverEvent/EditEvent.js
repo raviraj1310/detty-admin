@@ -11,7 +11,8 @@ import {
   getEventTypes,
   updateEvent,
   deleteEvent,
-  getVendors
+  getVendors,
+  deleteSlot
 } from '@/services/discover-events/event.service'
 
 export default function EditEvent ({ eventId }) {
@@ -81,8 +82,28 @@ export default function EditEvent ({ eventId }) {
     ])
   }
 
-  const removeTicket = index => {
-    if (tickets.length > 1) {
+  const handleDeleteSlot = async (index, slotId) => {
+    if (tickets.length <= 1) {
+      return
+    }
+
+    if (slotId) {
+      try {
+        setLoading(true)
+        const res = await deleteSlot(slotId)
+        if (res.success) {
+          const newTickets = tickets.filter((_, i) => i !== index)
+          setTickets(newTickets)
+        } else {
+          setErrors({ submit: res.message || 'Failed to delete slot' })
+        }
+      } catch (e) {
+        console.error(e)
+        setErrors({ submit: 'Error deleting slot' })
+      } finally {
+        setLoading(false)
+      }
+    } else {
       const newTickets = tickets.filter((_, i) => i !== index)
       setTickets(newTickets)
     }
@@ -215,7 +236,8 @@ export default function EditEvent ({ eventId }) {
       date: t.date,
       time: t.time,
       inventory: Number(t.inventory) || 0,
-      price: Number(t.price) || 0
+      price: Number(t.price) || 0,
+      _id: t._id || t.id || undefined
     }))
     fd.append('tickets', JSON.stringify(formattedTickets))
     fd.append('slots', JSON.stringify(formattedTickets))
@@ -673,11 +695,7 @@ export default function EditEvent ({ eventId }) {
                         type='text'
                         value={ticket.slotName || ''}
                         onChange={e =>
-                          handleTicketChange(
-                            index,
-                            'slotName',
-                            e.target.value
-                          )
+                          handleTicketChange(index, 'slotName', e.target.value)
                         }
                         placeholder='Enter Slot Name'
                         className='w-full h-10 rounded-lg border border-[#E5E6EF] bg-white px-3 text-sm text-slate-700 focus:border-[#C5CAE3] focus:outline-none focus:ring-2 focus:ring-[#C2C8E4]'
@@ -747,7 +765,9 @@ export default function EditEvent ({ eventId }) {
                       {tickets.length > 1 && (
                         <button
                           type='button'
-                          onClick={() => removeTicket(index)}
+                          onClick={() =>
+                            handleDeleteSlot(index, ticket._id || ticket.id)
+                          }
                           className='p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors'
                           title='Remove slot'
                         >
