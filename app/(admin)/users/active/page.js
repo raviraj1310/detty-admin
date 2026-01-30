@@ -280,7 +280,7 @@ export default function ActiveUsersPage () {
             </div>
             <div>
               <p className='text-xs text-black opacity-90'>
-                Total Active Users
+                Total Registered Users
               </p>
               <p className='text-2xl text-black font-bold'>
                 {counts.totalUsers}
