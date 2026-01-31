@@ -12,6 +12,18 @@ export const createCustomNotification = async notificationData => {
   }
 }
 
+export const createOtherCustomNotification = async notificationData => {
+  try {
+    const response = await api.post(
+      '/custom-notification/create-custom-notification',
+      notificationData
+    )
+    return response.data
+  } catch (error) {
+    throw error
+  }
+}
+
 export const getNotifications = async (page = 1, limit = 5) => {
   try {
     const response = await api.get(

@@ -257,3 +257,13 @@ export const downloadInactiveExcel = async () => {
     throw error
   }
 }
+
+export const getUserList = async () => {
+  try {
+    const response = await api.get(`/user/get-all-user-list`)
+    return response.data
+  } catch (error) {
+    console.error('Error fetching user list:', error)
+    throw error
+  }
+}

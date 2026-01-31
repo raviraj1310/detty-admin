@@ -16,6 +16,7 @@ import {
 } from 'lucide-react'
 import {
   createCustomNotification,
+  createOtherCustomNotification,
   getNotifications,
   getSendedEmailList
 } from '@/services/notification/notification.service'
@@ -36,7 +37,8 @@ const CustomNotificationsPage = () => {
     imageUrl: '',
     link: '',
     discountCode: '',
-    sendEmailCounts: 0
+    sendEmailCounts: 0,
+    notificationType: 'all_users'
   })
   const [notifications, setNotifications] = useState([])
   const [loadingNotifications, setLoadingNotifications] = useState(false)
@@ -154,7 +156,13 @@ const CustomNotificationsPage = () => {
 
     setLoading(true)
     try {
-      await createCustomNotification(formData)
+      if (formData.notificationType === 'all_users') {
+        console.log('call user list ')
+        await createCustomNotification(formData)
+      } else {
+        console.log('call other ')
+        await createOtherCustomNotification(formData)
+      }
 
       setToast({
         open: true,
@@ -169,7 +177,8 @@ const CustomNotificationsPage = () => {
         imageUrl: '',
         link: '',
         discountCode: '',
-        sendEmailCounts: 0
+        sendEmailCounts: 0,
+        notificationType: 'all_users'
       })
       fetchNotifications(1)
     } catch (error) {
@@ -295,6 +304,76 @@ const CustomNotificationsPage = () => {
                   placeholder='Enter discount code'
                   className='w-full px-3 py-1.5 text-sm text-gray-900 uppercase italic border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all'
                 />
+              </div>
+
+              {/* Notification Type */}
+              <div>
+                <label className='block text-xs font-medium text-gray-700 mb-2'>
+                  Target Audience <span className='text-red-500'>*</span>
+                </label>
+                <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3'>
+                  {[
+                    { label: 'All Users', value: 'all_users' },
+                    {
+                      label: 'Failed Transactions',
+                      value: 'failed_transactions'
+                    },
+                    { label: 'Event Buyers', value: 'event_buyers' },
+                    {
+                      label: 'Merchandise Buyers',
+                      value: 'merchandise_buyers'
+                    },
+                    { label: 'Voucher Holders', value: 'voucher_holders' }
+                  ].map(option => (
+                    <label
+                      key={option.value}
+                      className={`
+                        relative flex items-center justify-between px-4 py-3 border rounded-lg cursor-pointer transition-all
+                        ${
+                          formData.notificationType === option.value
+                            ? 'border-orange-500 bg-orange-50 ring-1 ring-orange-500'
+                            : 'border-gray-200 hover:border-orange-200 hover:bg-gray-50'
+                        }
+                      `}
+                    >
+                      <div className='flex items-center gap-3'>
+                        <div
+                          className={`
+                            w-4 h-4 rounded-full border flex items-center justify-center
+                            ${
+                              formData.notificationType === option.value
+                                ? 'border-orange-600 bg-orange-600'
+                                : 'border-gray-300 bg-white'
+                            }
+                          `}
+                        >
+                          {formData.notificationType === option.value && (
+                            <div className='w-1.5 h-1.5 rounded-full bg-white' />
+                          )}
+                        </div>
+                        <span
+                          className={`text-sm font-medium ${
+                            formData.notificationType === option.value
+                              ? 'text-orange-900'
+                              : 'text-gray-700'
+                          }`}
+                        >
+                          {option.label}
+                        </span>
+                      </div>
+                      <input
+                        type='radio'
+                        name='notificationType'
+                        value={option.value}
+                        checked={formData.notificationType === option.value}
+                        onChange={e =>
+                          handleChange('notificationType', e.target.value)
+                        }
+                        className='sr-only'
+                      />
+                    </label>
+                  ))}
+                </div>
               </div>
 
               {/* Body Editor */}
