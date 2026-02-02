@@ -74,8 +74,9 @@ jobs:
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
-          app-name: 'dettyfusion-admin'
+          app-name: 'uat-dettyfusion-admin'
           slot-name: 'Production'
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_EE6FB7A3986545378A2A8B0D1338FECE }}
           package: app.zip
+
 
