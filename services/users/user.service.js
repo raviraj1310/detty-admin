@@ -9,12 +9,16 @@ const getUserIdFromStorage = () => {
   }
 }
 
-export const getUsers = async (params = {}) => {
+export const getUsers = async (params = {}, signal) => {
   try {
-    const response = await api.get('/user/get-all-users', { params })
+    const config = { params }
+    if (signal) config.signal = signal
+    const response = await api.get('/user/get-all-users', config)
     return response.data
   } catch (error) {
-    console.error('Error fetching users:', error)
+    if (error.name !== 'CanceledError' && error.code !== 'ERR_CANCELED') {
+      console.error('Error fetching users:', error)
+    }
     throw error
   }
 }
