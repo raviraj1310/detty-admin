@@ -1,7 +1,4 @@
-# Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
-# More GitHub Actions for Azure: https://github.com/Azure/actions
-
-name: Build and deploy Node.js app to Azure Web App - uat-dettyfusion-admin
+name: Build and deploy Next.js app to Azure Web App - dettyfusion-admin
 
 on:
   push:
@@ -12,28 +9,56 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read #This is required for actions/checkout
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-      - name: Set up Node.js version
+      - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '24.x'
+          node-version: 20
+          cache: 'npm'
 
-      - name: npm install, build, and test
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Build Next.js (Standalone)
+        run: npm run build
+        env:
+          NEXT_TELEMETRY_DISABLED: 1
+
+      - name: Prepare Deployment Folder
         run: |
-          npm install
-          npm run build --if-present
-          npm run test --if-present
+          rm -rf deployment
+          mkdir deployment
 
-      - name: Upload artifact for deployment job
+          echo "Copying FULL .next directory..."
+          cp -r .next deployment/.next
+
+          echo "Copying standalone server..."
+          cp -r .next/standalone/* deployment/
+
+          echo "Copying public assets..."
+          cp -r public deployment/public
+
+          echo "Copying package.json files..."
+          cp package.json deployment/
+          cp package-lock.json deployment/ || true
+
+          echo "Deployment folder ready."
+
+      - name: Zip deployment contents
+        run: |
+          cd deployment
+          zip -r ../app.zip .
+          cd ..
+
+      - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: nextapp
-          path: .
+          path: app.zip
 
   deploy:
     runs-on: ubuntu-latest
@@ -49,7 +74,8 @@ jobs:
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
-          app-name: 'uat-dettyfusion-admin'
+          app-name: 'dettyfusion-admin'
           slot-name: 'Production'
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_EE6FB7A3986545378A2A8B0D1338FECE }}
           package: app.zip
+
