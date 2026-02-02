@@ -231,6 +231,11 @@ const menuSections = [
         href: '/settings'
       },
       {
+        label: 'Permissions',
+        icon: '/images/backend/side_menu/side_menu (2).svg',
+        href: '/permission'
+      },
+      {
         label: 'Logout',
         icon: '/images/backend/side_menu/side_menu (2).svg',
         href: '/logout'
