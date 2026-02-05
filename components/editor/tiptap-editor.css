@@ -140,7 +140,7 @@
 .tiptap-editor-wrapper .ProseMirror p.is-editor-empty:first-child::before {
   content: attr(data-placeholder);
   float: left;
-  color: #9ca3af;
+  color: #6b7280;
   pointer-events: none;
   height: 0;
 }

@@ -262,6 +262,12 @@ const menuSections = [
         icon: '/images/backend/side_menu/side_menu (12).svg',
         href: '/masters/shipping-price',
         permission: 'master'
+      },
+      {
+        label: 'Gym Access',
+        icon: '/images/backend/side_menu/side_menu (12).svg',
+        href: '/gym',
+        permission: 'master'
       }
     ]
   },
