@@ -72,6 +72,42 @@ export default function EditActivity ({ activityId }) {
   const [vendorsError, setVendorsError] = useState('')
   const [selectedVendorId, setSelectedVendorId] = useState('')
 
+  // Permission check
+  const [user, setUser] = useState(null)
+  const [isPartner, setIsPartner] = useState(false)
+
+  useEffect(() => {
+    const u = localStorage.getItem('user')
+    if (u) {
+      try {
+        const parsed = JSON.parse(u)
+        setUser(parsed)
+        if (parsed.role && parsed.role.name === 'Partner') {
+          setIsPartner(true)
+        }
+      } catch (e) {
+        console.error('Failed to parse user', e)
+      }
+    }
+  }, [])
+
+  const checkPermission = permissionKey => {
+    if (!user) return false
+    if (!permissionKey) return true
+    const permissions = user.role?.permissions
+    if (Array.isArray(permissions)) {
+      return permissions.some(
+        p =>
+          (p.module && p.module === permissionKey) ||
+          (p.name && p.name.toLowerCase().includes(permissionKey.toLowerCase()))
+      )
+    } else if (permissions && typeof permissions === 'object') {
+      const modulePerms = permissions[permissionKey]
+      return Array.isArray(modulePerms) && modulePerms.length > 0
+    }
+    return false
+  }
+
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }))
   }
@@ -512,26 +548,30 @@ export default function EditActivity ({ activityId }) {
             Activity Details
           </h2>
           <div className='flex gap-3'>
-            <button
-              onClick={() => setConfirmOpen(true)}
-              className='px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-colors'
-              disabled={loading}
-            >
-              Delete
-            </button>
-            <button
-              onClick={handleUpdate}
-              className='px-6 py-2.5 bg-[#FF5B2C] hover:bg-[#F0481A] text-white font-medium rounded-lg transition-colors'
-              disabled={submitting || loading}
-            >
-              {submitting ? (
-                <span className='flex items-center gap-2'>
-                  <Loader2 className='h-4 w-4 animate-spin' /> Updating...
-                </span>
-              ) : (
-                'Update'
-              )}
-            </button>
+            {!isPartner && checkPermission('places-delete') && (
+              <button
+                onClick={() => setConfirmOpen(true)}
+                className='px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-colors'
+                disabled={loading}
+              >
+                Delete
+              </button>
+            )}
+            {!isPartner && checkPermission('places-edit') && (
+              <button
+                onClick={handleUpdate}
+                className='px-6 py-2.5 bg-[#FF5B2C] hover:bg-[#F0481A] text-white font-medium rounded-lg transition-colors'
+                disabled={submitting || loading}
+              >
+                {submitting ? (
+                  <span className='flex items-center gap-2'>
+                    <Loader2 className='h-4 w-4 animate-spin' /> Updating...
+                  </span>
+                ) : (
+                  'Update'
+                )}
+              </button>
+            )}
           </div>
         </div>
 

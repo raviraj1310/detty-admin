@@ -104,8 +104,10 @@ export default function DiscoverEvents () {
   const [locationFilter, setLocationFilter] = useState('')
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [toastOpen, setToastOpen] = useState(false)
+  const [user, setUser] = useState(null)
   const [viewAllLoading, setViewAllLoading] = useState(false)
   const [addNewLoading, setAddNewLoading] = useState(false)
+  const [isPartner, setIsPartner] = useState(false)
   const [sortBy, setSortBy] = useState('eventDate')
   const [sortDir, setSortDir] = useState('desc')
   const [exporting, setExporting] = useState(false)
@@ -113,10 +115,38 @@ export default function DiscoverEvents () {
   const [pageCount, setPageCount] = useState(1)
   const [page, setPage] = useState(1)
 
-  const role =
-    typeof window !== 'undefined' ? localStorage.getItem('user_role') : null
+  useEffect(() => {
+    const u = localStorage.getItem('user')
+    if (u) {
+      try {
+        const parsed = JSON.parse(u)
+        setUser(parsed)
+        if (parsed.role && parsed.role.name === 'Partner') {
+          setIsPartner(true)
+        }
+      } catch (e) {
+        console.error('Failed to parse user', e)
+      }
+    }
+  }, [])
 
-  const isPartner = role === 'Partner'
+  const checkPermission = permissionKey => {
+    if (!user) return false
+    if (!permissionKey) return true
+
+    const permissions = user.role?.permissions
+    if (Array.isArray(permissions)) {
+      return permissions.some(
+        p =>
+          (p.module && p.module === permissionKey) ||
+          (p.name && p.name.toLowerCase().includes(permissionKey.toLowerCase()))
+      )
+    } else if (permissions && typeof permissions === 'object') {
+      const modulePerms = permissions[permissionKey]
+      return Array.isArray(modulePerms) && modulePerms.length > 0
+    }
+    return false
+  }
 
   const toIdString = v => {
     if (!v) return ''
@@ -470,24 +500,26 @@ export default function DiscoverEvents () {
           <p className='text-xs text-[#99A1BC]'>Dashboard / Discover Events</p>
         </div>
         <div className='flex flex-wrap items-center gap-3 md:justify-end'>
-          <button
-            onClick={() => {
-              setViewAllLoading(true)
-              router.push('/discover-events/tickets-booked')
-            }}
-            disabled={viewAllLoading}
-            className='rounded-xl border border-[#E5E6EF] bg-white px-5 py-2.5 text-sm font-medium text-[#1A1F3F] shadow-sm transition hover:bg-[#F9FAFD] disabled:opacity-60 disabled:cursor-not-allowed'
-          >
-            {viewAllLoading ? (
-              <span className='flex items-center gap-2'>
-                <Loader2 className='h-4 w-4 animate-spin' />
-                Loading...
-              </span>
-            ) : (
-              'View All Bookings'
-            )}
-          </button>
-          {!isPartner && (
+          {!isPartner && checkPermission('event-order') && (
+            <button
+              onClick={() => {
+                setViewAllLoading(true)
+                router.push('/discover-events/tickets-booked')
+              }}
+              disabled={viewAllLoading}
+              className='rounded-xl border border-[#E5E6EF] bg-white px-5 py-2.5 text-sm font-medium text-[#1A1F3F] shadow-sm transition hover:bg-[#F9FAFD] disabled:opacity-60 disabled:cursor-not-allowed'
+            >
+              {viewAllLoading ? (
+                <span className='flex items-center gap-2'>
+                  <Loader2 className='h-4 w-4 animate-spin' />
+                  Loading...
+                </span>
+              ) : (
+                'View All Bookings'
+              )}
+            </button>
+          )}
+          {!isPartner && checkPermission('event-create') && (
             <button
               onClick={handleAddNewEvent}
               disabled={addNewLoading}

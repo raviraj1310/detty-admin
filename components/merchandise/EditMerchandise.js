@@ -31,6 +31,42 @@ export default function EditMerchandise ({ merchandiseId }) {
   const [imagePreviewUrl, setImagePreviewUrl] = useState('')
   const [categories, setCategories] = useState([])
 
+  // Permission check
+  const [user, setUser] = useState(null)
+  const [isPartner, setIsPartner] = useState(false)
+
+  useEffect(() => {
+    const u = localStorage.getItem('user')
+    if (u) {
+      try {
+        const parsed = JSON.parse(u)
+        setUser(parsed)
+        if (parsed.role && parsed.role.name === 'Partner') {
+          setIsPartner(true)
+        }
+      } catch (e) {
+        console.error('Failed to parse user', e)
+      }
+    }
+  }, [])
+
+  const checkPermission = permissionKey => {
+    if (!user) return false
+    if (!permissionKey) return true
+    const permissions = user.role?.permissions
+    if (Array.isArray(permissions)) {
+      return permissions.some(
+        p =>
+          (p.module && p.module === permissionKey) ||
+          (p.name && p.name.toLowerCase().includes(permissionKey.toLowerCase()))
+      )
+    } else if (permissions && typeof permissions === 'object') {
+      const modulePerms = permissions[permissionKey]
+      return Array.isArray(modulePerms) && modulePerms.length > 0
+    }
+    return false
+  }
+
   const toNumber = s => {
     const n = Number(String(s || '').replace(/[^0-9.]/g, ''))
     return Number.isFinite(n) ? n : 0
@@ -281,20 +317,22 @@ export default function EditMerchandise ({ merchandiseId }) {
             <h2 className='text-lg font-semibold text-slate-900'>
               Merchandise Details
             </h2>
-            <button
-              onClick={handleSubmit}
-              disabled={submitting}
-              className='rounded-xl bg-[#FF5B2C] px-5 py-2.5 text-sm font-semibold text-white shadow-[0_14px_30px_-20px_rgba(248,113,72,0.65)] transition hover:bg-[#F0481A] disabled:opacity-60 disabled:cursor-not-allowed'
-            >
-              {submitting ? (
-                <span className='flex items-center gap-2'>
-                  <Loader2 className='h-4 w-4 animate-spin' />
-                  Saving...
-                </span>
-              ) : (
-                'Save'
-              )}
-            </button>
+            {!isPartner && checkPermission('merchandise-edit') && (
+              <button
+                onClick={handleSubmit}
+                disabled={submitting}
+                className='rounded-xl bg-[#FF5B2C] px-5 py-2.5 text-sm font-semibold text-white shadow-[0_14px_30px_-20px_rgba(248,113,72,0.65)] transition hover:bg-[#F0481A] disabled:opacity-60 disabled:cursor-not-allowed'
+              >
+                {submitting ? (
+                  <span className='flex items-center gap-2'>
+                    <Loader2 className='h-4 w-4 animate-spin' />
+                    Saving...
+                  </span>
+                ) : (
+                  'Save'
+                )}
+              </button>
+            )}
           </div>
           <div className='space-y-6'>
             <div className='grid grid-cols-1 md:grid-cols-3 gap-6'>

@@ -4,19 +4,22 @@ import { useEffect, useMemo, useState, useRef } from 'react'
 import {
   Search,
   MoreVertical,
-  Loader2,
   Pencil,
   Trash2,
+  Loader2,
+  Eye,
+  EyeOff,
   ChevronLeft,
   ChevronRight
 } from 'lucide-react'
 import { TbCaretUpDownFilled } from 'react-icons/tb'
 import {
-  getAllPermissions,
-  createPermission,
-  updatePermission,
-  deletePermission
-} from '@/services/permission/permission.service'
+  getAllAdminUsers,
+  createAdminUser,
+  updateAdminUser,
+  deleteAdminUser
+} from '@/services/admin-user/admin-user.service'
+import { getRoles } from '@/services/roles/roles.service'
 import Toast from '@/components/ui/Toast'
 
 const TableHeaderCell = ({
@@ -34,55 +37,37 @@ const TableHeaderCell = ({
     } ${active ? 'text-[#2D3658]' : 'text-[#8A92AC]'}`}
   >
     {children}
-    <TbCaretUpDownFilled
-      className={`h-3 w-3 ${active ? 'text-[#4F46E5]' : 'text-[#CBCFE2]'} ${
-        order === 'asc' ? 'rotate-180' : ''
-      }`}
-    />
+    {onClick && (
+      <TbCaretUpDownFilled
+        className={`h-3 w-3 ${active ? 'text-[#FF5B2C]' : 'text-[#CBCFE2]'} ${
+          order === 'asc' ? 'rotate-180' : ''
+        }`}
+      />
+    )}
   </button>
 )
 
-const MODULE_OPTIONS = [
-  'dashboard',
-  'user',
-  'transaction',
-  'event',
-  'event-order',
-  'places-to-visit',
-  'activity-order',
-  'merchandise',
-  'merchandise-order',
-  'visa',
-  'wallet',
-  'email-subscription',
-  'contact',
-  'inquiry',
-  'request-deactivation',
-  'referral-report',
-  'custom-notification',
-  'voucher',
-  'cms',
-  'master',
-  'admin-user'
-]
-
-export default function PermissionMaster () {
+export default function AdminAccessMaster () {
   const formSectionRef = useRef(null)
   const nameInputRef = useRef(null)
   const [formData, setFormData] = useState({
     name: '',
-    module: ''
+    email: '',
+    password: '',
+    roleId: ''
   })
   const [searchTerm, setSearchTerm] = useState('')
   const [errors, setErrors] = useState({})
   const [submitting, setSubmitting] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
   const [toast, setToast] = useState({
     open: false,
     title: '',
     description: '',
     variant: 'success'
   })
-  const [permissions, setPermissions] = useState([])
+  const [users, setUsers] = useState([])
+  const [roles, setRoles] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [menuOpenId, setMenuOpenId] = useState(null)
@@ -101,39 +86,71 @@ export default function PermissionMaster () {
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }))
+    if (errors[field]) {
+      setErrors(prev => ({ ...prev, [field]: '' }))
+    }
   }
 
   const validate = () => {
     const errs = {}
     if (!formData.name || formData.name.trim().length < 2)
-      errs.name = 'Enter a valid permission name'
+      errs.name = 'Enter a valid name'
+    if (!formData.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email))
+      errs.email = 'Enter a valid email'
+    if (!editingId && (!formData.password || formData.password.length < 6))
+      errs.password = 'Password must be at least 6 characters'
+    if (!formData.roleId) errs.roleId = 'Select a role'
     return errs
   }
 
-  const fetchPermissions = async (page = 1, limit = 10) => {
+  const getRoleName = user => {
+    if (user.role && user.role.name) return user.role.name
+    if (user.roleName) return user.roleName
+    if (user.roleId) {
+      const r = roles.find(r => r._id === user.roleId)
+      if (r) return r.name
+    }
+    if (typeof user.role === 'string') {
+      const r = roles.find(r => r._id === user.role)
+      if (r) return r.name
+    }
+    return '-'
+  }
+
+  const fetchData = async (page = 1, limit = 10) => {
     setLoading(true)
     setError('')
     try {
-      const res = await getAllPermissions(page, limit)
-      const list = res?.data || (Array.isArray(res) ? res : [])
-      setPermissions(list)
+      const [usersRes, rolesRes] = await Promise.all([
+        getAllAdminUsers(page, limit, searchTerm),
+        getRoles()
+      ])
+
+      const userList =
+        usersRes?.data || (Array.isArray(usersRes) ? usersRes : [])
+      setUsers(userList)
       setPagination(prev => ({
         ...prev,
-        page: res?.page || page,
-        limit: res?.limit || limit,
-        total: res?.total || list.length,
-        totalPages: res?.totalPages || 1
+        page: usersRes?.page || page,
+        limit: usersRes?.limit || limit,
+        total: usersRes?.total || userList.length,
+        totalPages: usersRes?.totalPages || 1
       }))
-    } catch {
-      setError('Failed to load permissions')
-      setPermissions([])
+
+      const rolesList =
+        rolesRes?.data?.data ||
+        (Array.isArray(rolesRes?.data) ? rolesRes.data : [])
+      setRoles(rolesList)
+    } catch (e) {
+      console.error('Failed to load data', e)
+      setError('Failed to load data')
     } finally {
       setLoading(false)
     }
   }
 
   useEffect(() => {
-    fetchPermissions(pagination.page, pagination.limit)
+    fetchData(pagination.page, pagination.limit)
   }, [pagination.page, pagination.limit])
 
   useEffect(() => {
@@ -159,39 +176,40 @@ export default function PermissionMaster () {
     try {
       const payload = {
         name: formData.name.trim(),
-        module: String(formData.module || '').trim()
+        email: formData.email.trim(),
+        roleId: formData.roleId
       }
+      if (formData.password) {
+        payload.password = formData.password
+      }
+
       if (editingId) {
-        const res = await updatePermission(editingId, payload)
+        const res = await updateAdminUser(editingId, payload)
         if (res?.success || res) {
           setToast({
             open: true,
-            title: 'Permission updated',
+            title: 'User updated',
             description: formData.name,
             variant: 'success'
           })
           setEditingId(null)
+          setFormData({ name: '', email: '', password: '', roleId: '' })
         }
       } else {
-        const res = await createPermission(payload)
+        const res = await createAdminUser(payload)
         if (res?.success || res) {
           setToast({
             open: true,
-            title: 'Permission added',
+            title: 'User added',
             description: formData.name,
             variant: 'success'
           })
+          setFormData({ name: '', email: '', password: '', roleId: '' })
         }
       }
-      setFormData({
-        name: '',
-        module: ''
-      })
-      await fetchPermissions(pagination.page, pagination.limit)
+      await fetchData(pagination.page, pagination.limit)
     } catch (e) {
-      alert(
-        e?.response?.data?.message || e?.message || 'Failed to save permission'
-      )
+      alert(e?.response?.data?.message || e?.message || 'Failed to save user')
     } finally {
       setSubmitting(false)
     }
@@ -200,7 +218,12 @@ export default function PermissionMaster () {
   const startEdit = item => {
     setFormData({
       name: item.name || '',
-      module: item.module || ''
+      email: item.email || '',
+      password: '', // Don't fill password
+      roleId:
+        item.roleId ||
+        (typeof item.role === 'object' ? item.role?._id : item.role) ||
+        ''
     })
     setEditingId(item._id)
     setMenuOpenId(null)
@@ -217,18 +240,18 @@ export default function PermissionMaster () {
     if (!confirmId) return
     setDeleting(true)
     try {
-      const res = await deletePermission(confirmId)
+      const res = await deleteAdminUser(confirmId)
       if (res?.success || res) {
-        await fetchPermissions(pagination.page, pagination.limit)
+        await fetchData(pagination.page, pagination.limit)
         setToast({
           open: true,
-          title: 'Permission deleted',
+          title: 'User deleted',
           description: 'Removed successfully',
           variant: 'success'
         })
       }
     } catch {
-      setError('Failed to delete permission')
+      setError('Failed to delete user')
     } finally {
       setDeleting(false)
       setConfirmOpen(false)
@@ -236,8 +259,8 @@ export default function PermissionMaster () {
     }
   }
 
-  const filteredPermissions = useMemo(() => {
-    const base = Array.isArray(permissions) ? permissions : []
+  const filteredUsers = useMemo(() => {
+    const base = Array.isArray(users) ? users : []
     const term = String(searchTerm || '')
       .trim()
       .toLowerCase()
@@ -257,13 +280,20 @@ export default function PermissionMaster () {
 
     return base.filter(a => {
       const name = String(a.name || '').toLowerCase()
+      const email = String(a.email || '').toLowerCase()
+      const roleName = String(getRoleName(a)).toLowerCase()
       const addedStr = String(
         formatAdded(a.createdAt || a.updatedAt) || ''
       ).toLowerCase()
 
-      return !term ? true : name.includes(term) || addedStr.includes(term)
+      return !term
+        ? true
+        : name.includes(term) ||
+            email.includes(term) ||
+            roleName.includes(term) ||
+            addedStr.includes(term)
     })
-  }, [permissions, searchTerm])
+  }, [users, searchTerm, roles])
 
   const getSortValue = (a, key) => {
     if (key === 'addedOn') {
@@ -273,11 +303,13 @@ export default function PermissionMaster () {
         : 0
     }
     if (key === 'name') return String(a.name || '').toLowerCase()
+    if (key === 'email') return String(a.email || '').toLowerCase()
+    if (key === 'role') return String(getRoleName(a)).toLowerCase()
     return 0
   }
 
-  const sortedPermissions = useMemo(() => {
-    const arr = [...filteredPermissions]
+  const sortedUsers = useMemo(() => {
+    const arr = [...filteredUsers]
     arr.sort((a, b) => {
       const va = getSortValue(a, sortKey)
       const vb = getSortValue(b, sortKey)
@@ -287,7 +319,7 @@ export default function PermissionMaster () {
       return sortOrder === 'asc' ? va - vb : vb - va
     })
     return arr
-  }, [filteredPermissions, sortKey, sortOrder])
+  }, [filteredUsers, sortKey, sortOrder])
 
   const toggleSort = key => {
     if (sortKey === key) setSortOrder(prev => (prev === 'asc' ? 'desc' : 'asc'))
@@ -312,10 +344,8 @@ export default function PermissionMaster () {
       {/* Header */}
       <div className='flex flex-col gap-1 md:flex-row md:items-start md:justify-between'>
         <div className='flex flex-col gap-1'>
-          <h1 className='text-xl font-semibold text-slate-900'>
-            Permission Masters
-          </h1>
-          <p className='text-xs text-[#99A1BC]'>Dashboard / Masters</p>
+          <h1 className='text-xl font-semibold text-slate-900'>Admin Access</h1>
+          <p className='text-xs text-[#99A1BC]'>Dashboard / Admin Access</p>
         </div>
       </div>
 
@@ -337,8 +367,8 @@ export default function PermissionMaster () {
               Confirm Delete
             </h3>
             <p className='mt-2 text-sm text-slate-500'>
-              Are you sure you want to delete this permission? This action
-              cannot be undone.
+              Are you sure you want to delete this user? This action cannot be
+              undone.
             </p>
             <div className='mt-6 flex justify-end gap-3'>
               <button
@@ -368,39 +398,50 @@ export default function PermissionMaster () {
       <div className='rounded-2xl border border-[#E1E6F7] bg-white p-5 shadow-[0_24px_60px_-40px_rgba(15,23,42,0.55)]'>
         <div className='flex items-center justify-between mb-4'>
           <h2 className='text-sm font-semibold text-slate-900'>
-            Permission Details
+            {editingId ? 'Edit User' : 'Add New User'}
           </h2>
-          <button
-            onClick={handleSubmit}
-            disabled={submitting}
-            className='rounded-xl bg-[#FF5B2C] px-4 py-2 text-xs font-semibold text-white shadow-[0_14px_30px_-20px_rgba(248,113,72,0.65)] transition hover:bg-[#F0481A] disabled:opacity-60 disabled:cursor-not-allowed'
-          >
-            {submitting ? (
-              <span className='flex items-center gap-2'>
-                <Loader2 className='h-3.5 w-3.5 animate-spin' />
-                {editingId ? 'Updating...' : 'Adding...'}
-              </span>
-            ) : editingId ? (
-              'Update'
-            ) : (
-              'Add'
+          <div className='flex items-center gap-3'>
+            {editingId && (
+              <button
+                onClick={() => {
+                  setEditingId(null)
+                  setFormData({ name: '', email: '', password: '', roleId: '' })
+                }}
+                className='text-xs text-slate-500 hover:text-slate-800'
+              >
+                Cancel Edit
+              </button>
             )}
-          </button>
+            <button
+              onClick={handleSubmit}
+              disabled={submitting}
+              className='rounded-xl bg-[#FF5B2C] px-4 py-2 text-xs font-semibold text-white shadow-[0_14px_30px_-20px_rgba(248,113,72,0.65)] transition hover:bg-[#F0481A] disabled:opacity-60 disabled:cursor-not-allowed'
+            >
+              {submitting ? (
+                <span className='flex items-center gap-2'>
+                  <Loader2 className='h-3.5 w-3.5 animate-spin' />
+                  {editingId ? 'Updating...' : 'Adding...'}
+                </span>
+              ) : editingId ? (
+                'Update'
+              ) : (
+                'Add'
+              )}
+            </button>
+          </div>
         </div>
 
         <form onSubmit={handleSubmit} ref={formSectionRef}>
-          <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+          <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4'>
             <div className='space-y-1'>
-              <label className='text-xs font-medium text-slate-700'>
-                Permission Name
-              </label>
+              <label className='text-xs font-medium text-slate-700'>Name</label>
               <input
                 type='text'
                 value={formData.name}
                 onChange={e => handleInputChange('name', e.target.value)}
                 ref={nameInputRef}
                 className='w-full h-9 rounded-lg border border-[#E5E6EF] bg-[#F8F9FC] px-3 text-xs text-slate-700 placeholder:text-[#B0B7D0] focus:border-[#C5CAE3] focus:outline-none focus:ring-2 focus:ring-[#C2C8E4]'
-                placeholder='Enter permission name'
+                placeholder='Enter full name'
               />
               {errors.name && (
                 <p className='text-xs text-red-600'>{errors.name}</p>
@@ -409,20 +450,64 @@ export default function PermissionMaster () {
 
             <div className='space-y-1'>
               <label className='text-xs font-medium text-slate-700'>
-                Module
+                Email
               </label>
+              <input
+                type='email'
+                value={formData.email}
+                onChange={e => handleInputChange('email', e.target.value)}
+                className='w-full h-9 rounded-lg border border-[#E5E6EF] bg-[#F8F9FC] px-3 text-xs text-slate-700 placeholder:text-[#B0B7D0] focus:border-[#C5CAE3] focus:outline-none focus:ring-2 focus:ring-[#C2C8E4]'
+                placeholder='Enter email address'
+              />
+              {errors.email && (
+                <p className='text-xs text-red-600'>{errors.email}</p>
+              )}
+            </div>
+
+            <div className='space-y-1'>
+              <label className='text-xs font-medium text-slate-700'>Role</label>
               <select
-                value={formData.module}
-                onChange={e => handleInputChange('module', e.target.value)}
-                className='w-full h-9 rounded-lg border border-[#E5E6EF] bg-[#F8F9FC] px-3 text-xs text-slate-700 focus:border-[#C5CAE3] focus:outline-none focus:ring-2 focus:ring-[#C2C8E4]'
+                value={formData.roleId}
+                onChange={e => handleInputChange('roleId', e.target.value)}
+                className='w-full h-9 rounded-lg border border-[#E5E6EF] bg-[#F8F9FC] px-3 text-xs text-slate-700 placeholder:text-[#B0B7D0] focus:border-[#C5CAE3] focus:outline-none focus:ring-2 focus:ring-[#C2C8E4]'
               >
-                <option value=''>Select module</option>
-                {MODULE_OPTIONS.map(opt => (
-                  <option key={opt} value={opt}>
-                    {opt}
+                <option value=''>Select Role</option>
+                {roles.map(role => (
+                  <option key={role._id} value={role._id}>
+                    {role.name}
                   </option>
                 ))}
               </select>
+              {errors.roleId && (
+                <p className='text-xs text-red-600'>{errors.roleId}</p>
+              )}
+            </div>
+
+            <div className='space-y-1'>
+              <label className='text-xs font-medium text-slate-700'>
+                Password {editingId && '(Optional)'}
+              </label>
+              <div className='relative'>
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={formData.password}
+                  onChange={e => handleInputChange('password', e.target.value)}
+                  className='w-full h-9 rounded-lg border border-[#E5E6EF] bg-[#F8F9FC] px-3 text-xs text-slate-700 placeholder:text-[#B0B7D0] focus:border-[#C5CAE3] focus:outline-none focus:ring-2 focus:ring-[#C2C8E4] pr-8'
+                  placeholder={
+                    editingId ? 'Leave blank to keep current' : 'Enter password'
+                  }
+                />
+                <button
+                  type='button'
+                  onClick={() => setShowPassword(!showPassword)}
+                  className='absolute right-2 top-1/2 -translate-y-1/2 text-[#A6AEC7] hover:text-[#2D3658]'
+                >
+                  {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+                </button>
+              </div>
+              {errors.password && (
+                <p className='text-xs text-red-600'>{errors.password}</p>
+              )}
             </div>
           </div>
         </form>
@@ -431,9 +516,7 @@ export default function PermissionMaster () {
       {/* List Section */}
       <div className='rounded-2xl border border-[#E1E6F7] bg-white p-4'>
         <div className='mb-4 flex flex-wrap items-center justify-between gap-2'>
-          <h2 className='text-sm font-semibold text-slate-900'>
-            Permission List
-          </h2>
+          <h2 className='text-sm font-semibold text-slate-900'>Users List</h2>
           <div className='flex items-center gap-2'>
             <div className='relative flex items-center'>
               <input
@@ -450,7 +533,7 @@ export default function PermissionMaster () {
 
         <div className='overflow-visible rounded-xl border border-[#E5E8F5]'>
           <div className='grid grid-cols-12 gap-4 bg-[#F7F9FD] px-4 py-3'>
-            <div className='col-span-2'>
+            <div className='col-span-3'>
               <TableHeaderCell
                 onClick={() => toggleSort('addedOn')}
                 active={sortKey === 'addedOn'}
@@ -459,7 +542,7 @@ export default function PermissionMaster () {
                 Added On
               </TableHeaderCell>
             </div>
-            <div className='col-span-4'>
+            <div className='col-span-3'>
               <TableHeaderCell
                 onClick={() => toggleSort('name')}
                 active={sortKey === 'name'}
@@ -468,9 +551,27 @@ export default function PermissionMaster () {
                 Name
               </TableHeaderCell>
             </div>
-            <div className='col-span-6'>
+            <div className='col-span-3'>
+              <TableHeaderCell
+                onClick={() => toggleSort('email')}
+                active={sortKey === 'email'}
+                order={sortOrder}
+              >
+                Email
+              </TableHeaderCell>
+            </div>
+            <div className='col-span-2'>
+              <TableHeaderCell
+                onClick={() => toggleSort('role')}
+                active={sortKey === 'role'}
+                order={sortOrder}
+              >
+                Role
+              </TableHeaderCell>
+            </div>
+            <div className='col-span-1 text-right'>
               <span className='text-xs font-medium uppercase tracking-wide text-[#8A92AC]'>
-                Module
+                Action
               </span>
             </div>
           </div>
@@ -484,12 +585,12 @@ export default function PermissionMaster () {
             )}
             {!loading &&
               !error &&
-              sortedPermissions.map((item, idx) => (
+              sortedUsers.map((item, idx) => (
                 <div
                   key={item._id || idx}
                   className='grid grid-cols-12 gap-4 px-4 py-3 hover:bg-[#F9FAFD]'
                 >
-                  <div className='col-span-2 self-center text-xs text-[#5E6582]'>
+                  <div className='col-span-3 self-center text-xs text-[#5E6582]'>
                     {item.createdAt || item.updatedAt
                       ? new Date(
                           item.createdAt || item.updatedAt
@@ -503,13 +604,25 @@ export default function PermissionMaster () {
                         })
                       : '-'}
                   </div>
-                  <div className='col-span-4 self-center text-xs font-semibold text-slate-900'>
+                  <div className='col-span-3 self-center text-xs font-semibold text-slate-900'>
                     {item.name || '-'}
                   </div>
-                  <div className='col-span-6 flex items-center justify-between gap-4'>
-                    <div className='self-center text-xs text-slate-700'>
-                      {item.module || '-'}
-                    </div>
+                  <div className='col-span-3 self-center text-xs text-slate-700'>
+                    {item.email || '-'}
+                  </div>
+                  <div className='col-span-2 self-center text-xs text-slate-700'>
+                    <span className='inline-flex items-center rounded-md bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10'>
+                      {getRoleName(item)}
+                    </span>
+                  </div>
+                  <div className='col-span-1 flex items-center justify-end gap-2'>
+                    <button
+                      onClick={() => startEdit(item)}
+                      className='rounded-full border border-transparent p-1.5 text-[#8C93AF] transition hover:border-[#E5E8F6] hover:bg-[#F5F7FD] hover:text-[#2D3658]'
+                      title='Edit'
+                    >
+                      <Pencil className='h-4 w-4' />
+                    </button>
                     <div className='relative shrink-0'>
                       <button
                         data-menu-button
@@ -553,10 +666,9 @@ export default function PermissionMaster () {
                   </div>
                 </div>
               ))}
-
-            {!loading && !error && sortedPermissions.length === 0 && (
+            {!loading && !error && sortedUsers.length === 0 && (
               <div className='px-4 py-8 text-center text-xs text-[#8A92AC]'>
-                No permissions found.
+                No users found.
               </div>
             )}
           </div>

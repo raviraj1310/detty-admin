@@ -109,10 +109,40 @@ export default function MerchandiseList () {
   const [pageCount, setPageCount] = useState(1)
   const [page, setPage] = useState(1)
 
-  const role =
-    typeof window !== 'undefined' ? localStorage.getItem('user_role') : null
+  const [user, setUser] = useState(null)
+  const [isPartner, setIsPartner] = useState(false)
 
-  const isPartner = role === 'Partner'
+  useEffect(() => {
+    const u = localStorage.getItem('user')
+    if (u) {
+      try {
+        const parsed = JSON.parse(u)
+        setUser(parsed)
+        if (parsed.role && parsed.role.name === 'Partner') {
+          setIsPartner(true)
+        }
+      } catch (e) {
+        console.error('Failed to parse user', e)
+      }
+    }
+  }, [])
+
+  const checkPermission = permissionKey => {
+    if (!user) return false
+    if (!permissionKey) return true
+    const permissions = user.role?.permissions
+    if (Array.isArray(permissions)) {
+      return permissions.some(
+        p =>
+          (p.module && p.module === permissionKey) ||
+          (p.name && p.name.toLowerCase().includes(permissionKey.toLowerCase()))
+      )
+    } else if (permissions && typeof permissions === 'object') {
+      const modulePerms = permissions[permissionKey]
+      return Array.isArray(modulePerms) && modulePerms.length > 0
+    }
+    return false
+  }
 
   const toImageSrc = u => {
     let s = String(u || '').trim()
@@ -524,24 +554,26 @@ export default function MerchandiseList () {
           <p className='text-xs text-[#99A1BC]'>Dashboard / Merchandise</p>
         </div>
         <div className='flex flex-wrap items-center gap-2 md:justify-end'>
-          <button
-            onClick={() => {
-              setViewAllLoading(true)
-              router.push('/merchandise/order')
-            }}
-            disabled={viewAllLoading}
-            className='rounded-lg border border-[#E5E6EF] bg-white px-3 py-1.5 text-xs font-medium text-[#1A1F3F] shadow-sm transition hover:bg-[#F9FAFD] disabled:opacity-60 disabled:cursor-not-allowed'
-          >
-            {viewAllLoading ? (
-              <span className='flex items-center gap-1.5'>
-                <Loader2 className='h-3 w-3 animate-spin' />
-                Loading...
-              </span>
-            ) : (
-              'View All Orders'
-            )}
-          </button>
-          {!isPartner && (
+          {!isPartner && checkPermission('merchandise-order') && (
+            <button
+              onClick={() => {
+                setViewAllLoading(true)
+                router.push('/merchandise/order')
+              }}
+              disabled={viewAllLoading}
+              className='rounded-lg border border-[#E5E6EF] bg-white px-3 py-1.5 text-xs font-medium text-[#1A1F3F] shadow-sm transition hover:bg-[#F9FAFD] disabled:opacity-60 disabled:cursor-not-allowed'
+            >
+              {viewAllLoading ? (
+                <span className='flex items-center gap-1.5'>
+                  <Loader2 className='h-3 w-3 animate-spin' />
+                  Loading...
+                </span>
+              ) : (
+                'View All Orders'
+              )}
+            </button>
+          )}
+          {!isPartner && checkPermission('merchandise-create') && (
             <button
               onClick={() => {
                 setAddNewLoading(true)

@@ -60,6 +60,42 @@ export default function EditEvent ({ eventId }) {
     { slotName: '', date: '', time: '', inventory: '', price: '' }
   ])
 
+  // Permission check
+  const [user, setUser] = useState(null)
+  const [isPartner, setIsPartner] = useState(false)
+
+  useEffect(() => {
+    const u = localStorage.getItem('user')
+    if (u) {
+      try {
+        const parsed = JSON.parse(u)
+        setUser(parsed)
+        if (parsed.role && parsed.role.name === 'Partner') {
+          setIsPartner(true)
+        }
+      } catch (e) {
+        console.error('Failed to parse user', e)
+      }
+    }
+  }, [])
+
+  const checkPermission = permissionKey => {
+    if (!user) return false
+    if (!permissionKey) return true
+    const permissions = user.role?.permissions
+    if (Array.isArray(permissions)) {
+      return permissions.some(
+        p =>
+          (p.module && p.module === permissionKey) ||
+          (p.name && p.name.toLowerCase().includes(permissionKey.toLowerCase()))
+      )
+    } else if (permissions && typeof permissions === 'object') {
+      const modulePerms = permissions[permissionKey]
+      return Array.isArray(modulePerms) && modulePerms.length > 0
+    }
+    return false
+  }
+
   const handleTicketChange = (index, field, value) => {
     const newTickets = [...tickets]
     if (!newTickets[index]) {
@@ -477,34 +513,38 @@ export default function EditEvent ({ eventId }) {
           </div>
         </div>
         <div className='flex flex-wrap items-center gap-3 md:justify-end'>
-          <button
-            onClick={() => setConfirmOpen(true)}
-            disabled={deleting || loading}
-            className='rounded-xl border border-[#E5E6EF] px-5 py-2.5 text-sm font-semibold text-[#FF5B2C] shadow-[0_14px_30px_-20px_rgba(248,113,72,0.65)] transition hover:bg-[#F0481A] disabled:opacity-60 disabled:cursor-not-allowed'
-          >
-            {deleting ? (
-              <span className='flex items-center gap-2'>
-                <Loader2 className='h-4 w-4 animate-spin' />
-                Deleting...
-              </span>
-            ) : (
-              'Delete'
-            )}
-          </button>
-          <button
-            onClick={handleSubmit}
-            disabled={submitting || loading}
-            className='rounded-xl bg-[#FF5B2C] px-5 py-2.5 text-sm font-semibold text-white shadow-[0_14px_30px_-20px_rgba(248,113,72,0.65)] transition hover:bg-[#F0481A] disabled:opacity-60 disabled:cursor-not-allowed'
-          >
-            {submitting ? (
-              <span className='flex items-center gap-2'>
-                <Loader2 className='h-4 w-4 animate-spin' />
-                Updating...
-              </span>
-            ) : (
-              'Update'
-            )}
-          </button>
+          {!isPartner && checkPermission('event-delete') && (
+            <button
+              onClick={() => setConfirmOpen(true)}
+              disabled={deleting || loading}
+              className='rounded-xl border border-[#E5E6EF] px-5 py-2.5 text-sm font-semibold text-[#FF5B2C] shadow-[0_14px_30px_-20px_rgba(248,113,72,0.65)] transition hover:bg-[#F0481A] disabled:opacity-60 disabled:cursor-not-allowed'
+            >
+              {deleting ? (
+                <span className='flex items-center gap-2'>
+                  <Loader2 className='h-4 w-4 animate-spin' />
+                  Deleting...
+                </span>
+              ) : (
+                'Delete'
+              )}
+            </button>
+          )}
+          {!isPartner && checkPermission('event-edit') && (
+            <button
+              onClick={handleSubmit}
+              disabled={submitting || loading}
+              className='rounded-xl bg-[#FF5B2C] px-5 py-2.5 text-sm font-semibold text-white shadow-[0_14px_30px_-20px_rgba(248,113,72,0.65)] transition hover:bg-[#F0481A] disabled:opacity-60 disabled:cursor-not-allowed'
+            >
+              {submitting ? (
+                <span className='flex items-center gap-2'>
+                  <Loader2 className='h-4 w-4 animate-spin' />
+                  Updating...
+                </span>
+              ) : (
+                'Update'
+              )}
+            </button>
+          )}
         </div>
       </div>
 

@@ -95,11 +95,41 @@ export default function PlacesToVisit () {
   const [limit, setLimit] = useState(50)
   const [pageCount, setPageCount] = useState(1)
   const [page, setPage] = useState(1)
+  const [user, setUser] = useState(null)
+  const [isPartner, setIsPartner] = useState(false)
 
-  const role =
-    typeof window !== 'undefined' ? localStorage.getItem('user_role') : null
+  useEffect(() => {
+    const u = localStorage.getItem('user')
+    if (u) {
+      try {
+        const parsed = JSON.parse(u)
+        setUser(parsed)
+        if (parsed.role && parsed.role.name === 'Partner') {
+          setIsPartner(true)
+        }
+      } catch (e) {
+        console.error('Failed to parse user', e)
+      }
+    }
+  }, [])
 
-  const isPartner = role === 'Partner'
+  const checkPermission = permissionKey => {
+    if (!user) return false
+    if (!permissionKey) return true
+
+    const permissions = user.role?.permissions
+    if (Array.isArray(permissions)) {
+      return permissions.some(
+        p =>
+          (p.module && p.module === permissionKey) ||
+          (p.name && p.name.toLowerCase().includes(permissionKey.toLowerCase()))
+      )
+    } else if (permissions && typeof permissions === 'object') {
+      const modulePerms = permissions[permissionKey]
+      return Array.isArray(modulePerms) && modulePerms.length > 0
+    }
+    return false
+  }
 
   useEffect(() => {
     const handleClickOutside = event => {
@@ -491,13 +521,15 @@ export default function PlacesToVisit () {
           <p className='text-xs text-[#99A1BC]'>Dashboard / Places to Visit</p>
         </div>
         <div className='flex flex-wrap items-center gap-2 md:justify-end'>
-          <button
-            onClick={() => router.push('/places-to-visit/bookings')}
-            className='rounded-lg border border-[#E5E6EF] bg-white px-4 py-2 text-xs font-medium text-[#1A1F3F] shadow-sm transition hover:bg-[#F9FAFD]'
-          >
-            View All Bookings
-          </button>
-          {!isPartner && (
+          {!isPartner && checkPermission('activity-order') && (
+            <button
+              onClick={() => router.push('/places-to-visit/bookings')}
+              className='rounded-lg border border-[#E5E6EF] bg-white px-4 py-2 text-xs font-medium text-[#1A1F3F] shadow-sm transition hover:bg-[#F9FAFD]'
+            >
+              View All Bookings
+            </button>
+          )}
+          {!isPartner && checkPermission('places-create') && (
             <button
               onClick={handleAddNewActivity}
               className='rounded-lg bg-[#FF5B2C] px-4 py-2 text-xs font-semibold text-white shadow-[0_14px_30px_-20px_rgba(248,113,72,0.65)] transition hover:bg-[#F0481A]'
