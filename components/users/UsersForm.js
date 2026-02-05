@@ -676,69 +676,14 @@ export default function UsersForm ({
 
   const fetchStats = async () => {
     try {
-      // Fetch all users to calculate accurate stats since backend total ignores filters
-      const limit = 5000
-      const params = { limit }
+      // Just fetch one user to check for metadata stats
+      // We avoid fetching all users (limit=5000) to prevent timeouts and network congestion
+      const params = { limit: 1 }
       if (dateRange.start) params.startDate = dateRange.start
       if (dateRange.end) params.endDate = dateRange.end
 
       const res = await getUsers(params)
       const payload = res?.data || res || {}
-
-      let allUsers = []
-      if (Array.isArray(payload?.users)) {
-        allUsers = payload.users
-      } else if (Array.isArray(payload?.data)) {
-        allUsers = payload.data
-      } else if (Array.isArray(res)) {
-        allUsers = res
-      }
-
-      // Handle pagination if backend caps the limit
-      const total = Number(payload?.total ?? 0)
-      const pages = Number(payload?.pages ?? 1)
-
-      if (pages > 1 && allUsers.length < total) {
-        const requests = []
-        for (let p = 2; p <= pages; p++) {
-          requests.push(getUsers({ ...params, page: p }))
-        }
-        const results = await Promise.all(requests)
-        results.forEach(r => {
-          const pl = r?.data || r || {}
-          const u = Array.isArray(pl?.users)
-            ? pl.users
-            : Array.isArray(pl?.data)
-            ? pl.data
-            : Array.isArray(r)
-            ? r
-            : []
-          allUsers = allUsers.concat(u)
-        })
-      }
-
-      // Deduplicate for accurate stats
-      const uniqueMap = new Map()
-      allUsers.forEach(u => {
-        const id = u?._id || u?.id
-        if (id) uniqueMap.set(String(id), u)
-      })
-      const uniqueUsers = Array.from(uniqueMap.values())
-
-      setAllCachedUsers(uniqueUsers.map(mapUser))
-
-      const active = uniqueUsers.filter(u => u.status === 'Active').length
-      const inactive = uniqueUsers.filter(u => u.status === 'Inactive').length
-
-      // --- New Metrics ---
-      const now = new Date()
-      // 1. Total Bookings (Users) Yesterday
-      const yesterday = new Date(now)
-      yesterday.setDate(yesterday.getDate() - 1)
-      const yesterdayDateStr = yesterday.toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric'
-      })
 
       // Check if API provides the stats directly
       if (
@@ -748,6 +693,14 @@ export default function UsersForm ({
         const apiAvgCount = Number(payload.avgDailyGrowthCount || 0)
         const apiAvgPctStr = String(payload.avgDailyGrowthPercent || '0')
         const apiAvgPct = parseFloat(apiAvgPctStr.replace('%', ''))
+
+        const now = new Date()
+        const yesterday = new Date(now)
+        yesterday.setDate(yesterday.getDate() - 1)
+        const yesterdayDateStr = yesterday.toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric'
+        })
 
         setGlobalStats({
           total: Number(payload.total || 0),
@@ -760,91 +713,7 @@ export default function UsersForm ({
           avgGrowthPercent: apiAvgPctStr,
           isPctIncreasing: apiAvgPct >= 0
         })
-        return
       }
-
-      yesterday.setHours(0, 0, 0, 0)
-      const yesterdayEnd = new Date(yesterday)
-      yesterdayEnd.setHours(23, 59, 59, 999)
-
-      const yesterdayCount = uniqueUsers.filter(u => {
-        const d = new Date(u.createdAt || u.created_on || u.created || 0)
-        return d >= yesterday && d <= yesterdayEnd
-      }).length
-
-      // 2. Avg Daily Growth Logic
-      // Group all users by date (timestamp of midnight)
-      const countsByDate = {}
-      uniqueUsers.forEach(u => {
-        const d = new Date(u.createdAt || u.created_on || u.created || 0)
-        d.setHours(0, 0, 0, 0)
-        const t = d.getTime()
-        if (t > 0) countsByDate[t] = (countsByDate[t] || 0) + 1
-      })
-
-      // Analyze last 30 days
-      const last30Days = []
-      for (let i = 0; i < 30; i++) {
-        const d = new Date(now)
-        d.setDate(d.getDate() - i)
-        d.setHours(0, 0, 0, 0)
-        last30Days.push(d.getTime())
-      }
-      last30Days.reverse() // Chronological
-
-      // Calculate cumulative base before the window
-      const firstWindowDay = last30Days[0]
-      let cumulative = uniqueUsers.filter(u => {
-        const d = new Date(u.createdAt || u.created_on || u.created || 0)
-        return d.getTime() < firstWindowDay
-      }).length
-
-      const dailyCounts = []
-      const dailyPcts = []
-
-      last30Days.forEach(t => {
-        const count = countsByDate[t] || 0
-        dailyCounts.push(count)
-
-        const pct = cumulative > 0 ? (count / cumulative) * 100 : 0
-        dailyPcts.push(pct)
-
-        cumulative += count
-      })
-
-      const avgGrowthCount =
-        dailyCounts.reduce((a, b) => a + b, 0) / (dailyCounts.length || 1)
-      const avgGrowthPercent =
-        dailyPcts.reduce((a, b) => a + b, 0) / (dailyPcts.length || 1)
-
-      // Trends (last 7 days vs previous 7 days)
-      const recent7Counts = dailyCounts.slice(-7)
-      const prev7Counts = dailyCounts.slice(-14, -7)
-      const recent7Avg =
-        recent7Counts.reduce((a, b) => a + b, 0) / (recent7Counts.length || 1)
-      const prev7Avg =
-        prev7Counts.reduce((a, b) => a + b, 0) / (prev7Counts.length || 1)
-      const isCountIncreasing = recent7Avg >= prev7Avg
-
-      const recent7Pcts = dailyPcts.slice(-7)
-      const prev7Pcts = dailyPcts.slice(-14, -7)
-      const recent7AvgPct =
-        recent7Pcts.reduce((a, b) => a + b, 0) / (recent7Pcts.length || 1)
-      const prev7AvgPct =
-        prev7Pcts.reduce((a, b) => a + b, 0) / (prev7Pcts.length || 1)
-      const isPctIncreasing = recent7AvgPct >= prev7AvgPct
-
-      setGlobalStats({
-        total: uniqueUsers.length || total,
-        active,
-        inactive,
-        yesterdayCount,
-        yesterdayDateStr,
-        avgGrowthCount: avgGrowthCount.toFixed(1),
-        isCountIncreasing,
-        avgGrowthPercent: avgGrowthPercent.toFixed(2),
-        isPctIncreasing
-      })
     } catch (e) {
       console.error('Failed to fetch stats', e)
     }
@@ -866,6 +735,9 @@ export default function UsersForm ({
   }, [debouncedSearch, statusFilter])
 
   useEffect(() => {
+    const abortController = new AbortController()
+    const signal = abortController.signal
+
     const load = async () => {
       // If we have cached users, use them for instant client-side search/filtering
       // This enables fuzzy search on formatted dates (which backend doesn't support)
@@ -879,152 +751,83 @@ export default function UsersForm ({
       setLoading(true)
       setError('')
       try {
-        if (debouncedSearch) {
-          const fetchLimit = Math.max(100, limit)
-          const baseParams = { page: 1, limit: fetchLimit }
-          baseParams.search = debouncedSearch
-          if (statusFilter) baseParams.status = statusFilter
-          if (dateRange.start) baseParams.startDate = dateRange.start
-          if (dateRange.end) baseParams.endDate = dateRange.end
+        const params = { page, limit }
+        if (debouncedSearch) params.search = debouncedSearch
+        if (statusFilter) params.status = statusFilter
+        if (dateRange.start) params.startDate = dateRange.start
+        if (dateRange.end) params.endDate = dateRange.end
 
-          const firstRes = await getUsers(baseParams)
-          const firstPayload = firstRes?.data || firstRes || {}
+        const res = await getUsers(params, signal)
+        const payload = res?.data || res || {}
 
-          // Update stats from API response if available
-          if (
-            typeof firstPayload?.activeUsers !== 'undefined' &&
-            typeof firstPayload?.newRegistrationYesterday !== 'undefined'
-          ) {
-            const apiAvgCount = Number(firstPayload.avgDailyGrowthCount || 0)
-            const apiAvgPctStr = String(
-              firstPayload.avgDailyGrowthPercent || '0'
-            )
-            const apiAvgPct = parseFloat(apiAvgPctStr.replace('%', ''))
+        // Update stats from API response if available
+        if (
+          typeof payload?.activeUsers !== 'undefined' &&
+          typeof payload?.newRegistrationYesterday !== 'undefined'
+        ) {
+          const apiAvgCount = Number(payload.avgDailyGrowthCount || 0)
+          const apiAvgPctStr = String(payload.avgDailyGrowthPercent || '0')
+          const apiAvgPct = parseFloat(apiAvgPctStr.replace('%', ''))
 
-            const now = new Date()
-            const yesterday = new Date(now)
-            yesterday.setDate(yesterday.getDate() - 1)
-            const yesterdayDateStr = yesterday.toLocaleDateString('en-US', {
-              month: 'short',
-              day: 'numeric'
-            })
-
-            setGlobalStats({
-              total: Number(firstPayload.total || 0),
-              active: Number(firstPayload.activeUsers || 0),
-              inactive: Number(firstPayload.inactiveUsers || 0),
-              yesterdayCount: Number(
-                firstPayload.newRegistrationYesterday || 0
-              ),
-              yesterdayDateStr,
-              avgGrowthCount: apiAvgCount,
-              isCountIncreasing: apiAvgCount >= 0,
-              avgGrowthPercent: apiAvgPctStr,
-              isPctIncreasing: apiAvgPct >= 0
-            })
-          }
-
-          const firstList = Array.isArray(firstPayload?.users)
-            ? firstPayload.users
-            : Array.isArray(firstRes?.data)
-            ? firstRes.data
-            : Array.isArray(firstRes)
-            ? firstRes
-            : []
-          const pages = Number(firstPayload?.pages ?? 1)
-          const requests = []
-          for (let p = 2; p <= pages; p++) {
-            const pParams = { ...baseParams, page: p }
-            requests.push(getUsers(pParams))
-          }
-          const results = requests.length ? await Promise.all(requests) : []
-          const rest = results.flatMap(r => {
-            const pl = r?.data || r || {}
-            const arr = Array.isArray(pl?.users)
-              ? pl.users
-              : Array.isArray(r?.data)
-              ? r.data
-              : Array.isArray(r)
-              ? r
-              : []
-            return arr
+          const now = new Date()
+          const yesterday = new Date(now)
+          yesterday.setDate(yesterday.getDate() - 1)
+          const yesterdayDateStr = yesterday.toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric'
           })
-          const all = [...firstList, ...rest]
-          const allMapped = all.map(mapUser)
-          const uniqueMap = new Map()
-          allMapped.forEach(u => uniqueMap.set(u.id, u))
-          setUsers(Array.from(uniqueMap.values()))
-          setTotalCount(uniqueMap.size)
-          setPage(1)
-          setPageCount(1)
-          setLimit(fetchLimit)
-        } else {
-          const params = { page, limit }
-          if (statusFilter) params.status = statusFilter
-          if (dateRange.start) params.startDate = dateRange.start
-          if (dateRange.end) params.endDate = dateRange.end
 
-          const res = await getUsers(params)
-          const payload = res?.data || res || {}
-
-          // Update stats from API response if available
-          if (
-            typeof payload?.activeUsers !== 'undefined' &&
-            typeof payload?.newRegistrationYesterday !== 'undefined'
-          ) {
-            const apiAvgCount = Number(payload.avgDailyGrowthCount || 0)
-            const apiAvgPctStr = String(payload.avgDailyGrowthPercent || '0')
-            const apiAvgPct = parseFloat(apiAvgPctStr.replace('%', ''))
-
-            const now = new Date()
-            const yesterday = new Date(now)
-            yesterday.setDate(yesterday.getDate() - 1)
-            const yesterdayDateStr = yesterday.toLocaleDateString('en-US', {
-              month: 'short',
-              day: 'numeric'
-            })
-
-            setGlobalStats({
-              total: Number(payload.total || 0),
-              active: Number(payload.activeUsers || 0),
-              inactive: Number(payload.inactiveUsers || 0),
-              yesterdayCount: Number(payload.newRegistrationYesterday || 0),
-              yesterdayDateStr,
-              avgGrowthCount: apiAvgCount,
-              isCountIncreasing: apiAvgCount >= 0,
-              avgGrowthPercent: apiAvgPctStr,
-              isPctIncreasing: apiAvgPct >= 0
-            })
-          }
-
-          const list = Array.isArray(payload?.users)
-            ? payload.users
-            : Array.isArray(res?.data)
-            ? res.data
-            : Array.isArray(res)
-            ? res
-            : []
-          const listMapped = list.map(mapUser)
-          const uniqueListMap = new Map()
-          listMapped.forEach(u => uniqueListMap.set(u.id, u))
-          setUsers(Array.from(uniqueListMap.values()))
-          const srvTotal = Number(payload?.total ?? 0)
-          const srvPages = Number(payload?.pages ?? 1)
-          const srvPage = Number(payload?.page ?? page)
-          const srvLimit = Number(payload?.limit ?? limit)
-          if (Number.isFinite(srvTotal)) setTotalCount(srvTotal)
-          if (Number.isFinite(srvPages)) setPageCount(Math.max(1, srvPages))
-          if (Number.isFinite(srvPage)) setPage(Math.max(1, srvPage))
-          if (Number.isFinite(srvLimit)) setLimit(Math.max(1, srvLimit))
+          setGlobalStats({
+            total: Number(payload.total || 0),
+            active: Number(payload.activeUsers || 0),
+            inactive: Number(payload.inactiveUsers || 0),
+            yesterdayCount: Number(payload.newRegistrationYesterday || 0),
+            yesterdayDateStr,
+            avgGrowthCount: apiAvgCount,
+            isCountIncreasing: apiAvgCount >= 0,
+            avgGrowthPercent: apiAvgPctStr,
+            isPctIncreasing: apiAvgPct >= 0
+          })
         }
+
+        const list = Array.isArray(payload?.users)
+          ? payload.users
+          : Array.isArray(res?.data)
+          ? res.data
+          : Array.isArray(res)
+          ? res
+          : []
+        const listMapped = list.map(mapUser)
+        const uniqueListMap = new Map()
+        listMapped.forEach(u => uniqueListMap.set(u.id, u))
+        setUsers(Array.from(uniqueListMap.values()))
+
+        const srvTotal = Number(payload?.total ?? 0)
+        const srvPages = Number(payload?.pages ?? 1)
+        const srvPage = Number(payload?.page ?? page)
+        const srvLimit = Number(payload?.limit ?? limit)
+
+        if (Number.isFinite(srvTotal)) setTotalCount(srvTotal)
+        if (Number.isFinite(srvPages)) setPageCount(Math.max(1, srvPages))
+        // Only update page/limit if they differ from current state to avoid loops
+        if (Number.isFinite(srvPage) && srvPage !== page)
+          setPage(Math.max(1, srvPage))
+        if (Number.isFinite(srvLimit) && srvLimit !== limit)
+          setLimit(Math.max(1, srvLimit))
       } catch (e) {
-        setError('Failed to load users')
-        setUsers([])
+        if (e.name !== 'CanceledError' && e.code !== 'ERR_CANCELED') {
+          setError('Failed to load users')
+          setUsers([])
+        }
       } finally {
-        setLoading(false)
+        if (!signal.aborted) {
+          setLoading(false)
+        }
       }
     }
     load()
+
+    return () => abortController.abort()
   }, [
     page,
     limit,
