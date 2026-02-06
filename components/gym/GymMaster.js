@@ -186,6 +186,10 @@ export default function GymAccessMaster () {
     }
   }
 
+  const handleEditGymAccess = id => {
+    router.push(`/gym/gym-access/${id}`)
+  }
+
   const getStatusColor = status => {
     if (status === 'Active')
       return 'bg-emerald-50 text-emerald-600 border border-emerald-200'
@@ -202,7 +206,9 @@ export default function GymAccessMaster () {
         </div>
         <div className='flex flex-wrap items-center gap-2 md:justify-end'>
           <button
-            onClick={() => {}}
+            onClick={() => {
+              router.push('/gym/bookings')
+            }}
             className='rounded-lg border border-[#FF5B2C] bg-white px-4 py-2 text-xs font-medium text-[#FF5B2C] shadow-sm transition hover:bg-[#FFF5F2]'
           >
             View All Bookings
@@ -363,13 +369,21 @@ export default function GymAccessMaster () {
                           View/Edit Detail
                         </button>
                         <div className='my-1 h-px bg-gray-100' />
-                        <button className='flex w-full items-center px-4 py-2 text-xs font-medium text-slate-700 hover:bg-gray-50'>
+                        <button
+                          onClick={() => router.push(`/gym/bookings/${gym.id}`)}
+                          className='flex w-full items-center px-4 py-2 text-xs font-medium text-slate-700 hover:bg-gray-50'
+                        >
                           View Bookings
                         </button>
                         <div className='my-1 h-px bg-gray-100' />
-                        <button className='flex w-full items-center px-4 py-2 text-xs font-medium text-slate-700 hover:bg-gray-50'>
+
+                        <button
+                          onClick={() => handleEditGymAccess(gym.id)}
+                          className='flex w-full items-center px-4 py-2 text-xs font-medium text-slate-700 hover:bg-gray-50'
+                        >
                           View/Edit Gym Access
                         </button>
+
                         <div className='my-1 h-px bg-gray-100' />
                         <button className='flex w-full items-center px-4 py-2 text-xs font-medium text-slate-700 hover:bg-gray-50'>
                           Delete

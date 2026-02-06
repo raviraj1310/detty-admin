@@ -10,7 +10,8 @@ import {
   Plus,
   Upload,
   Image as ImageIcon,
-  X
+  X,
+  ChevronLeft
 } from 'lucide-react'
 import TiptapEditor from '@/components/editor/TiptapEditor'
 import ImageCropper from '@/components/ui/ImageCropper'
@@ -133,16 +134,24 @@ export default function GymAccessAdd () {
   return (
     <div className='min-h-screen bg-gray-50 p-8'>
       {/* Header */}
-      <div className='mb-8 flex items-center justify-between'>
-        <div>
-          <h1 className='text-2xl font-bold text-gray-900'>Add New Gym</h1>
-          <nav className='mt-1 text-sm text-gray-500'>
-            <Link href='/dashboard' className='hover:text-gray-700'>
-              Dashboard
-            </Link>
-            <span className='mx-2'>/</span>
-            <span className='text-gray-900'>Add New Gym</span>
-          </nav>
+      <div className='mb-8'>
+        <button
+          onClick={() => router.back()}
+          className='flex items-center gap-1 text-xs font-medium text-[#8A92AC] hover:text-[#2D3658] transition-colors w-fit mb-2'
+        >
+          <ChevronLeft className='h-4 w-4' /> Back
+        </button>
+        <div className='flex items-center justify-between'>
+          <div>
+            <h1 className='text-2xl font-bold text-gray-900'>Add New Gym</h1>
+            <nav className='mt-1 text-sm text-gray-500'>
+              <Link href='/dashboard' className='hover:text-gray-700'>
+                Dashboard
+              </Link>
+              <span className='mx-2'>/</span>
+              <span className='text-gray-900'>Add New Gym</span>
+            </nav>
+          </div>
         </div>
       </div>
 
