@@ -43,7 +43,8 @@ export default function AddEvents () {
     uploadImage: '',
     aboutEvent: '',
     twitter: '',
-    website: ''
+    website: '',
+    isVATIncluded: true
   })
   const [errors, setErrors] = useState({})
   const [imageFile, setImageFile] = useState(null)
@@ -145,6 +146,7 @@ export default function AddEvents () {
     fd.append('websiteLink', ws)
     fd.append('location', formData.location)
     fd.append('eventStartDate', formData.eventStartDate)
+    fd.append('isVATIncluded', formData.isVATIncluded)
     const openingHours =
       `${formData.eventStartDate} ${formData.eventStartTime} - ${effectiveEndDate} ${formData.eventEndTime}`.trim()
     fd.append('openingHours', openingHours)
@@ -441,7 +443,43 @@ export default function AddEvents () {
                 )}
               </div>
 
-              <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+              {/* VAT Radio Buttons */}
+              <div className='flex items-center space-x-6 pt-8'>
+                <div className='flex items-center space-x-2'>
+                  <input
+                    type='radio'
+                    id='vat-included'
+                    name='vat-status'
+                    checked={formData.isVATIncluded === true}
+                    onChange={() => handleInputChange('isVATIncluded', true)}
+                    className='h-4 w-4 border-gray-300 text-[#FF5B2C] focus:ring-[#FF5B2C]'
+                  />
+                  <label
+                    htmlFor='vat-included'
+                    className='text-sm text-slate-700'
+                  >
+                    VAT Included
+                  </label>
+                </div>
+                <div className='flex items-center space-x-2'>
+                  <input
+                    type='radio'
+                    id='vat-excluded'
+                    name='vat-status'
+                    checked={formData.isVATIncluded === false}
+                    onChange={() => handleInputChange('isVATIncluded', false)}
+                    className='h-4 w-4 border-gray-300 text-[#FF5B2C] focus:ring-[#FF5B2C]'
+                  />
+                  <label
+                    htmlFor='vat-excluded'
+                    className='text-sm text-slate-700'
+                  >
+                    VAT Excluded
+                  </label>
+                </div>
+              </div>
+
+              <div className='grid grid-cols-2 md:grid-cols-2 gap-6'>
                 <div className='space-y-2'>
                   <label className='text-sm font-medium text-slate-700'>
                     Event Start Time*
@@ -512,11 +550,7 @@ export default function AddEvents () {
                         type='text'
                         value={ticket.slotName}
                         onChange={e =>
-                          handleTicketChange(
-                            index,
-                            'slotName',
-                            e.target.value
-                          )
+                          handleTicketChange(index, 'slotName', e.target.value)
                         }
                         placeholder='Enter Slot Name'
                         className='w-full h-10 rounded-lg border border-[#E5E6EF] bg-white px-3 text-sm text-slate-700 focus:border-[#C5CAE3] focus:outline-none focus:ring-2 focus:ring-[#C2C8E4]'

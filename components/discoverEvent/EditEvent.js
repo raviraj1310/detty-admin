@@ -29,7 +29,8 @@ export default function EditEvent ({ eventId }) {
     uploadImage: '',
     aboutEvent: '',
     twitter: '',
-    website: ''
+    website: '',
+    isVATIncluded: true
   })
   const [errors, setErrors] = useState({})
   const [imageFile, setImageFile] = useState(null)
@@ -252,6 +253,7 @@ export default function EditEvent ({ eventId }) {
     fd.append('websiteLink', ws)
     fd.append('location', formData.location)
     fd.append('eventStartDate', formData.eventStartDate.trim())
+    fd.append('isVATIncluded', formData.isVATIncluded)
     const openingHours =
       `${formData.eventStartTime} - ${formData.eventEndTime}`.trim()
     fd.append('openingHours', openingHours)
@@ -387,6 +389,7 @@ export default function EditEvent ({ eventId }) {
           aboutEvent: String(d.about || ''),
           twitter: String(d.twitterLink || ''),
           website: String(d.websiteLink || ''),
+          isVATIncluded: d.isVATIncluded || false,
           hostedBy: hostedById // Store ID string in form data
         })
         const urls = buildImageUrls(d.image || d.uploadImage || '')
@@ -664,6 +667,42 @@ export default function EditEvent ({ eventId }) {
                 {errors.eventType && (
                   <p className='text-xs text-red-600'>{errors.eventType}</p>
                 )}
+              </div>
+            </div>
+
+            {/* VAT Radio Buttons */}
+            <div className='flex items-center space-x-6'>
+              <div className='flex items-center space-x-2'>
+                <input
+                  type='radio'
+                  id='vat-included'
+                  name='vat-status'
+                  checked={formData.isVATIncluded === true}
+                  onChange={() => handleInputChange('isVATIncluded', true)}
+                  className='h-4 w-4 border-gray-300 text-[#FF5B2C] focus:ring-[#FF5B2C]'
+                />
+                <label
+                  htmlFor='vat-included'
+                  className='text-sm text-slate-700'
+                >
+                  VAT Included
+                </label>
+              </div>
+              <div className='flex items-center space-x-2'>
+                <input
+                  type='radio'
+                  id='vat-excluded'
+                  name='vat-status'
+                  checked={formData.isVATIncluded === false}
+                  onChange={() => handleInputChange('isVATIncluded', false)}
+                  className='h-4 w-4 border-gray-300 text-[#FF5B2C] focus:ring-[#FF5B2C]'
+                />
+                <label
+                  htmlFor='vat-excluded'
+                  className='text-sm text-slate-700'
+                >
+                  VAT Excluded
+                </label>
               </div>
             </div>
 
