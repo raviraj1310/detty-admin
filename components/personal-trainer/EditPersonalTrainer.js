@@ -8,27 +8,47 @@ import {
   Clock,
   Trash2,
   Plus,
-  Upload,
-  Image as ImageIcon,
-  X,
-  ChevronLeft
+  ChevronLeft,
+  Loader2
 } from 'lucide-react'
 import TiptapEditor from '@/components/editor/TiptapEditor'
-import ImageCropper from '@/components/ui/ImageCropper'
 import Toast from '@/components/ui/Toast'
 
-import { createGym, getGymHostList } from '@/services/v2/gym/gym.service'
+import {
+  getPersonalTrainerById,
+  updatePersonalTrainer,
+  getTrainerHostList
+} from '@/services/v2/personal-trainer/personal-trainer.service'
 
-export default function GymAccessAdd () {
+const toImageSrc = u => {
+  const s = String(u || '').trim()
+  if (!s) return ''
+  if (/^https?:\/\//i.test(s)) return s
+  const originEnv = process.env.NEXT_PUBLIC_SIM_IMAGE_BASE_ORIGIN
+  const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || ''
+  let origin = originEnv
+  if (!origin) {
+    try {
+      origin = new URL(apiBase).origin
+    } catch {
+      origin = ''
+    }
+  }
+  if (!origin) origin = originEnv
+  const base = origin.replace(/\/+$/, '')
+  const path = s.replace(/^\/+/, '')
+  return base ? `${base}/upload/image/${path}` : `/upload/image/${path}`
+}
+
+export default function EditPersonalTrainer ({ id }) {
   const router = useRouter()
   const fileInputRef = useRef(null)
-  const galleryInputRef = useRef(null)
 
   // State
   const [formData, setFormData] = useState({
-    gymName: '',
+    trainerName: '',
     hostedBy: '',
-    duration: '1-3 hours (based on selected access or activation)',
+    duration: '',
     startDate: '',
     endDate: '',
     startTime: '',
@@ -38,34 +58,118 @@ export default function GymAccessAdd () {
   })
 
   const [hosts, setHosts] = useState([])
-  const [aboutPlace, setAboutPlace] = useState('')
+  const [aboutTrainer, setAboutTrainer] = useState('')
+  const [trainingTypes, setTrainingTypes] = useState('')
   const [importantInfo, setImportantInfo] = useState('')
 
-  useEffect(() => {
-    const fetchHosts = async () => {
-      try {
-        const response = await getGymHostList()
-        if (response?.success) {
-          setHosts(response.data || [])
-        }
-      } catch (error) {
-        console.error('Error fetching hosts:', error)
-      }
-    }
-    fetchHosts()
-  }, [])
-
-  const [slots, setSlots] = useState([
-    { id: 1, name: '', date: '', time: '', inventory: '', price: '' }
-  ])
+  const [slots, setSlots] = useState([])
 
   const [mainImage, setMainImage] = useState(null)
   const [mainImageUrl, setMainImageUrl] = useState('')
-  const [galleryImages, setGalleryImages] = useState([])
 
-  const [toast, setToast] = useState({ show: false, message: '', type: '' })
-  const [cropOpen, setCropOpen] = useState(false)
-  const [rawImageFile, setRawImageFile] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [toast, setToast] = useState({
+    open: false,
+    title: '',
+    description: '',
+    variant: 'success'
+  })
+
+  // Fetch Data
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true)
+
+        // Fetch hosts and trainer data in parallel
+        const [hostsResponse, trainerResponse] = await Promise.all([
+          getTrainerHostList(),
+          getPersonalTrainerById(id)
+        ])
+
+        if (hostsResponse?.success) {
+          setHosts(hostsResponse.data || [])
+        }
+
+        if (trainerResponse?.success && trainerResponse.data) {
+          const trainer = trainerResponse.data
+
+          setFormData({
+            trainerName: trainer.trainerName || '',
+            hostedBy: trainer.hostedBy || '',
+            duration: trainer.duration || '',
+            startDate: trainer.startDate
+              ? new Date(trainer.startDate).toISOString().split('T')[0]
+              : '',
+            endDate: trainer.endDate
+              ? new Date(trainer.endDate).toISOString().split('T')[0]
+              : '',
+            startTime: trainer.startTime || '',
+            endTime: trainer.endTime || '',
+            location: trainer.location || '',
+            locationCoordinates: trainer.locationCoordinates || ''
+          })
+
+          setAboutTrainer(trainer.aboutTrainer || '')
+          setTrainingTypes(trainer.trainingTypesAvailable || '')
+          setImportantInfo(trainer.importantInformation || '')
+
+          if (trainer.image) {
+            setMainImageUrl(toImageSrc(trainer.image))
+          }
+
+          if (
+            trainer.personalTrainerSlots &&
+            Array.isArray(trainer.personalTrainerSlots)
+          ) {
+            setSlots(
+              trainer.personalTrainerSlots.map((slot, index) => ({
+                id: slot._id || Date.now() + index,
+                name: slot.slotName || '',
+                date: slot.date
+                  ? new Date(slot.date).toISOString().split('T')[0]
+                  : '',
+                time: slot.time || '',
+                inventory: slot.inventory || '',
+                price: slot.price || ''
+              }))
+            )
+          } else if (
+            trainer.personalTrainerSlots &&
+            typeof trainer.personalTrainerSlots === 'string'
+          ) {
+            // Handle case where it might be returned as string (unlikely but safe)
+            try {
+              const parsed = JSON.parse(trainer.personalTrainerSlots)
+              setSlots(
+                parsed.map((slot, index) => ({
+                  id: slot._id || Date.now() + index,
+                  name: slot.slotName || '',
+                  date: slot.date
+                    ? new Date(slot.date).toISOString().split('T')[0]
+                    : '',
+                  time: slot.time || '',
+                  inventory: slot.inventory || '',
+                  price: slot.price || ''
+                }))
+              )
+            } catch (e) {
+              console.error('Error parsing slots', e)
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching data:', error)
+        showToast('Failed to fetch trainer details', 'error')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    if (id) {
+      fetchData()
+    }
+  }, [id])
 
   // Handlers
   const handleInputChange = e => {
@@ -82,73 +186,66 @@ export default function GymAccessAdd () {
   const addSlot = () => {
     setSlots([
       ...slots,
-      { id: Date.now(), name: '', date: '', time: '', inventory: '', price: '' }
+      {
+        id: Date.now(),
+        name: `Slot ${slots.length + 1}`,
+        date: '',
+        time: '',
+        inventory: '',
+        price: ''
+      }
     ])
   }
 
   const removeSlot = id => {
-    if (slots.length > 1) {
-      setSlots(slots.filter(slot => slot.id !== id))
-    }
+    // For existing items, we might want to track deletions, but simple removal from array
+    // and sending full array on update usually works if backend replaces the list.
+    // Assuming backend replaces the list for now.
+    setSlots(slots.filter(slot => slot.id !== id))
   }
 
   // Main Image Handling
   const handleMainImageChange = e => {
     const file = e.target.files[0]
     if (file) {
-      setRawImageFile(file)
-      setCropOpen(true)
+      setMainImage(file)
+      setMainImageUrl(URL.createObjectURL(file))
     }
-  }
-
-  const handleCroppedImage = ({ file }) => {
-    setMainImage(file)
-    setMainImageUrl(URL.createObjectURL(file))
-    setCropOpen(false)
-  }
-
-  // Gallery Handling
-  const handleGalleryUpload = e => {
-    const files = Array.from(e.target.files)
-    const newImages = files.map(file => ({
-      file,
-      url: URL.createObjectURL(file),
-      id: Date.now() + Math.random()
-    }))
-    setGalleryImages([...galleryImages, ...newImages])
-  }
-
-  const removeGalleryImage = id => {
-    setGalleryImages(galleryImages.filter(img => img.id !== id))
   }
 
   const handleSubmit = async () => {
     // Validation
-    if (!formData.gymName) return showToast('Gym Name is required', 'error')
-    if (!aboutPlace) return showToast('About Place is required', 'error')
+    if (!formData.trainerName)
+      return showToast('Trainer Name is required', 'error')
+    if (!formData.hostedBy) return showToast('Host is required', 'error')
+    if (!aboutTrainer) return showToast('About Trainer is required', 'error')
+    if (!trainingTypes) return showToast('Training Types are required', 'error')
     if (!formData.startDate || !formData.endDate)
       return showToast('Dates are required', 'error')
-    if (!mainImage) return showToast('Main image is required', 'error')
+
+    // Image is required only if creating, but for edit it's optional if one exists.
+    // However, if no image url and no new image, then it's an error.
+    if (!mainImage && !mainImageUrl)
+      return showToast('Trainer image is required', 'error')
 
     try {
       const payload = new FormData()
 
-      // Append simple fields from formData
+      // Append simple fields
       Object.keys(formData).forEach(key => {
         if (key === 'hostedBy') {
-          if (formData[key]) payload.append('hostId', formData[key])
+          if (formData[key]) payload.append('hostedBy', formData[key])
         } else {
           payload.append(key, formData[key])
         }
       })
 
       // Append separate state fields
-      payload.append('aboutPlace', aboutPlace)
+      payload.append('aboutTrainer', aboutTrainer)
+      payload.append('trainingTypesAvailable', trainingTypes)
       payload.append('importantInformation', importantInfo)
-      payload.append('status', true)
-      payload.append('slots', 'placeholder')
 
-      // Format and append gymSlots
+      // Format and append slots
       const formattedSlots = slots.map(
         ({ id, name, inventory, price, ...rest }) => ({
           slotName: name,
@@ -157,40 +254,59 @@ export default function GymAccessAdd () {
           ...rest
         })
       )
-      payload.append('gymSlots', JSON.stringify(formattedSlots))
+      payload.append('personalTrainerSlots', JSON.stringify(formattedSlots))
 
-      // Append images
+      // Append image only if changed
       if (mainImage) {
         payload.append('image', mainImage)
       }
 
-      if (galleryImages.length > 0) {
-        galleryImages.forEach(img => {
-          payload.append('imageGallery', img.file)
-        })
+      const response = await updatePersonalTrainer(id, payload)
+      if (response && response.success) {
+        showToast('Trainer updated successfully', 'success')
+        setTimeout(() => {
+          router.push('/personal-trainer')
+        }, 1500)
+      } else {
+        showToast(response?.message || 'Failed to update trainer', 'error')
       }
-
-      // Call API
-      await createGym(payload)
-
-      showToast('Gym added successfully', 'success')
-
-      setTimeout(() => {
-        router.push('/gym')
-      }, 1500)
     } catch (error) {
-      console.error('Error creating gym:', error)
-      showToast(error.message || 'Failed to create gym', 'error')
+      console.error('Error updating trainer:', error)
+      showToast('Failed to update trainer', 'error')
     }
   }
 
   const showToast = (message, type) => {
-    setToast({ show: true, message, type })
-    setTimeout(() => setToast({ ...toast, show: false }), 3000)
+    setToast({
+      open: true,
+      title:
+        type === 'error' ? 'Error' : type === 'success' ? 'Success' : 'Info',
+      description: message,
+      variant: type
+    })
+  }
+
+  if (loading) {
+    return (
+      <div className='min-h-screen flex items-center justify-center bg-gray-50'>
+        <div className='flex items-center gap-2 text-gray-500'>
+          <Loader2 className='h-6 w-6 animate-spin' />
+          <span>Loading trainer details...</span>
+        </div>
+      </div>
+    )
   }
 
   return (
     <div className='min-h-screen bg-gray-50 p-8'>
+      <Toast
+        open={toast.open}
+        onOpenChange={v => setToast(prev => ({ ...prev, open: v }))}
+        title={toast.title}
+        description={toast.description}
+        variant={toast.variant}
+      />
+
       {/* Header */}
       <div className='mb-8'>
         <button
@@ -201,13 +317,13 @@ export default function GymAccessAdd () {
         </button>
         <div className='flex items-center justify-between'>
           <div>
-            <h1 className='text-2xl font-bold text-gray-900'>Add New Gym</h1>
+            <h1 className='text-2xl font-bold text-gray-900'>Edit Trainer</h1>
             <nav className='mt-1 text-sm text-gray-500'>
               <Link href='/dashboard' className='hover:text-gray-700'>
                 Dashboard
               </Link>
               <span className='mx-2'>/</span>
-              <span className='text-gray-900'>Add New Gym</span>
+              <span className='text-gray-900'>Edit Trainer</span>
             </nav>
           </div>
         </div>
@@ -216,65 +332,79 @@ export default function GymAccessAdd () {
       <div className='rounded-xl border border-gray-200 bg-white shadow-sm'>
         {/* Card Header */}
         <div className='flex items-center justify-between border-b border-gray-100 px-6 py-4'>
-          <h2 className='text-lg font-semibold text-gray-900'>Gym Details</h2>
+          <h2 className='text-lg font-semibold text-gray-900'>
+            Trainer Details
+          </h2>
           <div className='flex gap-3'>
             <button
               onClick={handleSubmit}
               className='rounded-lg bg-[#FF4400] px-6 py-2 text-sm font-medium text-white hover:bg-[#ff551e]'
             >
-              Add
+              Update
             </button>
           </div>
         </div>
 
         <div className='p-6 space-y-8'>
-          {/* Gym Name & Hosted By */}
-          <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
-            <div>
-              <label className='mb-2 block text-sm font-medium text-gray-700'>
-                Gym Name*
-              </label>
-              <input
-                type='text'
-                name='gymName'
-                value={formData.gymName}
-                onChange={handleInputChange}
-                className='w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
-                placeholder='Elevate Fitness Club'
-              />
-            </div>
-            <div>
-              <label className='mb-2 block text-sm font-medium text-gray-700'>
-                Hosted By
-              </label>
-              <select
-                name='hostedBy'
-                value={formData.hostedBy}
-                onChange={handleInputChange}
-                className='w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
-              >
-                <option value=''>Select Host</option>
-                {hosts.map(host => (
-                  <option key={host._id} value={host._id}>
-                    {host.name ||
-                      host.firstName + ' ' + host.lastName ||
-                      host.email}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {/* About Place */}
+          {/* Trainer Name */}
           <div>
             <label className='mb-2 block text-sm font-medium text-gray-700'>
-              About Place*
+              Trainer Name*
+            </label>
+            <input
+              type='text'
+              name='trainerName'
+              value={formData.trainerName}
+              onChange={handleInputChange}
+              className='w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
+              placeholder='Tunde Adeyemi'
+            />
+          </div>
+
+          {/* Hosted By */}
+          <div>
+            <label className='mb-2 block text-sm font-medium text-gray-700'>
+              Hosted By*
+            </label>
+            <select
+              name='hostedBy'
+              value={formData.hostedBy}
+              onChange={handleInputChange}
+              className='w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm text-gray-700 focus:border-[#FF4400] focus:outline-none'
+            >
+              <option value=''>Select Host</option>
+              {hosts.map(host => (
+                <option key={host._id} value={host._id}>
+                  {host.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* About Trainer */}
+          <div>
+            <label className='mb-2 block text-sm font-medium text-gray-700'>
+              About Trainer*
             </label>
             <div className='rounded-lg border border-gray-200 overflow-hidden'>
               <TiptapEditor
-                content={aboutPlace}
-                onChange={setAboutPlace}
-                placeholder='Enter description...'
+                content={aboutTrainer}
+                onChange={setAboutTrainer}
+                placeholder='Enter trainer description...'
+              />
+            </div>
+          </div>
+
+          {/* Training Types Available */}
+          <div>
+            <label className='mb-2 block text-sm font-medium text-gray-700'>
+              Training Types Available*
+            </label>
+            <div className='rounded-lg border border-gray-200 overflow-hidden'>
+              <TiptapEditor
+                content={trainingTypes}
+                onChange={setTrainingTypes}
+                placeholder='Enter training types...'
               />
             </div>
           </div>
@@ -481,7 +611,7 @@ export default function GymAccessAdd () {
               </label>
               <div className='flex rounded-lg border border-gray-200 bg-white'>
                 <div className='flex-1 truncate px-4 py-2.5 text-sm text-gray-500'>
-                  {mainImage ? mainImage.name || 'Image selected' : 'Image.jpg'}
+                  {mainImage ? mainImage.name : 'Image.jpg'}
                 </div>
                 <button
                   onClick={() => fileInputRef.current?.click()}
@@ -532,80 +662,8 @@ export default function GymAccessAdd () {
               />
             </div>
           </div>
-
-          {/* Gallery */}
-          <div>
-            <div className='mb-4'>
-              <span className='inline-block rounded-md bg-black px-3 py-1 text-sm font-medium text-white'>
-                Gallery
-              </span>
-            </div>
-
-            <div className='mb-6'>
-              <label className='mb-2 block text-sm font-medium text-gray-700'>
-                Upload Image*
-              </label>
-              <div className='flex max-w-md rounded-lg border border-gray-200 bg-white'>
-                <div className='flex-1 truncate px-4 py-2.5 text-sm text-gray-500'>
-                  Image.jpg
-                </div>
-                <button
-                  onClick={() => galleryInputRef.current?.click()}
-                  className='bg-gray-100 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-200 rounded-r-lg'
-                >
-                  Browse
-                </button>
-                <input
-                  type='file'
-                  ref={galleryInputRef}
-                  onChange={handleGalleryUpload}
-                  accept='image/*'
-                  multiple
-                  className='hidden'
-                />
-              </div>
-            </div>
-
-            {/* Gallery Grid */}
-            <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-4'>
-              {galleryImages.map(img => (
-                <div
-                  key={img.id}
-                  className='group relative aspect-video overflow-hidden rounded-xl bg-gray-100'
-                >
-                  <img
-                    src={img.url}
-                    alt='Gallery'
-                    className='h-full w-full object-cover'
-                  />
-                  <button
-                    onClick={() => removeGalleryImage(img.id)}
-                    className='absolute right-2 top-2 rounded-full bg-white p-1.5 text-gray-900 shadow-sm hover:bg-red-50 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity'
-                  >
-                    <Trash2 className='h-4 w-4' />
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
         </div>
       </div>
-
-      <Toast
-        isOpen={toast.show}
-        onClose={() => setToast({ ...toast, show: false })}
-        message={toast.message}
-        type={toast.type}
-      />
-
-      {cropOpen && (
-        <ImageCropper
-          open={cropOpen}
-          file={rawImageFile}
-          onCropped={handleCroppedImage}
-          onClose={() => setCropOpen(false)}
-        />
-      )}
     </div>
   )
 }

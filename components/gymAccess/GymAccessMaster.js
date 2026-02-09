@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import {
   Search,
   Download,
@@ -12,34 +12,15 @@ import {
 } from 'lucide-react'
 import { TbCaretUpDownFilled } from 'react-icons/tb'
 import TiptapEditor from '@/components/editor/TiptapEditor'
-
-// Mock Data matching the image
-const MOCK_DATA = [
-  {
-    id: 1,
-    addedOn: '12 June 2025, 10:00 AM',
-    name: 'Day Gym Pass (Adult)',
-    duration: '1 Day',
-    price: '₦10,000',
-    status: 'Active'
-  },
-  {
-    id: 2,
-    addedOn: '12 June 2025, 10:00 AM',
-    name: 'Gym Trial Access',
-    duration: '7 Days',
-    price: '₦10,000',
-    status: 'Active'
-  },
-  {
-    id: 3,
-    addedOn: '12 June 2025, 10:00 AM',
-    name: 'Fitness Access',
-    duration: '25 Days',
-    price: '₦10,000',
-    status: 'Inactive'
-  }
-]
+import {
+  getGymAccess,
+  createGymAccess,
+  updateGymAccess,
+  deleteGymAccess,
+  activeInactiveGymAccess
+} from '@/services/v2/gym/gym.service'
+import Toast from '@/components/ui/Toast'
+import Modal from '@/components/ui/Modal'
 
 const TableHeaderCell = ({ children, align = 'left' }) => (
   <div
@@ -52,18 +33,61 @@ const TableHeaderCell = ({ children, align = 'left' }) => (
   </div>
 )
 
-export default function GymAccessMaster () {
+export default function GymAccessMaster ({ gymId: propGymId }) {
   const router = useRouter()
+  const params = useParams()
+  const gymId = propGymId || params?.id
+
   const [formData, setFormData] = useState({
-    name: 'Day Gym Pass (Adult)',
-    durationValue: '1',
+    name: '',
+    durationValue: '',
     durationUnit: 'Day',
-    price: '₦10,000',
-    details:
-      '<p>Full-day access to the gym with use of all standard equipment, cardio zones, and training areas.</p>'
+    price: '',
+    details: ''
   })
+  const [gymAccessList, setGymAccessList] = useState([])
+  const [loading, setLoading] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [editId, setEditId] = useState(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [menuOpenId, setMenuOpenId] = useState(null)
+
+  // Toast & Modal State
+  const [toastOpen, setToastOpen] = useState(false)
+  const [toastProps, setToastProps] = useState({
+    title: '',
+    description: '',
+    variant: 'success'
+  })
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false)
+  const [deleteId, setDeleteId] = useState(null)
+  const [deleting, setDeleting] = useState(false)
+
+  const showToast = (title, description, variant = 'success') => {
+    setToastProps({ title, description, variant })
+    setToastOpen(true)
+  }
+
+  // Fetch Gym Access List
+  const fetchGymAccess = async () => {
+    if (!gymId) return
+    setLoading(true)
+    try {
+      const response = await getGymAccess(gymId)
+      if (response.success) {
+        setGymAccessList(response.data.gymAccessList || [])
+      }
+    } catch (error) {
+      console.error('Error fetching gym access:', error)
+      showToast('Error', 'Failed to fetch gym access list', 'error')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchGymAccess()
+  }, [gymId])
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -80,6 +104,110 @@ export default function GymAccessMaster () {
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }))
+  }
+
+  const resetForm = () => {
+    setFormData({
+      name: '',
+      durationValue: '',
+      durationUnit: 'Day',
+      price: '',
+      details: ''
+    })
+    setEditId(null)
+  }
+
+  const handleSubmit = async () => {
+    if (!formData.name || !formData.durationValue || !formData.price) {
+      showToast('Error', 'Please fill all required fields', 'error')
+      return
+    }
+
+    if (!gymId) {
+      showToast('Error', 'Gym ID is missing', 'error')
+      return
+    }
+
+    setSubmitting(true)
+    try {
+      const payload = {
+        gymId,
+        gymAccessName: formData.name,
+        accessDuration: `${formData.durationValue} ${formData.durationUnit}`,
+        accessPrice: Number(formData.price.replace(/[^0-9.]/g, '')),
+        details: formData.details
+      }
+
+      if (editId) {
+        await updateGymAccess(editId, payload)
+        showToast('Success', 'Gym access updated successfully', 'success')
+      } else {
+        await createGymAccess(payload)
+        showToast('Success', 'Gym access created successfully', 'success')
+      }
+      fetchGymAccess()
+      resetForm()
+    } catch (error) {
+      console.error('Error saving gym access:', error)
+      showToast('Error', error.message || 'Something went wrong', 'error')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const handleEdit = item => {
+    const [value, ...unitParts] = item.accessDuration.split(' ')
+    const unit = unitParts.join(' ').replace(/s$/, '') // Remove trailing 's' if present (e.g., "Days" -> "Day")
+
+    setFormData({
+      name: item.gymAccessName,
+      durationValue: value,
+      durationUnit: unit,
+      price: item.accessPrice.toString(),
+      details: item.details
+    })
+    setEditId(item._id)
+    setMenuOpenId(null)
+  }
+
+  const handleDelete = id => {
+    setMenuOpenId(null)
+    setDeleteId(id)
+    setDeleteModalOpen(true)
+  }
+
+  const confirmDelete = async () => {
+    if (!deleteId) return
+    setDeleting(true)
+    try {
+      await deleteGymAccess(deleteId)
+      showToast('Deleted!', 'Gym access has been deleted.', 'success')
+      fetchGymAccess()
+      setDeleteModalOpen(false)
+    } catch (error) {
+      showToast('Error', 'Failed to delete gym access', 'error')
+    } finally {
+      setDeleting(false)
+      setDeleteId(null)
+    }
+  }
+
+  const handleStatusChange = async (item, status) => {
+    setMenuOpenId(null)
+    try {
+      const payload = {
+        status
+      }
+      await activeInactiveGymAccess(item._id, payload)
+      fetchGymAccess()
+      showToast(
+        'Success',
+        `Status updated to ${status ? 'Active' : 'Inactive'}`,
+        'success'
+      )
+    } catch (error) {
+      showToast('Error', 'Failed to update status', 'error')
+    }
   }
 
   return (
@@ -103,8 +231,13 @@ export default function GymAccessMaster () {
           <h2 className='text-sm font-semibold text-slate-900'>
             Gym Access Details
           </h2>
-          <button className='rounded-xl bg-[#FF5B2C] px-6 py-2 text-xs font-semibold text-white shadow-sm hover:bg-[#F0481A] transition'>
-            Add
+          <button
+            onClick={handleSubmit}
+            disabled={submitting}
+            className='rounded-xl bg-[#FF5B2C] px-6 py-2 text-xs font-semibold text-white shadow-sm hover:bg-[#F0481A] transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2'
+          >
+            {submitting && <Loader2 className='h-3 w-3 animate-spin' />}
+            {editId ? 'Update' : 'Add'}
           </button>
         </div>
 
@@ -233,75 +366,134 @@ export default function GymAccessMaster () {
 
           {/* Table Rows */}
           <div className='divide-y divide-[#EEF1FA] bg-white'>
-            {MOCK_DATA.map(item => (
-              <div
-                key={item.id}
-                className='grid grid-cols-12 gap-4 px-4 py-3 items-center hover:bg-[#F9FAFD]'
-              >
-                <div className='col-span-3 text-xs text-[#5E6582]'>
-                  {item.addedOn}
-                </div>
-                <div className='col-span-3 text-xs font-medium text-slate-900'>
-                  {item.name}
-                </div>
-                <div className='col-span-2 text-xs text-[#5E6582]'>
-                  {item.duration}
-                </div>
-                <div className='col-span-2 text-xs text-[#5E6582]'>
-                  {item.price}
-                </div>
-                <div className='col-span-1'>
-                  <span
-                    className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${
-                      item.status === 'Active'
-                        ? 'border-emerald-200 bg-emerald-50 text-emerald-600'
-                        : 'border-red-200 bg-red-50 text-red-600'
-                    }`}
-                  >
-                    <span
-                      className={`h-1.5 w-1.5 rounded-full ${
-                        item.status === 'Active'
-                          ? 'bg-emerald-500'
-                          : 'bg-red-500'
-                      }`}
-                    ></span>
-                    {item.status}
-                  </span>
-                </div>
-                <div className='col-span-1 flex justify-end relative action-menu'>
-                  <button
-                    onClick={() =>
-                      setMenuOpenId(menuOpenId === item.id ? null : item.id)
-                    }
-                    className='text-[#8A92AC] hover:text-[#2D3658]'
-                  >
-                    <MoreVertical className='h-4 w-4' />
-                  </button>
-                  {menuOpenId === item.id && (
-                    <div className='absolute right-0 top-6 z-10 w-32 rounded-lg border border-[#E1E6F7] bg-white py-2 shadow-lg'>
-                      <button className='block w-full px-4 py-2 text-left text-xs font-medium text-slate-700 hover:bg-[#F8F9FC]'>
-                        Edit
-                      </button>
-                      <div className='my-1 border-t border-[#F1F3F9]'></div>
-                      <button className='block w-full px-4 py-2 text-left text-xs font-medium text-slate-700 hover:bg-[#F8F9FC]'>
-                        Delete
-                      </button>
-                      <div className='my-1 border-t border-[#F1F3F9]'></div>
-                      <button className='block w-full px-4 py-2 text-left text-xs font-medium text-slate-700 hover:bg-[#F8F9FC]'>
-                        Active
-                      </button>
-                      <div className='my-1 border-t border-[#F1F3F9]'></div>
-                      <button className='block w-full px-4 py-2 text-left text-xs font-medium text-slate-700 hover:bg-[#F8F9FC]'>
-                        Inactive
-                      </button>
-                    </div>
-                  )}
-                </div>
+            {loading ? (
+              <div className='flex items-center justify-center py-8'>
+                <Loader2 className='h-6 w-6 animate-spin text-[#FF5B2C]' />
               </div>
-            ))}
+            ) : gymAccessList.length === 0 ? (
+              <div className='flex items-center justify-center py-8 text-xs text-[#8A92AC]'>
+                No gym access records found
+              </div>
+            ) : (
+              gymAccessList.map(item => (
+                <div
+                  key={item._id}
+                  className='grid grid-cols-12 gap-4 px-4 py-3 items-center hover:bg-[#F9FAFD]'
+                >
+                  <div className='col-span-3 text-xs text-[#5E6582]'>
+                    {new Date(item.createdAt).toLocaleDateString()}
+                  </div>
+                  <div className='col-span-3 text-xs font-medium text-slate-900'>
+                    {item.gymAccessName}
+                  </div>
+                  <div className='col-span-2 text-xs text-[#5E6582]'>
+                    {item.accessDuration}
+                  </div>
+                  <div className='col-span-2 text-xs text-[#5E6582]'>
+                    {item.accessPrice}
+                  </div>
+                  <div className='col-span-1'>
+                    <span
+                      className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${
+                        String(item.status) === 'true'
+                          ? 'border-emerald-200 bg-emerald-50 text-emerald-600'
+                          : 'border-red-200 bg-red-50 text-red-600'
+                      }`}
+                    >
+                      <span
+                        className={`h-1.5 w-1.5 rounded-full ${
+                          String(item.status) === 'true'
+                            ? 'bg-emerald-500'
+                            : 'bg-red-500'
+                        }`}
+                      ></span>
+                      {String(item.status) === 'true' ? 'Active' : 'Inactive'}
+                    </span>
+                  </div>
+                  <div className='col-span-1 flex justify-end relative action-menu'>
+                    <button
+                      onClick={() =>
+                        setMenuOpenId(menuOpenId === item._id ? null : item._id)
+                      }
+                      className='text-[#8A92AC] hover:text-[#2D3658]'
+                    >
+                      <MoreVertical className='h-4 w-4' />
+                    </button>
+                    {menuOpenId === item._id && (
+                      <div className='absolute right-0 top-6 z-10 w-32 rounded-lg border border-[#E1E6F7] bg-white py-2 shadow-lg'>
+                        <button
+                          onClick={() => handleEdit(item)}
+                          className='block w-full px-4 py-2 text-left text-xs font-medium text-slate-700 hover:bg-[#F8F9FC]'
+                        >
+                          Edit
+                        </button>
+                        <div className='my-1 border-t border-[#F1F3F9]'></div>
+                        <button
+                          onClick={() => handleDelete(item._id)}
+                          className='block w-full px-4 py-2 text-left text-xs font-medium text-slate-700 hover:bg-[#F8F9FC]'
+                        >
+                          Delete
+                        </button>
+                        <div className='my-1 border-t border-[#F1F3F9]'></div>
+                        <button
+                          onClick={() => handleStatusChange(item, true)}
+                          className='block w-full px-4 py-2 text-left text-xs font-medium text-slate-700 hover:bg-[#F8F9FC]'
+                        >
+                          Active
+                        </button>
+                        <div className='my-1 border-t border-[#F1F3F9]'></div>
+                        <button
+                          onClick={() => handleStatusChange(item, false)}
+                          className='block w-full px-4 py-2 text-left text-xs font-medium text-slate-700 hover:bg-[#F8F9FC]'
+                        >
+                          Inactive
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
       </div>
+
+      <Toast
+        open={toastOpen}
+        onOpenChange={setToastOpen}
+        title={toastProps.title}
+        description={toastProps.description}
+        variant={toastProps.variant}
+      />
+
+      <Modal
+        open={deleteModalOpen}
+        onOpenChange={setDeleteModalOpen}
+        title='Confirm Deletion'
+      >
+        <div className='flex flex-col gap-4'>
+          <p className='text-sm text-slate-600'>
+            Are you sure you want to delete this gym access? This action cannot
+            be undone.
+          </p>
+          <div className='flex justify-end gap-2'>
+            <button
+              onClick={() => setDeleteModalOpen(false)}
+              className='rounded-lg border border-[#E5E8F6] px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50'
+            >
+              Cancel
+            </button>
+            <button
+              onClick={confirmDelete}
+              disabled={deleting}
+              className='flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-xs font-medium text-white hover:bg-red-700 disabled:opacity-50'
+            >
+              {deleting && <Loader2 className='h-3 w-3 animate-spin' />}
+              Delete
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   )
 }

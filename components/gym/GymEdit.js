@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import {
   Calendar,
@@ -17,10 +17,35 @@ import TiptapEditor from '@/components/editor/TiptapEditor'
 import ImageCropper from '@/components/ui/ImageCropper'
 import Toast from '@/components/ui/Toast'
 
-import { createGym, getGymHostList } from '@/services/v2/gym/gym.service'
+import {
+  updateGym,
+  getGymById,
+  getGymHostList,
+  deleteGymGallery
+} from '@/services/v2/gym/gym.service'
 
-export default function GymAccessAdd () {
+const getGymImageUrl = imagePath => {
+  if (!imagePath) return null
+  if (imagePath.startsWith('http')) return imagePath
+
+  const baseUrl =
+    process.env.NEXT_PUBLIC_API_BASE_URL2 ||
+    process.env.NEXT_PUBLIC_API_BASE_URL
+  if (!baseUrl) return `/upload/image/${imagePath}`
+
+  try {
+    const { origin } = new URL(baseUrl)
+    return `${origin}/upload/image/${imagePath}`
+  } catch {
+    return `/upload/image/${imagePath}`
+  }
+}
+
+export default function GymAccessEdit () {
   const router = useRouter()
+  const params = useParams()
+  const { gymId } = params
+  const id = gymId // Map gymId to id for existing logic
   const fileInputRef = useRef(null)
   const galleryInputRef = useRef(null)
 
@@ -40,20 +65,7 @@ export default function GymAccessAdd () {
   const [hosts, setHosts] = useState([])
   const [aboutPlace, setAboutPlace] = useState('')
   const [importantInfo, setImportantInfo] = useState('')
-
-  useEffect(() => {
-    const fetchHosts = async () => {
-      try {
-        const response = await getGymHostList()
-        if (response?.success) {
-          setHosts(response.data || [])
-        }
-      } catch (error) {
-        console.error('Error fetching hosts:', error)
-      }
-    }
-    fetchHosts()
-  }, [])
+  const [isLoading, setIsLoading] = useState(true)
 
   const [slots, setSlots] = useState([
     { id: 1, name: '', date: '', time: '', inventory: '', price: '' }
@@ -63,9 +75,91 @@ export default function GymAccessAdd () {
   const [mainImageUrl, setMainImageUrl] = useState('')
   const [galleryImages, setGalleryImages] = useState([])
 
+  // Track deleted existing images if needed, or just handle current view
+  // For now we will just display existing and allow adding new.
+  // Deleting existing images might require backend support not visible here.
+
   const [toast, setToast] = useState({ show: false, message: '', type: '' })
   const [cropOpen, setCropOpen] = useState(false)
   const [rawImageFile, setRawImageFile] = useState(null)
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setIsLoading(true)
+
+        // Fetch Hosts
+        const hostsResponse = await getGymHostList()
+        if (hostsResponse?.success) {
+          setHosts(hostsResponse.data || [])
+        }
+
+        // Fetch Gym Details
+        if (id) {
+          const gymResponse = await getGymById(id)
+          const gym = gymResponse.data || gymResponse
+
+          // Populate form
+          setFormData({
+            gymName: gym.gymName || '',
+            hostedBy: gym.hostId || gym.hostedBy || '', // Adjust based on API response
+            duration: gym.duration || '',
+            startDate: gym.startDate
+              ? new Date(gym.startDate).toISOString().split('T')[0]
+              : '',
+            endDate: gym.endDate
+              ? new Date(gym.endDate).toISOString().split('T')[0]
+              : '',
+            startTime: gym.startTime || '',
+            endTime: gym.endTime || '',
+            location: gym.location || '',
+            locationCoordinates: gym.locationCoordinates || ''
+          })
+
+          setAboutPlace(gym.aboutPlace || '')
+          setImportantInfo(gym.importantInformation || '')
+
+          // Populate slots
+          if (gym.gymSlots && gym.gymSlots.length > 0) {
+            setSlots(
+              gym.gymSlots.map((s, index) => ({
+                id: s._id || Date.now() + index,
+                name: s.slotName || '',
+                date: s.date
+                  ? new Date(s.date).toISOString().split('T')[0]
+                  : '',
+                time: s.time || '',
+                inventory: s.inventory || '',
+                price: s.price || ''
+              }))
+            )
+          }
+
+          // Populate images
+          if (gym.image) {
+            setMainImageUrl(getGymImageUrl(gym.image))
+          }
+
+          if (gym.imageGallery && Array.isArray(gym.imageGallery)) {
+            setGalleryImages(
+              gym.imageGallery.map((item, index) => ({
+                id: item._id || 'existing-' + index,
+                url: getGymImageUrl(item.image),
+                isExisting: true
+              }))
+            )
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching data:', error)
+        showToast('Failed to load gym details', 'error')
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchData()
+  }, [id])
 
   // Handlers
   const handleInputChange = e => {
@@ -113,22 +207,36 @@ export default function GymAccessAdd () {
     const newImages = files.map(file => ({
       file,
       url: URL.createObjectURL(file),
-      id: Date.now() + Math.random()
+      id: Date.now() + Math.random(),
+      isExisting: false
     }))
     setGalleryImages([...galleryImages, ...newImages])
   }
 
-  const removeGalleryImage = id => {
-    setGalleryImages(galleryImages.filter(img => img.id !== id))
+  const removeGalleryImage = async imageId => {
+    const imageToRemove = galleryImages.find(img => img.id === imageId)
+    if (!imageToRemove) return
+
+    if (imageToRemove.isExisting) {
+      try {
+        await deleteGymGallery(imageId)
+        showToast('Image deleted successfully', 'success')
+      } catch (error) {
+        console.error('Error deleting image:', error)
+        showToast('Failed to delete image', 'error')
+        return
+      }
+    }
+    setGalleryImages(prev => prev.filter(img => img.id !== imageId))
   }
 
   const handleSubmit = async () => {
     // Validation
     if (!formData.gymName) return showToast('Gym Name is required', 'error')
     if (!aboutPlace) return showToast('About Place is required', 'error')
-    if (!formData.startDate || !formData.endDate)
-      return showToast('Dates are required', 'error')
-    if (!mainImage) return showToast('Main image is required', 'error')
+    // if (!formData.startDate || !formData.endDate)
+    //   return showToast('Dates are required', 'error')
+    // validation can be looser for edit if needed, but keeping same for consistency
 
     try {
       const payload = new FormData()
@@ -136,7 +244,7 @@ export default function GymAccessAdd () {
       // Append simple fields from formData
       Object.keys(formData).forEach(key => {
         if (key === 'hostedBy') {
-          if (formData[key]) payload.append('hostId', formData[key])
+          if (formData[key]) payload.append('hostedBy', formData[key])
         } else {
           payload.append(key, formData[key])
         }
@@ -145,7 +253,7 @@ export default function GymAccessAdd () {
       // Append separate state fields
       payload.append('aboutPlace', aboutPlace)
       payload.append('importantInformation', importantInfo)
-      payload.append('status', true)
+      // payload.append('status', true) // Maybe don't reset status on edit
       payload.append('slots', 'placeholder')
 
       // Format and append gymSlots
@@ -166,27 +274,33 @@ export default function GymAccessAdd () {
 
       if (galleryImages.length > 0) {
         galleryImages.forEach(img => {
-          payload.append('imageGallery', img.file)
+          if (!img.isExisting && img.file) {
+            payload.append('imageGallery', img.file)
+          }
         })
       }
 
       // Call API
-      await createGym(payload)
+      await updateGym(id, payload)
 
-      showToast('Gym added successfully', 'success')
+      showToast('Gym updated successfully', 'success')
 
       setTimeout(() => {
         router.push('/gym')
       }, 1500)
     } catch (error) {
-      console.error('Error creating gym:', error)
-      showToast(error.message || 'Failed to create gym', 'error')
+      console.error('Error updating gym:', error)
+      showToast(error.message || 'Failed to update gym', 'error')
     }
   }
 
   const showToast = (message, type) => {
     setToast({ show: true, message, type })
     setTimeout(() => setToast({ ...toast, show: false }), 3000)
+  }
+
+  if (isLoading) {
+    return <div className='p-8 text-center'>Loading...</div>
   }
 
   return (
@@ -201,13 +315,13 @@ export default function GymAccessAdd () {
         </button>
         <div className='flex items-center justify-between'>
           <div>
-            <h1 className='text-2xl font-bold text-gray-900'>Add New Gym</h1>
+            <h1 className='text-2xl font-bold text-gray-900'>Edit Gym</h1>
             <nav className='mt-1 text-sm text-gray-500'>
               <Link href='/dashboard' className='hover:text-gray-700'>
                 Dashboard
               </Link>
               <span className='mx-2'>/</span>
-              <span className='text-gray-900'>Add New Gym</span>
+              <span className='text-gray-900'>Edit Gym</span>
             </nav>
           </div>
         </div>
@@ -222,7 +336,7 @@ export default function GymAccessAdd () {
               onClick={handleSubmit}
               className='rounded-lg bg-[#FF4400] px-6 py-2 text-sm font-medium text-white hover:bg-[#ff551e]'
             >
-              Add
+              Update
             </button>
           </div>
         </div>

@@ -1,33 +1,19 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import {
-  Calendar,
-  Clock,
-  Trash2,
-  Plus,
-  Upload,
-  Image as ImageIcon,
-  X,
-  ChevronLeft
-} from 'lucide-react'
+import { Calendar, Clock, Trash2, Plus, ChevronLeft, X } from 'lucide-react'
 import TiptapEditor from '@/components/editor/TiptapEditor'
-import ImageCropper from '@/components/ui/ImageCropper'
 import Toast from '@/components/ui/Toast'
 
-import { createGym, getGymHostList } from '@/services/v2/gym/gym.service'
-
-export default function GymAccessAdd () {
+export default function AddTeamBondingRetreat () {
   const router = useRouter()
   const fileInputRef = useRef(null)
-  const galleryInputRef = useRef(null)
 
   // State
   const [formData, setFormData] = useState({
-    gymName: '',
-    hostedBy: '',
+    retreatName: '',
     duration: '1-3 hours (based on selected access or activation)',
     startDate: '',
     endDate: '',
@@ -37,35 +23,18 @@ export default function GymAccessAdd () {
     locationCoordinates: ''
   })
 
-  const [hosts, setHosts] = useState([])
-  const [aboutPlace, setAboutPlace] = useState('')
+  const [aboutRetreat, setAboutRetreat] = useState('')
+  const [trainingTypes, setTrainingTypes] = useState('')
   const [importantInfo, setImportantInfo] = useState('')
 
-  useEffect(() => {
-    const fetchHosts = async () => {
-      try {
-        const response = await getGymHostList()
-        if (response?.success) {
-          setHosts(response.data || [])
-        }
-      } catch (error) {
-        console.error('Error fetching hosts:', error)
-      }
-    }
-    fetchHosts()
-  }, [])
-
   const [slots, setSlots] = useState([
-    { id: 1, name: '', date: '', time: '', inventory: '', price: '' }
+    { id: 1, name: 'Slot 1', date: '', time: '', inventory: '', price: '' }
   ])
 
   const [mainImage, setMainImage] = useState(null)
   const [mainImageUrl, setMainImageUrl] = useState('')
-  const [galleryImages, setGalleryImages] = useState([])
 
   const [toast, setToast] = useState({ show: false, message: '', type: '' })
-  const [cropOpen, setCropOpen] = useState(false)
-  const [rawImageFile, setRawImageFile] = useState(null)
 
   // Handlers
   const handleInputChange = e => {
@@ -82,7 +51,14 @@ export default function GymAccessAdd () {
   const addSlot = () => {
     setSlots([
       ...slots,
-      { id: Date.now(), name: '', date: '', time: '', inventory: '', price: '' }
+      {
+        id: Date.now(),
+        name: `Slot ${slots.length + 1}`,
+        date: '',
+        time: '',
+        inventory: '',
+        price: ''
+      }
     ])
   }
 
@@ -96,92 +72,32 @@ export default function GymAccessAdd () {
   const handleMainImageChange = e => {
     const file = e.target.files[0]
     if (file) {
-      setRawImageFile(file)
-      setCropOpen(true)
+      setMainImage(file)
+      setMainImageUrl(URL.createObjectURL(file))
     }
-  }
-
-  const handleCroppedImage = ({ file }) => {
-    setMainImage(file)
-    setMainImageUrl(URL.createObjectURL(file))
-    setCropOpen(false)
-  }
-
-  // Gallery Handling
-  const handleGalleryUpload = e => {
-    const files = Array.from(e.target.files)
-    const newImages = files.map(file => ({
-      file,
-      url: URL.createObjectURL(file),
-      id: Date.now() + Math.random()
-    }))
-    setGalleryImages([...galleryImages, ...newImages])
-  }
-
-  const removeGalleryImage = id => {
-    setGalleryImages(galleryImages.filter(img => img.id !== id))
   }
 
   const handleSubmit = async () => {
     // Validation
-    if (!formData.gymName) return showToast('Gym Name is required', 'error')
-    if (!aboutPlace) return showToast('About Place is required', 'error')
+    if (!formData.retreatName)
+      return showToast('Retreat Name is required', 'error')
+    if (!aboutRetreat) return showToast('About Retreat is required', 'error')
+    if (!trainingTypes) return showToast('Training Types are required', 'error')
     if (!formData.startDate || !formData.endDate)
       return showToast('Dates are required', 'error')
-    if (!mainImage) return showToast('Main image is required', 'error')
+    if (!mainImage) return showToast('Retreat image is required', 'error')
 
-    try {
-      const payload = new FormData()
+    // Mock Submit
+    console.log({
+      ...formData,
+      aboutRetreat,
+      trainingTypes,
+      importantInfo,
+      slots,
+      mainImage
+    })
 
-      // Append simple fields from formData
-      Object.keys(formData).forEach(key => {
-        if (key === 'hostedBy') {
-          if (formData[key]) payload.append('hostId', formData[key])
-        } else {
-          payload.append(key, formData[key])
-        }
-      })
-
-      // Append separate state fields
-      payload.append('aboutPlace', aboutPlace)
-      payload.append('importantInformation', importantInfo)
-      payload.append('status', true)
-      payload.append('slots', 'placeholder')
-
-      // Format and append gymSlots
-      const formattedSlots = slots.map(
-        ({ id, name, inventory, price, ...rest }) => ({
-          slotName: name,
-          inventory: Number(inventory),
-          price: Number(price),
-          ...rest
-        })
-      )
-      payload.append('gymSlots', JSON.stringify(formattedSlots))
-
-      // Append images
-      if (mainImage) {
-        payload.append('image', mainImage)
-      }
-
-      if (galleryImages.length > 0) {
-        galleryImages.forEach(img => {
-          payload.append('imageGallery', img.file)
-        })
-      }
-
-      // Call API
-      await createGym(payload)
-
-      showToast('Gym added successfully', 'success')
-
-      setTimeout(() => {
-        router.push('/gym')
-      }, 1500)
-    } catch (error) {
-      console.error('Error creating gym:', error)
-      showToast(error.message || 'Failed to create gym', 'error')
-    }
+    showToast('Retreat added successfully', 'success')
   }
 
   const showToast = (message, type) => {
@@ -191,6 +107,13 @@ export default function GymAccessAdd () {
 
   return (
     <div className='min-h-screen bg-gray-50 p-8'>
+      <Toast
+        show={toast.show}
+        message={toast.message}
+        type={toast.type}
+        onClose={() => setToast({ ...toast, show: false })}
+      />
+
       {/* Header */}
       <div className='mb-8'>
         <button
@@ -201,13 +124,17 @@ export default function GymAccessAdd () {
         </button>
         <div className='flex items-center justify-between'>
           <div>
-            <h1 className='text-2xl font-bold text-gray-900'>Add New Gym</h1>
+            <h1 className='text-2xl font-bold text-gray-900'>
+              Add New Team Bonding Retreat
+            </h1>
             <nav className='mt-1 text-sm text-gray-500'>
               <Link href='/dashboard' className='hover:text-gray-700'>
                 Dashboard
               </Link>
               <span className='mx-2'>/</span>
-              <span className='text-gray-900'>Add New Gym</span>
+              <span className='text-gray-900'>
+                Add New Team Bonding Retreat
+              </span>
             </nav>
           </div>
         </div>
@@ -216,7 +143,9 @@ export default function GymAccessAdd () {
       <div className='rounded-xl border border-gray-200 bg-white shadow-sm'>
         {/* Card Header */}
         <div className='flex items-center justify-between border-b border-gray-100 px-6 py-4'>
-          <h2 className='text-lg font-semibold text-gray-900'>Gym Details</h2>
+          <h2 className='text-lg font-semibold text-gray-900'>
+            Team Bonding Retreat Details
+          </h2>
           <div className='flex gap-3'>
             <button
               onClick={handleSubmit}
@@ -228,53 +157,45 @@ export default function GymAccessAdd () {
         </div>
 
         <div className='p-6 space-y-8'>
-          {/* Gym Name & Hosted By */}
-          <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
-            <div>
-              <label className='mb-2 block text-sm font-medium text-gray-700'>
-                Gym Name*
-              </label>
-              <input
-                type='text'
-                name='gymName'
-                value={formData.gymName}
-                onChange={handleInputChange}
-                className='w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
-                placeholder='Elevate Fitness Club'
-              />
-            </div>
-            <div>
-              <label className='mb-2 block text-sm font-medium text-gray-700'>
-                Hosted By
-              </label>
-              <select
-                name='hostedBy'
-                value={formData.hostedBy}
-                onChange={handleInputChange}
-                className='w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
-              >
-                <option value=''>Select Host</option>
-                {hosts.map(host => (
-                  <option key={host._id} value={host._id}>
-                    {host.name ||
-                      host.firstName + ' ' + host.lastName ||
-                      host.email}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {/* About Place */}
+          {/* Retreat Name */}
           <div>
             <label className='mb-2 block text-sm font-medium text-gray-700'>
-              About Place*
+              Team Bonding Retreat Name*
+            </label>
+            <input
+              type='text'
+              name='retreatName'
+              value={formData.retreatName}
+              onChange={handleInputChange}
+              className='w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
+              placeholder='Outdoor Team Challenge'
+            />
+          </div>
+
+          {/* About Retreat */}
+          <div>
+            <label className='mb-2 block text-sm font-medium text-gray-700'>
+              About Team Bonding Retreat*
             </label>
             <div className='rounded-lg border border-gray-200 overflow-hidden'>
               <TiptapEditor
-                content={aboutPlace}
-                onChange={setAboutPlace}
-                placeholder='Enter description...'
+                content={aboutRetreat}
+                onChange={setAboutRetreat}
+                placeholder='Enter retreat description...'
+              />
+            </div>
+          </div>
+
+          {/* Training Types Available */}
+          <div>
+            <label className='mb-2 block text-sm font-medium text-gray-700'>
+              Training Types Available*
+            </label>
+            <div className='rounded-lg border border-gray-200 overflow-hidden'>
+              <TiptapEditor
+                content={trainingTypes}
+                onChange={setTrainingTypes}
+                placeholder='Enter training types...'
               />
             </div>
           </div>
@@ -481,7 +402,7 @@ export default function GymAccessAdd () {
               </label>
               <div className='flex rounded-lg border border-gray-200 bg-white'>
                 <div className='flex-1 truncate px-4 py-2.5 text-sm text-gray-500'>
-                  {mainImage ? mainImage.name || 'Image selected' : 'Image.jpg'}
+                  {mainImage ? mainImage.name : 'Image.jpg'}
                 </div>
                 <button
                   onClick={() => fileInputRef.current?.click()}
@@ -532,80 +453,8 @@ export default function GymAccessAdd () {
               />
             </div>
           </div>
-
-          {/* Gallery */}
-          <div>
-            <div className='mb-4'>
-              <span className='inline-block rounded-md bg-black px-3 py-1 text-sm font-medium text-white'>
-                Gallery
-              </span>
-            </div>
-
-            <div className='mb-6'>
-              <label className='mb-2 block text-sm font-medium text-gray-700'>
-                Upload Image*
-              </label>
-              <div className='flex max-w-md rounded-lg border border-gray-200 bg-white'>
-                <div className='flex-1 truncate px-4 py-2.5 text-sm text-gray-500'>
-                  Image.jpg
-                </div>
-                <button
-                  onClick={() => galleryInputRef.current?.click()}
-                  className='bg-gray-100 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-200 rounded-r-lg'
-                >
-                  Browse
-                </button>
-                <input
-                  type='file'
-                  ref={galleryInputRef}
-                  onChange={handleGalleryUpload}
-                  accept='image/*'
-                  multiple
-                  className='hidden'
-                />
-              </div>
-            </div>
-
-            {/* Gallery Grid */}
-            <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-4'>
-              {galleryImages.map(img => (
-                <div
-                  key={img.id}
-                  className='group relative aspect-video overflow-hidden rounded-xl bg-gray-100'
-                >
-                  <img
-                    src={img.url}
-                    alt='Gallery'
-                    className='h-full w-full object-cover'
-                  />
-                  <button
-                    onClick={() => removeGalleryImage(img.id)}
-                    className='absolute right-2 top-2 rounded-full bg-white p-1.5 text-gray-900 shadow-sm hover:bg-red-50 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity'
-                  >
-                    <Trash2 className='h-4 w-4' />
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
         </div>
       </div>
-
-      <Toast
-        isOpen={toast.show}
-        onClose={() => setToast({ ...toast, show: false })}
-        message={toast.message}
-        type={toast.type}
-      />
-
-      {cropOpen && (
-        <ImageCropper
-          open={cropOpen}
-          file={rawImageFile}
-          onCropped={handleCroppedImage}
-          onClose={() => setCropOpen(false)}
-        />
-      )}
     </div>
   )
 }

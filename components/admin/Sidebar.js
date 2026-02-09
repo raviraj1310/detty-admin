@@ -268,6 +268,24 @@ const menuSections = [
         icon: '/images/backend/side_menu/side_menu (12).svg',
         href: '/gym',
         permission: 'master'
+      },
+      {
+        label: 'Personal Trainer',
+        icon: '/images/backend/side_menu/side_menu (12).svg',
+        href: '/personal-trainer',
+        permission: 'master'
+      },
+      {
+        label: 'Team Bonding Retreat',
+        icon: '/images/backend/side_menu/side_menu (12).svg',
+        href: '/team-bonding-retreat',
+        permission: 'master'
+      },
+      {
+        label: 'Fitness Events',
+        icon: '/images/backend/side_menu/side_menu (12).svg',
+        href: '/fitness-events',
+        permission: 'master'
       }
     ]
   },
