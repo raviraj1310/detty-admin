@@ -8,6 +8,7 @@ import {
   changeUserStatus,
   getUserWithProfile
 } from '@/services/users/user.service'
+import { dashboardUserActiveInactiveCounts } from '@/services/auth/login.service'
 import Toast from '@/components/ui/Toast'
 import { ChevronUp, ChevronDown, X } from 'lucide-react'
 import {
@@ -669,7 +670,9 @@ export default function UsersForm ({
     avgGrowthCount: 0,
     isCountIncreasing: false,
     avgGrowthPercent: 0,
-    isPctIncreasing: false
+    isPctIncreasing: false,
+    registered: 0,
+    unregistered: 0
   })
   const [dateRange, setDateRange] = useState({ start: '', end: '' })
   const [exporting, setExporting] = useState(false)
@@ -682,7 +685,11 @@ export default function UsersForm ({
       if (dateRange.start) params.startDate = dateRange.start
       if (dateRange.end) params.endDate = dateRange.end
 
-      const res = await getUsers(params)
+      const [res, dashboardRes] = await Promise.all([
+        getUsers(params),
+        dashboardUserActiveInactiveCounts(params)
+      ])
+
       const payload = res?.data || res || {}
 
       // Check if API provides the stats directly
@@ -711,7 +718,9 @@ export default function UsersForm ({
           avgGrowthCount: apiAvgCount,
           isCountIncreasing: apiAvgCount >= 0,
           avgGrowthPercent: apiAvgPctStr,
-          isPctIncreasing: apiAvgPct >= 0
+          isPctIncreasing: apiAvgPct >= 0,
+          registered: Number(dashboardRes?.data?.registeredUser || 0),
+          unregistered: Number(dashboardRes?.data?.unregisteredUsers || 0)
         })
       }
     } catch (e) {
@@ -1166,7 +1175,7 @@ export default function UsersForm ({
         }`}
       >
         {(!visibleStats || visibleStats.includes('total')) && (
-          <div className='bg-gradient-to-r from-[#E8EEFF] to-[#C5D5FF] p-4 rounded-lg shadow-md'>
+          <div className='bg-gradient-to-r from-[#E8EEFF] to-[#C5D5FF] p-4 rounded-lg shadow-md flex justify-between items-center'>
             <div className='flex items-center'>
               <div className='bg-white bg-opacity-20 p-2 rounded-lg mr-3'>
                 <Image
@@ -1178,12 +1187,18 @@ export default function UsersForm ({
                 />
               </div>
               <div>
-                <p className='text-xs text-black opacity-90'>
-                  Total Registered Users
-                </p>
+                <p className='text-xs text-black opacity-90'>Total Users</p>
                 <p className='text-2xl text-black font-bold'>
                   {globalStats.total}
                 </p>
+              </div>
+            </div>
+            <div className='flex flex-col gap-1 text-right'>
+              <div className='bg-red-100/80 px-2 py-0.5 rounded text-[10px] text-red-600 border border-red-200'>
+                Total Unregister counts: {globalStats.unregistered}
+              </div>
+              <div className='bg-blue-100/80 px-2 py-0.5 rounded text-[10px] text-blue-600 border border-blue-200'>
+                Total Register counts: {globalStats.registered}
               </div>
             </div>
           </div>
