@@ -75,7 +75,9 @@ export default function AdminDashboard ({ stats, year, startDate, endDate }) {
   const [userCounts, setUserCounts] = useState({
     totalUsers: 0,
     totalActiveUsers: 0,
-    totalInactiveUsers: 0
+    totalInactiveUsers: 0,
+    registeredUser: 0,
+    unregisteredUsers: 0
   })
   const [txnCounts, setTxnCounts] = useState({
     event: 0,
@@ -103,13 +105,17 @@ export default function AdminDashboard ({ stats, year, startDate, endDate }) {
         setUserCounts({
           totalUsers: Number(res?.data?.totalUserCount || 0),
           totalActiveUsers: Number(res?.data?.activeUserCount || 0),
-          totalInactiveUsers: Number(res?.data?.inactiveUserCount || 0)
+          totalInactiveUsers: Number(res?.data?.inactiveUserCount || 0),
+          registeredUser: Number(res?.data?.registeredUser || 0),
+          unregisteredUsers: Number(res?.data?.unregisteredUsers || 0)
         })
       } catch (_) {
         setUserCounts({
           totalUsers: Number(stats?.totalUsers || 0),
           totalActiveUsers: Number(stats?.totalActiveUsers || 0),
-          totalInactiveUsers: Number(stats?.totalInactiveUsers || 0)
+          totalInactiveUsers: Number(stats?.totalInactiveUsers || 0),
+          registeredUser: Number(stats?.registeredUser || 0),
+          unregisteredUsers: Number(stats?.unregisteredUsers || 0)
         })
       }
 
@@ -295,6 +301,22 @@ export default function AdminDashboard ({ stats, year, startDate, endDate }) {
           iconSrc: '/images/dashboard/icons (11).svg',
           bg: 'bg-[#FFE8E8]',
           iconBg: 'bg-gradient-to-r from-[#FFA8A8] to-[#E03E3E]'
+        },
+        {
+          id: 'ru',
+          title: 'Registered Users',
+          value: userCounts.registeredUser || 0,
+          iconSrc: '/images/dashboard/icons (9).svg',
+          bg: 'bg-[#E8F8F0]',
+          iconBg: 'bg-gradient-to-r from-[#8EEDC7] to-[#3FA574]'
+        },
+        {
+          id: 'uu',
+          title: 'Unregistered Users',
+          value: userCounts.unregisteredUsers || 0,
+          iconSrc: '/images/dashboard/icons (13).svg',
+          bg: 'bg-[#FFF4E8]',
+          iconBg: 'bg-gradient-to-r from-[#FFD8A8] to-[#F76707]'
         },
         ...getGrowthCards('users', 'New Registrations Yesterday')
       ]
