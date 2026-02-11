@@ -125,7 +125,7 @@ const MetricCard = ({
   </div>
 )
 
-export default function TeamBondingRetreatBookings() {
+export default function TeamBondingRetreatBookings () {
   const router = useRouter()
   const params = useParams()
   const { id } = params || {}
@@ -137,7 +137,17 @@ export default function TeamBondingRetreatBookings() {
   const dropdownRef = useRef(null)
 
   // Toast State
-  const [toast, setToast] = useState({ show: false, message: '', type: '' })
+  const [toastOpen, setToastOpen] = useState(false)
+  const [toastProps, setToastProps] = useState({
+    title: '',
+    description: '',
+    variant: 'success'
+  })
+
+  const showToast = (title, description, variant = 'success') => {
+    setToastProps({ title, description, variant })
+    setToastOpen(true)
+  }
 
   useEffect(() => {
     const handleClickOutside = event => {
@@ -168,10 +178,11 @@ export default function TeamBondingRetreatBookings() {
   return (
     <div className='min-h-screen bg-[#F8F9FC] p-6'>
       <Toast
-        show={toast.show}
-        message={toast.message}
-        type={toast.type}
-        onClose={() => setToast({ ...toast, show: false })}
+        open={toastOpen}
+        onOpenChange={setToastOpen}
+        title={toastProps.title}
+        description={toastProps.description}
+        variant={toastProps.variant}
       />
 
       {/* Header */}

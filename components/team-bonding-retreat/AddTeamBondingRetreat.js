@@ -6,6 +6,8 @@ import Link from 'next/link'
 import { Calendar, Clock, Trash2, Plus, ChevronLeft, X } from 'lucide-react'
 import TiptapEditor from '@/components/editor/TiptapEditor'
 import Toast from '@/components/ui/Toast'
+import ImageCropper from '@/components/ui/ImageCropper'
+import { createTeamBondingRetreat } from '@/services/v2/team/team-bonding-retreat.service'
 
 export default function AddTeamBondingRetreat () {
   const router = useRouter()
@@ -33,8 +35,16 @@ export default function AddTeamBondingRetreat () {
 
   const [mainImage, setMainImage] = useState(null)
   const [mainImageUrl, setMainImageUrl] = useState('')
+  const [cropOpen, setCropOpen] = useState(false)
+  const [rawImageFile, setRawImageFile] = useState(null)
+  const [submitting, setSubmitting] = useState(false)
 
-  const [toast, setToast] = useState({ show: false, message: '', type: '' })
+  const [toastOpen, setToastOpen] = useState(false)
+  const [toastProps, setToastProps] = useState({
+    title: '',
+    description: '',
+    variant: 'success'
+  })
 
   // Handlers
   const handleInputChange = e => {
@@ -72,46 +82,108 @@ export default function AddTeamBondingRetreat () {
   const handleMainImageChange = e => {
     const file = e.target.files[0]
     if (file) {
-      setMainImage(file)
-      setMainImageUrl(URL.createObjectURL(file))
+      // Basic validation
+      const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg']
+      if (!validTypes.includes(file.type)) {
+        return showToast(
+          'Error',
+          'Please upload a valid image (JPEG, PNG, WEBP)',
+          'error'
+        )
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        return showToast('Error', 'Image size must be less than 5MB', 'error')
+      }
+
+      setRawImageFile(file)
+      setCropOpen(true)
+      e.target.value = '' // Reset input
     }
+  }
+
+  const handleCropped = ({ file }) => {
+    setMainImage(file)
+    setMainImageUrl(URL.createObjectURL(file))
+    setCropOpen(false)
   }
 
   const handleSubmit = async () => {
     // Validation
     if (!formData.retreatName)
-      return showToast('Retreat Name is required', 'error')
-    if (!aboutRetreat) return showToast('About Retreat is required', 'error')
-    if (!trainingTypes) return showToast('Training Types are required', 'error')
-    if (!formData.startDate || !formData.endDate)
-      return showToast('Dates are required', 'error')
-    if (!mainImage) return showToast('Retreat image is required', 'error')
+      return showToast('Error', 'Retreat Name is required', 'error')
+    if (!aboutRetreat)
+      return showToast('Error', 'About Retreat is required', 'error')
+    if (!trainingTypes)
+      return showToast('Error', 'Training Types are required', 'error')
+    if (!formData.startDate)
+      return showToast('Error', 'Start Date is required', 'error')
+    if (!formData.endDate)
+      return showToast('Error', 'End Date is required', 'error')
+    if (!mainImage)
+      return showToast('Error', 'Retreat image is required', 'error')
 
-    // Mock Submit
-    console.log({
-      ...formData,
-      aboutRetreat,
-      trainingTypes,
-      importantInfo,
-      slots,
-      mainImage
-    })
+    try {
+      setSubmitting(true)
+      const fd = new FormData()
+      fd.append('teamBondingRetreatName', formData.retreatName)
+      fd.append('teamBondingRetreatAbout', aboutRetreat)
+      fd.append('trainingTypesAvailable', trainingTypes)
+      fd.append('hostedBy', '698c2b1a0248d736c2d2866b') // Hardcoded as per requirement
+      fd.append('duration', formData.duration)
+      fd.append('startDate', formData.startDate)
+      fd.append('endDate', formData.endDate)
+      fd.append('startTime', formData.startTime)
+      fd.append('endTime', formData.endTime)
+      fd.append('location', formData.location)
+      fd.append('locationCoordinates', formData.locationCoordinates)
+      fd.append('importantInformation', importantInfo)
+      fd.append('status', 'true')
+      fd.append('image', mainImage)
 
-    showToast('Retreat added successfully', 'success')
+      const formattedSlots = slots.map(slot => ({
+        slotName: slot.name,
+        date: slot.date,
+        time: slot.time,
+        inventory: Number(slot.inventory) || 0,
+        price: Number(slot.price) || 0
+      }))
+      fd.append('slots', JSON.stringify(formattedSlots))
+
+      await createTeamBondingRetreat(fd)
+      showToast('Success', 'Retreat added successfully', 'success')
+
+      // Redirect after short delay
+      setTimeout(() => {
+        router.push('/team-bonding-retreat')
+      }, 1000)
+    } catch (error) {
+      console.error(error)
+      showToast('Error', 'Failed to create retreat', 'error')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
-  const showToast = (message, type) => {
-    setToast({ show: true, message, type })
-    setTimeout(() => setToast({ ...toast, show: false }), 3000)
+  const showToast = (title, description, variant = 'success') => {
+    setToastProps({ title, description, variant })
+    setToastOpen(true)
   }
 
   return (
     <div className='min-h-screen bg-gray-50 p-8'>
       <Toast
-        show={toast.show}
-        message={toast.message}
-        type={toast.type}
-        onClose={() => setToast({ ...toast, show: false })}
+        open={toastOpen}
+        onOpenChange={setToastOpen}
+        title={toastProps.title}
+        description={toastProps.description}
+        variant={toastProps.variant}
+      />
+
+      <ImageCropper
+        open={cropOpen}
+        file={rawImageFile}
+        onCropped={handleCropped}
+        onClose={() => setCropOpen(false)}
       />
 
       {/* Header */}
@@ -149,9 +221,10 @@ export default function AddTeamBondingRetreat () {
           <div className='flex gap-3'>
             <button
               onClick={handleSubmit}
-              className='rounded-lg bg-[#FF4400] px-6 py-2 text-sm font-medium text-white hover:bg-[#ff551e]'
+              disabled={submitting}
+              className='rounded-lg bg-[#FF4400] px-6 py-2 text-sm font-medium text-white hover:bg-[#ff551e] disabled:opacity-50 disabled:cursor-not-allowed'
             >
-              Add
+              {submitting ? 'Adding...' : 'Add'}
             </button>
           </div>
         </div>
@@ -167,7 +240,7 @@ export default function AddTeamBondingRetreat () {
               name='retreatName'
               value={formData.retreatName}
               onChange={handleInputChange}
-              className='w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
+              className='w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
               placeholder='Outdoor Team Challenge'
             />
           </div>
@@ -211,7 +284,7 @@ export default function AddTeamBondingRetreat () {
                 name='duration'
                 value={formData.duration}
                 onChange={handleInputChange}
-                className='w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
+                className='w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
               />
             </div>
             <div>
@@ -222,9 +295,10 @@ export default function AddTeamBondingRetreat () {
                 <input
                   type='date'
                   name='startDate'
+                  required
                   value={formData.startDate}
                   onChange={handleInputChange}
-                  className='w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
+                  className='w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
                 />
               </div>
             </div>
@@ -236,9 +310,10 @@ export default function AddTeamBondingRetreat () {
                 <input
                   type='date'
                   name='endDate'
+                  required
                   value={formData.endDate}
                   onChange={handleInputChange}
-                  className='w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
+                  className='w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
                 />
               </div>
             </div>
@@ -256,7 +331,7 @@ export default function AddTeamBondingRetreat () {
                   name='startTime'
                   value={formData.startTime}
                   onChange={handleInputChange}
-                  className='w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
+                  className='w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
                 />
                 <Clock className='absolute right-3 top-2.5 h-5 w-5 text-gray-400 pointer-events-none' />
               </div>
@@ -271,7 +346,7 @@ export default function AddTeamBondingRetreat () {
                   name='endTime'
                   value={formData.endTime}
                   onChange={handleInputChange}
-                  className='w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
+                  className='w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
                 />
                 <Clock className='absolute right-3 top-2.5 h-5 w-5 text-gray-400 pointer-events-none' />
               </div>
@@ -311,7 +386,7 @@ export default function AddTeamBondingRetreat () {
                       onChange={e =>
                         handleSlotChange(slot.id, 'name', e.target.value)
                       }
-                      className='w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
+                      className='w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
                       placeholder='Slot 1'
                     />
                   </div>
@@ -322,7 +397,7 @@ export default function AddTeamBondingRetreat () {
                       onChange={e =>
                         handleSlotChange(slot.id, 'date', e.target.value)
                       }
-                      className='w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
+                      className='w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
                     />
                   </div>
                   <div className='col-span-2'>
@@ -332,7 +407,7 @@ export default function AddTeamBondingRetreat () {
                       onChange={e =>
                         handleSlotChange(slot.id, 'time', e.target.value)
                       }
-                      className='w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
+                      className='w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
                     />
                   </div>
                   <div className='col-span-2'>
@@ -342,7 +417,7 @@ export default function AddTeamBondingRetreat () {
                       onChange={e =>
                         handleSlotChange(slot.id, 'inventory', e.target.value)
                       }
-                      className='w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
+                      className='w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
                       placeholder='50'
                     />
                   </div>
@@ -353,7 +428,7 @@ export default function AddTeamBondingRetreat () {
                       onChange={e =>
                         handleSlotChange(slot.id, 'price', e.target.value)
                       }
-                      className='w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
+                      className='w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
                       placeholder='₦10,000'
                     />
                     <button
@@ -379,7 +454,7 @@ export default function AddTeamBondingRetreat () {
                 name='location'
                 value={formData.location}
                 onChange={handleInputChange}
-                className='w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
+                className='w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
                 placeholder='Lekki Phase 1, Lagos'
               />
             </div>
@@ -392,7 +467,7 @@ export default function AddTeamBondingRetreat () {
                 name='locationCoordinates'
                 value={formData.locationCoordinates}
                 onChange={handleInputChange}
-                className='w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
+                className='w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
                 placeholder='6.449942, 3.442864'
               />
             </div>

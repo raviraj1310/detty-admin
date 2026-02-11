@@ -18,57 +18,27 @@ import {
 } from 'lucide-react'
 import { IoFilterSharp } from 'react-icons/io5'
 import { TbCaretUpDownFilled } from 'react-icons/tb'
+import {
+  getTeamBondingRetreatList,
+  deleteTeamBondingRetreat,
+  activeInactiveTeamBondingRetreat
+} from '@/services/v2/team/team-bonding-retreat.service'
 import Toast from '@/components/ui/Toast'
 
-// Mock Data for Metrics
-const INITIAL_METRICS = {
-  totalRetreats: 1155,
-  activeRetreats: 1137,
-  inactiveRetreats: 299,
-  totalBookings: 1155,
-  revenue: '865(₦10,00,000)',
-  cancelledBookings: '299(₦2,00,000)'
-}
+const getRetreatImageUrl = imagePath => {
+  if (!imagePath) return '/images/placeholder.png'
+  if (imagePath.startsWith('http')) return imagePath
 
-// Mock Data for Table
-const MOCK_RETREATS = [
-  {
-    _id: '1',
-    createdAt: '2025-06-12T10:00:00',
-    name: 'Wellness & Fitness Retreat',
-    image: '/images/dashboard/image-1.webp', // Placeholder
-    location: 'Ikoyi, Lagos',
-    bookingsCount: 100,
-    isActive: true
-  },
-  {
-    _id: '2',
-    createdAt: '2025-06-12T10:00:00',
-    name: 'Leadership & Wellness Camp',
-    image: '/images/dashboard/image-1.webp', // Placeholder
-    location: 'Ikoyi, Lagos',
-    bookingsCount: 100,
-    isActive: true
-  },
-  {
-    _id: '3',
-    createdAt: '2025-06-12T10:00:00',
-    name: 'Corporate Fitness Offsite',
-    image: '/images/dashboard/image-1.webp', // Placeholder
-    location: 'Ikoyi, Lagos',
-    bookingsCount: 100,
-    isActive: false
-  },
-  {
-    _id: '4',
-    createdAt: '2025-06-12T10:00:00',
-    name: 'Yoga Fitness Retreat',
-    image: '/images/dashboard/image-1.webp', // Placeholder
-    location: 'Ikoyi, Lagos',
-    bookingsCount: 100,
-    isActive: true
+  const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL
+  if (!baseUrl) return `/${imagePath}`
+
+  try {
+    const { origin } = new URL(baseUrl)
+    return `${origin}/${imagePath}`.replace(/([^:]\/)\/+/g, '$1')
+  } catch {
+    return imagePath
   }
-]
+}
 
 const TableHeaderCell = ({ children, align = 'left' }) => (
   <div
@@ -110,10 +80,22 @@ export default function TeamBondingRetreatMaster () {
 
   const [retreats, setRetreats] = useState([])
   const [loading, setLoading] = useState(true)
-  const [metrics, setMetrics] = useState(INITIAL_METRICS)
+  const [metrics, setMetrics] = useState({
+    totalRetreats: 0,
+    activeRetreats: 0,
+    inactiveRetreats: 0,
+    totalBookings: 0,
+    revenue: '0(₦0)',
+    cancelledBookings: '0(₦0)'
+  })
 
   // Toast State
-  const [toast, setToast] = useState({ show: false, message: '', type: '' })
+  const [toastOpen, setToastOpen] = useState(false)
+  const [toastProps, setToastProps] = useState({
+    title: '',
+    description: '',
+    variant: 'success'
+  })
 
   // Delete Confirmation State
   const [confirmOpen, setConfirmOpen] = useState(false)
@@ -126,40 +108,91 @@ export default function TeamBondingRetreatMaster () {
     setActiveDropdown(null)
   }
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
+    if (!deleteId) return
     setDeleting(true)
-    setTimeout(() => {
-      setRetreats(retreats.filter(t => t._id !== deleteId))
+    try {
+      const res = await deleteTeamBondingRetreat(deleteId)
+      if (res?.data?.success) {
+        showToast('Success', 'Retreat deleted successfully', 'success')
+        fetchData()
+      } else {
+        showToast(
+          'Error',
+          res?.data?.message || 'Failed to delete retreat',
+          'error'
+        )
+      }
+    } catch (error) {
+      console.error('Error deleting retreat:', error)
+      showToast('Error', 'Error deleting retreat', 'error')
+    } finally {
+      setDeleting(false)
       setConfirmOpen(false)
       setDeleteId(null)
-      setDeleting(false)
-      showToast('Retreat deleted successfully', 'success')
-    }, 500)
+    }
   }
 
-  const handleStatusChange = (id, status) => {
-    setRetreats(
-      retreats.map(t => (t._id === id ? { ...t, isActive: status } : t))
-    )
+  const handleStatusChange = async (id, status) => {
+    try {
+      const res = await activeInactiveTeamBondingRetreat(id, { status })
+      if (res?.data?.success) {
+        showToast(
+          'Success',
+          `Retreat marked as ${status ? 'Active' : 'Inactive'}`,
+          'success'
+        )
+        fetchData()
+      } else {
+        showToast(
+          'Error',
+          res?.data?.message || 'Failed to update status',
+          'error'
+        )
+      }
+    } catch (error) {
+      console.error('Error updating status:', error)
+      showToast('Error', 'Error updating status', 'error')
+    }
     setActiveDropdown(null)
-    showToast(`Retreat marked as ${status ? 'Active' : 'Inactive'}`, 'success')
   }
+
+  const fetchData = async () => {
+    setLoading(true)
+    try {
+      const response = await getTeamBondingRetreatList()
+      if (response?.data?.success) {
+        // Map API data to component structure
+        const mappedRetreats = (response.data.data || []).map(item => ({
+          _id: item._id,
+          createdAt: item.createdAt,
+          name: item.teamBondingRetreatName,
+          image: item.image,
+          location: item.location,
+          bookingsCount: 0, // Not provided in API
+          isActive: item.status
+        }))
+        setRetreats(mappedRetreats)
+
+        // Update metrics
+        setMetrics(prev => ({
+          ...prev,
+          totalRetreats: response.data.totalTeamBonding || 0,
+          activeRetreats: response.data.activeTeamBonding || 0,
+          inactiveRetreats: response.data.inactiveTeamBonding || 0
+        }))
+      }
+    } catch (error) {
+      console.error('Error fetching retreats:', error)
+      showToast('Error', 'Failed to fetch retreats', 'error')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const [dropdownPos, setDropdownPos] = useState({ top: 0, right: 0 })
 
   useEffect(() => {
-    // Simulate API fetch
-    const fetchData = async () => {
-      setLoading(true)
-      try {
-        // In a real app, we would fetch from API here
-        setTimeout(() => {
-          setRetreats(MOCK_RETREATS)
-          setLoading(false)
-        }, 1000)
-      } catch (error) {
-        console.error('Error fetching retreats:', error)
-        setLoading(false)
-      }
-    }
     fetchData()
   }, [])
 
@@ -170,27 +203,46 @@ export default function TeamBondingRetreatMaster () {
         setActiveDropdown(null)
       }
     }
+
     document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
+    document.addEventListener('scroll', () => setActiveDropdown(null), true) // Close on scroll
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener(
+        'scroll',
+        () => setActiveDropdown(null),
+        true
+      )
+    }
   }, [])
 
-  const showToast = (message, type) => {
-    setToast({ show: true, message, type })
-    setTimeout(() => setToast({ ...toast, show: false }), 3000)
+  const showToast = (title, description, variant = 'success') => {
+    setToastProps({ title, description, variant })
+    setToastOpen(true)
   }
 
   const toggleDropdown = (e, id) => {
     e.stopPropagation()
-    setActiveDropdown(activeDropdown === id ? null : id)
+    if (activeDropdown === id) {
+      setActiveDropdown(null)
+    } else {
+      const rect = e.currentTarget.getBoundingClientRect()
+      setDropdownPos({
+        top: rect.bottom,
+        right: window.innerWidth - rect.right
+      })
+      setActiveDropdown(id)
+    }
   }
 
   return (
     <div className='min-h-screen bg-[#F8F9FC] p-6'>
       <Toast
-        show={toast.show}
-        message={toast.message}
-        type={toast.type}
-        onClose={() => setToast({ ...toast, show: false })}
+        open={toastOpen}
+        onOpenChange={setToastOpen}
+        title={toastProps.title}
+        description={toastProps.description}
+        variant={toastProps.variant}
       />
 
       {/* Header */}
@@ -356,7 +408,7 @@ export default function TeamBondingRetreatMaster () {
                       <div className='flex items-center gap-3'>
                         <div className='relative h-10 w-10 overflow-hidden rounded-lg bg-gray-100'>
                           <Image
-                            src={retreat.image || '/images/placeholder.png'}
+                            src={getRetreatImageUrl(retreat.image)}
                             alt={retreat.name}
                             fill
                             className='object-cover'
@@ -403,71 +455,6 @@ export default function TeamBondingRetreatMaster () {
                       >
                         <MoreVertical className='h-4 w-4' />
                       </button>
-
-                      {activeDropdown === retreat._id && (
-                        <div
-                          ref={dropdownRef}
-                          className='absolute right-6 top-12 z-10 w-56 rounded-xl border border-[#E1E6F7] bg-white p-1.5 shadow-lg'
-                        >
-                          <button
-                            onClick={() =>
-                              router.push(
-                                `/team-bonding-retreat/edit/${retreat._id}`
-                              )
-                            }
-                            className='flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-[#475569] hover:bg-[#F8F9FC] hover:text-[#1E293B]'
-                          >
-                            View/Edit Detail
-                          </button>
-                          <div className='my-1 h-px bg-gray-100' />
-                          <button
-                            onClick={() =>
-                              router.push(
-                                `/team-bonding-retreat/bookings/${retreat._id}`
-                              )
-                            }
-                            className='flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-[#475569] hover:bg-[#F8F9FC] hover:text-[#1E293B]'
-                          >
-                            View Bookings
-                          </button>
-                          <div className='my-1 h-px bg-gray-100' />
-                          <button
-                            onClick={() =>
-                              router.push(
-                                `/team-bonding-retreat/team-bonding-retreat-session/${retreat._id}`
-                              )
-                            }
-                            className='flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-[#475569] hover:bg-[#F8F9FC] hover:text-[#1E293B]'
-                          >
-                            View/Edit Session
-                          </button>
-                          <div className='my-1 h-px bg-gray-100' />
-                          <button
-                            onClick={() => handleDelete(retreat._id)}
-                            className='flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-[#EF4444] hover:bg-[#FFF0F0] hover:text-[#EF4444]'
-                          >
-                            Delete
-                          </button>
-                          <div className='my-1 h-px bg-gray-100' />
-                          <button
-                            onClick={() =>
-                              handleStatusChange(retreat._id, true)
-                            }
-                            className='flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-[#475569] hover:bg-[#F8F9FC] hover:text-[#1E293B]'
-                          >
-                            Active
-                          </button>
-                          <div className='my-1 h-px bg-gray-100' />
-                          <button
-                            onClick={() =>
-                              handleStatusChange(retreat._id, false)
-                            }
-                            className='flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-[#475569] hover:bg-[#F8F9FC] hover:text-[#1E293B]'
-                          >
-                            Inactive
-                          </button>
-                        </div>
-                      )}
                     </td>
                   </tr>
                 ))
@@ -529,6 +516,65 @@ export default function TeamBondingRetreatMaster () {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Fixed Dropdown Menu */}
+      {activeDropdown && (
+        <div
+          ref={dropdownRef}
+          className='fixed z-50 w-56 rounded-xl border border-[#E1E6F7] bg-white p-1.5 shadow-lg'
+          style={{ top: dropdownPos.top, right: dropdownPos.right }}
+        >
+          <button
+            onClick={() =>
+              router.push(`/team-bonding-retreat/edit/${activeDropdown}`)
+            }
+            className='flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-[#475569] hover:bg-[#F8F9FC] hover:text-[#1E293B]'
+          >
+            View/Edit Detail
+          </button>
+          <div className='my-1 h-px bg-gray-100' />
+          <button
+            onClick={() =>
+              router.push(`/team-bonding-retreat/bookings/${activeDropdown}`)
+            }
+            className='flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-[#475569] hover:bg-[#F8F9FC] hover:text-[#1E293B]'
+          >
+            View Bookings
+          </button>
+          <div className='my-1 h-px bg-gray-100' />
+          <button
+            onClick={() =>
+              router.push(
+                `/team-bonding-retreat/team-bonding-retreat-session/${activeDropdown}`
+              )
+            }
+            className='flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-[#475569] hover:bg-[#F8F9FC] hover:text-[#1E293B]'
+          >
+            View/Edit Session
+          </button>
+          <div className='my-1 h-px bg-gray-100' />
+          <button
+            onClick={() => handleDelete(activeDropdown)}
+            className='flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-[#EF4444] hover:bg-[#FFF0F0] hover:text-[#EF4444]'
+          >
+            Delete
+          </button>
+          <div className='my-1 h-px bg-gray-100' />
+          <button
+            onClick={() => handleStatusChange(activeDropdown, true)}
+            className='flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-[#475569] hover:bg-[#F8F9FC] hover:text-[#1E293B]'
+          >
+            Active
+          </button>
+          <div className='my-1 h-px bg-gray-100' />
+          <button
+            onClick={() => handleStatusChange(activeDropdown, false)}
+            className='flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-[#475569] hover:bg-[#F8F9FC] hover:text-[#1E293B]'
+          >
+            Inactive
+          </button>
         </div>
       )}
     </div>

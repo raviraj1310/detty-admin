@@ -1,41 +1,138 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { Calendar, Clock, Trash2, Plus, ChevronLeft, X } from 'lucide-react'
 import TiptapEditor from '@/components/editor/TiptapEditor'
 import Toast from '@/components/ui/Toast'
+import {
+  getTeamBondingRetreatById,
+  updateTeamBondingRetreat
+} from '../../services/v2/team/team-bonding-retreat.service'
 
-export default function EditTeamBondingRetreat() {
+const getRetreatImageUrl = imagePath => {
+  if (!imagePath) return '/images/placeholder.png'
+  if (imagePath.startsWith('http')) return imagePath
+
+  const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL
+  if (!baseUrl) return `/${imagePath}`
+
+  try {
+    const { origin } = new URL(baseUrl)
+    return `${origin}/${imagePath}`.replace(/([^:]\/)\/+/g, '$1')
+  } catch {
+    return imagePath
+  }
+}
+
+export default function EditTeamBondingRetreat () {
   const router = useRouter()
+  const params = useParams()
+  const id = params?.id
   const fileInputRef = useRef(null)
 
   // State
   const [formData, setFormData] = useState({
-    retreatName: 'Outdoor Team Challenge',
-    duration: '3 hours',
-    startDate: '2025-06-12',
-    endDate: '2025-06-12',
-    startTime: '10:00',
-    endTime: '13:00',
-    location: 'Lekki Conservation Centre',
-    locationCoordinates: '6.441158, 3.537678'
+    retreatName: '',
+    duration: '',
+    startDate: '',
+    endDate: '',
+    startTime: '',
+    endTime: '',
+    location: '',
+    locationCoordinates: ''
   })
 
-  const [aboutRetreat, setAboutRetreat] = useState('<p>An exciting outdoor challenge designed to build trust and collaboration among team members through various obstacle courses and problem-solving activities.</p>')
-  const [trainingTypes, setTrainingTypes] = useState('<ul><li>Obstacle Course</li><li>Trust Fall</li><li>Relay Race</li></ul>')
-  const [importantInfo, setImportantInfo] = useState('<p>Please wear comfortable sportswear and running shoes. Water and snacks will be provided.</p>')
+  const [aboutRetreat, setAboutRetreat] = useState('')
+  const [trainingTypes, setTrainingTypes] = useState('')
+  const [importantInfo, setImportantInfo] = useState('')
 
-  const [slots, setSlots] = useState([
-    { id: 1, name: 'Morning Slot', date: '2025-06-12', time: '10:00', inventory: '20', price: '15000' },
-    { id: 2, name: 'Afternoon Slot', date: '2025-06-12', time: '14:00', inventory: '20', price: '15000' }
-  ])
+  const [slots, setSlots] = useState([])
 
   const [mainImage, setMainImage] = useState(null)
-  const [mainImageUrl, setMainImageUrl] = useState('/images/dashboard/image-1.webp') // Placeholder
+  const [mainImageUrl, setMainImageUrl] = useState('')
 
-  const [toast, setToast] = useState({ show: false, message: '', type: '' })
+  const [toastOpen, setToastOpen] = useState(false)
+  const [toastProps, setToastProps] = useState({
+    title: '',
+    description: '',
+    variant: 'success'
+  })
+
+  // Fetch Data
+  useEffect(() => {
+    if (id) {
+      fetchRetreatDetails()
+    }
+  }, [id])
+
+  const fetchRetreatDetails = async () => {
+    try {
+      const response = await getTeamBondingRetreatById(id)
+      if (response?.data?.success) {
+        const data = response.data.data
+        setFormData({
+          retreatName: data.teamBondingRetreatName || '',
+          duration: data.duration || '',
+          startDate: data.startDate ? data.startDate.split('T')[0] : '',
+          endDate: data.endDate ? data.endDate.split('T')[0] : '',
+          startTime: data.startTime || '',
+          endTime: data.endTime || '',
+          location: data.location || '',
+          locationCoordinates: data.locationCoordinates || ''
+        })
+        setAboutRetreat(data.teamBondingRetreatAbout || '')
+        setTrainingTypes(
+          Array.isArray(data.trainingTypesAvailable)
+            ? data.trainingTypesAvailable[0]
+            : data.trainingTypesAvailable || ''
+        )
+        setImportantInfo(data.importantInformation || '')
+
+        // Map slots
+        if (data.slots && Array.isArray(data.slots)) {
+          const mappedSlots = data.slots.map(slot => ({
+            id: slot._id,
+            name: slot.slotName,
+            date: slot.date ? slot.date.split('T')[0] : '',
+            time: convertTo24Hour(slot.time),
+            inventory: slot.inventory,
+            price: slot.price
+          }))
+          setSlots(mappedSlots)
+        }
+
+        setMainImageUrl(getRetreatImageUrl(data.image) || '')
+      }
+    } catch (error) {
+      console.error('Error fetching retreat:', error)
+      showToast('Error', 'Failed to fetch retreat details', 'error')
+    }
+  }
+
+  const convertTo24Hour = timeStr => {
+    if (!timeStr) return ''
+    if (!timeStr.includes('AM') && !timeStr.includes('PM')) return timeStr
+    const [time, modifier] = timeStr.split(' ')
+    let [hours, minutes] = time.split(':')
+    if (hours === '12') {
+      hours = '00'
+    }
+    if (modifier === 'PM') {
+      hours = parseInt(hours, 10) + 12
+    }
+    return `${hours}:${minutes}`
+  }
+
+  const convertTo12Hour = timeStr => {
+    if (!timeStr) return ''
+    const [hours, minutes] = timeStr.split(':')
+    const h = parseInt(hours, 10)
+    const ampm = h >= 12 ? 'PM' : 'AM'
+    const h12 = h % 12 || 12
+    return `${h12}:${minutes} ${ampm}`
+  }
 
   // Handlers
   const handleInputChange = e => {
@@ -81,37 +178,74 @@ export default function EditTeamBondingRetreat() {
   const handleSubmit = async () => {
     // Validation
     if (!formData.retreatName)
-      return showToast('Retreat Name is required', 'error')
-    if (!aboutRetreat) return showToast('About Retreat is required', 'error')
-    if (!trainingTypes) return showToast('Training Types are required', 'error')
+      return showToast('Error', 'Retreat Name is required', 'error')
+    if (!aboutRetreat)
+      return showToast('Error', 'About Retreat is required', 'error')
+    if (!trainingTypes)
+      return showToast('Error', 'Training Types are required', 'error')
     if (!formData.startDate || !formData.endDate)
-      return showToast('Dates are required', 'error')
-    
-    // Mock Submit
-    console.log({
-      ...formData,
-      aboutRetreat,
-      trainingTypes,
-      importantInfo,
-      slots,
-      mainImage
-    })
+      return showToast('Error', 'Dates are required', 'error')
 
-    showToast('Retreat updated successfully', 'success')
+    const data = new FormData()
+    data.append('teamBondingRetreatName', formData.retreatName)
+    data.append('teamBondingRetreatAbout', aboutRetreat)
+    data.append('trainingTypesAvailable', trainingTypes)
+    data.append('duration', formData.duration)
+    data.append('startDate', formData.startDate)
+    data.append('endDate', formData.endDate)
+    data.append('startTime', formData.startTime)
+    data.append('endTime', formData.endTime)
+    data.append('location', formData.location)
+    data.append('locationCoordinates', formData.locationCoordinates)
+    data.append('importantInformation', importantInfo)
+
+    // Append Slots
+    const slotsPayload = slots.map(slot => ({
+      slotName: slot.name,
+      date: slot.date,
+      time: slot.time,
+      inventory: slot.inventory,
+      price: slot.price
+    }))
+    data.append('slots', JSON.stringify(slotsPayload))
+
+    if (mainImage) {
+      data.append('image', mainImage)
+    }
+
+    try {
+      const response = await updateTeamBondingRetreat(id, data)
+      if (response?.data?.success) {
+        showToast('Success', 'Retreat updated successfully', 'success')
+        setTimeout(() => {
+          router.push('/team-bonding-retreat')
+        }, 1000)
+      } else {
+        showToast(
+          'Error',
+          response?.data?.message || 'Failed to update retreat',
+          'error'
+        )
+      }
+    } catch (error) {
+      console.error('Error updating retreat:', error)
+      showToast('Error', 'Failed to update retreat', 'error')
+    }
   }
 
-  const showToast = (message, type) => {
-    setToast({ show: true, message, type })
-    setTimeout(() => setToast({ ...toast, show: false }), 3000)
+  const showToast = (title, description, variant = 'success') => {
+    setToastProps({ title, description, variant })
+    setToastOpen(true)
   }
 
   return (
     <div className='min-h-screen bg-gray-50 p-8'>
       <Toast
-        show={toast.show}
-        message={toast.message}
-        type={toast.type}
-        onClose={() => setToast({ ...toast, show: false })}
+        open={toastOpen}
+        onOpenChange={setToastOpen}
+        title={toastProps.title}
+        description={toastProps.description}
+        variant={toastProps.variant}
       />
 
       {/* Header */}
@@ -132,9 +266,7 @@ export default function EditTeamBondingRetreat() {
                 Dashboard
               </Link>
               <span className='mx-2'>/</span>
-              <span className='text-gray-900'>
-                Edit Team Bonding Retreat
-              </span>
+              <span className='text-gray-900'>Edit Team Bonding Retreat</span>
             </nav>
           </div>
         </div>
@@ -167,7 +299,7 @@ export default function EditTeamBondingRetreat() {
               name='retreatName'
               value={formData.retreatName}
               onChange={handleInputChange}
-              className='w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
+              className='w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
               placeholder='Outdoor Team Challenge'
             />
           </div>
@@ -211,7 +343,7 @@ export default function EditTeamBondingRetreat() {
                 name='duration'
                 value={formData.duration}
                 onChange={handleInputChange}
-                className='w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
+                className='w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
               />
             </div>
             <div>
@@ -224,7 +356,7 @@ export default function EditTeamBondingRetreat() {
                   name='startDate'
                   value={formData.startDate}
                   onChange={handleInputChange}
-                  className='w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
+                  className='w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
                 />
               </div>
             </div>
@@ -238,7 +370,7 @@ export default function EditTeamBondingRetreat() {
                   name='endDate'
                   value={formData.endDate}
                   onChange={handleInputChange}
-                  className='w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
+                  className='w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
                 />
               </div>
             </div>
@@ -256,7 +388,7 @@ export default function EditTeamBondingRetreat() {
                   name='startTime'
                   value={formData.startTime}
                   onChange={handleInputChange}
-                  className='w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
+                  className='w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
                 />
                 <Clock className='absolute right-3 top-2.5 h-5 w-5 text-gray-400 pointer-events-none' />
               </div>
@@ -271,7 +403,7 @@ export default function EditTeamBondingRetreat() {
                   name='endTime'
                   value={formData.endTime}
                   onChange={handleInputChange}
-                  className='w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
+                  className='w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
                 />
                 <Clock className='absolute right-3 top-2.5 h-5 w-5 text-gray-400 pointer-events-none' />
               </div>
@@ -311,7 +443,7 @@ export default function EditTeamBondingRetreat() {
                       onChange={e =>
                         handleSlotChange(slot.id, 'name', e.target.value)
                       }
-                      className='w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
+                      className='w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
                       placeholder='Slot 1'
                     />
                   </div>
@@ -322,7 +454,7 @@ export default function EditTeamBondingRetreat() {
                       onChange={e =>
                         handleSlotChange(slot.id, 'date', e.target.value)
                       }
-                      className='w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
+                      className='w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
                     />
                   </div>
                   <div className='col-span-2'>
@@ -332,7 +464,7 @@ export default function EditTeamBondingRetreat() {
                       onChange={e =>
                         handleSlotChange(slot.id, 'time', e.target.value)
                       }
-                      className='w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
+                      className='w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
                     />
                   </div>
                   <div className='col-span-2'>
@@ -342,7 +474,7 @@ export default function EditTeamBondingRetreat() {
                       onChange={e =>
                         handleSlotChange(slot.id, 'inventory', e.target.value)
                       }
-                      className='w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
+                      className='w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
                       placeholder='50'
                     />
                   </div>
@@ -353,7 +485,7 @@ export default function EditTeamBondingRetreat() {
                       onChange={e =>
                         handleSlotChange(slot.id, 'price', e.target.value)
                       }
-                      className='w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
+                      className='w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
                       placeholder='₦10,000'
                     />
                     <button
@@ -379,7 +511,7 @@ export default function EditTeamBondingRetreat() {
                 name='location'
                 value={formData.location}
                 onChange={handleInputChange}
-                className='w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
+                className='w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
                 placeholder='Lekki Phase 1, Lagos'
               />
             </div>
@@ -392,7 +524,7 @@ export default function EditTeamBondingRetreat() {
                 name='locationCoordinates'
                 value={formData.locationCoordinates}
                 onChange={handleInputChange}
-                className='w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
+                className='w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
                 placeholder='6.449942, 3.442864'
               />
             </div>

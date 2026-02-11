@@ -55,7 +55,7 @@ const TableHeaderCell = ({ children, align = 'left' }) => (
   </div>
 )
 
-export default function TeamBondingRetreatSessionMaster() {
+export default function TeamBondingRetreatSessionMaster () {
   const router = useRouter()
   const params = useParams()
   const { id } = params || {}
@@ -65,7 +65,8 @@ export default function TeamBondingRetreatSessionMaster() {
     sessionName: 'Small Team Package',
     participants: '10',
     price: '₦10,000',
-    details: '<p>Ideal for teams of up to 10 participants. Includes guided challenges, equipment, & facilitator support.</p>'
+    details:
+      '<p>Ideal for teams of up to 10 participants. Includes guided challenges, equipment, & facilitator support.</p>'
   })
 
   // Table State
@@ -76,11 +77,16 @@ export default function TeamBondingRetreatSessionMaster() {
   const dropdownRef = useRef(null)
 
   // Toast State
-  const [toast, setToast] = useState({ show: false, message: '', type: '' })
+  const [toastOpen, setToastOpen] = useState(false)
+  const [toastProps, setToastProps] = useState({
+    title: '',
+    description: '',
+    variant: 'success'
+  })
 
-  const showToast = (message, type) => {
-    setToast({ show: true, message, type })
-    setTimeout(() => setToast({ ...toast, show: false }), 3000)
+  const showToast = (title, description, variant = 'success') => {
+    setToastProps({ title, description, variant })
+    setToastOpen(true)
   }
 
   // Close dropdown when clicking outside
@@ -111,19 +117,20 @@ export default function TeamBondingRetreatSessionMaster() {
   const handleFormSubmit = () => {
     // Mock submit logic
     if (!formData.sessionName || !formData.price || !formData.participants) {
-      showToast('Please fill in all required fields', 'error')
+      showToast('Error', 'Please fill in all required fields', 'error')
       return
     }
-    showToast('Session saved successfully', 'success')
+    showToast('Success', 'Session saved successfully', 'success')
   }
 
   return (
     <div className='min-h-screen bg-[#F8F9FC] p-6'>
       <Toast
-        show={toast.show}
-        message={toast.message}
-        type={toast.type}
-        onClose={() => setToast({ ...toast, show: false })}
+        open={toastOpen}
+        onOpenChange={setToastOpen}
+        title={toastProps.title}
+        description={toastProps.description}
+        variant={toastProps.variant}
       />
 
       {/* Header */}
