@@ -1195,10 +1195,10 @@ export default function UsersForm ({
             </div>
             <div className='flex flex-col gap-1 text-right'>
               <div className='bg-red-100/80 px-2 py-0.5 rounded text-[10px] text-red-600 border border-red-200'>
-                Total Unregister counts: {globalStats.unregistered}
+                Total Unactivated counts: {globalStats.unregistered}
               </div>
               <div className='bg-blue-100/80 px-2 py-0.5 rounded text-[10px] text-blue-600 border border-blue-200'>
-                Total Register counts: {globalStats.registered}
+                Total Activated counts: {globalStats.registered}
               </div>
             </div>
           </div>
