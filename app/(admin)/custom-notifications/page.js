@@ -323,7 +323,8 @@ const CustomNotificationsPage = () => {
                       label: 'Merchandise Buyers',
                       value: 'merchandise_buyers'
                     },
-                    { label: 'Voucher Holders', value: 'voucher_holders' }
+                    { label: 'Voucher Holders', value: 'voucher_holders' },
+                    { label: 'Unregistered Users', value: 'unregistered_users' }
                   ].map(option => (
                     <label
                       key={option.value}
