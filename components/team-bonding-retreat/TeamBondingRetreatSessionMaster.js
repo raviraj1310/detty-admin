@@ -15,34 +15,15 @@ import { IoFilterSharp } from 'react-icons/io5'
 import { TbCaretUpDownFilled } from 'react-icons/tb'
 import TiptapEditor from '@/components/editor/TiptapEditor'
 import Toast from '@/components/ui/Toast'
+import {
+  getTeamBondingRetreatSessionList,
+  createTeamBondingRetreatSession,
+  updateSessionById,
+  deleteSessionById,
+  activeInactiveSessionById
+} from '@/services/v2/team/team-bonding-retreat.service'
 
-// Mock Data for Table
-const MOCK_SESSIONS = [
-  {
-    _id: '1',
-    createdAt: '2025-06-12T10:00:00',
-    name: 'Small Team Package',
-    participants: '10',
-    price: '₦10,000',
-    isActive: true
-  },
-  {
-    _id: '2',
-    createdAt: '2025-06-12T10:00:00',
-    name: 'Medium Team Package',
-    participants: '10-20',
-    price: '₦10,000',
-    isActive: true
-  },
-  {
-    _id: '3',
-    createdAt: '2025-06-12T10:00:00',
-    name: 'Large Team Package',
-    participants: '20-40',
-    price: '₦10,000',
-    isActive: false
-  }
-]
+// Mock Data for Tabl
 
 const TableHeaderCell = ({ children, align = 'left' }) => (
   <div
@@ -59,18 +40,19 @@ export default function TeamBondingRetreatSessionMaster () {
   const router = useRouter()
   const params = useParams()
   const { id } = params || {}
+  const [isEditing, setIsEditing] = useState(false)
+  const [currentSessionId, setCurrentSessionId] = useState(null)
 
   // Form State
   const [formData, setFormData] = useState({
-    sessionName: 'Small Team Package',
-    participants: '10',
-    price: '₦10,000',
-    details:
-      '<p>Ideal for teams of up to 10 participants. Includes guided challenges, equipment, & facilitator support.</p>'
+    sessionName: '',
+    participants: '',
+    price: '',
+    details: ''
   })
 
   // Table State
-  const [sessions, setSessions] = useState(MOCK_SESSIONS)
+  const [sessions, setSessions] = useState([])
   const [loading, setLoading] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
   const [activeDropdown, setActiveDropdown] = useState(null)
@@ -100,6 +82,25 @@ export default function TeamBondingRetreatSessionMaster () {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
+  const fetchSessions = async () => {
+    if (!id) return
+    setLoading(true)
+    try {
+      const res = await getTeamBondingRetreatSessionList(id)
+      const list = res?.data || res || []
+      setSessions(Array.isArray(list) ? list : [])
+    } catch (error) {
+      console.error('Failed to fetch sessions:', error)
+      showToast('Error', 'Failed to fetch sessions', 'error')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchSessions()
+  }, [id])
+
   const handleInputChange = e => {
     const { name, value } = e.target
     setFormData(prev => ({ ...prev, [name]: value }))
@@ -114,13 +115,91 @@ export default function TeamBondingRetreatSessionMaster () {
     setActiveDropdown(activeDropdown === id ? null : id)
   }
 
-  const handleFormSubmit = () => {
-    // Mock submit logic
+  const handleFormSubmit = async () => {
     if (!formData.sessionName || !formData.price || !formData.participants) {
       showToast('Error', 'Please fill in all required fields', 'error')
       return
     }
-    showToast('Success', 'Session saved successfully', 'success')
+
+    try {
+      const priceNum = parseFloat(
+        String(formData.price).replace(/[^0-9.]/g, '')
+      )
+      const payload = {
+        teamBondingId: id,
+        sessionName: formData.sessionName,
+        sessionPrice: priceNum,
+        details: formData.details,
+        participants: formData.participants, // Assuming API accepts string, if strictly array, might need splitting or wrapping
+        status: true
+      }
+
+      if (isEditing && currentSessionId) {
+        await updateSessionById(currentSessionId, payload)
+        showToast('Success', 'Session updated successfully', 'success')
+      } else {
+        await createTeamBondingRetreatSession(payload)
+        showToast('Success', 'Session created successfully', 'success')
+      }
+
+      // Reset Form
+      setFormData({
+        sessionName: '',
+        participants: '',
+        price: '',
+        details: ''
+      })
+      setIsEditing(false)
+      setCurrentSessionId(null)
+      fetchSessions()
+    } catch (error) {
+      console.error('Submit error:', error)
+      showToast('Error', 'Failed to save session', 'error')
+    }
+  }
+
+  const handleEdit = session => {
+    setFormData({
+      sessionName: session.name || session.sessionName || '',
+      participants: session.participants || '',
+      price: session.price || session.sessionPrice || '',
+      details: session.details || ''
+    })
+    setIsEditing(true)
+    setCurrentSessionId(session._id)
+    setActiveDropdown(null)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  const handleDelete = async sessionId => {
+    if (!window.confirm('Are you sure you want to delete this session?')) return
+    try {
+      await deleteSessionById(sessionId)
+      showToast('Success', 'Session deleted successfully', 'success')
+      fetchSessions()
+    } catch (error) {
+      console.error('Delete error:', error)
+      showToast('Error', 'Failed to delete session', 'error')
+    } finally {
+      setActiveDropdown(null)
+    }
+  }
+
+  const handleStatusChange = async (sessionId, status) => {
+    try {
+      await activeInactiveSessionById(sessionId, { status })
+      showToast(
+        'Success',
+        `Session marked as ${status ? 'Active' : 'Inactive'}`,
+        'success'
+      )
+      fetchSessions()
+    } catch (error) {
+      console.error('Status change error:', error)
+      showToast('Error', 'Failed to update status', 'error')
+    } finally {
+      setActiveDropdown(null)
+    }
   }
 
   return (
@@ -161,7 +240,7 @@ export default function TeamBondingRetreatSessionMaster () {
             onClick={handleFormSubmit}
             className='rounded-lg bg-[#FF4400] px-6 py-2.5 text-sm font-medium text-white hover:bg-[#E63E00]'
           >
-            Add
+            {isEditing ? 'Update' : 'Add'}
           </button>
         </div>
 
@@ -343,19 +422,31 @@ export default function TeamBondingRetreatSessionMaster () {
                           ref={dropdownRef}
                           className='absolute right-6 top-12 z-10 w-48 rounded-xl border border-[#E1E6F7] bg-white p-1.5 shadow-lg text-left'
                         >
-                          <button className='flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-[#475569] hover:bg-[#F8F9FC] hover:text-[#1E293B]'>
+                          <button
+                            onClick={() => handleEdit(session)}
+                            className='flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-[#475569] hover:bg-[#F8F9FC] hover:text-[#1E293B]'
+                          >
                             Edit
                           </button>
                           <div className='my-1 h-px bg-gray-100' />
-                          <button className='flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-[#EF4444] hover:bg-[#FFF0F0] hover:text-[#EF4444]'>
+                          <button
+                            onClick={() => handleDelete(session._id)}
+                            className='flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-[#EF4444] hover:bg-[#FFF0F0] hover:text-[#EF4444]'
+                          >
                             Delete
                           </button>
                           <div className='my-1 h-px bg-gray-100' />
-                          <button className='flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-[#475569] hover:bg-[#F8F9FC] hover:text-[#1E293B]'>
+                          <button
+                            onClick={() => handleStatusChange(session._id, true)}
+                            className='flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-[#475569] hover:bg-[#F8F9FC] hover:text-[#1E293B]'
+                          >
                             Active
                           </button>
                           <div className='my-1 h-px bg-gray-100' />
-                          <button className='flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-[#475569] hover:bg-[#F8F9FC] hover:text-[#1E293B]'>
+                          <button
+                            onClick={() => handleStatusChange(session._id, false)}
+                            className='flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-[#475569] hover:bg-[#F8F9FC] hover:text-[#1E293B]'
+                          >
                             Inactive
                           </button>
                         </div>
