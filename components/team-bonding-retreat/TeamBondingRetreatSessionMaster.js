@@ -9,7 +9,8 @@ import {
   MoreVertical,
   Plus,
   Loader2,
-  ChevronLeft
+  ChevronLeft,
+  AlertCircle
 } from 'lucide-react'
 import { IoFilterSharp } from 'react-icons/io5'
 import { TbCaretUpDownFilled } from 'react-icons/tb'
@@ -57,6 +58,12 @@ export default function TeamBondingRetreatSessionMaster () {
   const [searchTerm, setSearchTerm] = useState('')
   const [activeDropdown, setActiveDropdown] = useState(null)
   const dropdownRef = useRef(null)
+  const [dropdownPos, setDropdownPos] = useState({ top: 0, right: 0 })
+
+  // Delete Modal State
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [deleteId, setDeleteId] = useState(null)
+  const [deleting, setDeleting] = useState(false)
 
   // Toast State
   const [toastOpen, setToastOpen] = useState(false)
@@ -87,7 +94,7 @@ export default function TeamBondingRetreatSessionMaster () {
     setLoading(true)
     try {
       const res = await getTeamBondingRetreatSessionList(id)
-      const list = res?.data || res || []
+      const list = res?.data?.data || res?.data || res || []
       setSessions(Array.isArray(list) ? list : [])
     } catch (error) {
       console.error('Failed to fetch sessions:', error)
@@ -112,7 +119,16 @@ export default function TeamBondingRetreatSessionMaster () {
 
   const toggleDropdown = (e, id) => {
     e.stopPropagation()
-    setActiveDropdown(activeDropdown === id ? null : id)
+    if (activeDropdown === id) {
+      setActiveDropdown(null)
+    } else {
+      const rect = e.currentTarget.getBoundingClientRect()
+      setDropdownPos({
+        top: rect.bottom,
+        right: window.innerWidth - rect.right
+      })
+      setActiveDropdown(id)
+    }
   }
 
   const handleFormSubmit = async () => {
@@ -171,18 +187,27 @@ export default function TeamBondingRetreatSessionMaster () {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
-  const handleDelete = async sessionId => {
-    if (!window.confirm('Are you sure you want to delete this session?')) return
+  const confirmDelete = async () => {
+    if (!deleteId) return
+    setDeleting(true)
     try {
-      await deleteSessionById(sessionId)
+      await deleteSessionById(deleteId)
       showToast('Success', 'Session deleted successfully', 'success')
       fetchSessions()
+      setConfirmOpen(false)
     } catch (error) {
       console.error('Delete error:', error)
       showToast('Error', 'Failed to delete session', 'error')
     } finally {
-      setActiveDropdown(null)
+      setDeleting(false)
+      setDeleteId(null)
     }
+  }
+
+  const handleDelete = sessionId => {
+    setDeleteId(sessionId)
+    setConfirmOpen(true)
+    setActiveDropdown(null)
   }
 
   const handleStatusChange = async (sessionId, status) => {
@@ -385,28 +410,28 @@ export default function TeamBondingRetreatSessionMaster () {
                       })}
                     </td>
                     <td className='py-4 px-6 text-sm font-medium text-[#1E293B]'>
-                      {session.name}
+                      {session.sessionName}
                     </td>
                     <td className='py-4 px-6 text-sm text-[#64748B]'>
-                      {session.participants}
+                      {session.participants || '-'}
                     </td>
                     <td className='py-4 px-6 text-sm text-[#64748B]'>
-                      {session.price}
+                      {session.sessionPrice}
                     </td>
                     <td className='py-4 px-6'>
                       <span
                         className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium ${
-                          session.isActive
+                          session.status
                             ? 'border-[#22C55E] text-[#22C55E]'
                             : 'border-[#EF4444] text-[#EF4444]'
                         }`}
                       >
                         <span
                           className={`h-1.5 w-1.5 rounded-full ${
-                            session.isActive ? 'bg-[#22C55E]' : 'bg-[#EF4444]'
+                            session.status ? 'bg-[#22C55E]' : 'bg-[#EF4444]'
                           }`}
                         ></span>
-                        {session.isActive ? 'Active' : 'Inactive'}
+                        {session.status ? 'Active' : 'Inactive'}
                       </span>
                     </td>
                     <td className='py-4 px-6 text-right relative'>
@@ -416,41 +441,6 @@ export default function TeamBondingRetreatSessionMaster () {
                       >
                         <MoreVertical className='h-4 w-4' />
                       </button>
-
-                      {activeDropdown === session._id && (
-                        <div
-                          ref={dropdownRef}
-                          className='absolute right-6 top-12 z-10 w-48 rounded-xl border border-[#E1E6F7] bg-white p-1.5 shadow-lg text-left'
-                        >
-                          <button
-                            onClick={() => handleEdit(session)}
-                            className='flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-[#475569] hover:bg-[#F8F9FC] hover:text-[#1E293B]'
-                          >
-                            Edit
-                          </button>
-                          <div className='my-1 h-px bg-gray-100' />
-                          <button
-                            onClick={() => handleDelete(session._id)}
-                            className='flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-[#EF4444] hover:bg-[#FFF0F0] hover:text-[#EF4444]'
-                          >
-                            Delete
-                          </button>
-                          <div className='my-1 h-px bg-gray-100' />
-                          <button
-                            onClick={() => handleStatusChange(session._id, true)}
-                            className='flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-[#475569] hover:bg-[#F8F9FC] hover:text-[#1E293B]'
-                          >
-                            Active
-                          </button>
-                          <div className='my-1 h-px bg-gray-100' />
-                          <button
-                            onClick={() => handleStatusChange(session._id, false)}
-                            className='flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-[#475569] hover:bg-[#F8F9FC] hover:text-[#1E293B]'
-                          >
-                            Inactive
-                          </button>
-                        </div>
-                      )}
                     </td>
                   </tr>
                 ))
@@ -459,6 +449,106 @@ export default function TeamBondingRetreatSessionMaster () {
           </table>
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {confirmOpen && (
+        <div className='fixed inset-0 z-50 flex items-center justify-center'>
+          <div
+            className='absolute inset-0 bg-black/40'
+            onClick={() => {
+              if (!deleting) {
+                setConfirmOpen(false)
+              }
+            }}
+          />
+          <div className='relative z-50 w-full max-w-md rounded-2xl border border-[#E5E8F6] bg-white p-6 shadow-2xl'>
+            <div className='flex items-start gap-4'>
+              <div className='rounded-full bg-red-100 p-3'>
+                <AlertCircle className='h-6 w-6 text-red-600' />
+              </div>
+              <div className='flex-1'>
+                <div className='text-lg font-semibold text-slate-900'>
+                  Delete this session?
+                </div>
+                <div className='mt-1 text-sm text-[#5E6582]'>
+                  This action cannot be undone.
+                </div>
+              </div>
+            </div>
+            <div className='mt-6 flex justify-end gap-3'>
+              <button
+                onClick={() => {
+                  if (!deleting) {
+                    setConfirmOpen(false)
+                  }
+                }}
+                className='rounded-xl border border-[#E5E6EF] bg-white px-5 py-2.5 text-sm font-medium text-[#1A1F3F] shadow-sm transition hover:bg-[#F9FAFD]'
+                disabled={deleting}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDelete}
+                disabled={deleting}
+                className='rounded-xl bg-red-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg transition hover:bg-red-700 disabled:opacity-60 disabled:cursor-not-allowed'
+              >
+                {deleting ? (
+                  <span className='flex items-center gap-2'>
+                    <Loader2 className='h-4 w-4 animate-spin' />
+                    Deleting...
+                  </span>
+                ) : (
+                  'Delete'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Fixed Dropdown Menu */}
+      {activeDropdown && (
+        <div
+          ref={dropdownRef}
+          className='fixed z-50 w-48 rounded-xl border border-[#E1E6F7] bg-white p-1.5 shadow-lg text-left'
+          style={{ top: dropdownPos.top, right: dropdownPos.right }}
+        >
+          {(() => {
+            const session = sessions.find(s => s._id === activeDropdown)
+            if (!session) return null
+            return (
+              <>
+                <button
+                  onClick={() => handleEdit(session)}
+                  className='flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-[#475569] hover:bg-[#F8F9FC] hover:text-[#1E293B]'
+                >
+                  Edit
+                </button>
+                <div className='my-1 h-px bg-gray-100' />
+                <button
+                  onClick={() => handleDelete(session._id)}
+                  className='flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-[#EF4444] hover:bg-[#FFF0F0] hover:text-[#EF4444]'
+                >
+                  Delete
+                </button>
+                <div className='my-1 h-px bg-gray-100' />
+                <button
+                  onClick={() => handleStatusChange(session._id, true)}
+                  className='flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-[#475569] hover:bg-[#F8F9FC] hover:text-[#1E293B]'
+                >
+                  Active
+                </button>
+                <div className='my-1 h-px bg-gray-100' />
+                <button
+                  onClick={() => handleStatusChange(session._id, false)}
+                  className='flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-[#475569] hover:bg-[#F8F9FC] hover:text-[#1E293B]'
+                >
+                  Inactive
+                </button>
+              </>
+            )
+          })()}
+        </div>
+      )}
     </div>
   )
 }
