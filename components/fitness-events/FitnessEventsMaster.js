@@ -20,61 +20,22 @@ import {
 import { IoFilterSharp } from 'react-icons/io5'
 import { TbCaretUpDownFilled } from 'react-icons/tb'
 import Toast from '@/components/ui/Toast'
+import {
+  getAllFitnessEvent,
+  deleteFitnessEvent,
+  activeInactiveFitnessEvent
+} from '@/services/fitness-event/fitness-event.service'
 
 // Mock Data for Metrics
 const INITIAL_METRICS = {
-  totalEvents: 1155,
-  doneEvents: 1137,
-  ongoingEvents: 1137,
-  upcomingEvents: 299,
-  totalBookings: 1155,
-  revenue: '865(₦10,00,000)',
-  cancelledBookings: '299(₦2,00,000)'
+  totalEvents: 0,
+  doneEvents: 0,
+  ongoingEvents: 0,
+  upcomingEvents: 0,
+  totalBookings: 0,
+  revenue: '0',
+  cancelledBookings: '0'
 }
-
-// Mock Data for Table
-const MOCK_EVENTS = [
-  {
-    _id: '1',
-    createdAt: '2025-06-12T10:00:00',
-    eventName: 'Fitness Bootcamp & Yoga',
-    image: '/images/dashboard/image-1.webp', // Placeholder
-    hostedBy: 'ProActive Gym',
-    location: 'Ikoyi, Lagos',
-    bookingsCount: 100,
-    status: 'Done'
-  },
-  {
-    _id: '2',
-    createdAt: '2025-06-12T10:00:00',
-    eventName: 'Outdoor Marathon',
-    image: '/images/dashboard/image-1.webp', // Placeholder
-    hostedBy: 'ProActive Gym',
-    location: 'Ikoyi, Lagos',
-    bookingsCount: 100,
-    status: 'Done'
-  },
-  {
-    _id: '3',
-    createdAt: '2025-06-12T10:00:00',
-    eventName: 'Corporate Fitness Offsite',
-    image: '/images/dashboard/image-1.webp', // Placeholder
-    hostedBy: 'ProActive Gym',
-    location: 'Ikoyi, Lagos',
-    bookingsCount: 100,
-    status: 'Upcoming'
-  },
-  {
-    _id: '4',
-    createdAt: '2025-06-12T10:00:00',
-    eventName: 'Fitness Bootcamp & Yoga',
-    image: '/images/dashboard/image-1.webp', // Placeholder
-    hostedBy: 'ProActive Gym',
-    location: 'Ikoyi, Lagos',
-    bookingsCount: 100,
-    status: 'Done'
-  }
-]
 
 const TableHeaderCell = ({ children, align = 'left' }) => (
   <div
@@ -108,6 +69,25 @@ const MetricCard = ({
   </div>
 )
 
+const getImageUrl = path => {
+  if (!path) return null
+  if (path.startsWith('http')) return path
+
+  const baseUrl =
+    process.env.NEXT_PUBLIC_SIM_IMAGE_BASE_ORIGIN ||
+    process.env.NEXT_PUBLIC_API_BASE_URL
+
+  if (!baseUrl) return path
+
+  try {
+    const { origin } = new URL(baseUrl)
+    const cleanPath = path.startsWith('/') ? path.slice(1) : path
+    return `${origin}/${cleanPath}`
+  } catch {
+    return path
+  }
+}
+
 export default function FitnessEventsMaster () {
   const router = useRouter()
   const [searchTerm, setSearchTerm] = useState('')
@@ -120,7 +100,12 @@ export default function FitnessEventsMaster () {
   const [deleting, setDeleting] = useState(false)
 
   // Toast State
-  const [toast, setToast] = useState({ show: false, message: '', type: '' })
+  const [toast, setToast] = useState({
+    open: false,
+    title: '',
+    description: '',
+    variant: 'success'
+  })
 
   // Delete Confirmation State
   const [confirmOpen, setConfirmOpen] = useState(false)
@@ -132,36 +117,91 @@ export default function FitnessEventsMaster () {
     setActiveDropdown(null)
   }
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     setDeleting(true)
-    setTimeout(() => {
-      setEvents(events.filter(e => e._id !== deleteId))
-      setConfirmOpen(false)
-      setDeleteId(null)
+    try {
+      const response = await deleteFitnessEvent(deleteId)
+      if (response?.success || response?.data?.success) {
+        setEvents(events.filter(e => e._id !== deleteId))
+        showToast('Event deleted successfully', 'success')
+        setConfirmOpen(false)
+        setDeleteId(null)
+      } else {
+        showToast(response?.message || 'Failed to delete event', 'error')
+      }
+    } catch (error) {
+      console.error('Delete error:', error)
+      showToast('An error occurred while deleting', 'error')
+    } finally {
       setDeleting(false)
-      showToast('Event deleted successfully', 'success')
-    }, 1000)
+    }
   }
 
-  const handleStatusChange = (id, newStatus) => {
-    // This is just a mock update. In real app, we might toggle Active/Inactive or change event status
-    // For now, let's just show a toast as "Status Updated"
+  const handleStatusChange = async (id, newStatus) => {
     setActiveDropdown(null)
-    showToast(`Event status updated to ${newStatus}`, 'success')
+    try {
+      const status = newStatus === 'Active'
+      const response = await activeInactiveFitnessEvent(id, { status })
+      if (response?.success || response?.data?.success) {
+        showToast(`Event status updated to ${newStatus}`, 'success')
+        setEvents(prevEvents =>
+          prevEvents.map(event =>
+            event._id === id ? { ...event, status: status } : event
+          )
+        )
+      } else {
+        showToast(response?.message || 'Failed to update status', 'error')
+      }
+    } catch (error) {
+      console.error('Status update error:', error)
+      showToast('An error occurred while updating status', 'error')
+    }
   }
 
   useEffect(() => {
-    // Simulate API fetch
     const fetchData = async () => {
       setLoading(true)
       try {
-        // In a real app, we would fetch from API here
-        setTimeout(() => {
-          setEvents(MOCK_EVENTS)
-          setLoading(false)
-        }, 1000)
+        const response = await getAllFitnessEvent()
+        if (response?.success || response?.data?.success) {
+          const data = response?.data?.data || response?.data || {}
+          const eventList = data.events || []
+          const stats = data.stats || {}
+
+          const formattedEvents = eventList.map(event => {
+            // Calculate status based on dates
+            const now = new Date()
+            const start = new Date(event.startDate)
+            const end = new Date(event.endDate)
+            let timeStatus = 'Upcoming'
+            if (now > end) timeStatus = 'Done'
+            else if (now >= start && now <= end) timeStatus = 'Ongoing'
+
+            return {
+              ...event,
+              eventName: event.fitnessEventName,
+              status: event.status, // Use API boolean status
+              timeStatus: timeStatus,
+              bookingsCount: 0, // Not provided in API
+              image: getImageUrl(event.image) || null
+            }
+          })
+
+          setEvents(formattedEvents)
+          setMetrics({
+            totalEvents: stats.totalEvents || 0,
+            doneEvents: stats.completedEvents || 0,
+            ongoingEvents: stats.ongoingEvents || 0,
+            upcomingEvents: stats.upcomingEvents || 0,
+            totalBookings: 0,
+            revenue: '0',
+            cancelledBookings: '0'
+          })
+        }
       } catch (error) {
         console.error('Error fetching events:', error)
+        showToast('Failed to fetch events', 'error')
+      } finally {
         setLoading(false)
       }
     }
@@ -179,9 +219,13 @@ export default function FitnessEventsMaster () {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-  const showToast = (message, type) => {
-    setToast({ show: true, message, type })
-    setTimeout(() => setToast({ ...toast, show: false }), 3000)
+  const showToast = (message, type = 'success') => {
+    setToast({
+      open: true,
+      title: type === 'success' ? 'Success' : 'Error',
+      description: message,
+      variant: type
+    })
   }
 
   const toggleDropdown = (e, id) => {
@@ -191,12 +235,10 @@ export default function FitnessEventsMaster () {
 
   const getStatusColor = status => {
     switch (status) {
-      case 'Done':
+      case true:
         return 'border-[#22C55E] text-[#22C55E]'
-      case 'Upcoming':
+      case false:
         return 'border-[#EF4444] text-[#EF4444]'
-      case 'Ongoing':
-        return 'border-[#F59E0B] text-[#F59E0B]'
       default:
         return 'border-gray-300 text-gray-500'
     }
@@ -204,12 +246,10 @@ export default function FitnessEventsMaster () {
 
   const getStatusDotColor = status => {
     switch (status) {
-      case 'Done':
+      case true:
         return 'bg-[#22C55E]'
-      case 'Upcoming':
+      case false:
         return 'bg-[#EF4444]'
-      case 'Ongoing':
-        return 'bg-[#F59E0B]'
       default:
         return 'bg-gray-500'
     }
@@ -218,10 +258,11 @@ export default function FitnessEventsMaster () {
   return (
     <div className='min-h-screen bg-[#F8F9FC] p-6'>
       <Toast
-        show={toast.show}
-        message={toast.message}
-        type={toast.type}
-        onClose={() => setToast({ ...toast, show: false })}
+        open={toast.open}
+        onOpenChange={open => setToast(prev => ({ ...prev, open }))}
+        title={toast.title}
+        description={toast.description}
+        variant={toast.variant}
       />
 
       {/* Header */}
@@ -406,6 +447,7 @@ export default function FitnessEventsMaster () {
                             alt={event.eventName}
                             fill
                             className='object-cover'
+                            unoptimized={true}
                           />
                         </div>
                         <span className='text-sm font-medium text-[#1E293B]'>
@@ -414,7 +456,9 @@ export default function FitnessEventsMaster () {
                       </div>
                     </td>
                     <td className='py-4 px-6 text-sm text-[#64748B]'>
-                      {event.hostedBy}
+                      {typeof event.hostedBy === 'object'
+                        ? event.hostedBy?.name
+                        : event.hostedBy}
                     </td>
                     <td className='py-4 px-6 text-sm text-[#64748B]'>
                       {event.location}
@@ -440,7 +484,7 @@ export default function FitnessEventsMaster () {
                             event.status
                           )}`}
                         ></span>
-                        {event.status}
+                        {event.status === true ? 'Active' : 'Inactive'}
                       </span>
                     </td>
                     <td className='py-4 px-6 text-right relative'>
@@ -482,7 +526,7 @@ export default function FitnessEventsMaster () {
                             }
                             className='flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-[#475569] hover:bg-[#F8F9FC] hover:text-[#1E293B]'
                           >
-                            View/Edit Session
+                            View/Edit Fitness Event Pass
                           </button>
                           <div className='my-1 h-px bg-gray-100' />
                           <button
@@ -521,37 +565,39 @@ export default function FitnessEventsMaster () {
       </div>
       {/* Delete Confirmation Modal */}
       {confirmOpen && (
-        <div className='fixed inset-0 z-50 flex items-center justify-center'>
+        <div className='fixed inset-0 z-40 flex items-center justify-center'>
           <div
             className='absolute inset-0 bg-black/40'
             onClick={() => {
               if (!deleting) {
                 setConfirmOpen(false)
+                setDeleteId(null)
               }
             }}
           />
-          <div className='relative z-50 w-full max-w-md rounded-2xl border border-[#E5E8F6] bg-white p-6 shadow-2xl'>
-            <div className='flex items-start gap-4'>
-              <div className='rounded-full bg-red-100 p-3'>
-                <AlertCircle className='h-6 w-6 text-red-600' />
+          <div className='relative z-50 w-full max-w-sm rounded-xl border border-[#E5E8F6] bg-white p-5 shadow-lg'>
+            <div className='flex items-start gap-3'>
+              <div className='rounded-full bg-red-100 p-2'>
+                <AlertCircle className='h-5 w-5 text-red-600' />
               </div>
               <div className='flex-1'>
-                <div className='text-lg font-semibold text-slate-900'>
+                <div className='text-sm font-semibold text-slate-900'>
                   Delete this event?
                 </div>
-                <div className='mt-1 text-sm text-[#5E6582]'>
+                <div className='mt-1 text-xs text-[#5E6582]'>
                   This action cannot be undone.
                 </div>
               </div>
             </div>
-            <div className='mt-6 flex justify-end gap-3'>
+            <div className='mt-4 flex justify-end gap-2'>
               <button
                 onClick={() => {
                   if (!deleting) {
                     setConfirmOpen(false)
+                    setDeleteId(null)
                   }
                 }}
-                className='rounded-xl border border-[#E5E6EF] bg-white px-5 py-2.5 text-sm font-medium text-[#1A1F3F] shadow-sm transition hover:bg-[#F9FAFD]'
+                className='rounded-lg border border-[#E5E6EF] bg-white px-4 py-1.5 text-xs font-medium text-[#1A1F3F] transition hover:bg-[#F9FAFD]'
                 disabled={deleting}
               >
                 Cancel
@@ -559,11 +605,11 @@ export default function FitnessEventsMaster () {
               <button
                 onClick={confirmDelete}
                 disabled={deleting}
-                className='rounded-xl bg-red-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg transition hover:bg-red-700 disabled:opacity-60 disabled:cursor-not-allowed'
+                className='rounded-lg bg-red-600 px-4 py-1.5 text-xs font-semibold text-white transition hover:bg-red-700 disabled:opacity-60 disabled:cursor-not-allowed'
               >
                 {deleting ? (
-                  <span className='flex items-center gap-2'>
-                    <Loader2 className='h-4 w-4 animate-spin' />
+                  <span className='flex items-center gap-1'>
+                    <Loader2 className='h-3.5 w-3.5 animate-spin' />
                     Deleting...
                   </span>
                 ) : (

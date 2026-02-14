@@ -9,43 +9,32 @@ import {
   Download,
   MoreVertical,
   Trash2,
-  Edit2
+  Edit2,
+  Loader2
 } from 'lucide-react'
 import { IoFilterSharp } from 'react-icons/io5'
 import { TbCaretUpDownFilled } from 'react-icons/tb'
 import TiptapEditor from '@/components/editor/TiptapEditor'
 import Toast from '@/components/ui/Toast'
+import {
+  createFitnessEventPass,
+  getEventPassList,
+  getEventPassById,
+  updateEventPass,
+  deleteEventPass,
+  activeInactiveEventPass
+} from '@/services/fitness-event/fitness-event.service'
 
-// Mock Data for Passes
-const MOCK_PASSES = [
-  {
-    id: 1,
-    addedOn: '2025-06-12T10:00:00',
-    passName: 'Entry Pass',
-    passType: 'Single Entry',
-    participants: 1,
-    price: '10,000',
-    status: 'Active'
-  },
-  {
-    id: 2,
-    addedOn: '2025-06-12T10:00:00',
-    passName: 'Premium Pass',
-    passType: 'Group Entry',
-    participants: 4,
-    price: '10,000',
-    status: 'Active'
-  },
-  {
-    id: 3,
-    addedOn: '2025-06-12T10:00:00',
-    passName: 'Fitness Pass',
-    passType: 'Single Entry',
-    participants: 1,
-    price: '10,000',
-    status: 'Inactive'
-  }
-]
+const mapPassFromApi = api => ({
+  id: api._id,
+  addedOn: api.createdAt,
+  passName: api.eventPassName,
+  passType: api.passType === 'group' ? 'Group Entry' : 'Single Entry',
+  participants: api.entryFor,
+  price: api.passPrice,
+  status: api.status ? 'Active' : 'Inactive',
+  details: api.details
+})
 
 const TableHeaderCell = ({ children, align = 'left' }) => (
   <div
@@ -62,19 +51,20 @@ export default function FitnessEventPassManager ({ eventId }) {
   const router = useRouter()
 
   // State
-  const [passes, setPasses] = useState(MOCK_PASSES)
+  const [passes, setPasses] = useState([])
   const [formData, setFormData] = useState({
-    passName: 'Entry Pass',
-    passType: 'Single Entry', // 'Single Entry' | 'Group Entry'
-    participants: '1',
-    price: '10,000'
+    passName: '',
+    passType: '',
+    participants: '',
+    price: ''
   })
-  const [details, setDetails] = useState(
-    '<p>Ideal for teams of up to 2 participants. Includes guided challenges, equipment, & facilitator support.</p>'
-  )
+  const [details, setDetails] = useState('')
   const [isEditing, setIsEditing] = useState(null) // null or pass ID
   const [activeDropdown, setActiveDropdown] = useState(null)
   const [toast, setToast] = useState({ show: false, message: '', type: '' })
+  const [loading, setLoading] = useState(false)
+  const [editLoading, setEditLoading] = useState(false)
+  // Dropdown menu positioning not needed (inline absolute like GymAccess)
 
   // Handlers
   const handleInputChange = e => {
@@ -90,64 +80,149 @@ export default function FitnessEventPassManager ({ eventId }) {
     }))
   }
 
-  const handleAddOrUpdate = () => {
+  const fetchPasses = async () => {
+    if (!eventId) return
+    setLoading(true)
+    try {
+      const res = await getEventPassList(eventId)
+      if (res?.success || res?.data?.success) {
+        const list =
+          res?.data?.data?.passes ??
+          res?.data?.passes ??
+          (Array.isArray(res?.data?.data)
+            ? res?.data?.data
+            : res?.data?.data) ??
+          (Array.isArray(res?.data) ? res?.data : res?.data) ??
+          []
+        setPasses(Array.isArray(list) ? list.map(mapPassFromApi) : [])
+      } else {
+        showToast(res?.message || 'Failed to fetch event passes', 'error')
+      }
+    } catch (err) {
+      showToast(
+        err?.response?.data?.message ||
+          err?.message ||
+          'Failed to fetch passes',
+        'error'
+      )
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchPasses()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [eventId])
+
+  const handleAddOrUpdate = async () => {
     // Validation
     if (!formData.passName) return showToast('Pass Name is required', 'error')
     if (!formData.price) return showToast('Price is required', 'error')
+    if (formData.passType === 'Group Entry' && !formData.participants)
+      return showToast('Participants is required for Group Entry', 'error')
 
-    if (isEditing) {
-      // Update existing
-      setPasses(
-        passes.map(p =>
-          p.id === isEditing
-            ? {
-                ...p,
-                passName: formData.passName,
-                passType: formData.passType,
-                participants: parseInt(formData.participants),
-                price: formData.price
-              }
-            : p
-        )
-      )
-      showToast('Pass updated successfully', 'success')
-      setIsEditing(null)
-    } else {
-      // Add new
-      const newPass = {
-        id: Date.now(),
-        addedOn: new Date().toISOString(),
-        passName: formData.passName,
-        passType: formData.passType,
-        participants: parseInt(formData.participants),
-        price: formData.price,
-        status: 'Active'
+    try {
+      const payload = {
+        fitnessEventId: eventId,
+        eventPassName: formData.passName,
+        passType: formData.passType === 'Group Entry' ? 'group' : 'single',
+        passPrice: formData.price,
+        details
       }
-      setPasses([newPass, ...passes])
-      showToast('Pass added successfully', 'success')
+
+      if (isEditing) {
+        const res = await updateEventPass(isEditing, payload)
+        if (res?.success || res?.data?.success) {
+          showToast('Pass updated successfully', 'success')
+          setIsEditing(null)
+          await fetchPasses()
+        } else {
+          showToast(res?.message || 'Failed to update pass', 'error')
+        }
+      } else {
+        const res = await createFitnessEventPass(payload)
+        if (res?.success || res?.data?.success) {
+          showToast('Pass added successfully', 'success')
+          await fetchPasses()
+          setFormData({
+            passName: '',
+            passType: '',
+            participants: '',
+            price: ''
+          })
+          setDetails('')
+        } else {
+          showToast(res?.message || 'Failed to add pass', 'error')
+        }
+      }
+    } catch (err) {
+      showToast(
+        err?.response?.data?.message ||
+          err?.message ||
+          'An error occurred while saving pass',
+        'error'
+      )
     }
 
     // Reset form (keep some defaults or clear? Screenshot shows filled form)
     // I'll keep the form filled as per screenshot "Entry Pass"
   }
 
-  const handleEditClick = pass => {
+  const handleEditClick = async pass => {
     setIsEditing(pass.id)
-    setFormData({
-      passName: pass.passName,
-      passType: pass.passType,
-      participants: pass.participants.toString(),
-      price: pass.price
-    })
-    // In a real app, we'd load the details too
     setActiveDropdown(null)
     window.scrollTo({ top: 0, behavior: 'smooth' })
+    try {
+      setEditLoading(true)
+      const res = await getEventPassById(pass.id)
+      if (res?.success || res?.data?.success) {
+        const data =
+          (res?.data?.data?.passes && res?.data?.data?.passes[0]) ??
+          (Array.isArray(res?.data?.data)
+            ? res?.data?.data[0]
+            : res?.data?.data) ??
+          (Array.isArray(res?.data) ? res?.data[0] : res?.data)
+        setFormData({
+          passName: data?.eventPassName || '',
+          passType: data?.passType === 'group' ? 'Group Entry' : 'Single Entry',
+          participants:
+            (data?.passType === 'group'
+              ? (data?.entryFor ?? '').toString()
+              : '') || '',
+          price: data?.passPrice || ''
+        })
+        setDetails(data?.details || '')
+      } else {
+        showToast(res?.message || 'Failed to fetch pass details', 'error')
+      }
+    } catch (err) {
+      showToast(
+        err?.response?.data?.message || err?.message || 'Failed to fetch pass',
+        'error'
+      )
+    } finally {
+      setEditLoading(false)
+    }
   }
 
-  const handleDelete = id => {
-    setPasses(passes.filter(p => p.id !== id))
-    showToast('Pass deleted', 'success')
-    setActiveDropdown(null)
+  const handleDelete = async id => {
+    try {
+      const res = await deleteEventPass(id)
+      if (res?.success || res?.data?.success) {
+        showToast('Pass deleted', 'success')
+        await fetchPasses()
+      } else {
+        showToast(res?.message || 'Failed to delete pass', 'error')
+      }
+    } catch (err) {
+      showToast(
+        err?.response?.data?.message || err?.message || 'Delete failed',
+        'error'
+      )
+    } finally {
+      setActiveDropdown(null)
+    }
   }
 
   const showToast = (message, type) => {
@@ -162,12 +237,15 @@ export default function FitnessEventPassManager ({ eventId }) {
         setActiveDropdown(null)
       }
     }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
+    document.addEventListener('click', handleClickOutside)
+    return () => document.removeEventListener('click', handleClickOutside)
   }, [activeDropdown])
 
   return (
-    <div className='min-h-screen bg-gray-50 p-8'>
+    <div
+      className='min-h-screen bg-gray-50 p-8'
+      style={{ colorScheme: 'light' }}
+    >
       <Toast
         show={toast.show}
         message={toast.message}
@@ -207,9 +285,11 @@ export default function FitnessEventPassManager ({ eventId }) {
           </h2>
           <button
             onClick={handleAddOrUpdate}
-            className='rounded-lg bg-[#FF4400] px-6 py-2 text-sm font-medium text-white hover:bg-[#ff551e]'
+            disabled={editLoading}
+            className='rounded-lg bg-[#FF4400] px-6 py-2 text-sm font-medium text-white hover:bg-[#ff551e] disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2'
           >
-            {isEditing ? 'Update' : 'Add'}
+            {editLoading && <Loader2 className='h-4 w-4 animate-spin' />}
+            {isEditing ? (editLoading ? 'Loading...' : 'Update') : 'Add'}
           </button>
         </div>
 
@@ -225,7 +305,7 @@ export default function FitnessEventPassManager ({ eventId }) {
                 name='passName'
                 value={formData.passName}
                 onChange={handleInputChange}
-                className='w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
+                className='w-full rounded-lg border border-gray-200 bg-white text-gray-900 px-4 py-2.5 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
                 placeholder='Entry Pass'
               />
             </div>
@@ -256,7 +336,7 @@ export default function FitnessEventPassManager ({ eventId }) {
                     onChange={() => handlePassTypeChange('Single Entry')}
                     className='hidden'
                   />
-                  <span className='text-sm text-gray-600'>Single Entry</span>
+                  <span className='text-sm text-gray-900'>Single Entry</span>
                 </label>
                 <label className='flex items-center gap-2 cursor-pointer'>
                   <div
@@ -278,7 +358,7 @@ export default function FitnessEventPassManager ({ eventId }) {
                     onChange={() => handlePassTypeChange('Group Entry')}
                     className='hidden'
                   />
-                  <span className='text-sm text-gray-600'>Group Entry</span>
+                  <span className='text-sm text-gray-900'>Group Entry</span>
                 </label>
               </div>
             </div>
@@ -293,13 +373,13 @@ export default function FitnessEventPassManager ({ eventId }) {
                 name='price'
                 value={formData.price}
                 onChange={handleInputChange}
-                className='w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
+                className='w-full rounded-lg border border-gray-200 bg-white text-gray-900 px-4 py-2.5 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
                 placeholder='₦10,000'
               />
             </div>
           </div>
 
-          {/* Group Entry - Number of Participants (Conditional or always show if Group) */}
+          {/* Group Entry - Number of Participants (Conditional) */}
           {formData.passType === 'Group Entry' && (
             <div className='w-full md:w-1/3'>
               <label className='mb-2 block text-sm font-medium text-gray-700'>
@@ -310,7 +390,7 @@ export default function FitnessEventPassManager ({ eventId }) {
                 name='participants'
                 value={formData.participants}
                 onChange={handleInputChange}
-                className='w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
+                className='w-full rounded-lg border border-gray-200 bg-white text-gray-900 px-4 py-2.5 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
                 placeholder='4'
               />
             </div>
@@ -333,7 +413,7 @@ export default function FitnessEventPassManager ({ eventId }) {
       </div>
 
       {/* List Card */}
-      <div className='rounded-xl border border-gray-200 bg-white shadow-sm'>
+      <div className='rounded-xl border border-gray-200 bg-white shadow-sm overflow-visible'>
         <div className='flex flex-col gap-4 border-b border-gray-100 px-6 py-4 md:flex-row md:items-center md:justify-between'>
           <h2 className='text-lg font-semibold text-gray-900'>
             Fitness Events Pass List
@@ -344,7 +424,7 @@ export default function FitnessEventPassManager ({ eventId }) {
               <input
                 type='text'
                 placeholder='Search'
-                className='h-10 w-64 rounded-lg border border-gray-200 pl-10 pr-4 text-sm focus:border-[#FF4400] focus:outline-none'
+                className='h-10 w-64 rounded-lg border border-gray-200 bg-white text-gray-900 pl-10 pr-4 text-sm focus:border-[#FF4400] focus:outline-none'
               />
             </div>
             <button className='flex h-10 items-center gap-2 rounded-lg border border-gray-200 px-4 text-sm font-medium text-gray-700 hover:bg-gray-50'>
@@ -357,7 +437,7 @@ export default function FitnessEventPassManager ({ eventId }) {
           </div>
         </div>
 
-        <div className='overflow-x-auto'>
+        <div className='overflow-visible'>
           <table className='w-full'>
             <thead>
               <tr className='border-b border-gray-100 bg-gray-50/50'>
@@ -437,9 +517,11 @@ export default function FitnessEventPassManager ({ eventId }) {
                       >
                         <MoreVertical className='h-4 w-4' />
                       </button>
-
                       {activeDropdown === pass.id && (
-                        <div className='absolute right-0 top-full z-10 mt-1 w-48 rounded-lg border border-gray-100 bg-white p-1 shadow-lg'>
+                        <div
+                          className='absolute right-0 top-6 z-50 w-48 rounded-lg border border-gray-100 bg-white p-1 shadow-xl'
+                          onMouseDown={e => e.stopPropagation()}
+                        >
                           <button
                             onClick={() => handleEditClick(pass)}
                             className='flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-50'
@@ -453,10 +535,70 @@ export default function FitnessEventPassManager ({ eventId }) {
                             <Trash2 className='h-4 w-4' /> Delete
                           </button>
                           <div className='my-1 h-px bg-gray-100' />
-                          <button className='flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-50'>
+                          <button
+                            onClick={async () => {
+                              try {
+                                const res = await activeInactiveEventPass(
+                                  pass.id,
+                                  {
+                                    status: true
+                                  }
+                                )
+                                if (res?.success || res?.data?.success) {
+                                  showToast('Pass set to Active', 'success')
+                                  await fetchPasses()
+                                } else {
+                                  showToast(
+                                    res?.message || 'Failed to update status',
+                                    'error'
+                                  )
+                                }
+                              } catch (err) {
+                                showToast(
+                                  err?.response?.data?.message ||
+                                    err?.message ||
+                                    'Status update failed',
+                                  'error'
+                                )
+                              } finally {
+                                setActiveDropdown(null)
+                              }
+                            }}
+                            className='flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-50'
+                          >
                             Active
                           </button>
-                          <button className='flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-50'>
+                          <button
+                            onClick={async () => {
+                              try {
+                                const res = await activeInactiveEventPass(
+                                  pass.id,
+                                  {
+                                    status: false
+                                  }
+                                )
+                                if (res?.success || res?.data?.success) {
+                                  showToast('Pass set to Inactive', 'success')
+                                  await fetchPasses()
+                                } else {
+                                  showToast(
+                                    res?.message || 'Failed to update status',
+                                    'error'
+                                  )
+                                }
+                              } catch (err) {
+                                showToast(
+                                  err?.response?.data?.message ||
+                                    err?.message ||
+                                    'Status update failed',
+                                  'error'
+                                )
+                              } finally {
+                                setActiveDropdown(null)
+                              }
+                            }}
+                            className='flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-50'
+                          >
                             Inactive
                           </button>
                         </div>

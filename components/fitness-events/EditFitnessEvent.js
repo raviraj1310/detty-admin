@@ -3,53 +3,187 @@
 import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Clock, Trash2, Plus, ChevronLeft } from 'lucide-react'
+import { Clock, Trash2, Plus, ChevronLeft, Loader2 } from 'lucide-react'
 import TiptapEditor from '@/components/editor/TiptapEditor'
 import Toast from '@/components/ui/Toast'
+import {
+  getFitnessEventById,
+  updateFitnessEvent,
+  getCertificateTemplate,
+  getHostList
+} from '@/services/fitness-event/fitness-event.service'
 
 export default function EditFitnessEvent ({ id }) {
   const router = useRouter()
   const fileInputRef = useRef(null)
 
   // State
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
   const [formData, setFormData] = useState({
-    eventName: 'Fitness Bootcamp & Yoga',
-    capacity: '10',
+    eventName: '',
+    capacity: '',
     certificateTemplate: 'Fitness Bootcamp & Yoga',
-    duration: '1-3 hours (based on selected access or activation)',
-    startDate: '2026-06-12',
-    endDate: '2026-06-17',
-    startTime: '10:00',
-    endTime: '13:00',
-    hostedBy: 'ProActive Gym',
-    location: 'Lekki Phase 1, Lagos',
-    locationCoordinates: '6.449942, 3.442864'
+    duration: '',
+    startDate: '',
+    endDate: '',
+    startTime: '',
+    endTime: '',
+    hostedBy: '',
+    location: '',
+    locationCoordinates: ''
   })
 
-  const [aboutEvent, setAboutEvent] = useState(
-    '<p>Join us for an intensive fitness bootcamp designed to push your limits and rejuvenate your spirit.</p>'
-  )
-  const [importantInfo, setImportantInfo] = useState(
-    '<p>Please bring your own yoga mat and water bottle.</p>'
-  )
+  const [aboutEvent, setAboutEvent] = useState('')
+  const [importantInfo, setImportantInfo] = useState('')
 
-  const [slots, setSlots] = useState([
-    {
-      id: 1,
-      name: 'Slot 1',
-      date: '2026-06-12',
-      time: '20:40',
-      inventory: '50',
-      price: '10000'
-    }
-  ])
+  const [slots, setSlots] = useState([])
 
   const [mainImage, setMainImage] = useState(null)
-  const [mainImageUrl, setMainImageUrl] = useState(
-    'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?auto=format&fit=crop&q=80&w=1000'
-  )
+  const [mainImageUrl, setMainImageUrl] = useState(null)
 
-  const [toast, setToast] = useState({ show: false, message: '', type: '' })
+  const [toast, setToast] = useState({
+    open: false,
+    title: '',
+    description: '',
+    variant: ''
+  })
+  const [certificateTemplates, setCertificateTemplates] = useState([])
+  const [hostList, setHostList] = useState([])
+
+  const getImageUrl = path => {
+    if (!path) return null
+    if (path.startsWith('http')) return path
+
+    const baseUrl =
+      process.env.NEXT_PUBLIC_SIM_IMAGE_BASE_ORIGIN ||
+      process.env.NEXT_PUBLIC_API_BASE_URL
+
+    if (!baseUrl) return path
+
+    try {
+      const { origin } = new URL(baseUrl)
+      const cleanPath = path.startsWith('/') ? path.slice(1) : path
+      return `${origin}/${cleanPath}`
+    } catch {
+      return path
+    }
+  }
+
+  const to24h = s => {
+    if (!s) return ''
+    const match = s.match(`/^\s*(\d{1,2}):(\d{2})\s*(AM|PM)\s*$/i`)
+    if (!match) return s
+    let [_, h, m, ap] = match
+    let hour = parseInt(h, 10)
+    const isPM = ap.toUpperCase() === 'PM'
+    if (isPM && hour !== 12) hour += 12
+    if (!isPM && hour === 12) hour = 0
+    return `${String(hour).padStart(2, '0')}:${m}`
+  }
+
+  useEffect(() => {
+    const fetchTemplates = async () => {
+      try {
+        const response = await getCertificateTemplate()
+        if (response?.success || response?.data?.success) {
+          setCertificateTemplates(response?.data?.data || response?.data)
+        }
+      } catch (error) {
+        console.error('Failed to fetch certificate templates:', error)
+        showToast('Failed to fetch certificate templates', 'error')
+      }
+    }
+
+    const fetchHosts = async () => {
+      try {
+        const response = await getHostList()
+        if (response?.success) {
+          setHostList(response.data)
+        }
+      } catch (error) {
+        console.error('Failed to fetch host list:', error)
+        showToast('Failed to fetch host list', 'error')
+      }
+    }
+
+    fetchTemplates()
+    fetchHosts()
+  }, [])
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true)
+      try {
+        const response = await getFitnessEventById(id)
+        if (response?.success || response?.data?.success) {
+          const data = response?.data?.data || response?.data || {}
+
+          setFormData({
+            eventName: data.fitnessEventName || '',
+            capacity: data.participateCapacity || '',
+            certificateTemplate: data.certificateTemplateId || '',
+            duration: data.duration || '',
+            startDate: data.startDate ? data.startDate.split('T')[0] : '',
+            endDate: data.endDate ? data.endDate.split('T')[0] : '',
+            startTime: to24h(data.startTime) || '',
+            endTime: to24h(data.endTime) || '',
+            hostedBy: data.hostedBy || '',
+            location: data.location || '',
+            locationCoordinates: data.locationCoordinates || ''
+          })
+
+          setAboutEvent(data.aboutEvent || '')
+          setImportantInfo(data.importantInformation || '')
+
+          // Handle Slots
+          // API might return slots as 'slots' or 'fitnessEventSlots' or similar
+          // Assuming structure based on previous mock data, but adapting to likely API response
+          const fetchedSlots = data.fitnessEventSlots || data.slots || []
+
+          // Map fetched slots to component state structure if needed
+          const mappedSlots = fetchedSlots.map((slot, index) => ({
+            id: slot._id || Date.now() + index,
+            name: slot.slotName || slot.name || `Slot ${index + 1}`,
+            date: slot.date ? slot.date.split('T')[0] : '',
+            time: to24h(slot.time) || '',
+            inventory: slot.inventory || '',
+            price: slot.price || ''
+          }))
+
+          setSlots(
+            mappedSlots.length > 0
+              ? mappedSlots
+              : [
+                  {
+                    id: Date.now(),
+                    name: 'Slot 1',
+                    date: '',
+                    time: '',
+                    inventory: '',
+                    price: ''
+                  }
+                ]
+          )
+
+          if (data.image) {
+            setMainImageUrl(getImageUrl(data.image))
+          }
+        } else {
+          showToast('Failed to fetch event details', 'error')
+        }
+      } catch (error) {
+        console.error('Error fetching event:', error)
+        showToast('Error fetching event details', 'error')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    if (id) {
+      fetchData()
+    }
+  }, [id])
 
   // Handlers
   const handleInputChange = e => {
@@ -98,32 +232,105 @@ export default function EditFitnessEvent ({ id }) {
     if (!aboutEvent) return showToast('About Event is required', 'error')
     if (!formData.startDate || !formData.endDate)
       return showToast('Dates are required', 'error')
+    if (!formData.capacity)
+      return showToast('Participate Capacity is required', 'error')
+    if (!formData.hostedBy) return showToast('Hosted By is required', 'error')
 
-    // Mock Submit
-    console.log({
-      id,
-      ...formData,
-      aboutEvent,
-      importantInfo,
-      slots,
-      mainImage
-    })
+    setSaving(true)
+    try {
+      const payload = new FormData()
 
-    showToast('Event updated successfully', 'success')
+      const formatTime = timeStr => {
+        if (!timeStr) return ''
+        const [hours, minutes] = timeStr.split(':')
+        const h = parseInt(hours, 10)
+        const ampm = h >= 12 ? 'PM' : 'AM'
+        const h12 = h % 12 || 12
+        return `${String(h12).padStart(2, '0')}:${minutes} ${ampm}`
+      }
+
+      payload.append('fitnessEventName', formData.eventName)
+      payload.append('participateCapacity', formData.capacity)
+      if (formData.certificateTemplate) {
+        payload.append('certificateTemplateId', formData.certificateTemplate)
+      }
+      payload.append('aboutEvent', aboutEvent)
+      payload.append('duration', formData.duration)
+      payload.append('startDate', formData.startDate)
+      payload.append('endDate', formData.endDate)
+      payload.append('startTime', formatTime(formData.startTime))
+      payload.append('endTime', formatTime(formData.endTime))
+      payload.append('hostedBy', formData.hostedBy)
+      payload.append('location', formData.location)
+      payload.append('locationCoordinates', formData.locationCoordinates)
+      payload.append('importantInformation', importantInfo)
+      payload.append('status', 'true')
+
+      const formattedSlots = slots.map(slot => ({
+        slotName: slot.name,
+        date: slot.date,
+        time: formatTime(slot.time),
+        inventory: Number(slot.inventory),
+        price: Number(String(slot.price).replace(/,/g, ''))
+      }))
+      payload.append('slots', JSON.stringify(formattedSlots))
+
+      // Append Image
+      if (mainImage) {
+        payload.append('image', mainImage)
+      }
+
+      const response = await updateFitnessEvent(id, payload)
+
+      if (response?.success || response?.data?.success) {
+        showToast('Event updated successfully', 'success')
+        // Optional: refresh or redirect
+        // router.push('/fitness-events')
+      } else {
+        showToast(
+          response?.message ||
+            response?.data?.message ||
+            'Failed to update event',
+          'error'
+        )
+      }
+    } catch (error) {
+      console.error('Update error:', error)
+      const msg =
+        error?.response?.data?.message ||
+        error?.message ||
+        'An error occurred while updating'
+      showToast(msg, 'error')
+    } finally {
+      setSaving(false)
+    }
   }
 
-  const showToast = (message, type) => {
-    setToast({ show: true, message, type })
-    setTimeout(() => setToast({ ...toast, show: false }), 3000)
+  const showToast = (message, type = 'success') => {
+    setToast({
+      open: true,
+      title: type === 'success' ? 'Success' : 'Error',
+      description: message,
+      variant: type
+    })
+  }
+
+  if (loading) {
+    return (
+      <div className='flex h-screen items-center justify-center'>
+        <Loader2 className='h-8 w-8 animate-spin text-[#FF4400]' />
+      </div>
+    )
   }
 
   return (
     <div className='min-h-screen bg-gray-50 p-8'>
       <Toast
-        show={toast.show}
-        message={toast.message}
-        type={toast.type}
-        onClose={() => setToast({ ...toast, show: false })}
+        open={toast.open}
+        title={toast.title}
+        description={toast.description}
+        variant={toast.variant}
+        onOpenChange={open => setToast(prev => ({ ...prev, open }))}
       />
 
       {/* Header */}
@@ -159,9 +366,11 @@ export default function EditFitnessEvent ({ id }) {
           <div className='flex gap-3'>
             <button
               onClick={handleSubmit}
-              className='rounded-lg bg-[#FF4400] px-6 py-2 text-sm font-medium text-white hover:bg-[#ff551e]'
+              disabled={saving}
+              className='rounded-lg bg-[#FF4400] px-6 py-2 text-sm font-medium text-white hover:bg-[#ff551e] disabled:opacity-50 flex items-center gap-2'
             >
-              Update
+              {saving && <Loader2 className='h-4 w-4 animate-spin' />}
+              {saving ? 'Updating...' : 'Update'}
             </button>
           </div>
         </div>
@@ -206,10 +415,12 @@ export default function EditFitnessEvent ({ id }) {
                   onChange={handleInputChange}
                   className='w-full appearance-none rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm focus:border-[#FF4400] focus:outline-none'
                 >
-                  <option value='Fitness Bootcamp & Yoga'>
-                    Fitness Bootcamp & Yoga
-                  </option>
-                  <option value='Template 2'>Template 2</option>
+                  <option value=''>Select Template</option>
+                  {certificateTemplates.map(template => (
+                    <option key={template._id} value={template._id}>
+                      {template.certificateName}
+                    </option>
+                  ))}
                 </select>
                 <div className='pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500'>
                   <svg className='h-4 w-4 fill-current' viewBox='0 0 20 20'>
@@ -321,8 +532,12 @@ export default function EditFitnessEvent ({ id }) {
                   onChange={handleInputChange}
                   className='w-full appearance-none rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm focus:border-[#FF4400] focus:outline-none'
                 >
-                  <option value='ProActive Gym'>ProActive Gym</option>
-                  <option value='Other Gym'>Other Gym</option>
+                  <option value=''>Select Host</option>
+                  {hostList.map(host => (
+                    <option key={host._id} value={host._id}>
+                      {host.name}
+                    </option>
+                  ))}
                 </select>
                 <div className='pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500'>
                   <svg className='h-4 w-4 fill-current' viewBox='0 0 20 20'>
@@ -333,98 +548,8 @@ export default function EditFitnessEvent ({ id }) {
             </div>
           </div>
 
-          {/* Slots Section */}
-          <div>
-            <div className='mb-4 flex items-center justify-between'>
-              <h3 className='text-sm font-medium text-gray-700'>Slots</h3>
-              <button
-                onClick={addSlot}
-                className='flex items-center gap-1 text-sm font-medium text-[#FF4400] hover:text-[#ff551e]'
-              >
-                <Plus className='h-4 w-4' /> Add Slot
-              </button>
-            </div>
-
-            <div className='space-y-3 bg-gray-50 p-4 rounded-xl'>
-              <div className='grid grid-cols-12 gap-4 text-xs font-medium text-gray-500 mb-2 px-2'>
-                <div className='col-span-3'>Slot Name*</div>
-                <div className='col-span-3'>Date*</div>
-                <div className='col-span-2'>Time*</div>
-                <div className='col-span-2'>Inventory</div>
-                <div className='col-span-2'>Price</div>
-              </div>
-
-              {slots.map(slot => (
-                <div
-                  key={slot.id}
-                  className='grid grid-cols-12 gap-4 items-center'
-                >
-                  <div className='col-span-3'>
-                    <input
-                      type='text'
-                      value={slot.name}
-                      onChange={e =>
-                        handleSlotChange(slot.id, 'name', e.target.value)
-                      }
-                      className='w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
-                      placeholder='Slot 1'
-                    />
-                  </div>
-                  <div className='col-span-3'>
-                    <input
-                      type='date'
-                      value={slot.date}
-                      onChange={e =>
-                        handleSlotChange(slot.id, 'date', e.target.value)
-                      }
-                      className='w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
-                    />
-                  </div>
-                  <div className='col-span-2'>
-                    <input
-                      type='time'
-                      value={slot.time}
-                      onChange={e =>
-                        handleSlotChange(slot.id, 'time', e.target.value)
-                      }
-                      className='w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
-                    />
-                  </div>
-                  <div className='col-span-2'>
-                    <input
-                      type='number'
-                      value={slot.inventory}
-                      onChange={e =>
-                        handleSlotChange(slot.id, 'inventory', e.target.value)
-                      }
-                      className='w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
-                      placeholder='50'
-                    />
-                  </div>
-                  <div className='col-span-2 flex items-center gap-2'>
-                    <input
-                      type='text'
-                      value={slot.price}
-                      onChange={e =>
-                        handleSlotChange(slot.id, 'price', e.target.value)
-                      }
-                      className='w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
-                      placeholder='₦10,000'
-                    />
-                    <button
-                      onClick={() => removeSlot(slot.id)}
-                      className='p-1 text-gray-400 hover:text-red-500'
-                    >
-                      <Trash2 className='h-4 w-4' />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Location & Image */}
-          <div className='grid grid-cols-1 gap-6 md:grid-cols-3'>
+          {/* Location */}
+          <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
             <div>
               <label className='mb-2 block text-sm font-medium text-gray-700'>
                 Location*
@@ -435,12 +560,11 @@ export default function EditFitnessEvent ({ id }) {
                 value={formData.location}
                 onChange={handleInputChange}
                 className='w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
-                placeholder='Lekki Phase 1, Lagos'
               />
             </div>
             <div>
               <label className='mb-2 block text-sm font-medium text-gray-700'>
-                Location Coordinates*
+                Location Coordinates
               </label>
               <input
                 type='text'
@@ -448,64 +572,153 @@ export default function EditFitnessEvent ({ id }) {
                 value={formData.locationCoordinates}
                 onChange={handleInputChange}
                 className='w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
-                placeholder='6.449942, 3.442864'
               />
-            </div>
-            <div>
-              <label className='mb-2 block text-sm font-medium text-gray-700'>
-                Upload Image*
-              </label>
-              <div className='flex rounded-lg border border-gray-200 bg-white'>
-                <div className='flex-1 truncate px-4 py-2.5 text-sm text-gray-500'>
-                  {mainImage ? mainImage.name : 'Image.jpg'}
-                </div>
-                <button
-                  onClick={() => fileInputRef.current?.click()}
-                  className='bg-gray-100 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-200 rounded-r-lg'
-                >
-                  Browse
-                </button>
-                <input
-                  type='file'
-                  ref={fileInputRef}
-                  onChange={handleMainImageChange}
-                  accept='image/*'
-                  className='hidden'
-                />
-              </div>
-              {mainImageUrl && (
-                <div className='mt-3 relative w-full h-40 rounded-lg overflow-hidden border border-gray-200'>
-                  <img
-                    src={mainImageUrl}
-                    alt='Preview'
-                    className='w-full h-full object-cover'
-                  />
-                  <button
-                    onClick={() => {
-                      setMainImage(null)
-                      setMainImageUrl('')
-                      if (fileInputRef.current) fileInputRef.current.value = ''
-                    }}
-                    className='absolute top-2 right-2 bg-white/90 p-1.5 rounded-full text-red-500 hover:text-red-600 shadow-sm transition-colors'
-                  >
-                    <Trash2 className='w-4 h-4' />
-                  </button>
-                </div>
-              )}
             </div>
           </div>
 
-          {/* Important Information */}
+          {/* Important Info */}
           <div>
             <label className='mb-2 block text-sm font-medium text-gray-700'>
-              Important Information*
+              Important Info*
             </label>
             <div className='rounded-lg border border-gray-200 overflow-hidden'>
               <TiptapEditor
                 content={importantInfo}
                 onChange={setImportantInfo}
-                placeholder='Enter important information...'
+                placeholder='Enter important info...'
               />
+            </div>
+          </div>
+
+          {/* Main Image */}
+          <div>
+            <label className='mb-2 block text-sm font-medium text-gray-700'>
+              Main Image
+            </label>
+            <div className='flex items-center gap-4'>
+              <div
+                onClick={() => fileInputRef.current?.click()}
+                className='flex h-32 w-32 cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 hover:bg-gray-100'
+              >
+                {mainImageUrl ? (
+                  <img
+                    src={mainImageUrl}
+                    alt='Preview'
+                    className='h-full w-full rounded-lg object-cover'
+                  />
+                ) : (
+                  <div className='text-center'>
+                    <Plus className='mx-auto h-6 w-6 text-gray-400' />
+                    <span className='mt-1 block text-xs text-gray-500'>
+                      Upload
+                    </span>
+                  </div>
+                )}
+              </div>
+              <input
+                ref={fileInputRef}
+                type='file'
+                accept='image/*'
+                onChange={handleMainImageChange}
+                className='hidden'
+              />
+            </div>
+          </div>
+
+          {/* Slots Section */}
+          <div>
+            <div className='mb-4 flex items-center justify-between'>
+              <h3 className='text-lg font-semibold text-gray-900'>Slots</h3>
+              <button
+                onClick={addSlot}
+                className='flex items-center gap-2 text-sm font-medium text-[#FF4400] hover:text-[#E63E00]'
+              >
+                <Plus className='h-4 w-4' /> Add Slot
+              </button>
+            </div>
+            <div className='space-y-4'>
+              {slots.map((slot, index) => (
+                <div
+                  key={slot.id}
+                  className='relative grid grid-cols-1 gap-4 rounded-xl border border-gray-200 bg-gray-50 p-4 md:grid-cols-5'
+                >
+                  <div>
+                    <label className='mb-1 block text-xs font-medium text-gray-500'>
+                      Name
+                    </label>
+                    <input
+                      type='text'
+                      value={slot.name}
+                      onChange={e =>
+                        handleSlotChange(slot.id, 'name', e.target.value)
+                      }
+                      className='w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#FF4400] focus:outline-none'
+                    />
+                  </div>
+                  <div>
+                    <label className='mb-1 block text-xs font-medium text-gray-500'>
+                      Date
+                    </label>
+                    <input
+                      type='date'
+                      value={slot.date}
+                      onChange={e =>
+                        handleSlotChange(slot.id, 'date', e.target.value)
+                      }
+                      className='w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#FF4400] focus:outline-none'
+                    />
+                  </div>
+                  <div>
+                    <label className='mb-1 block text-xs font-medium text-gray-500'>
+                      Time
+                    </label>
+                    <input
+                      type='time'
+                      value={slot.time}
+                      onChange={e =>
+                        handleSlotChange(slot.id, 'time', e.target.value)
+                      }
+                      className='w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#FF4400] focus:outline-none'
+                    />
+                  </div>
+                  <div>
+                    <label className='mb-1 block text-xs font-medium text-gray-500'>
+                      Inventory
+                    </label>
+                    <input
+                      type='number'
+                      value={slot.inventory}
+                      onChange={e =>
+                        handleSlotChange(slot.id, 'inventory', e.target.value)
+                      }
+                      className='w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#FF4400] focus:outline-none'
+                    />
+                  </div>
+                  <div>
+                    <label className='mb-1 block text-xs font-medium text-gray-500'>
+                      Price
+                    </label>
+                    <div className='flex items-center gap-2'>
+                      <input
+                        type='number'
+                        value={slot.price}
+                        onChange={e =>
+                          handleSlotChange(slot.id, 'price', e.target.value)
+                        }
+                        className='w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#FF4400] focus:outline-none'
+                      />
+                      {slots.length > 1 && (
+                        <button
+                          onClick={() => removeSlot(slot.id)}
+                          className='rounded-lg p-2 text-red-500 hover:bg-red-50'
+                        >
+                          <Trash2 className='h-4 w-4' />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
