@@ -271,3 +271,13 @@ export const getUserList = async () => {
     throw error
   }
 }
+
+export const getUserAnalysis = async (params = {}) => {
+  try {
+    const response = await api.get('/user/user-data-analysis', { params })
+    return response.data
+  } catch (error) {
+    console.error('Error fetching user analysis:', error)
+    throw error
+  }
+}
