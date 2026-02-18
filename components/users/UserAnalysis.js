@@ -32,7 +32,7 @@ export default function UserAnalysis () {
     const mm = String(today.getMonth() + 1).padStart(2, '0')
     const dd = String(today.getDate()).padStart(2, '0')
     return {
-      start: '2025-12-03',
+      start: '2025-11-01',
       end: `${yyyy}-${mm}-${dd}`
     }
   })
