@@ -281,3 +281,218 @@ export const getUserAnalysis = async (params = {}) => {
     throw error
   }
 }
+
+export const getRegisteredUser = async (params = {}) => {
+  try {
+    const response = await api.get('/user/get-registered-users', { params })
+    return response.data
+  } catch (error) {
+    console.error('Error fetching registered user:', error)
+    throw error
+  }
+}
+
+export const downloadRegisteredExcel = async (params = {}) => {
+  try {
+    const response = await api.get(`/user/download-registered-users`, {
+      params,
+      responseType: 'blob'
+    })
+    return response.data
+  } catch (error) {
+    console.error('Error downloading registered users Excel:', error)
+    throw error
+  }
+}
+export const getManuallyRegisteredUser = async (params = {}) => {
+  try {
+    const response = await api.get('/user/get-manually-registered-users', {
+      params
+    })
+    return response.data
+  } catch (error) {
+    console.error('Error fetching manually registered user:', error)
+    throw error
+  }
+}
+
+export const downloadManuallyRegisteredExcel = async (params = {}) => {
+  try {
+    const response = await api.get(`/user/download-manually-registered-users`, {
+      params,
+      responseType: 'blob'
+    })
+    return response.data
+  } catch (error) {
+    console.error('Error downloading registered users Excel:', error)
+    throw error
+  }
+}
+export const getDumpedUserProvided = async (params = {}) => {
+  try {
+    const response = await api.get('/user/get-dumped-users-provided', {
+      params
+    })
+    return response.data
+  } catch (error) {
+    console.error('Error fetching manually registered user:', error)
+    throw error
+  }
+}
+
+export const downloadDumpedUserProvided = async (params = {}) => {
+  try {
+    const response = await api.get(`/user/download-dumped-users-provided`, {
+      params,
+      responseType: 'blob'
+    })
+    return response.data
+  } catch (error) {
+    console.error('Error downloading registered users Excel:', error)
+    throw error
+  }
+}
+export const getEffectiveUsers = async (params = {}) => {
+  try {
+    const response = await api.get('/user/get-effective-users', {
+      params
+    })
+    return response.data
+  } catch (error) {
+    console.error('Error fetching manually registered user:', error)
+    throw error
+  }
+}
+
+export const downloadEffectiveUsers = async (params = {}) => {
+  try {
+    const response = await api.get(`/user/download-effective-users`, {
+      params,
+      responseType: 'blob'
+    })
+    return response.data
+  } catch (error) {
+    console.error('Error downloading registered users Excel:', error)
+    throw error
+  }
+}
+export const getSuccessfulDumped = async (params = {}) => {
+  try {
+    const response = await api.get('/user/get-successful-dumped-users', {
+      params
+    })
+    return response.data
+  } catch (error) {
+    console.error('Error fetching successful dumped user:', error)
+    throw error
+  }
+}
+
+export const downloadSuccessfulDumped = async (params = {}) => {
+  try {
+    const response = await api.get(`/user/download-successful-dumped-users`, {
+      params,
+      responseType: 'blob'
+    })
+    return response.data
+  } catch (error) {
+    console.error('Error downloading successful dumped users Excel:', error)
+    throw error
+  }
+}
+export const getIncompleteDumped = async (params = {}) => {
+  try {
+    const response = await api.get('/user/get-incomplete-dumped-users', {
+      params
+    })
+    return response.data
+  } catch (error) {
+    console.error('Error fetching incomplete dumped user:', error)
+    throw error
+  }
+}
+
+export const downloadIncompleteDumped = async (params = {}) => {
+  try {
+    const response = await api.get(`/user/download-incomplete-dumped-users`, {
+      params,
+      responseType: 'blob'
+    })
+    return response.data
+  } catch (error) {
+    console.error('Error downloading incomplete dumped users Excel:', error)
+    throw error
+  }
+}
+export const getSuccessPasswordReset = async (params = {}) => {
+  try {
+    const response = await api.get('/user/get-success-password-reset', {
+      params
+    })
+    return response.data
+  } catch (error) {
+    console.error('Error fetching incomplete dumped user:', error)
+    throw error
+  }
+}
+
+export const downloadSuccessPasswordReset = async (params = {}) => {
+  try {
+    const response = await api.get(`/user/download-success-password-reset`, {
+      params,
+      responseType: 'blob'
+    })
+    return response.data
+  } catch (error) {
+    console.error('Error downloading incomplete dumped users Excel:', error)
+    throw error
+  }
+}
+export const getIncompletePasswordReset = async (params = {}) => {
+  try {
+    const response = await api.get('/user/get-incomplete-password-reset', {
+      params
+    })
+    return response.data
+  } catch (error) {
+    console.error('Error fetching incomplete dumped user:', error)
+    throw error
+  }
+}
+
+export const downloadIncompletePasswordReset = async (params = {}) => {
+  try {
+    const response = await api.get(`/user/download-incomplete-password-reset`, {
+      params,
+      responseType: 'blob'
+    })
+    return response.data
+  } catch (error) {
+    console.error('Error downloading incomplete dumped users Excel:', error)
+    throw error
+  }
+}
+export const getDuplicateUsers = async (params = {}) => {
+  try {
+    const response = await api.get('/user/get-duplicate-users', {
+      params
+    })
+    return response.data
+  } catch (error) {
+    console.error('Error fetching incomplete dumped user:', error)
+    throw error
+  }
+}
+
+export const downloadDuplicateUsers = async (params = {}) => {
+  try {
+    const response = await api.get(`/user/download-duplicate-users`, {
+      params,
+      responseType: 'blob'
+    })
+    return response.data
+  } catch (error) {
+    console.error('Error downloading incomplete dumped users Excel:', error)
+    throw error
+  }
+}
