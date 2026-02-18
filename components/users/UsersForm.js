@@ -1126,7 +1126,13 @@ export default function UsersForm ({
             <span className='text-gray-900 font-medium'>Users</span>
           </nav>
         </div>
-        <div className='flex items-center gap-2'>
+        <div className='flex items-end gap-2'>
+          <button
+            onClick={() => router.push('/users/user-analysis')}
+            className='h-9 px-4 rounded-lg bg-emerald-600 text-xs font-medium text-white hover:bg-emerald-700 whitespace-nowrap'
+          >
+            Detailed User Analysis
+          </button>
           <div className='flex items-center gap-2'>
             <div className='flex flex-col'>
               <label className='text-[10px] text-gray-500 font-medium ml-1'>
