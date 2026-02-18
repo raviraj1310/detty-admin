@@ -85,7 +85,8 @@ export default function UserAnalysis () {
           startDate: dateRange.start,
           endDate: dateRange.end,
           page,
-          pageSize: limit
+          pageSize: limit,
+          search: search ? search.trim() : undefined
         }
 
         const res = await getUserAnalysis(params)
@@ -150,7 +151,7 @@ export default function UserAnalysis () {
     if (viewMode === 'analysis') {
       fetchAnalysis()
     }
-  }, [viewMode, dateRange, page, limit])
+  }, [viewMode, dateRange, page, limit, search])
 
   useEffect(() => {
     setPage(1)
@@ -194,7 +195,8 @@ export default function UserAnalysis () {
           startDate: dateRange.start,
           endDate: dateRange.end,
           page,
-          pageSize: limit
+          pageSize: limit,
+          search: search ? search.trim() : undefined
         }
 
         const res = await (isManual
@@ -291,7 +293,7 @@ export default function UserAnalysis () {
     }
 
     fetchRegistered()
-  }, [viewMode, dateRange, page, limit])
+  }, [viewMode, dateRange, page, limit, search])
 
   const filteredUsers = useMemo(() => {
     const term = search.trim().toLowerCase()
@@ -353,7 +355,8 @@ export default function UserAnalysis () {
       setDownloading(true)
       const params = {
         startDate: dateRange.start,
-        endDate: dateRange.end
+        endDate: dateRange.end,
+        search: search ? search.trim() : undefined
       }
       const isManual = viewMode === 'manual'
       const isDumpedProvided = viewMode === 'dumpedProvided'
