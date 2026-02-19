@@ -28,11 +28,13 @@ export default function UserAnalysis () {
   const [search, setSearch] = useState('')
   const [dateRange, setDateRange] = useState(() => {
     const today = new Date()
-    const yyyy = today.getFullYear()
-    const mm = String(today.getMonth() + 1).padStart(2, '0')
-    const dd = String(today.getDate()).padStart(2, '0')
+
+    const yyyy = today.getUTCFullYear()
+    const mm = String(today.getUTCMonth() + 1).padStart(2, '0')
+    const dd = String(today.getUTCDate()).padStart(2, '0')
+
     return {
-      start: '2025-12-03',
+      start: '2025-11-01',
       end: `${yyyy}-${mm}-${dd}`
     }
   })
@@ -474,7 +476,7 @@ export default function UserAnalysis () {
         </div>
       </div>
 
-      <div className='grid grid-cols-1 md:grid-cols-4 gap-4 mb-4'>
+      <div className='grid grid-cols-1 md:grid-cols-3 gap-4 mb-4'>
         <button
           type='button'
           onClick={() => {
@@ -493,7 +495,7 @@ export default function UserAnalysis () {
             Total manually registered users + dumped users provided
           </p>
         </button>
-        <button
+        {/* <button
           type='button'
           onClick={() => {
             setViewMode('manual')
@@ -510,7 +512,7 @@ export default function UserAnalysis () {
           <p className='text-[11px] text-gray-500'>
             Users who completed manual registration.
           </p>
-        </button>
+        </button> */}
         <button
           type='button'
           onClick={() => {
@@ -552,7 +554,7 @@ export default function UserAnalysis () {
         </button>
       </div>
 
-      <div className='grid grid-cols-1 md:grid-cols-3 xl:grid-cols-5 gap-4 mb-6'>
+      <div className='grid grid-cols-1 md:grid-cols-3 xl:grid-cols-2 gap-4 mb-6'>
         <button
           type='button'
           onClick={() => {
@@ -572,7 +574,7 @@ export default function UserAnalysis () {
             incomplete data in the selected period.
           </p>
         </button>
-        <button
+        {/* <button
           type='button'
           onClick={() => {
             setViewMode('incompleteDumped')
@@ -608,7 +610,7 @@ export default function UserAnalysis () {
           <p className='text-[11px] text-gray-500'>
             Total dumped users who reset their password in the selected period.
           </p>
-        </button>
+        </button> */}
         <button
           type='button'
           onClick={() => {
@@ -630,7 +632,7 @@ export default function UserAnalysis () {
           </p>
         </button>
 
-        <button
+        {/* <button
           type='button'
           onClick={() => {
             setViewMode('duplicateUsers')
@@ -647,7 +649,7 @@ export default function UserAnalysis () {
           <p className='text-[11px] text-gray-500'>
             Users with the same email address.
           </p>
-        </button>
+        </button> */}
       </div>
 
       <div className='bg-gray-200 p-5 rounded-xl'>
