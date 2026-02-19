@@ -730,7 +730,7 @@ export default function UsersForm ({
 
   useEffect(() => {
     fetchStats()
-  }, [])
+  }, [dateRange.start, dateRange.end])
 
   useEffect(() => {
     const h = setTimeout(() => {
