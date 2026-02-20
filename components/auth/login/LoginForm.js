@@ -110,7 +110,7 @@ export default function LoginForm () {
         normalizedRole === 'super-admin' ||
         normalizedRole === 'super_admin'
       ) {
-        router.push('/admin/dashboard')
+        router.push('/dashboard')
       } else {
         router.push('/')
       }
