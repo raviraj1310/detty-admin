@@ -300,8 +300,8 @@ const menuSections = [
       {
         label: 'Admin Access',
         icon: '/images/backend/side_menu/side_menu (2).svg',
-        href: '/admin-access',
-        permission: 'admin-user'
+        href: '/admin-access'
+        // permission: 'admin-user'
       },
       {
         label: 'Roles',
