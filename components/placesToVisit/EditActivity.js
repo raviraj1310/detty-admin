@@ -94,6 +94,13 @@ export default function EditActivity ({ activityId }) {
   const checkPermission = permissionKey => {
     if (!user) return false
     if (!permissionKey) return true
+
+    const roleName = user.role?.name || user.role
+    if (typeof roleName === 'string') {
+      const normalizedRole = roleName.toLowerCase().replace(/[_\s]+/g, '-')
+      if (normalizedRole === 'super-admin') return true
+    }
+
     const permissions = user.role?.permissions
     if (Array.isArray(permissions)) {
       return permissions.some(
