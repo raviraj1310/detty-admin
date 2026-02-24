@@ -1,38 +1,120 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { QRCodeCanvas } from 'qrcode.react'
+import { getGymBookingDetail } from '@/services/v2/gym/gym.service'
 
-// Mock Data
-const BOOKING_DATA = {
-  orderId: '78393002875234152',
-  issuedOn: '27/1/2026',
-  visitDate: 'Wednesday, Jan 28',
-  gymName: 'Elevate Fitness Club',
-  gymImage: '/images/dashboard/image-1.webp', // Using a placeholder from existing files
-  accessType: 'Gym Access',
-  dateTime: 'Sat, Dec 14 • 3pm',
-  location: 'Landmark Event Centre, Lagos',
-  qrCodeValue: '928095101915334814409001',
-  items: [
-    { name: '2* General Access', price: '₦3,000.00', quantity: 2 },
-    { name: '2* General Access', price: '₦3,000.00', quantity: 2 }
-  ],
-  total: '₦6,110.00',
-  paymentStatus: 'Completed',
-  bookingStatus: 'Pending',
-  buyer: {
-    name: 'Oromuno Okiemute Grace',
-    email: 'loveokiemute@gmail.com',
-    phone: '2347031962591',
-    country: 'Nigeria',
-    city: 'Lagos'
+const getGymImageUrl = imagePath => {
+  if (!imagePath) return '/images/placeholder.png'
+  if (imagePath.startsWith('http')) return imagePath
+
+  const baseUrl =
+    process.env.NEXT_PUBLIC_API_BASE_URL2 ||
+    process.env.NEXT_PUBLIC_API_BASE_URL
+  if (!baseUrl) return `/upload/image/${imagePath}`
+
+  try {
+    const { origin } = new URL(baseUrl)
+    return `${origin}/upload/image/${imagePath}`
+  } catch {
+    return `/upload/image/${imagePath}`
   }
 }
 
-export default function GymBookingDetails ({ id }) {
+const formatDate = (dateString, includeTime = false) => {
+  if (!dateString) return '-'
+  const date = new Date(dateString)
+  const options = {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric'
+  }
+  if (includeTime) {
+    options.hour = 'numeric'
+    options.minute = 'numeric'
+    options.hour12 = true
+  }
+  return date.toLocaleString('en-US', options)
+}
+
+const formatCurrency = amount => {
+  return `₦${Number(amount || 0).toLocaleString('en-NG', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  })}`
+}
+
+const getStatusColor = status => {
+  const s = (status || '').toLowerCase()
+  if (['success', 'paid', 'completed'].includes(s)) return 'text-emerald-600'
+  if (['abandoned', 'abondoned', 'failed', 'cancelled'].includes(s))
+    return 'text-red-600'
+  return 'text-orange-600'
+}
+
+export default function GymBookingDetails ({ bookingId }) {
   const router = useRouter()
+  const [booking, setBooking] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+
+  useEffect(() => {
+    const fetchBooking = async () => {
+      if (!bookingId) return
+      try {
+        setLoading(true)
+        const response = await getGymBookingDetail(bookingId)
+        if (response?.success) {
+          setBooking(response.data)
+        } else {
+          setError(response?.message || 'Failed to fetch booking details')
+        }
+      } catch (err) {
+        console.error('Error fetching booking details:', err)
+        setError(err?.message || 'An error occurred while fetching details')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchBooking()
+  }, [bookingId])
+
+  if (loading) {
+    return (
+      <div className='min-h-screen flex items-center justify-center'>
+        <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900'></div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className='min-h-screen flex items-center justify-center'>
+        <div className='text-red-500 text-center'>
+          <p className='text-lg font-semibold'>Error</p>
+          <p>{error}</p>
+          <button
+            onClick={() => router.back()}
+            className='mt-4 text-blue-500 hover:underline'
+          >
+            Go Back
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  if (!booking) return null
+
+  // Map API data to UI structure
+  const buyer = booking.buyer || booking.userId || {}
+  const gym = booking.gymId || {}
+  const passes = booking.passes || []
+  const pricing = booking.pricing || {}
 
   return (
     <div className='min-h-screen bg-[#fffff] p-12'>
@@ -54,13 +136,13 @@ export default function GymBookingDetails ({ id }) {
           </div>
           <div className='text-right text-sm'>
             <div className='font-semibold'>
-              Order ID: {BOOKING_DATA.orderId}
+              Order ID: {booking.orderId || '-'}
             </div>
             <div className='text-white/80'>
-              Issued on: {BOOKING_DATA.issuedOn}
+              Issued on: {formatDate(booking.createdAt)}
             </div>
             <div className='text-white/80'>
-              Visit Date: {BOOKING_DATA.visitDate}
+              Visit Date: {formatDate(booking.arrivalDate)}
             </div>
           </div>
         </div>
@@ -70,64 +152,138 @@ export default function GymBookingDetails ({ id }) {
           {/* Top Section: Gym Info & QR */}
           <div className='flex items-start justify-between gap-4'>
             <div className='flex items-start gap-3'>
-              <div className='h-16 w-16 rounded-lg bg-gray-100 overflow-hidden'>
+              <div className='h-16 w-16 rounded-lg bg-gray-100 overflow-hidden relative'>
                 <Image
-                  src={BOOKING_DATA.gymImage}
-                  alt={BOOKING_DATA.gymName}
-                  width={64}
-                  height={64}
-                  className='h-full w-full object-cover'
+                  src={getGymImageUrl(gym.image)}
+                  alt={gym.gymName || 'Gym Image'}
+                  fill
+                  className='object-cover'
+                  unoptimized={true}
                 />
               </div>
               <div>
                 <div className='text-base font-semibold text-slate-900'>
-                  {BOOKING_DATA.gymName}
+                  {gym.gymName || '-'}
                 </div>
                 <div className='text-sm text-[#5E6582]'>
-                  {BOOKING_DATA.dateTime}
+                  {formatDate(booking.arrivalDate, true)}
                 </div>
                 <div className='text-sm text-[#5E6582]'>
-                  {BOOKING_DATA.location}
+                  {gym.location || '-'}
                 </div>
+                {gym.duration && (
+                  <div className='text-sm text-[#5E6582] mt-1'>
+                    Duration: {gym.duration}
+                  </div>
+                )}
+                {(gym.startTime || gym.endTime) && (
+                  <div className='text-sm text-[#5E6582]'>
+                    Hours: {gym.startTime || '-'} - {gym.endTime || '-'}
+                  </div>
+                )}
               </div>
             </div>
-            <div className='h-20 w-20 rounded-lg bg-gray-100 flex items-center justify-center text-xs text-gray-600'>
-              <QRCodeCanvas value={BOOKING_DATA.qrCodeValue} size={64} />
+            <div className='h-20 w-20 rounded-lg flex items-center justify-center text-xs text-gray-600 p-2'>
+              <QRCodeCanvas value={booking.orderId || booking._id} size={64} />
             </div>
           </div>
 
           <div className='divide-y divide-[#EEF1FA]'>
             {/* Items List */}
             <div className='py-3 space-y-2'>
-              {BOOKING_DATA.items.map((item, index) => (
+              {passes.map((item, index) => (
                 <div
                   key={index}
                   className='flex items-center justify-between text-sm'
                 >
-                  <span>{item.name}</span>
-                  <span>{item.price}</span>
+                  <span>
+                    {item.quantity} x {item.gymAccessName}
+                  </span>
+                  <span>
+                    {formatCurrency(
+                      item.totalPrice || item.perAccessPrice * item.quantity
+                    )}
+                  </span>
                 </div>
               ))}
             </div>
 
-            {/* Total */}
-            <div className='py-3 flex items-center justify-between text-sm'>
-              <span>Total</span>
-              <span className='font-medium'>{BOOKING_DATA.total}</span>
+            {/* Pricing Breakdown */}
+            <div className='py-3 space-y-2 text-sm text-[#5E6582]'>
+              <div className='flex justify-between'>
+                <span>Subtotal</span>
+                <span>{formatCurrency(pricing.subtotal || 0)}</span>
+              </div>
+              <div className='flex justify-between'>
+                <span>Service Fee</span>
+                <span>{formatCurrency(pricing.serviceFee || 0)}</span>
+              </div>
+              {pricing.discountApplied > 0 && (
+                <div className='flex justify-between text-green-600'>
+                  <span>Discount</span>
+                  <span>-{formatCurrency(pricing.discountApplied)}</span>
+                </div>
+              )}
             </div>
 
-            {/* Status Section */}
-            <div className='py-3 grid grid-cols-2 gap-4'>
+            {/* Total */}
+            <div className='py-3 flex items-center justify-between text-sm border-t border-[#EEF1FA]'>
+              <span className='font-medium text-slate-900'>Total Amount</span>
+              <span className='font-bold text-slate-900'>
+                {formatCurrency(booking.finalPayableAmount)}
+              </span>
+            </div>
+
+            {/* Transaction & Status Section */}
+            <div className='py-3 grid grid-cols-2 gap-4 border-t border-[#EEF1FA]'>
+              <div className='text-sm text-[#5E6582]'>Transaction Ref</div>
+              <div className='text-right text-sm font-semibold text-slate-900 font-mono'>
+                {booking.transactionRef || '-'}
+              </div>
               <div className='text-sm text-[#5E6582]'>Payment Status</div>
-              <div className='text-right text-sm font-semibold text-slate-900'>
-                {BOOKING_DATA.paymentStatus}
+              <div
+                className={`text-right text-sm font-semibold capitalize ${getStatusColor(
+                  booking.paymentStatus
+                )}`}
+              >
+                {booking.paymentStatus || 'Pending'}
               </div>
               <div className='text-sm text-[#5E6582]'>Booking Status</div>
-              <div className='text-right text-sm font-semibold text-slate-900'>
-                {BOOKING_DATA.bookingStatus}
+              <div className='text-right text-sm font-semibold text-slate-900 capitalize'>
+                {booking.status || 'Pending'}
               </div>
             </div>
           </div>
+
+          {/* Gym Additional Info */}
+          {/* {(gym.aboutPlace || gym.importantInformation) && (
+            <div className='rounded-xl border border-[#E5E8F6] bg-white p-4 space-y-4'>
+              {gym.aboutPlace && (
+                <div>
+                  <div className='text-sm font-semibold text-slate-900 mb-2'>
+                    About Place
+                  </div>
+                  <div
+                    className='text-sm text-[#5E6582] prose prose-sm max-w-none'
+                    dangerouslySetInnerHTML={{ __html: gym.aboutPlace }}
+                  />
+                </div>
+              )}
+              {gym.importantInformation && (
+                <div className='pt-4 border-t border-[#EEF1FA]'>
+                  <div className='text-sm font-semibold text-slate-900 mb-2'>
+                    Important Information
+                  </div>
+                  <div
+                    className='text-sm text-[#5E6582] prose prose-sm max-w-none'
+                    dangerouslySetInnerHTML={{
+                      __html: gym.importantInformation
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+          )} */}
 
           {/* Buyer Details */}
           <div className='rounded-xl border border-[#E5E8F6] bg-white p-4'>
@@ -137,23 +293,23 @@ export default function GymBookingDetails ({ id }) {
             <div className='grid grid-cols-2 gap-4 text-sm'>
               <div className='text-[#5E6582]'>Full Name</div>
               <div className='text-right font-semibold text-slate-900'>
-                {BOOKING_DATA.buyer.name}
+                {buyer.fullName || buyer.name || '-'}
               </div>
               <div className='text-[#5E6582]'>Email Address</div>
-              <div className='text-right font-semibold text-slate-900'>
-                {BOOKING_DATA.buyer.email}
+              <div className='text-right font-semibold text-slate-900 break-all'>
+                {buyer.email || '-'}
               </div>
               <div className='text-[#5E6582]'>Phone</div>
               <div className='text-right font-semibold text-slate-900'>
-                {BOOKING_DATA.buyer.phone}
+                {buyer.phone || buyer.phoneNumber || '-'}
               </div>
               <div className='text-[#5E6582]'>Country</div>
               <div className='text-right font-semibold text-slate-900'>
-                {BOOKING_DATA.buyer.country}
+                {buyer.country || '-'}
               </div>
               <div className='text-[#5E6582]'>City</div>
               <div className='text-right font-semibold text-slate-900'>
-                {BOOKING_DATA.buyer.city}
+                {buyer.city || '-'}
               </div>
             </div>
           </div>

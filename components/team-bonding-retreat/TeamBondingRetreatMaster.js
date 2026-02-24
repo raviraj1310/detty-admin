@@ -412,6 +412,7 @@ export default function TeamBondingRetreatMaster () {
                             alt={retreat.name}
                             fill
                             className='object-cover'
+                            unoptimized={true}
                           />
                         </div>
                         <span className='text-sm font-medium text-[#1E293B]'>

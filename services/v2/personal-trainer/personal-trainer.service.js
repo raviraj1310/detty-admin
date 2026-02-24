@@ -161,3 +161,49 @@ export const activeInactiveTrainingSession = async (id, status) => {
     throw error
   }
 }
+
+export const getAllPersonalTrainerBooking = async (page, limit, search) => {
+  try {
+    const params = {
+      page,
+      limit
+    }
+
+    if (search) {
+      params.search = search
+    }
+
+    const response = await apiv2.get(
+      `/personal-trainer/get-all-bookings-personal-trainer`,
+      { params }
+    )
+    return response.data
+  } catch (error) {
+    console.error('Error fetching personal trainer bookings:', error)
+    throw error
+  }
+}
+
+export const getPersonalTrainerBookingById = async bookingId => {
+  try {
+    const response = await apiv2.get(
+      `/wellness/get-personal-trainer-booking-detail/${bookingId}`
+    )
+    return response.data
+  } catch (error) {
+    console.error('Error fetching personal trainer booking by id:', error)
+    throw error
+  }
+}
+
+export const getBookingsByTrainerId = async trainerId => {
+  try {
+    const response = await apiv2.get(
+      `/personal-trainer/get-bookings-personal-trainer/${trainerId}`
+    )
+    return response.data
+  } catch (error) {
+    console.error('Error fetching bookings by trainer id:', error)
+    throw error
+  }
+}

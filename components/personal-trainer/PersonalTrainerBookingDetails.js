@@ -1,38 +1,148 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { QRCodeCanvas } from 'qrcode.react'
+import { getPersonalTrainerBookingById } from '@/services/v2/personal-trainer/personal-trainer.service'
 
-// Mock Data
-const BOOKING_DATA = {
-  orderId: '78393002875234152',
-  issuedOn: '27/1/2026',
-  visitDate: 'Wednesday, Jan 28',
-  trainerName: 'Tunde Adeyemi',
-  trainerImage: '/images/dashboard/image-1.webp', // Placeholder
-  sessionType: '1:1 Training',
-  dateTime: 'Sat, Dec 14 • 3pm',
-  location: 'Landmark Event Centre, Lagos',
-  qrCodeValue: '928095101915334814409001',
-  items: [
-    { name: '2* General Session', price: '₦3,000.00', quantity: 2 },
-    { name: '2* General Session', price: '₦3,000.00', quantity: 2 }
-  ],
-  total: '₦6,110.00',
-  paymentStatus: 'Completed',
-  bookingStatus: 'Pending',
-  buyer: {
-    name: 'Oromuno Okiemute Grace',
-    email: 'loveokiemute@gmail.com',
-    phone: '2347031962591',
-    country: 'Nigeria',
-    city: 'Lagos'
+const formatCurrency = amount => {
+  return `₦${Number(amount || 0).toLocaleString('en-NG', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  })}`
+}
+
+const formatIssuedOn = dateString => {
+  if (!dateString) return '-'
+  const date = new Date(dateString)
+  const day = String(date.getDate()).padStart(2, '0')
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const year = date.getFullYear()
+  return `${day}/${month}/${year}`
+}
+
+const formatVisitDate = dateString => {
+  if (!dateString) return '-'
+  const date = new Date(dateString)
+  return date.toLocaleDateString('en-US', {
+    weekday: 'long',
+    month: 'short',
+    day: 'numeric'
+  })
+}
+
+const formatSessionDateTime = (dateString, timeString) => {
+  if (!dateString && !timeString) return '-'
+  const date = dateString ? new Date(dateString) : null
+  const datePart = date
+    ? date.toLocaleDateString('en-US', {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric'
+      })
+    : ''
+  const timePart = timeString || ''
+  if (!datePart && !timePart) return '-'
+  if (!datePart) return timePart
+  if (!timePart) return datePart
+  return `${datePart} • ${timePart}`
+}
+
+const toImageSrc = u => {
+  const s = String(u || '').trim()
+  if (!s) return null
+  if (/^https?:\/\//i.test(s)) return s
+  const originEnv = process.env.NEXT_PUBLIC_SIM_IMAGE_BASE_ORIGIN
+  const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || ''
+  let origin = originEnv
+  if (!origin) {
+    try {
+      origin = new URL(apiBase).origin
+    } catch {
+      origin = ''
+    }
   }
+  if (!origin) origin = originEnv
+  const base = origin ? origin.replace(/\/+$/, '') : ''
+  const path = s.replace(/^\/+/, '')
+  return base ? `${base}/upload/image/${path}` : `/upload/image/${path}`
 }
 
 export default function PersonalTrainerBookingDetails ({ id }) {
   const router = useRouter()
+  const [booking, setBooking] = useState(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchBooking = async () => {
+      if (!id) return
+      try {
+        setLoading(true)
+        const response = await getPersonalTrainerBookingById(id)
+        if (response?.success) {
+          setBooking(response.data)
+        }
+      } catch (error) {
+        console.error('Error fetching booking detail:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchBooking()
+  }, [id])
+
+  const trainer = booking?.personalTrainerId
+  const buyer = booking?.buyer
+  const user = booking?.userId
+  const session = booking?.sessions?.[0]
+
+  const orderId = booking?.orderId || ''
+  const issuedOn = formatIssuedOn(booking?.createdAt)
+  const visitDate = formatVisitDate(session?.date || booking?.sessionDate)
+  const dateTime = formatSessionDateTime(
+    session?.date || booking?.sessionDate,
+    session?.time
+  )
+  const trainerName = trainer?.trainerName || 'Trainer'
+  const trainerImage =
+    toImageSrc(trainer?.image) || '/images/dashboard/image-1.webp'
+  const location = trainer?.location || ''
+  const qrCodeValue = booking?.orderId || booking?.transactionRef || ''
+  const items = booking?.sessions || []
+  const total = formatCurrency(
+    booking?.pricing?.total || booking?.totalAmount || 0
+  )
+  const paymentStatusLabel =
+    booking?.paymentStatus === 'success'
+      ? 'Completed'
+      : booking?.paymentStatus || '-'
+  const bookingStatusLabel = booking?.status
+    ? booking.status.charAt(0).toUpperCase() + booking.status.slice(1)
+    : '-'
+
+  const buyerName = buyer?.fullName || user?.name || '-'
+  const buyerEmail = buyer?.email || user?.email || '-'
+  const buyerPhone = buyer?.phone || user?.phoneNumber || '-'
+  const buyerCountry = buyer?.country || '-'
+  const buyerCity = buyer?.city || '-'
+
+  if (loading) {
+    return (
+      <div className='min-h-screen bg-[#F8F9FC] p-12 flex items-center justify-center'>
+        <div className='text-[#64748B]'>Loading booking details...</div>
+      </div>
+    )
+  }
+
+  if (!booking) {
+    return (
+      <div className='min-h-screen bg-[#F8F9FC] p-12 flex items-center justify-center'>
+        <div className='text-[#64748B]'>Booking not found</div>
+      </div>
+    )
+  }
 
   return (
     <div className='min-h-screen bg-[#F8F9FC] p-12'>
@@ -53,13 +163,13 @@ export default function PersonalTrainerBookingDetails ({ id }) {
             </div>
             <div className='text-right'>
               <div className='text-sm font-medium opacity-90'>
-                Order ID: {BOOKING_DATA.orderId}
+                Order ID: {orderId}
               </div>
               <div className='mt-1 text-xs text-white/60'>
-                Issued On: {BOOKING_DATA.issuedOn}
+                Issued On: {issuedOn}
               </div>
               <div className='text-xs text-white/60'>
-                Visit Date: {BOOKING_DATA.visitDate}
+                Visit Date: {visitDate}
               </div>
             </div>
           </div>
@@ -72,21 +182,22 @@ export default function PersonalTrainerBookingDetails ({ id }) {
             <div className='flex items-start gap-4'>
               <div className='relative h-16 w-16 overflow-hidden rounded-lg bg-gray-100'>
                 <Image
-                  src={BOOKING_DATA.trainerImage}
-                  alt={BOOKING_DATA.trainerName}
+                  src={trainerImage}
+                  alt={trainerName}
                   fill
                   className='object-cover'
+                  unoptimized={true}
                 />
               </div>
               <div>
                 <h3 className='text-lg font-bold text-[#1E293B]'>
-                  {BOOKING_DATA.trainerName}
+                  {trainerName}
                 </h3>
                 <p className='text-sm text-[#64748B]'>
-                  {BOOKING_DATA.sessionType}
+                  {session?.sessionType || session?.trainingSessionName || '-'}
                 </p>
                 <div className='mt-1 flex flex-col gap-0.5 text-sm text-[#64748B]'>
-                  <span>{BOOKING_DATA.dateTime}</span>
+                  <span>{dateTime}</span>
                   <div className='flex items-center gap-1'>
                     <svg
                       width='12'
@@ -108,28 +219,32 @@ export default function PersonalTrainerBookingDetails ({ id }) {
                         strokeLinejoin='round'
                       />
                     </svg>
-                    <span>{BOOKING_DATA.location}</span>
+                    <span>{location}</span>
                   </div>
                 </div>
               </div>
             </div>
             <div>
-              <QRCodeCanvas value={BOOKING_DATA.qrCodeValue} size={80} />
+              <QRCodeCanvas value={qrCodeValue} size={80} />
               <div className='mt-1 text-[10px] text-center text-[#64748B] tracking-wider'>
-                {BOOKING_DATA.qrCodeValue}
+                {qrCodeValue}
               </div>
             </div>
           </div>
 
           {/* Items List */}
           <div className='mb-6 space-y-4 border-b border-dashed border-[#E2E8F0] pb-6'>
-            {BOOKING_DATA.items.map((item, index) => (
+            {items.map(item => (
               <div
-                key={index}
+                key={item._id}
                 className='flex items-center justify-between text-sm font-medium text-[#1E293B]'
               >
-                <span>{item.name}</span>
-                <span>{item.price}</span>
+                <span>
+                  {item.quantity}* {item.trainingSessionName}
+                </span>
+                <span>
+                  {formatCurrency(item.totalPrice || item.perSessionPrice)}
+                </span>
               </div>
             ))}
           </div>
@@ -138,7 +253,7 @@ export default function PersonalTrainerBookingDetails ({ id }) {
           <div className='mb-8 flex items-center justify-between border-b border-dashed border-[#E2E8F0] pb-8'>
             <span className='text-lg font-bold text-[#1E293B]'>Total</span>
             <span className='text-xl font-extrabold text-[#1E293B]'>
-              {BOOKING_DATA.total}
+              {total}
             </span>
           </div>
 
@@ -147,13 +262,13 @@ export default function PersonalTrainerBookingDetails ({ id }) {
             <div className='flex items-center justify-between text-sm'>
               <span className='text-[#64748B]'>Payment Status</span>
               <span className='font-bold text-[#22C55E]'>
-                {BOOKING_DATA.paymentStatus}
+                {paymentStatusLabel}
               </span>
             </div>
             <div className='flex items-center justify-between text-sm'>
               <span className='text-[#64748B]'>Booking Status</span>
               <span className='font-bold text-[#94A3B8]'>
-                {BOOKING_DATA.bookingStatus}
+                {bookingStatusLabel}
               </span>
             </div>
           </div>
@@ -167,31 +282,31 @@ export default function PersonalTrainerBookingDetails ({ id }) {
               <div className='flex justify-between'>
                 <span className='text-[#64748B]'>Name</span>
                 <span className='font-semibold text-[#1E293B]'>
-                  {BOOKING_DATA.buyer.name}
+                  {buyerName}
                 </span>
               </div>
               <div className='flex justify-between'>
                 <span className='text-[#64748B]'>Email Address</span>
                 <span className='font-semibold text-[#1E293B]'>
-                  {BOOKING_DATA.buyer.email}
+                  {buyerEmail}
                 </span>
               </div>
               <div className='flex justify-between'>
                 <span className='text-[#64748B]'>Phone Number</span>
                 <span className='font-semibold text-[#1E293B]'>
-                  {BOOKING_DATA.buyer.phone}
+                  {buyerPhone}
                 </span>
               </div>
               <div className='flex justify-between'>
                 <span className='text-[#64748B]'>Country</span>
                 <span className='font-semibold text-[#1E293B]'>
-                  {BOOKING_DATA.buyer.country}
+                  {buyerCountry}
                 </span>
               </div>
               <div className='flex justify-between'>
                 <span className='text-[#64748B]'>City</span>
                 <span className='font-semibold text-[#1E293B]'>
-                  {BOOKING_DATA.buyer.city}
+                  {buyerCity}
                 </span>
               </div>
             </div>

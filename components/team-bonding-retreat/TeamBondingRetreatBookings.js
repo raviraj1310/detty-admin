@@ -10,88 +10,38 @@ import {
   Wallet,
   XCircle,
   Loader2,
-  Calendar
+  Calendar,
+  ArrowLeft
 } from 'lucide-react'
 import { IoFilterSharp } from 'react-icons/io5'
 import { TbCaretUpDownFilled } from 'react-icons/tb'
 import Toast from '@/components/ui/Toast'
 
-// Mock Data for Metrics
-const INITIAL_METRICS = {
-  totalBookings: 1155,
-  revenue: '865(₦10,00,000)',
-  cancelledBookings: '299(₦2,00,000)'
+import {
+  getAllBondingRetreatBookings,
+  getAllBookingByRetreatId,
+  getTeamBondingRetreatById
+} from '@/services/v2/team/team-bonding-retreat.service'
+
+const formatDate = dateString => {
+  if (!dateString) return '-'
+  return new Date(dateString).toLocaleString('en-US', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: 'numeric',
+    hour12: true
+  })
 }
 
-// Mock Data for Table
-const MOCK_BOOKINGS = [
-  {
-    _id: '1',
-    bookedOn: '2025-06-12T10:00:00',
-    userName: 'Ayo Famuyiwa',
-    email: 'ayo.famuyiwa@email.com',
-    phone: '+234 802 123 4567',
-    session: 'Small Team Package',
-    sessionPrice: '₦10,000',
-    amount: '₦10,000',
-    status: 'Completed'
-  },
-  {
-    _id: '2',
-    bookedOn: '2025-06-12T10:00:00',
-    userName: 'Bolu Onabanjo',
-    email: 'bolu.onabanjo@email.com',
-    phone: '+234 802 234 5678',
-    session: 'Small Team Package',
-    sessionPrice: '₦10,000',
-    amount: '₦10,000',
-    status: 'Cancelled'
-  },
-  {
-    _id: '3',
-    bookedOn: '2025-06-12T10:00:00',
-    userName: 'Segun Adebayo',
-    email: 'segun.adebayo@email.com',
-    phone: '+234 802 345 6789',
-    session: 'Small Team Package',
-    sessionPrice: '₦10,000',
-    amount: '₦10,000',
-    status: 'Completed'
-  },
-  {
-    _id: '4',
-    bookedOn: '2025-06-12T10:00:00',
-    userName: 'Tunde Bakare',
-    email: 'tunde.bakare@email.com',
-    phone: '+234 802 456 7890',
-    session: 'Small Team Package',
-    sessionPrice: '₦10,000',
-    amount: '₦10,000',
-    status: 'Completed'
-  },
-  {
-    _id: '5',
-    bookedOn: '2025-06-12T10:00:00',
-    userName: 'Kunle Afolayan',
-    email: 'kunle.afolayan@email.com',
-    phone: '+234 802 567 8901',
-    session: 'Small Team Package',
-    sessionPrice: '₦10,000',
-    amount: '₦10,000',
-    status: 'Completed'
-  },
-  {
-    _id: '6',
-    bookedOn: '2025-06-12T10:00:00',
-    userName: 'Bisi Alimi',
-    email: 'bisi.alimi@email.com',
-    phone: '+234 802 678 9012',
-    session: 'Small Team Package',
-    sessionPrice: '₦10,000',
-    amount: '₦10,000',
-    status: 'Completed'
-  }
-]
+const formatCurrency = amount => {
+  return `₦${Number(amount || 0).toLocaleString('en-NG', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  })}`
+}
 
 const TableHeaderCell = ({ children, align = 'left' }) => (
   <div
@@ -130,8 +80,14 @@ export default function TeamBondingRetreatBookings () {
   const params = useParams()
   const { id } = params || {}
 
-  const [bookings, setBookings] = useState(MOCK_BOOKINGS)
-  const [loading, setLoading] = useState(false)
+  const [bookings, setBookings] = useState([])
+  const [metrics, setMetrics] = useState({
+    totalBookings: 0,
+    revenue: 0,
+    cancelledBookings: 0
+  })
+  const [retreatName, setRetreatName] = useState('')
+  const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [activeDropdown, setActiveDropdown] = useState(null)
   const dropdownRef = useRef(null)
@@ -149,6 +105,81 @@ export default function TeamBondingRetreatBookings () {
     setToastOpen(true)
   }
 
+  const fetchBookings = async () => {
+    try {
+      setLoading(true)
+      let response
+      if (id) {
+        response = await getAllBookingByRetreatId(id, 1, 100, searchTerm)
+      } else {
+        response = await getAllBondingRetreatBookings(1, 100, searchTerm)
+      }
+
+      const responseData = response?.data || response
+
+      if (responseData?.success) {
+        const bookingsList =
+          responseData.data?.bookings || responseData.data || []
+        const validBookings = Array.isArray(bookingsList) ? bookingsList : []
+
+        setBookings(validBookings)
+
+        // Calculate metrics
+        const totalRevenue =
+          responseData.data?.totalRevenue ||
+          validBookings.reduce((sum, booking) => {
+            return (
+              sum +
+              (booking.pricing?.total ||
+                booking.totalAmount ||
+                booking.amount ||
+                0)
+            )
+          }, 0)
+
+        const cancelled =
+          responseData.data?.cancelledBookings ||
+          validBookings.filter(b => b.status?.toLowerCase() === 'cancelled')
+            .length
+
+        setMetrics({
+          totalBookings:
+            responseData.data?.totalBookings || validBookings.length,
+          revenue: totalRevenue,
+          cancelledBookings: cancelled
+        })
+      }
+    } catch (error) {
+      console.error('Error fetching bookings:', error)
+      showToast('Error', 'Failed to fetch bookings', 'destructive')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchBookings()
+  }, [searchTerm, id])
+
+  useEffect(() => {
+    const fetchRetreatDetails = async () => {
+      if (id) {
+        try {
+          const response = await getTeamBondingRetreatById(id)
+          const data = response?.data?.data || response?.data
+          if (data?.teamBondingRetreatName) {
+            setRetreatName(data.teamBondingRetreatName)
+          }
+        } catch (error) {
+          console.error('Error fetching retreat details:', error)
+        }
+      } else {
+        setRetreatName('')
+      }
+    }
+    fetchRetreatDetails()
+  }, [id])
+
   useEffect(() => {
     const handleClickOutside = event => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -165,11 +196,17 @@ export default function TeamBondingRetreatBookings () {
   }
 
   const getStatusColor = status => {
+    if (!status) return 'bg-gray-100 text-gray-600 border border-gray-200'
     switch (status.toLowerCase()) {
       case 'completed':
+      case 'success':
         return 'bg-[#E6F8EF] text-[#22C55E] border border-[#22C55E]'
       case 'cancelled':
+      case 'abandoned':
+      case 'failed':
         return 'bg-[#FFF0F0] text-[#FF9E42] border border-[#FF9E42]'
+      case 'pending':
+        return 'bg-[#FFF9E6] text-[#FFB020] border border-[#FFB020]'
       default:
         return 'bg-gray-100 text-gray-600 border border-gray-200'
     }
@@ -187,8 +224,18 @@ export default function TeamBondingRetreatBookings () {
 
       {/* Header */}
       <div className='mb-8'>
+        <button
+          onClick={() => router.back()}
+          className='mb-4 flex items-center gap-2 text-sm font-medium text-[#64748B] hover:text-[#1E293B]'
+        >
+          <ArrowLeft className='h-4 w-4' />
+          Back
+        </button>
         <h1 className='text-2xl font-bold text-[#1E293B]'>
           Team Bonding Retreat Session Bookings{' '}
+          {retreatName && (
+            <span className='text-[#FF4400]'>({retreatName})</span>
+          )}
         </h1>
         <nav className='mt-1 text-sm text-[#64748B]'>
           <span className='cursor-pointer hover:text-[#1E293B]'>Dashboard</span>
@@ -201,7 +248,7 @@ export default function TeamBondingRetreatBookings () {
       <div className='mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3'>
         <MetricCard
           title='Total Bookings'
-          value={INITIAL_METRICS.totalBookings}
+          value={metrics.totalBookings}
           icon={User}
           bgClass='bg-[#F3E8FF]'
           colorClass='text-[#9333EA]'
@@ -209,7 +256,7 @@ export default function TeamBondingRetreatBookings () {
         />
         <MetricCard
           title='Revenue'
-          value={INITIAL_METRICS.revenue}
+          value={formatCurrency(metrics.revenue)}
           icon={Wallet}
           bgClass='bg-[#E0F2F1]'
           colorClass='text-[#00897B]'
@@ -217,7 +264,7 @@ export default function TeamBondingRetreatBookings () {
         />
         <MetricCard
           title='Cancelled Bookings'
-          value={INITIAL_METRICS.cancelledBookings}
+          value={metrics.cancelledBookings}
           icon={XCircle}
           bgClass='bg-[#FCE4EC]'
           colorClass='text-[#D81B60]'
@@ -298,41 +345,56 @@ export default function TeamBondingRetreatBookings () {
                 bookings.map(booking => (
                   <tr key={booking._id} className='hover:bg-[#F8F9FC]'>
                     <td className='py-4 px-6 text-sm text-[#64748B]'>
-                      {new Date(booking.bookedOn).toLocaleString('en-GB', {
-                        weekday: 'short',
-                        day: 'numeric',
-                        month: 'long',
-                        year: 'numeric',
-                        hour: 'numeric',
-                        minute: 'numeric',
-                        hour12: true
-                      })}
+                      {formatDate(booking.createdAt || booking.bookedOn)}
                     </td>
                     <td className='py-4 px-6 text-sm text-[#64748B]'>
-                      {booking.userName}
+                      {booking.buyer?.fullName ||
+                        booking.userId?.name ||
+                        booking.userName ||
+                        '-'}
                     </td>
                     <td className='py-4 px-6 text-sm text-[#64748B]'>
-                      {booking.email}
+                      {booking.buyer?.email ||
+                        booking.userId?.email ||
+                        booking.email ||
+                        '-'}
                     </td>
                     <td className='py-4 px-6 text-sm text-[#64748B]'>
-                      {booking.phone}
+                      {booking.buyer?.phoneNumber ||
+                        booking.buyer?.phone ||
+                        booking.userId?.phoneNumber ||
+                        booking.userId?.phone ||
+                        booking.phoneNumber ||
+                        booking.phone ||
+                        '-'}
                     </td>
                     <td className='py-4 px-6 text-sm text-[#64748B]'>
-                      {booking.session}{' '}
+                      {booking.sessions?.[0]?.sessionName ||
+                        booking.session ||
+                        '-'}
                       <span className='font-semibold text-[#1E293B]'>
-                        ({booking.sessionPrice})
+                        {' ('}
+                        {formatCurrency(
+                          booking.sessions?.[0]?.sessionPrice ||
+                            booking.sessionPrice
+                        )}
+                        {')'}
                       </span>
                     </td>
                     <td className='py-4 px-6 text-sm font-bold text-[#1E293B]'>
-                      {booking.amount}
+                      {formatCurrency(
+                        booking.finalPayableAmount ||
+                          booking.totalAmount ||
+                          booking.amount
+                      )}
                     </td>
                     <td className='py-4 px-6'>
                       <span
                         className={`inline-flex items-center rounded-lg px-3 py-1 text-xs font-medium ${getStatusColor(
-                          booking.status
+                          booking.paymentStatus || booking.status || 'Pending'
                         )}`}
                       >
-                        {booking.status}
+                        {booking.paymentStatus || booking.status || 'Pending'}
                       </span>
                     </td>
                     <td className='py-4 px-6 text-right relative'>

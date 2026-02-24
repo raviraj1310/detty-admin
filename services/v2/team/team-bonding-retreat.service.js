@@ -142,3 +142,44 @@ export const activeInactiveSessionById = async (sessionId, data) => {
     throw error
   }
 }
+
+export const getAllBondingRetreatBookings = async (page, limit, searchTerm) => {
+  try {
+    const bondingRetreatBookings = await apiv2.get(
+      `/team-bonding/get-all-bookings?page=${page}&limit=${limit}&searchTerm=${searchTerm}`
+    )
+    return bondingRetreatBookings
+  } catch (error) {
+    console.error('Error fetching team bonding retreat bookings:', error)
+    throw error
+  }
+}
+
+export const getAllBookingByRetreatId = async (
+  retreatId,
+  page,
+  limit,
+  searchTerm
+) => {
+  try {
+    const bondingRetreatBookings = await apiv2.get(
+      `/team-bonding/get-bookings-by-retreat/${retreatId}?page=${page}&limit=${limit}&searchTerm=${searchTerm}`
+    )
+    return bondingRetreatBookings
+  } catch (error) {
+    console.error('Error fetching team bonding retreat bookings:', error)
+    throw error
+  }
+}
+
+export const getBookingDetails = async bookingId => {
+  try {
+    const bookingDetail = await apiv2.get(
+      `/wellness/get-team-bonding-booking-detail/${bookingId}`
+    )
+    return bookingDetail
+  } catch (error) {
+    console.error('Error fetching booking detail:', error)
+    throw error
+  }
+}

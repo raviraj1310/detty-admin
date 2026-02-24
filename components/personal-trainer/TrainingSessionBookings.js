@@ -10,88 +10,36 @@ import {
   Wallet,
   XCircle,
   Loader2,
-  Calendar
+  Calendar,
+  ChevronLeft
 } from 'lucide-react'
 import { IoFilterSharp } from 'react-icons/io5'
 import { TbCaretUpDownFilled } from 'react-icons/tb'
 import Toast from '@/components/ui/Toast'
+import {
+  getAllPersonalTrainerBooking,
+  getBookingsByTrainerId
+} from '@/services/v2/personal-trainer/personal-trainer.service'
 
-// Mock Data for Metrics
-const INITIAL_METRICS = {
-  totalBookings: 1155,
-  revenue: '865(₦10,00,000)',
-  cancelledBookings: '299(₦2,00,000)'
+const formatDate = dateString => {
+  if (!dateString) return '-'
+  return new Date(dateString).toLocaleString('en-US', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: 'numeric',
+    hour12: true
+  })
 }
 
-// Mock Data for Table
-const MOCK_BOOKINGS = [
-  {
-    _id: '1',
-    bookedOn: '2025-06-12T10:00:00',
-    userName: 'Ayo Famuyiwa',
-    email: 'ayo.famuyiwa@email.com',
-    phone: '+234 802 123 4567',
-    session: '1:1 Personal Training',
-    sessionPrice: '₦2,000',
-    amount: '₦16,000',
-    status: 'Completed'
-  },
-  {
-    _id: '2',
-    bookedOn: '2025-06-12T10:00:00',
-    userName: 'Bolu Onabanjo',
-    email: 'bolu.onabanjo@email.com',
-    phone: '+234 802 234 5678',
-    session: '1:1 Personal Training',
-    sessionPrice: '₦2,000',
-    amount: '₦6,000',
-    status: 'Cancelled'
-  },
-  {
-    _id: '3',
-    bookedOn: '2025-06-12T10:00:00',
-    userName: 'Segun Adebayo',
-    email: 'segun.adebayo@email.com',
-    phone: '+234 802 345 6789',
-    session: '1:1 Personal Training',
-    sessionPrice: '₦2,000',
-    amount: '₦6,000',
-    status: 'Completed'
-  },
-  {
-    _id: '4',
-    bookedOn: '2025-06-12T10:00:00',
-    userName: 'Tunde Bakare',
-    email: 'tunde.bakare@email.com',
-    phone: '+234 802 456 7890',
-    session: '1:1 Personal Training',
-    sessionPrice: '₦2,000',
-    amount: '₦6,000',
-    status: 'Completed'
-  },
-  {
-    _id: '5',
-    bookedOn: '2025-06-12T10:00:00',
-    userName: 'Kunle Afolayan',
-    email: 'kunle.afolayan@email.com',
-    phone: '+234 802 567 8901',
-    session: '1:1 Personal Training',
-    sessionPrice: '₦2,000',
-    amount: '₦6,000',
-    status: 'Completed'
-  },
-  {
-    _id: '6',
-    bookedOn: '2025-06-12T10:00:00',
-    userName: 'Bisi Alimi',
-    email: 'bisi.alimi@email.com',
-    phone: '+234 802 678 9012',
-    session: '1:1 Personal Training',
-    sessionPrice: '₦2,000',
-    amount: '₦6,000',
-    status: 'Completed'
-  }
-]
+const formatCurrency = amount => {
+  return `₦${Number(amount || 0).toLocaleString('en-NG', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  })}`
+}
 
 const TableHeaderCell = ({ children, align = 'left' }) => (
   <div
@@ -130,14 +78,80 @@ export default function TrainingSessionBookings () {
   const params = useParams()
   const { id } = params || {}
 
-  const [bookings, setBookings] = useState(MOCK_BOOKINGS)
-  const [loading, setLoading] = useState(false)
+  const [bookings, setBookings] = useState([])
+  const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [activeDropdown, setActiveDropdown] = useState(null)
+  const [metrics, setMetrics] = useState({
+    totalBookings: 0,
+    revenue: 0,
+    cancelledBookings: 0
+  })
   const dropdownRef = useRef(null)
 
   // Toast State
   const [toast, setToast] = useState({ show: false, message: '', type: '' })
+
+  const fetchBookings = async () => {
+    try {
+      setLoading(true)
+      if (id) {
+        const response = await getBookingsByTrainerId(id)
+        if (response?.success) {
+          const trainerBookings = Array.isArray(response.data)
+            ? response.data
+            : response.data?.bookings || response.data?.data || []
+
+          setBookings(Array.isArray(trainerBookings) ? trainerBookings : [])
+
+          // Calculate metrics from the bookings list
+          const totalRevenue = Array.isArray(trainerBookings)
+            ? trainerBookings.reduce((sum, booking) => {
+                return (
+                  sum + (booking.pricing?.total || booking.totalAmount || 0)
+                )
+              }, 0)
+            : 0
+
+          const cancelled = Array.isArray(trainerBookings)
+            ? trainerBookings.filter(
+                b => b.status?.toLowerCase() === 'cancelled'
+              ).length
+            : 0
+
+          setMetrics({
+            totalBookings: trainerBookings.length || 0,
+            revenue: totalRevenue,
+            cancelledBookings: cancelled
+          })
+        }
+      } else {
+        const response = await getAllPersonalTrainerBooking(1, 100, searchTerm)
+        if (response?.success) {
+          const allBookings = response.data.bookings || []
+          setBookings(Array.isArray(allBookings) ? allBookings : [])
+          setMetrics({
+            totalBookings: response.data.totalBookings || 0,
+            revenue: response.data.totalRevenue || 0,
+            cancelledBookings: response.data.cancelledBookings || 0
+          })
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching bookings:', error)
+      setToast({
+        show: true,
+        message: 'Failed to fetch bookings',
+        type: 'error'
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchBookings()
+  }, [searchTerm, id])
 
   useEffect(() => {
     const handleClickOutside = event => {
@@ -175,23 +189,33 @@ export default function TrainingSessionBookings () {
       />
 
       {/* Header */}
-      <div className='mb-8'>
-        <h1 className='text-2xl font-bold text-[#1E293B]'>
-          Training Session Bookings{' '}
-          {id && <span className='text-[#FF4400]'>(Tunde Adeyemi)</span>}
-        </h1>
-        <nav className='mt-1 text-sm text-[#64748B]'>
-          <span className='cursor-pointer hover:text-[#1E293B]'>Dashboard</span>
-          <span className='mx-2'>/</span>
-          <span className='text-[#1E293B]'>Bookings</span>
-        </nav>
+      <div className='mb-8 flex items-center gap-4'>
+        <button
+          onClick={() => router.back()}
+          className='flex h-10 w-10 items-center justify-center rounded-xl border border-[#E2E8F0] bg-white text-[#64748B] transition hover:bg-gray-50'
+        >
+          <ChevronLeft className='h-5 w-5' />
+        </button>
+        <div>
+          <h1 className='text-2xl font-bold text-[#1E293B]'>
+            Training Session Bookings{' '}
+            {id && <span className='text-[#FF4400]'>(Tunde Adeyemi)</span>}
+          </h1>
+          <nav className='mt-1 text-sm text-[#64748B]'>
+            <span className='cursor-pointer hover:text-[#1E293B]'>
+              Dashboard
+            </span>
+            <span className='mx-2'>/</span>
+            <span className='text-[#1E293B]'>Bookings</span>
+          </nav>
+        </div>
       </div>
 
       {/* Metrics Grid */}
       <div className='mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3'>
         <MetricCard
           title='Total Bookings'
-          value={INITIAL_METRICS.totalBookings}
+          value={metrics.totalBookings}
           icon={User}
           bgClass='bg-[#F3E8FF]'
           colorClass='text-[#9333EA]'
@@ -199,7 +223,7 @@ export default function TrainingSessionBookings () {
         />
         <MetricCard
           title='Revenue'
-          value={INITIAL_METRICS.revenue}
+          value={formatCurrency(metrics.revenue)}
           icon={Wallet}
           bgClass='bg-[#E0F2F1]'
           colorClass='text-[#00897B]'
@@ -207,7 +231,7 @@ export default function TrainingSessionBookings () {
         />
         <MetricCard
           title='Cancelled Bookings'
-          value={INITIAL_METRICS.cancelledBookings}
+          value={metrics.cancelledBookings}
           icon={XCircle}
           bgClass='bg-[#FCE4EC]'
           colorClass='text-[#D81B60]'
@@ -288,33 +312,33 @@ export default function TrainingSessionBookings () {
                 bookings.map(booking => (
                   <tr key={booking._id} className='hover:bg-[#F8F9FC]'>
                     <td className='py-4 px-6 text-sm text-[#64748B]'>
-                      {new Date(booking.bookedOn).toLocaleString('en-GB', {
-                        weekday: 'short',
-                        day: 'numeric',
-                        month: 'long',
-                        year: 'numeric',
-                        hour: 'numeric',
-                        minute: 'numeric',
-                        hour12: true
-                      })}
+                      {formatDate(booking.createdAt || booking.bookedOn)}
                     </td>
                     <td className='py-4 px-6 text-sm text-[#64748B]'>
-                      {booking.userName}
+                      {booking.buyer?.fullName || booking.userId?.name || '-'}
                     </td>
                     <td className='py-4 px-6 text-sm text-[#64748B]'>
-                      {booking.email}
+                      {booking.buyer?.email || '-'}
                     </td>
                     <td className='py-4 px-6 text-sm text-[#64748B]'>
-                      {booking.phone}
+                      {booking.buyer?.phone || '-'}
                     </td>
                     <td className='py-4 px-6 text-sm text-[#64748B]'>
-                      {booking.session}{' '}
+                      {booking.sessions?.[0]?.trainingSessionName ||
+                        booking.session ||
+                        '-'}{' '}
                       <span className='font-semibold text-[#1E293B]'>
-                        ({booking.sessionPrice})
+                        (
+                        {formatCurrency(
+                          booking.sessions?.[0]?.perSessionPrice ||
+                            booking.perSessionPrice ||
+                            0
+                        )}
+                        )
                       </span>
                     </td>
                     <td className='py-4 px-6 text-sm font-bold text-[#1E293B]'>
-                      {booking.amount}
+                      {formatCurrency(booking.pricing?.total || booking.amount)}
                     </td>
                     <td className='py-4 px-6'>
                       <span

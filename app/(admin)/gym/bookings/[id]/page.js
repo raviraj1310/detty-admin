@@ -1,5 +1,6 @@
 import GymBookings from '@/components/gymAccess/GymBookings'
 
-export default function GymBookingsPage ({ params }) {
-  return <GymBookings id={params.id} />
+export default async function GymBookingsPage ({ params }) {
+  const resolvedParams = await params
+  return <GymBookings id={resolvedParams.id} />
 }

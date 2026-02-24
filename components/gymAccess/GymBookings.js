@@ -13,104 +13,27 @@ import {
   ChevronLeft
 } from 'lucide-react'
 import { TbCaretUpDownFilled } from 'react-icons/tb'
+import { getBookingsByGymId } from '@/services/v2/gym/gym.service'
 
-// Mock Data for Metric Cards
-const METRIC_CARDS = [
-  {
-    id: 'total-bookings',
-    title: 'Total Bookings',
-    value: '1155',
-    icon: User,
-    bg: 'bg-[#F3E8FF]',
-    textColor: 'text-purple-600',
-    iconBg: 'bg-white'
-  },
-  {
-    id: 'revenue',
-    title: 'Revenue',
-    value: '865(₦10,00,000)',
-    icon: Wallet,
-    bg: 'bg-[#E0F2F1]',
-    textColor: 'text-teal-700',
-    iconBg: 'bg-white'
-  },
-  {
-    id: 'cancelled',
-    title: 'Cancelled Bookings',
-    value: '299(₦2,00,000)',
-    icon: XCircle,
-    bg: 'bg-[#FCE4EC]',
-    textColor: 'text-pink-600',
-    iconBg: 'bg-white'
-  }
-]
+const formatDate = dateString => {
+  if (!dateString) return '-'
+  return new Date(dateString).toLocaleString('en-US', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: 'numeric',
+    hour12: true
+  })
+}
 
-// Mock Data for Booking List
-const MOCK_BOOKINGS = [
-  {
-    id: 1,
-    bookedOn: 'Sat, 12 June 2025, 10:00 AM',
-    userName: 'Ayo Famuyiwa',
-    email: 'ayo.famuyiwa@email.com',
-    phoneNumber: '+234 802 123 4567',
-    accessBooked: [
-      '3 x Day Gym Access (Adult) (₦2,000)',
-      '2 x Day Gym Access (Adult) (₦10,000)'
-    ],
-    amount: '₦16,000',
-    status: 'Completed'
-  },
-  {
-    id: 2,
-    bookedOn: 'Sat, 12 June 2025, 10:00 AM',
-    userName: 'Bolu Onabanjo',
-    email: 'bolu.onabanjo@email.com',
-    phoneNumber: '+234 802 234 5678',
-    accessBooked: ['3 x Day Gym Access (Adult) (₦2,000)'],
-    amount: '₦6,000',
-    status: 'Cancelled'
-  },
-  {
-    id: 3,
-    bookedOn: 'Sat, 12 June 2025, 10:00 AM',
-    userName: 'Segun Adebayo',
-    email: 'segun.adebayo@email.com',
-    phoneNumber: '+234 802 345 6789',
-    accessBooked: ['3 x Day Gym Access (Adult) (₦2,000)'],
-    amount: '₦6,000',
-    status: 'Completed'
-  },
-  {
-    id: 4,
-    bookedOn: 'Sat, 12 June 2025, 10:00 AM',
-    userName: 'Tunde Bakare',
-    email: 'tunde.bakare@email.com',
-    phoneNumber: '+234 802 456 7890',
-    accessBooked: ['3 x Day Gym Access (Adult) (₦2,000)'],
-    amount: '₦6,000',
-    status: 'Completed'
-  },
-  {
-    id: 5,
-    bookedOn: 'Sat, 12 June 2025, 10:00 AM',
-    userName: 'Kunle Afolayan',
-    email: 'kunle.afolayan@email.com',
-    phoneNumber: '+234 802 567 8901',
-    accessBooked: ['3 x Day Gym Access (Adult) (₦2,000)'],
-    amount: '₦6,000',
-    status: 'Completed'
-  },
-  {
-    id: 6,
-    bookedOn: 'Sat, 12 June 2025, 10:00 AM',
-    userName: 'Bisi Alimi',
-    email: 'bisi.alimi@email.com',
-    phoneNumber: '+234 802 678 9012',
-    accessBooked: ['3 x Day Gym Access (Adult) (₦2,000)'],
-    amount: '₦6,000',
-    status: 'Completed'
-  }
-]
+const formatCurrency = amount => {
+  return `₦${Number(amount || 0).toLocaleString('en-NG', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  })}`
+}
 
 const TableHeaderCell = ({ children, align = 'left' }) => (
   <div
@@ -127,6 +50,36 @@ export default function GymBookings ({ id }) {
   const router = useRouter()
   const [searchTerm, setSearchTerm] = useState('')
   const [menuOpenId, setMenuOpenId] = useState(null)
+  const [bookings, setBookings] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [metrics, setMetrics] = useState({
+    totalBookings: 0,
+    totalRevenue: 0
+  })
+
+  useEffect(() => {
+    const fetchBookings = async () => {
+      try {
+        setLoading(true)
+        const response = await getBookingsByGymId(1, 100, id, searchTerm)
+        if (response?.success) {
+          setBookings(response.data.gymBookings || [])
+          setMetrics({
+            totalBookings: response.data.totalBookings || 0,
+            totalRevenue: response.data.totalRevenue || 0
+          })
+        }
+      } catch (error) {
+        console.error('Error fetching bookings:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    if (id) {
+      fetchBookings()
+    }
+  }, [id, searchTerm])
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -159,31 +112,49 @@ export default function GymBookings ({ id }) {
 
       {/* Metric Cards */}
       <div className='grid grid-cols-1 gap-4 md:grid-cols-3'>
-        {METRIC_CARDS.map(card => {
-          const Icon = card.icon
-          return (
-            <div
-              key={card.id}
-              className={`flex items-center justify-between rounded-2xl p-4 ${card.bg}`}
-            >
-              <div className='flex items-center gap-3'>
-                <div
-                  className={`flex h-10 w-10 items-center justify-center rounded-full ${card.iconBg}`}
-                >
-                  <Icon className={`h-5 w-5 ${card.textColor}`} />
-                </div>
-                <div className='flex flex-col'>
-                  <p className={`text-xs font-medium ${card.textColor}`}>
-                    {card.title}
-                  </p>
-                  <p className={`text-xl font-bold ${card.textColor}`}>
-                    {card.value}
-                  </p>
-                </div>
-              </div>
+        <div className='flex items-center justify-between rounded-2xl p-4 bg-[#F3E8FF]'>
+          <div className='flex items-center gap-3'>
+            <div className='flex h-10 w-10 items-center justify-center rounded-full bg-white'>
+              <User className='h-5 w-5 text-purple-600' />
             </div>
-          )
-        })}
+            <div className='flex flex-col'>
+              <p className='text-xs font-medium text-purple-600'>
+                Total Bookings
+              </p>
+              <p className='text-xl font-bold text-purple-600'>
+                {metrics.totalBookings}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className='flex items-center justify-between rounded-2xl p-4 bg-[#E0F2F1]'>
+          <div className='flex items-center gap-3'>
+            <div className='flex h-10 w-10 items-center justify-center rounded-full bg-white'>
+              <Wallet className='h-5 w-5 text-teal-700' />
+            </div>
+            <div className='flex flex-col'>
+              <p className='text-xs font-medium text-teal-700'>Revenue</p>
+              <p className='text-xl font-bold text-teal-700'>
+                {formatCurrency(metrics.totalRevenue)}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className='flex items-center justify-between rounded-2xl p-4 bg-[#FCE4EC]'>
+          <div className='flex items-center gap-3'>
+            <div className='flex h-10 w-10 items-center justify-center rounded-full bg-white'>
+              <XCircle className='h-5 w-5 text-pink-600' />
+            </div>
+            <div className='flex flex-col'>
+              <p className='text-xs font-medium text-pink-600'>
+                Cancelled Bookings
+              </p>
+              <p className='text-xl font-bold text-pink-600'>-</p>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Booking List Table */}
@@ -238,73 +209,102 @@ export default function GymBookings ({ id }) {
 
           {/* Table Rows */}
           <div className='divide-y divide-[#EEF1FA] bg-white'>
-            {MOCK_BOOKINGS.map(item => (
-              <div
-                key={item.id}
-                className='grid grid-cols-12 gap-4 px-4 py-3 items-start hover:bg-[#F9FAFD]'
-              >
-                <div className='col-span-2 text-xs text-[#5E6582]'>
-                  {item.bookedOn}
-                </div>
-                <div className='col-span-2 text-xs font-medium text-slate-900'>
-                  {item.userName}
-                </div>
-                <div
-                  className='col-span-2 text-xs text-[#5E6582] truncate'
-                  title={item.email}
-                >
-                  {item.email}
-                </div>
-                <div className='col-span-2 text-xs text-[#5E6582]'>
-                  {item.phoneNumber}
-                </div>
-                <div className='col-span-2 space-y-1'>
-                  {item.accessBooked.map((access, idx) => (
-                    <div key={idx} className='text-xs text-[#5E6582]'>
-                      {access}
-                    </div>
-                  ))}
-                </div>
-                <div className='col-span-1 text-xs font-bold text-slate-900'>
-                  {item.amount}
-                </div>
-                <div className='col-span-1 flex justify-end items-center gap-2'>
-                  <span
-                    className={`inline-flex items-center justify-center rounded-md px-2 py-1 text-[10px] font-semibold ${
-                      item.status === 'Completed'
-                        ? 'bg-emerald-50 text-emerald-600 border border-emerald-200'
-                        : 'bg-orange-50 text-orange-600 border border-orange-200'
-                    }`}
-                  >
-                    {item.status}
-                  </span>
-
-                  {/* Action Menu */}
-                  <div className='relative action-menu'>
-                    <button
-                      onClick={() =>
-                        setMenuOpenId(menuOpenId === item.id ? null : item.id)
-                      }
-                      className='text-[#8A92AC] hover:text-[#2D3658]'
-                    >
-                      <MoreVertical className='h-4 w-4' />
-                    </button>
-                    {menuOpenId === item.id && (
-                      <div className='absolute right-0 top-6 z-10 w-40 rounded-lg border border-[#E1E6F7] bg-white py-2 shadow-lg'>
-                        <button
-                          onClick={() => {
-                            router.push(`/gym/bookings/view/${item.id}`)
-                          }}
-                          className='block w-full px-4 py-2 text-left text-xs font-medium text-slate-700 hover:bg-[#F8F9FC]'
-                        >
-                          View Access Details
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
+            {loading ? (
+              <div className='p-8 text-center text-gray-500'>
+                Loading bookings...
               </div>
-            ))}
+            ) : bookings.length === 0 ? (
+              <div className='p-8 text-center text-gray-500'>
+                No bookings found
+              </div>
+            ) : (
+              bookings.map(item => {
+                const buyer = item.buyer || item.userId || {}
+                const paymentStatus = (item.paymentStatus || '').toLowerCase()
+
+                return (
+                  <div
+                    key={item._id}
+                    className='grid grid-cols-12 gap-4 px-4 py-3 items-start hover:bg-[#F9FAFD]'
+                  >
+                    <div className='col-span-2 text-xs text-[#5E6582]'>
+                      {formatDate(item.createdAt)}
+                    </div>
+                    <div className='col-span-2 text-xs font-medium text-slate-900'>
+                      {buyer.fullName || buyer.name || '-'}
+                    </div>
+                    <div
+                      className='col-span-2 text-xs text-[#5E6582] truncate'
+                      title={buyer.email}
+                    >
+                      {buyer.email || '-'}
+                    </div>
+                    <div className='col-span-2 text-xs text-[#5E6582]'>
+                      {buyer.phone || buyer.phoneNumber || '-'}
+                    </div>
+                    <div className='col-span-2 space-y-1'>
+                      {(item.passes || []).map((pass, idx) => (
+                        <div key={idx} className='text-xs text-[#5E6582]'>
+                          {pass.quantity} x {pass.gymAccessName} (
+                          {formatCurrency(pass.totalPrice)})
+                        </div>
+                      ))}
+                    </div>
+                    <div className='col-span-1 text-xs font-bold text-slate-900'>
+                      {formatCurrency(
+                        item.totalAmount ?? item.finalPayableAmount
+                      )}
+                    </div>
+                    <div className='col-span-1 flex justify-end items-center gap-2'>
+                      <span
+                        className={`inline-flex items-center justify-center rounded-md px-2 py-1 text-[10px] font-semibold capitalize ${
+                          ['success', 'paid', 'completed'].includes(
+                            paymentStatus
+                          )
+                            ? 'bg-emerald-50 text-emerald-600 border border-emerald-200'
+                            : [
+                                'abandoned',
+                                'abondoned',
+                                'failed',
+                                'cancelled'
+                              ].includes(paymentStatus)
+                            ? 'bg-red-50 text-red-600 border border-red-200'
+                            : 'bg-orange-50 text-orange-600 border border-orange-200'
+                        }`}
+                      >
+                        {item.paymentStatus || 'Pending'}
+                      </span>
+
+                      {/* Action Menu */}
+                      <div className='relative action-menu'>
+                        <button
+                          onClick={() =>
+                            setMenuOpenId(
+                              menuOpenId === item._id ? null : item._id
+                            )
+                          }
+                          className='text-[#8A92AC] hover:text-[#2D3658]'
+                        >
+                          <MoreVertical className='h-4 w-4' />
+                        </button>
+                        {menuOpenId === item._id && (
+                          <div className='absolute right-0 top-6 z-10 w-40 rounded-lg border border-[#E1E6F7] bg-white py-2 shadow-lg'>
+                            <button
+                              onClick={() => {
+                                router.push(`/gym/bookings/view/${item._id}`)
+                              }}
+                              className='block w-full px-4 py-2 text-left text-xs font-medium text-slate-700 hover:bg-[#F8F9FC]'
+                            >
+                              View Access Details
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )
+              })
+            )}
           </div>
         </div>
       </div>
