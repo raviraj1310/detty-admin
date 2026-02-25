@@ -50,7 +50,8 @@ export default function UserAnalysis () {
     successfullyRegisteredUserWithResetPasswordToken: 0,
     tempDumpedUsersCount: 0,
     tempNotDumpedUsers: 0,
-    duplicateUsersCount: 0
+    duplicateUsersCount: 0,
+    incompletePasswordResetCount: 0
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -73,7 +74,8 @@ export default function UserAnalysis () {
           successfullyRegisteredUserWithResetPasswordToken: 0,
           tempDumpedUsersCount: 0,
           tempNotDumpedUsers: 0,
-          duplicateUsersCount: 0
+          duplicateUsersCount: 0,
+          incompletePasswordResetCount: 0
         }))
         setPageCount(1)
         setPage(1)
@@ -91,8 +93,17 @@ export default function UserAnalysis () {
           search: search ? search.trim() : undefined
         }
 
-        const res = await getUserAnalysis(params)
+        const [res, resIncomplete] = await Promise.all([
+          getUserAnalysis(params),
+          getIncompletePasswordReset({
+            startDate: dateRange.start,
+            endDate: dateRange.end,
+            page: 1,
+            pageSize: 1
+          })
+        ])
         const payload = res?.data || res || {}
+        const payloadIncomplete = resIncomplete?.data || resIncomplete || {}
         const list = Array.isArray(payload.users) ? payload.users : []
 
         setMeta({
@@ -107,7 +118,8 @@ export default function UserAnalysis () {
           ),
           tempDumpedUsersCount: Number(payload.tempDumpedUsersCount || 0),
           tempNotDumpedUsers: Number(payload.tempNotDumpedUsers || 0),
-          duplicateUsersCount: Number(payload.duplicateUsersCount || 0)
+          duplicateUsersCount: Number(payload.duplicateUsersCount || 0),
+          incompletePasswordResetCount: Number(payloadIncomplete.total || 0)
         })
 
         const srvPage = Number(payload.currentPage ?? page)
@@ -618,8 +630,7 @@ export default function UserAnalysis () {
             Reset password is not done
           </span>
           <div className='text-2xl font-semibold text-orange-600'>
-            {meta.tempDumpedUsersCount -
-              meta.successfullyRegisteredUserWithResetPasswordToken}
+            {meta.incompletePasswordResetCount}
           </div>
           <p className='text-[11px] text-gray-500'>
             Total dumped users who did not reset their password in the selected
