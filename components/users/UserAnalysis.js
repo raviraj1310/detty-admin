@@ -160,19 +160,21 @@ export default function UserAnalysis () {
   }, [dateRange.start, dateRange.end])
 
   useEffect(() => {
+    let isActive = true
     const fetchRegistered = async () => {
-      if (
-        viewMode !== 'registered' &&
-        viewMode !== 'manual' &&
-        viewMode !== 'dumpedProvided' &&
-        viewMode !== 'effective' &&
-        viewMode !== 'successfulDumped' &&
-        viewMode !== 'incompleteDumped' &&
-        viewMode !== 'successPasswordReset' &&
-        viewMode !== 'incompletePasswordReset' &&
-        viewMode !== 'duplicateUsers'
-      )
-        return
+      const validModes = [
+        'registered',
+        'manual',
+        'dumpedProvided',
+        'effective',
+        'successfulDumped',
+        'incompleteDumped',
+        'successPasswordReset',
+        'incompletePasswordReset',
+        'duplicateUsers'
+      ]
+
+      if (!validModes.includes(viewMode)) return
 
       if (!dateRange.start || !dateRange.end) {
         setUsers([])
@@ -185,14 +187,6 @@ export default function UserAnalysis () {
       setLoading(true)
       setError('')
       try {
-        const isManual = viewMode === 'manual'
-        const isDumpedProvided = viewMode === 'dumpedProvided'
-        const isEffective = viewMode === 'effective'
-        const isSuccessfulDumped = viewMode === 'successfulDumped'
-        const isIncompleteDumped = viewMode === 'incompleteDumped'
-        const isSuccessPasswordReset = viewMode === 'successPasswordReset'
-        const isIncompletePasswordReset = viewMode === 'incompletePasswordReset'
-        const isDuplicateUsers = viewMode === 'duplicateUsers'
         const params = {
           startDate: dateRange.start,
           endDate: dateRange.end,
@@ -201,23 +195,51 @@ export default function UserAnalysis () {
           search: search ? search.trim() : undefined
         }
 
-        const res = await (isManual
-          ? getManuallyRegisteredUser(params)
-          : isDumpedProvided
-          ? getDumpedUserProvided(params)
-          : isEffective
-          ? getEffectiveUsers(params)
-          : isSuccessfulDumped
-          ? getSuccessfulDumped(params)
-          : isIncompleteDumped
-          ? getIncompleteDumped(params)
-          : isSuccessPasswordReset
-          ? getSuccessPasswordReset(params)
-          : isIncompletePasswordReset
-          ? getIncompletePasswordReset(params)
-          : isDuplicateUsers
-          ? getDuplicateUsers(params)
-          : getRegisteredUser(params))
+        let res
+        let statusLabel = 'Registered'
+
+        switch (viewMode) {
+          case 'manual':
+            res = await getManuallyRegisteredUser(params)
+            statusLabel = 'Manually Registered'
+            break
+          case 'dumpedProvided':
+            res = await getDumpedUserProvided(params)
+            statusLabel = 'Dumped Users Provided'
+            break
+          case 'effective':
+            res = await getEffectiveUsers(params)
+            statusLabel = 'Effective User'
+            break
+          case 'successfulDumped':
+            res = await getSuccessfulDumped(params)
+            statusLabel = 'Successfully Dumped'
+            break
+          case 'incompleteDumped':
+            res = await getIncompleteDumped(params)
+            statusLabel = 'Incomplete Dumped'
+            break
+          case 'successPasswordReset':
+            res = await getSuccessPasswordReset(params)
+            statusLabel = 'Reset Password Done'
+            break
+          case 'incompletePasswordReset':
+            res = await getIncompletePasswordReset(params)
+            statusLabel = 'Reset Password Not Done'
+            break
+          case 'duplicateUsers':
+            res = await getDuplicateUsers(params)
+            statusLabel = 'Duplicate User'
+            break
+          case 'registered':
+          default:
+            res = await getRegisteredUser(params)
+            statusLabel = 'Registered'
+            break
+        }
+
+        if (!isActive) return
+
         const payload = res?.data || res || {}
         const list = Array.isArray(payload.users) ? payload.users : []
 
@@ -245,56 +267,29 @@ export default function UserAnalysis () {
             name: u.name || '-',
             email: u.email || '-',
             status: u.status || '-',
-            registerStatus: isManual
-              ? 'Manually Registered'
-              : isDumpedProvided
-              ? 'Dumped Users Provided'
-              : isEffective
-              ? 'Effective User'
-              : isSuccessfulDumped
-              ? 'Successfully Dumped'
-              : isIncompleteDumped
-              ? 'Incomplete Dumped'
-              : isSuccessPasswordReset
-              ? 'Reset Password Done'
-              : isIncompletePasswordReset
-              ? 'Reset Password Not Done'
-              : isDuplicateUsers
-              ? 'Duplicate User'
-              : 'Registered',
+            registerStatus: statusLabel,
             createdAt: u.createdAt || null,
             walletFunds:
               typeof u.walletFunds === 'number' ? u.walletFunds : null
           }))
         )
       } catch (err) {
+        if (!isActive) return
         setError(
           err?.response?.data?.message ||
             err?.message ||
-            (viewMode === 'manual'
-              ? 'Failed to fetch manually registered users'
-              : viewMode === 'dumpedProvided'
-              ? 'Failed to fetch dumped users provided'
-              : viewMode === 'effective'
-              ? 'Failed to fetch effective users'
-              : viewMode === 'successfulDumped'
-              ? 'Failed to fetch successfully dumped users'
-              : viewMode === 'incompleteDumped'
-              ? 'Failed to fetch incomplete dumped users'
-              : viewMode === 'successPasswordReset'
-              ? 'Failed to fetch reset password done users'
-              : viewMode === 'incompletePasswordReset'
-              ? 'Failed to fetch reset password not done users'
-              : viewMode === 'duplicateUsers'
-              ? 'Failed to fetch duplicate users'
-              : 'Failed to fetch registered users')
+            'Failed to fetch users'
         )
       } finally {
-        setLoading(false)
+        if (isActive) setLoading(false)
       }
     }
 
     fetchRegistered()
+
+    return () => {
+      isActive = false
+    }
   }, [viewMode, dateRange, page, limit, search])
 
   const filteredUsers = useMemo(() => {
