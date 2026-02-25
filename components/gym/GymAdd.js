@@ -50,6 +50,12 @@ export default function GymAccessAdd () {
         }
       } catch (error) {
         console.error('Error fetching hosts:', error)
+        showToast(
+          error.response?.data?.error ||
+            error.response?.data?.message ||
+            'Failed to fetch gym hosts',
+          'error'
+        )
       }
     }
     fetchHosts()
@@ -136,7 +142,7 @@ export default function GymAccessAdd () {
       // Append simple fields from formData
       Object.keys(formData).forEach(key => {
         if (key === 'hostedBy') {
-          if (formData[key]) payload.append('hostId', formData[key])
+          if (formData[key]) payload.append('hostedBy', formData[key])
         } else {
           payload.append(key, formData[key])
         }
@@ -180,7 +186,12 @@ export default function GymAccessAdd () {
       }, 1500)
     } catch (error) {
       console.error('Error creating gym:', error)
-      showToast(error.message || 'Failed to create gym', 'error')
+      const errMsg =
+        error.response?.data?.error ||
+        error.response?.data?.message ||
+        error.message ||
+        'Failed to create gym'
+      showToast(errMsg, 'error')
     }
   }
 
@@ -592,10 +603,11 @@ export default function GymAccessAdd () {
       </div>
 
       <Toast
-        isOpen={toast.show}
-        onClose={() => setToast({ ...toast, show: false })}
-        message={toast.message}
-        type={toast.type}
+        open={toast.show}
+        onOpenChange={val => setToast(prev => ({ ...prev, show: val }))}
+        title={toast.type === 'error' ? 'Error' : 'Success'}
+        description={toast.message}
+        variant={toast.type}
       />
 
       {cropOpen && (
