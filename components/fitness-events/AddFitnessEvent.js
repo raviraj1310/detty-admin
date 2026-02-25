@@ -460,7 +460,7 @@ export default function AddFitnessEvent () {
                   <option value=''>Select Host</option>
                   {hostList.map(host => (
                     <option key={host._id} value={host._id}>
-                      {host.hostName}
+                      {host.name}
                     </option>
                   ))}
                 </select>

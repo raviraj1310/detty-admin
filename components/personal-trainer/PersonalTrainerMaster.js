@@ -115,6 +115,7 @@ export default function PersonalTrainerMaster () {
   // Delete Confirmation State
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [deleteId, setDeleteId] = useState(null)
+  const [deleting, setDeleting] = useState(false)
 
   const handleDelete = id => {
     setDeleteId(id)
@@ -123,6 +124,7 @@ export default function PersonalTrainerMaster () {
   }
 
   const confirmDelete = async () => {
+    setDeleting(true)
     try {
       const response = await deletePersonalTrainer(deleteId)
       if (response && response.success) {
@@ -140,6 +142,7 @@ export default function PersonalTrainerMaster () {
       console.error('Error deleting trainer:', error)
       showToast('Failed to delete trainer', 'error')
     } finally {
+      setDeleting(false)
       setConfirmOpen(false)
       setDeleteId(null)
     }
