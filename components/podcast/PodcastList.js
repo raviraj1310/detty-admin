@@ -560,7 +560,14 @@ export default function PodcastList () {
                             <button className='flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-50'>
                               <Users className='h-4 w-4' /> View Subscribers
                             </button>
-                            <button className='flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-50'>
+                            <button
+                              onClick={() =>
+                                router.push(
+                                  `/podcast/subscription/${podcast.id}`
+                                )
+                              }
+                              className='flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-50'
+                            >
                               <CreditCard className='h-4 w-4' /> View/Edit
                               Subscription
                             </button>

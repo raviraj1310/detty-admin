@@ -100,3 +100,79 @@ export const deleteEpisode = async id => {
     throw error
   }
 }
+
+// subscription routes
+export const getAllPodcastSubscription = async podcastId => {
+  try {
+    const response = await apiv2.get(
+      `/podcast/get-podcast-subscriptions/${podcastId}`
+    )
+    return response.data
+  } catch (error) {
+    console.error('Error fetching podcast subscriptions:', error)
+    throw error
+  }
+}
+
+export const createSubscription = async payload => {
+  try {
+    const response = await apiv2.post(
+      `/podcast/create-podcast-subscription`,
+      payload
+    )
+    return response.data
+  } catch (error) {
+    console.error('Error creating podcast subscription:', error)
+    throw error
+  }
+}
+
+export const getSubscriptionById = async id => {
+  try {
+    const response = await apiv2.get(
+      `/podcast/get-podcast-subscription-by-id/${id}`
+    )
+    return response.data
+  } catch (error) {
+    console.error('Error fetching podcast subscription:', error)
+    throw error
+  }
+}
+
+export const updateSubscription = async (id, payload) => {
+  try {
+    const response = await apiv2.put(
+      `/podcast/update-podcast-subscription/${id}`,
+      payload
+    )
+    return response.data
+  } catch (error) {
+    console.error('Error updating podcast subscription:', error)
+    throw error
+  }
+}
+
+export const deleteSubscription = async id => {
+  try {
+    const response = await apiv2.delete(
+      `/podcast/delete-podcast-subscription/${id}`
+    )
+    return response.data
+  } catch (error) {
+    console.error('Error deleting podcast subscription:', error)
+    throw error
+  }
+}
+
+export const activeInactiveSubscription = async (id, payload) => {
+  try {
+    const response = await apiv2.put(
+      `/podcast/change-podcast-subscription-status/${id}`,
+      payload
+    )
+    return response.data
+  } catch (error) {
+    console.error('Error active/inactive podcast subscription:', error)
+    throw error
+  }
+}
