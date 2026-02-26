@@ -3,14 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import {
-  Calendar,
-  Clock,
-  Trash2,
-  Plus,
-  ChevronLeft,
-  Loader2
-} from 'lucide-react'
+import { Clock, Trash2, Plus, ChevronLeft, Loader2 } from 'lucide-react'
 import TiptapEditor from '@/components/editor/TiptapEditor'
 import Toast from '@/components/ui/Toast'
 
@@ -49,8 +42,6 @@ export default function EditPersonalTrainer ({ id }) {
     trainerName: '',
     hostedBy: '',
     duration: '',
-    startDate: '',
-    endDate: '',
     startTime: '',
     endTime: '',
     location: '',
@@ -98,12 +89,6 @@ export default function EditPersonalTrainer ({ id }) {
             trainerName: trainer.trainerName || '',
             hostedBy: trainer.hostedBy || '',
             duration: trainer.duration || '',
-            startDate: trainer.startDate
-              ? new Date(trainer.startDate).toISOString().split('T')[0]
-              : '',
-            endDate: trainer.endDate
-              ? new Date(trainer.endDate).toISOString().split('T')[0]
-              : '',
             startTime: trainer.startTime || '',
             endTime: trainer.endTime || '',
             location: trainer.location || '',
@@ -126,12 +111,8 @@ export default function EditPersonalTrainer ({ id }) {
               trainer.personalTrainerSlots.map((slot, index) => ({
                 id: slot._id || Date.now() + index,
                 name: slot.slotName || '',
-                date: slot.date
-                  ? new Date(slot.date).toISOString().split('T')[0]
-                  : '',
                 time: slot.time || '',
-                inventory: slot.inventory || '',
-                price: slot.price || ''
+                inventory: slot.inventory || ''
               }))
             )
           } else if (
@@ -145,12 +126,8 @@ export default function EditPersonalTrainer ({ id }) {
                 parsed.map((slot, index) => ({
                   id: slot._id || Date.now() + index,
                   name: slot.slotName || '',
-                  date: slot.date
-                    ? new Date(slot.date).toISOString().split('T')[0]
-                    : '',
                   time: slot.time || '',
-                  inventory: slot.inventory || '',
-                  price: slot.price || ''
+                  inventory: slot.inventory || ''
                 }))
               )
             } catch (e) {
@@ -189,10 +166,8 @@ export default function EditPersonalTrainer ({ id }) {
       {
         id: Date.now(),
         name: `Slot ${slots.length + 1}`,
-        date: '',
         time: '',
-        inventory: '',
-        price: ''
+        inventory: ''
       }
     ])
   }
@@ -220,8 +195,7 @@ export default function EditPersonalTrainer ({ id }) {
     if (!formData.hostedBy) return showToast('Host is required', 'error')
     if (!aboutTrainer) return showToast('About Trainer is required', 'error')
     if (!trainingTypes) return showToast('Training Types are required', 'error')
-    if (!formData.startDate || !formData.endDate)
-      return showToast('Dates are required', 'error')
+    // Dates removed; no need to validate
 
     // Image is required only if creating, but for edit it's optional if one exists.
     // However, if no image url and no new image, then it's an error.
@@ -246,14 +220,11 @@ export default function EditPersonalTrainer ({ id }) {
       payload.append('importantInformation', importantInfo)
 
       // Format and append slots
-      const formattedSlots = slots.map(
-        ({ id, name, inventory, price, ...rest }) => ({
-          slotName: name,
-          inventory: Number(inventory),
-          price: Number(price),
-          ...rest
-        })
-      )
+      const formattedSlots = slots.map(({ id, name, inventory, ...rest }) => ({
+        slotName: name,
+        inventory: Number(inventory),
+        ...rest
+      }))
       payload.append('personalTrainerSlots', JSON.stringify(formattedSlots))
 
       // Append image only if changed
@@ -409,8 +380,8 @@ export default function EditPersonalTrainer ({ id }) {
             </div>
           </div>
 
-          {/* Duration & Dates */}
-          <div className='grid grid-cols-1 gap-6 md:grid-cols-3'>
+          {/* Duration */}
+          <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
             <div>
               <label className='mb-2 block text-sm font-medium text-gray-700'>
                 Duration*
@@ -422,34 +393,6 @@ export default function EditPersonalTrainer ({ id }) {
                 onChange={handleInputChange}
                 className='w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
               />
-            </div>
-            <div>
-              <label className='mb-2 block text-sm font-medium text-gray-700'>
-                Start Date*
-              </label>
-              <div className='relative'>
-                <input
-                  type='date'
-                  name='startDate'
-                  value={formData.startDate}
-                  onChange={handleInputChange}
-                  className='w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
-                />
-              </div>
-            </div>
-            <div>
-              <label className='mb-2 block text-sm font-medium text-gray-700'>
-                End Date*
-              </label>
-              <div className='relative'>
-                <input
-                  type='date'
-                  name='endDate'
-                  value={formData.endDate}
-                  onChange={handleInputChange}
-                  className='w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
-                />
-              </div>
             </div>
           </div>
 
@@ -501,11 +444,10 @@ export default function EditPersonalTrainer ({ id }) {
 
             <div className='space-y-3 bg-gray-50 p-4 rounded-xl'>
               <div className='grid grid-cols-12 gap-4 text-xs font-medium text-gray-500 mb-2 px-2'>
-                <div className='col-span-3'>Slot Name*</div>
-                <div className='col-span-3'>Date*</div>
-                <div className='col-span-2'>Time*</div>
-                <div className='col-span-2'>Inventory</div>
-                <div className='col-span-2'>Price</div>
+                <div className='col-span-5'>Slot Name*</div>
+                <div className='col-span-3'>Time*</div>
+                <div className='col-span-3'>Inventory</div>
+                <div className='col-span-1'></div>
               </div>
 
               {slots.map(slot => (
@@ -513,7 +455,7 @@ export default function EditPersonalTrainer ({ id }) {
                   key={slot.id}
                   className='grid grid-cols-12 gap-4 items-center'
                 >
-                  <div className='col-span-3'>
+                  <div className='col-span-5'>
                     <input
                       type='text'
                       value={slot.name}
@@ -526,16 +468,6 @@ export default function EditPersonalTrainer ({ id }) {
                   </div>
                   <div className='col-span-3'>
                     <input
-                      type='date'
-                      value={slot.date}
-                      onChange={e =>
-                        handleSlotChange(slot.id, 'date', e.target.value)
-                      }
-                      className='w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
-                    />
-                  </div>
-                  <div className='col-span-2'>
-                    <input
                       type='time'
                       value={slot.time}
                       onChange={e =>
@@ -544,7 +476,7 @@ export default function EditPersonalTrainer ({ id }) {
                       className='w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
                     />
                   </div>
-                  <div className='col-span-2'>
+                  <div className='col-span-3'>
                     <input
                       type='number'
                       value={slot.inventory}
@@ -555,16 +487,7 @@ export default function EditPersonalTrainer ({ id }) {
                       placeholder='50'
                     />
                   </div>
-                  <div className='col-span-2 flex items-center gap-2'>
-                    <input
-                      type='number'
-                      value={slot.price}
-                      onChange={e =>
-                        handleSlotChange(slot.id, 'price', e.target.value)
-                      }
-                      className='w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
-                      placeholder='₦10,000'
-                    />
+                  <div className='col-span-1 flex items-center justify-center'>
                     <button
                       onClick={() => removeSlot(slot.id)}
                       className='p-1 text-gray-400 hover:text-red-500'
