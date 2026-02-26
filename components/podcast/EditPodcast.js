@@ -1,48 +1,202 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { ChevronLeft, Trash2 } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { useRouter, useParams } from 'next/navigation'
+import {
+  ChevronLeft,
+  Trash2,
+  Loader2,
+  Upload,
+  X,
+  Image as ImageIcon
+} from 'lucide-react'
 import TiptapEditor from '@/components/editor/TiptapEditor'
+import ImageCropper from '@/components/ui/ImageCropper'
+import { convertToWebp } from '@/src/utils/image'
+import {
+  getPodcastById,
+  updatePodcast,
+  updatePodcastEpisode,
+  addEpisode as addEpisodeApi
+} from '@/services/podcast/podcast.service'
+import Toast from '@/components/ui/Toast'
 
-export default function EditPodcast() {
+export default function EditPodcast () {
   const router = useRouter()
+  const params = useParams()
+  const id = params?.podId
+
+  // Helper function for image/video URL
+  const toImageSrc = u => {
+    const s = String(u || '').trim()
+    if (!s) return '/images/no-image.webp'
+    if (/^https?:\/\//i.test(s)) return s
+    const originEnv = process.env.NEXT_PUBLIC_SIM_IMAGE_BASE_ORIGIN
+    const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || ''
+    let origin = originEnv
+    if (!origin) {
+      try {
+        origin = new URL(apiBase).origin
+      } catch {
+        origin = ''
+      }
+    }
+    if (!origin) origin = originEnv
+    const base = String(origin || '').replace(/\/+$/, '')
+    const path = s.replace(/^\/+/, '')
+    return base ? `${base}/${path}` : s
+  }
+
   const [loading, setLoading] = useState(false)
+  const [fetching, setFetching] = useState(true)
+  const [toast, setToast] = useState({
+    open: false,
+    title: '',
+    description: '',
+    variant: 'success'
+  })
+
   const [formData, setFormData] = useState({
-    name: 'Mind Over Hustle',
-    about:
-      'Fit Talk is a fitness and wellness podcast dedicated to helping people build healthier bodies and stronger minds. Each episode features certified trainers, nutritionists, and athletes sharing practical advice on workouts, recovery, and sustainable healthy living. The podcast focuses on realistic fitness routines, motivation, injury prevention, and nutrition strategies for beginners to advanced fitness enthusiasts.',
-    episodeInfo:
-      'Latest Episode: Fat Loss vs Muscle Gain – What Should You Focus On?\nRelease Date: January 2026\nDuration: 38 minutes\nSeason: Season 2\nEpisode: #64',
-    category: 'Fitness',
+    name: '',
+    about: '',
+    episodeInfo: '',
+    category: '',
     type: 'Video',
-    duration: '2-4 hours (depending on selected challenge format)',
-    episodeTime: 'Every Monday - 6:00 AM (GMT)',
+    duration: '',
+    episodeTime: '',
     image: null
   })
 
-  const [episodes, setEpisodes] = useState([
-    {
-      id: 1,
-      number: '1',
-      title: 'Fat Loss – What Should You Focus On?',
-      subText:
-        'Fit Talk is a fitness and wellness podcast dedicated to helping people build healthier',
-      info: 'Latest Episode: Fat Loss vs Muscle Gain – What Should You Focus On?\nRelease Date: January 2026\nDuration: 38 minutes\nSeason: Season 2\nEpisode: #64',
-      video: null,
-      scheduledDate: '2026-06-05T06:00'
-    },
-    {
-      id: 2,
-      number: '2',
-      title: 'Fat Loss – What Should You Focus On?',
-      subText:
-        'Fit Talk is a fitness and wellness podcast dedicated to helping people build healthier',
-      info: 'Latest Episode: Fat Loss vs Muscle Gain – What Should You Focus On?\nRelease Date: January 2026\nDuration: 38 minutes\nSeason: Season 2\nEpisode: #64',
-      video: null,
-      scheduledDate: '2028-06-12T06:00'
+  const [episodes, setEpisodes] = useState([])
+
+  const [cropOpen, setCropOpen] = useState(false)
+  const [rawImageFile, setRawImageFile] = useState(null)
+  const [imageFile, setImageFile] = useState(null)
+  const [imageMeta, setImageMeta] = useState({
+    width: 0,
+    height: 0,
+    sizeBytes: 0,
+    originalSizeBytes: 0,
+    format: ''
+  })
+  const fileInputRef = useRef(null)
+
+  useEffect(() => {
+    const fetchPodcast = async () => {
+      if (!id) return
+      try {
+        setFetching(true)
+        const response = await getPodcastById(id)
+        if (response?.success || response?.data) {
+          const data = response.data || response
+          setFormData({
+            name: data.title || data.name || '',
+            about: data.about || '',
+            episodeInfo: data.episodeInfo || '',
+            category: data.podcastCategory || data.category || '',
+            type: data.podcastType || data.type || 'Video',
+            duration: data.duration || '',
+            episodeTime: data.episodeTime || '',
+            image: data.image || null
+          })
+
+          const episodesData = data.episodes || data.podcast_media || []
+          if (Array.isArray(episodesData)) {
+            setEpisodes(
+              episodesData.map(ep => ({
+                id: ep.id || ep._id,
+                number: ep.episodeNo || ep.episodeNumber || ep.number || '',
+                title: ep.title || '',
+                subText: ep.subText || '',
+                info: ep.episodeInfo || ep.info || '',
+                video: ep.media || ep.video || null,
+                scheduledDate: ep.scheduleDate || ep.scheduledDate || ''
+              }))
+            )
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching podcast:', error)
+        setToast({
+          open: true,
+          title: 'Error',
+          description: 'Failed to fetch podcast details',
+          variant: 'error'
+        })
+      } finally {
+        setFetching(false)
+      }
     }
-  ])
+
+    fetchPodcast()
+  }, [id])
+
+  const handleUpdate = async () => {
+    if (!id) return
+    setLoading(true)
+    try {
+      const fd = new FormData()
+      fd.append('name', formData.name.trim())
+      fd.append('about', formData.about.trim())
+      fd.append('episodeInfo', formData.episodeInfo.trim())
+      fd.append('category', formData.category)
+      fd.append('type', formData.type)
+      fd.append('duration', formData.duration)
+      fd.append('episodeTime', formData.episodeTime)
+
+      if (imageFile) {
+        fd.append('image', imageFile)
+        fd.append('imageWidth', String(imageMeta.width || 0))
+        fd.append('imageHeight', String(imageMeta.height || 0))
+        fd.append('imageSizeBytes', String(imageMeta.sizeBytes || 0))
+        fd.append(
+          'imageOriginalSizeBytes',
+          String(imageMeta.originalSizeBytes || 0)
+        )
+        fd.append('imageFormat', imageMeta.format || 'webp')
+      }
+
+      // Update podcast details
+      await updatePodcast(id, fd)
+
+      // Update episodes
+      if (episodes.length > 0) {
+        // Only update existing episodes (ignore new/temp ones for now)
+        const existingEpisodes = episodes.filter(
+          ep => !String(ep.id).startsWith('temp_')
+        )
+        await Promise.all(
+          existingEpisodes.map(ep =>
+            updatePodcastEpisode(ep.id, {
+              episodeNumber: ep.number,
+              title: ep.title,
+              subText: ep.subText,
+              info: ep.info,
+              video: ep.video,
+              scheduledDate: ep.scheduledDate
+            })
+          )
+        )
+      }
+
+      setToast({
+        open: true,
+        title: 'Success',
+        description: 'Podcast updated successfully',
+        variant: 'success'
+      })
+    } catch (error) {
+      console.error('Error updating podcast:', error)
+      setToast({
+        open: true,
+        title: 'Error',
+        description: 'Failed to update podcast',
+        variant: 'error'
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const handleEpisodeChange = (id, field, value) => {
     setEpisodes(prev =>
@@ -51,8 +205,7 @@ export default function EditPodcast() {
   }
 
   const addEpisode = () => {
-    const newId =
-      episodes.length > 0 ? Math.max(...episodes.map(e => e.id)) + 1 : 1
+    const newId = `temp_${Date.now()}`
     setEpisodes([
       ...episodes,
       {
@@ -71,6 +224,41 @@ export default function EditPodcast() {
     setEpisodes(prev => prev.filter(ep => ep.id !== id))
   }
 
+  const handleFileChange = e => {
+    const file = e.target.files && e.target.files[0]
+    if (file) {
+      setRawImageFile(file)
+      setCropOpen(true)
+    }
+    // Clear input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
+  }
+
+  const handleCropped = ({ file, meta }) => {
+    setImageFile(file)
+    setImageMeta(meta)
+    // Create preview URL
+    const url = URL.createObjectURL(file)
+    setFormData(prev => ({ ...prev, image: url }))
+  }
+
+  const openCropperFromPreview = () => {
+    if (imageFile instanceof File) {
+      setRawImageFile(imageFile)
+      setCropOpen(true)
+    }
+  }
+
+  if (fetching) {
+    return (
+      <div className='flex h-screen items-center justify-center'>
+        <Loader2 className='h-8 w-8 animate-spin text-[#FF4400]' />
+      </div>
+    )
+  }
+
   return (
     <div className='min-h-screen bg-gray-50 p-8'>
       {/* Header */}
@@ -87,7 +275,12 @@ export default function EditPodcast() {
             <button className='rounded-lg border border-[#FF4400] px-4 py-2 text-sm font-medium text-[#FF4400] hover:bg-orange-50'>
               Edit Subscription Plans
             </button>
-            <button className='rounded-lg bg-[#FF4400] px-6 py-2 text-sm font-medium text-white hover:bg-[#E63D00]'>
+            <button
+              onClick={handleUpdate}
+              disabled={loading}
+              className='flex items-center gap-2 rounded-lg bg-[#FF4400] px-6 py-2 text-sm font-medium text-white hover:bg-[#E63D00] disabled:opacity-50'
+            >
+              {loading && <Loader2 className='h-4 w-4 animate-spin' />}
               Update
             </button>
           </div>
@@ -210,15 +403,65 @@ export default function EditPodcast() {
               </label>
               <div className='flex'>
                 <input
+                  type='file'
+                  ref={fileInputRef}
+                  onChange={handleFileChange}
+                  className='hidden'
+                  accept='image/jpeg,image/png,image/webp,image/gif'
+                />
+                <input
                   type='text'
                   readOnly
-                  value='Image.jpg'
+                  value={
+                    imageFile
+                      ? imageFile.name
+                      : typeof formData.image === 'string'
+                      ? formData.image.split('/').pop()
+                      : 'No image selected'
+                  }
                   className='w-full rounded-l-lg border border-r-0 border-gray-200 bg-gray-50 p-3 text-sm text-gray-900 focus:outline-none'
                 />
-                <button className='rounded-r-lg border border-gray-200 bg-gray-100 px-4 text-sm font-medium text-gray-700 hover:bg-gray-200'>
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className='rounded-r-lg border border-gray-200 bg-gray-100 px-4 text-sm font-medium text-gray-700 hover:bg-gray-200'
+                >
                   Browse
                 </button>
               </div>
+              <span className='mt-1 block text-xs text-[#B0B7D0]'>
+                Accepted: JPG, JPEG, PNG, HEIC, GIF (auto-converted to WebP)
+              </span>
+
+              {formData.image && (
+                <div className='mt-3 relative w-fit'>
+                  <img
+                    src={toImageSrc(formData.image)}
+                    alt='Podcast Cover'
+                    className='h-32 w-32 rounded-lg object-cover border border-gray-200'
+                  />
+                  {imageFile && (
+                    <button
+                      type='button'
+                      onClick={openCropperFromPreview}
+                      className='absolute top-2 right-2 rounded bg-white/90 p-1 text-[#FF4400] shadow-sm hover:bg-white'
+                      title='Crop Image'
+                    >
+                      <ImageIcon className='h-4 w-4' />
+                    </button>
+                  )}
+                </div>
+              )}
+              {imageFile && (
+                <div className='text-xs text-[#5E6582] mt-2'>
+                  <span>
+                    Dimensions: {imageMeta.width} × {imageMeta.height}
+                  </span>
+                  <span className='ml-3'>
+                    Size: {(imageMeta.sizeBytes / 1024).toFixed(1)} KB
+                  </span>
+                  <span className='ml-3'>Format: {imageMeta.format}</span>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -310,13 +553,26 @@ export default function EditPodcast() {
                       <input
                         type='text'
                         readOnly
-                        value='Video.mp4'
+                        value={
+                          typeof episode.video === 'string'
+                            ? episode.video.split('/').pop()
+                            : 'No video selected'
+                        }
                         className='w-full rounded-l-lg border border-r-0 border-gray-200 bg-white p-3 text-sm text-gray-900 focus:outline-none'
                       />
                       <button className='rounded-r-lg border border-gray-200 bg-gray-100 px-4 text-sm font-medium text-gray-700 hover:bg-gray-200'>
                         Browse
                       </button>
                     </div>
+                    {episode.video && (
+                      <div className='mt-3'>
+                        <video
+                          src={toImageSrc(episode.video)}
+                          controls
+                          className='max-h-48 w-full rounded-lg border border-gray-200 bg-black'
+                        />
+                      </div>
+                    )}
                   </div>
 
                   <div>
@@ -358,6 +614,20 @@ export default function EditPodcast() {
           </button>
         </div>
       </div>
+
+      <Toast
+        open={toast.open}
+        title={toast.title}
+        description={toast.description}
+        variant={toast.variant}
+        onOpenChange={open => setToast(prev => ({ ...prev, open }))}
+      />
+      <ImageCropper
+        open={cropOpen}
+        file={rawImageFile}
+        onClose={() => setCropOpen(false)}
+        onCropped={handleCropped}
+      />
     </div>
   )
 }
