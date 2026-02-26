@@ -90,3 +90,13 @@ export const updatePodcastEpisode = async (id, episode) => {
     throw error
   }
 }
+
+export const deleteEpisode = async id => {
+  try {
+    const response = await apiv2.delete(`/podcast/delete-podcast-media/${id}`)
+    return response.data
+  } catch (error) {
+    console.error('Error deleting episode:', error)
+    throw error
+  }
+}

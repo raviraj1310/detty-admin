@@ -17,9 +17,11 @@ import {
   getPodcastById,
   updatePodcast,
   updatePodcastEpisode,
-  addEpisode as addEpisodeApi
+  addEpisode as addEpisodeApi,
+  deleteEpisode
 } from '@/services/podcast/podcast.service'
 import Toast from '@/components/ui/Toast'
+import { AlertCircle } from 'lucide-react'
 
 export default function EditPodcast () {
   const router = useRouter()
@@ -66,6 +68,10 @@ export default function EditPodcast () {
     episodeTime: '',
     image: null
   })
+
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
+  const [episodeToDelete, setEpisodeToDelete] = useState(null)
+  const [deletingEpisode, setDeletingEpisode] = useState(false)
 
   const [episodes, setEpisodes] = useState([])
 
@@ -136,11 +142,11 @@ export default function EditPodcast () {
     setLoading(true)
     try {
       const fd = new FormData()
-      fd.append('name', formData.name.trim())
+      fd.append('title', formData.name.trim())
       fd.append('about', formData.about.trim())
       fd.append('episodeInfo', formData.episodeInfo.trim())
-      fd.append('category', formData.category)
-      fd.append('type', formData.type)
+      fd.append('podcastCategory', (formData.category || '').toLowerCase())
+      fd.append('podcastType', (formData.type || '').toLowerCase())
       fd.append('duration', formData.duration)
       fd.append('episodeTime', formData.episodeTime)
 
@@ -221,7 +227,79 @@ export default function EditPodcast () {
   }
 
   const removeEpisode = id => {
-    setEpisodes(prev => prev.filter(ep => ep.id !== id))
+    // Check if it's a temporary episode (starts with temp_)
+    if (String(id).startsWith('temp_')) {
+      setEpisodes(prev => prev.filter(ep => ep.id !== id))
+    } else {
+      // It's a saved episode, ask for confirmation
+      setEpisodeToDelete(id)
+      setDeleteConfirmOpen(true)
+    }
+  }
+
+  const confirmDeleteEpisode = async () => {
+    if (!episodeToDelete) return
+
+    setDeletingEpisode(true)
+    try {
+      await deleteEpisode(episodeToDelete)
+
+      setEpisodes(prev => prev.filter(ep => ep.id !== episodeToDelete))
+
+      setToast({
+        open: true,
+        title: 'Success',
+        description: 'Episode deleted successfully',
+        variant: 'success'
+      })
+    } catch (error) {
+      console.error('Error deleting episode:', error)
+      setToast({
+        open: true,
+        title: 'Error',
+        description: 'Failed to delete episode',
+        variant: 'error'
+      })
+    } finally {
+      setDeletingEpisode(false)
+      setDeleteConfirmOpen(false)
+      setEpisodeToDelete(null)
+    }
+  }
+
+  const openCropWithExisting = e => {
+    e.preventDefault() // Prevent form submission if inside a form
+    if (imageFile) {
+      setCropFile(imageFile)
+      setCropOpen(true)
+    } else if (formData.image) {
+      // Create a temporary file object from the URL for the cropper
+      // This is a bit of a hack since the cropper expects a File object
+      // But we can try to fetch it or just use the URL if the cropper supports it
+      // Based on ImageCropper.js, it takes a 'file' prop which is usually a File object
+      // Let's try to fetch the image and convert to blob/file
+      fetch(toImageSrc(formData.image))
+        .then(res => res.blob())
+        .then(blob => {
+          const file = new File([blob], 'existing-image.webp', {
+            type: blob.type
+          })
+          setCropFile(file)
+          setCropOpen(true)
+        })
+        .catch(err => {
+          console.error('Error fetching image for cropping:', err)
+          setToast({
+            open: true,
+            title: 'Error',
+            description: 'Could not load image for cropping',
+            variant: 'error'
+          })
+        })
+    } else {
+      // If no image exists, trigger the file input
+      fileInputRef.current?.click()
+    }
   }
 
   const handleFileChange = e => {
@@ -244,10 +322,39 @@ export default function EditPodcast () {
     setFormData(prev => ({ ...prev, image: url }))
   }
 
-  const openCropperFromPreview = () => {
+  const openCropperFromPreview = async () => {
     if (imageFile instanceof File) {
       setRawImageFile(imageFile)
       setCropOpen(true)
+      return
+    }
+
+    const src = toImageSrc(formData.image)
+    if (!src) return
+
+    try {
+      // Fetch the image
+      const r = await fetch(src)
+      const b = await r.blob()
+
+      // Get filename from URL or default
+      let filename = 'podcast-image'
+      if (typeof formData.image === 'string') {
+        filename = formData.image.split('/').pop() || 'podcast-image'
+      }
+
+      const f = new File([b], filename, { type: b.type || 'image/jpeg' })
+
+      setRawImageFile(f)
+      setCropOpen(true)
+    } catch (error) {
+      console.error('Error preparing image for cropper:', error)
+      setToast({
+        open: true,
+        title: 'Error',
+        description: 'Failed to load image for cropping',
+        variant: 'error'
+      })
     }
   }
 
@@ -272,9 +379,6 @@ export default function EditPodcast () {
         <div className='flex items-center justify-between'>
           <h1 className='text-2xl font-bold text-gray-900'>Podcast Details</h1>
           <div className='flex gap-3'>
-            <button className='rounded-lg border border-[#FF4400] px-4 py-2 text-sm font-medium text-[#FF4400] hover:bg-orange-50'>
-              Edit Subscription Plans
-            </button>
             <button
               onClick={handleUpdate}
               disabled={loading}
@@ -422,10 +526,11 @@ export default function EditPodcast () {
                   className='w-full rounded-l-lg border border-r-0 border-gray-200 bg-gray-50 p-3 text-sm text-gray-900 focus:outline-none'
                 />
                 <button
-                  onClick={() => fileInputRef.current?.click()}
+                  type='button'
+                  onClick={openCropWithExisting}
                   className='rounded-r-lg border border-gray-200 bg-gray-100 px-4 text-sm font-medium text-gray-700 hover:bg-gray-200'
                 >
-                  Browse
+                  Crop / Browse
                 </button>
               </div>
               <span className='mt-1 block text-xs text-[#B0B7D0]'>
@@ -439,7 +544,7 @@ export default function EditPodcast () {
                     alt='Podcast Cover'
                     className='h-32 w-32 rounded-lg object-cover border border-gray-200'
                   />
-                  {imageFile && (
+                  {(imageFile || formData.image) && (
                     <button
                       type='button'
                       onClick={openCropperFromPreview}
@@ -560,8 +665,12 @@ export default function EditPodcast () {
                         }
                         className='w-full rounded-l-lg border border-r-0 border-gray-200 bg-white p-3 text-sm text-gray-900 focus:outline-none'
                       />
-                      <button className='rounded-r-lg border border-gray-200 bg-gray-100 px-4 text-sm font-medium text-gray-700 hover:bg-gray-200'>
-                        Browse
+                      <button
+                        type='button'
+                        onClick={openCropWithExisting}
+                        className='rounded-r-lg border border-gray-200 bg-gray-100 px-4 text-sm font-medium text-gray-700 hover:bg-gray-200'
+                      >
+                        Browse / Crop
                       </button>
                     </div>
                     {episode.video && (
@@ -628,6 +737,50 @@ export default function EditPodcast () {
         onClose={() => setCropOpen(false)}
         onCropped={handleCropped}
       />
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirmOpen && (
+        <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4'>
+          <div className='w-full max-w-md rounded-lg bg-white p-6 shadow-xl'>
+            <div className='flex items-start gap-4'>
+              <div className='rounded-full bg-red-100 p-2'>
+                <AlertCircle className='h-6 w-6 text-red-600' />
+              </div>
+              <div>
+                <h3 className='text-lg font-medium text-gray-900'>
+                  Delete Episode?
+                </h3>
+                <p className='mt-1 text-sm text-gray-500'>
+                  Are you sure you want to delete this episode? This action
+                  cannot be undone.
+                </p>
+              </div>
+            </div>
+            <div className='mt-6 flex justify-end gap-3'>
+              <button
+                onClick={() => {
+                  setDeleteConfirmOpen(false)
+                  setEpisodeToDelete(null)
+                }}
+                disabled={deletingEpisode}
+                className='rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50'
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDeleteEpisode}
+                disabled={deletingEpisode}
+                className='flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50'
+              >
+                {deletingEpisode && (
+                  <Loader2 className='h-4 w-4 animate-spin' />
+                )}
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
