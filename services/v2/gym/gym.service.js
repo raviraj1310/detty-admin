@@ -144,3 +144,48 @@ export const activeInactiveGymAccess = async (gymId, data) => {
     throw error
   }
 }
+
+export const getAllGymBookings = async (page, limit, params) => {
+  try {
+    const response = await apiv2.get('/gym/get-all-gym-bookings', {
+      params
+    })
+    return response.data
+  } catch (error) {
+    console.error('Error fetching gym bookings:', error)
+    throw error
+  }
+}
+
+export const getGymBookingDetail = async bookingId => {
+  try {
+    const response = await apiv2.get(
+      `/wellness/get-gym-booking-detail/${bookingId}`
+    )
+    return response.data
+  } catch (error) {
+    console.error('Error fetching gym booking:', error)
+    throw error
+  }
+}
+
+export const getBookingsByGymId = async (page, limit, gymId, search) => {
+  try {
+    const params = {
+      page,
+      limit
+    }
+
+    if (search) {
+      params.search = search
+    }
+
+    const response = await apiv2.get(`/gym/get-all-bookings-gym/${gymId}`, {
+      params
+    })
+    return response.data
+  } catch (error) {
+    console.error('Error fetching gym bookings:', error)
+    throw error
+  }
+}

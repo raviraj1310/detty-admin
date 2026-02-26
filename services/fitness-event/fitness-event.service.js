@@ -182,3 +182,38 @@ export const activeInactiveEventPass = async (eventPassId, data) => {
     return errData
   }
 }
+
+export const getFitnessEventBookings = async (page, limit, searchTerm) => {
+  try {
+    const response = await apiv2.get(
+      `/fitness-event/get-all-fitness-event-bookings?page=${page}&limit=${limit}&searchTerm=${searchTerm}`
+    )
+    return response.data
+  } catch (error) {
+    const errData = error?.response?.data || {
+      success: false,
+      message: error?.message || 'Request failed'
+    }
+    return errData
+  }
+}
+
+export const getBookingsByFitnessId = async (
+  fitnessEventId,
+  page,
+  limit,
+  searchTerm
+) => {
+  try {
+    const response = await apiv2.get(
+      `/fitness-event/get-fitness-event-booking-by-fitness-event-id/${fitnessEventId}?page=${page}&limit=${limit}&searchTerm=${searchTerm}`
+    )
+    return response.data
+  } catch (error) {
+    const errData = error?.response?.data || {
+      success: false,
+      message: error?.message || 'Request failed'
+    }
+    return errData
+  }
+}

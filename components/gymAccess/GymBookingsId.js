@@ -10,16 +10,19 @@ import {
   User,
   Wallet,
   XCircle,
-  ChevronLeft
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react'
 import { TbCaretUpDownFilled } from 'react-icons/tb'
+import { getAllGymBookings } from '@/services/v2/gym/gym.service'
+import Toast from '@/components/ui/Toast'
 
 // Mock Data for Metric Cards
-const METRIC_CARDS = [
+const INITIAL_METRIC_CARDS = [
   {
     id: 'total-bookings',
     title: 'Total Bookings',
-    value: '1155',
+    value: '0',
     icon: User,
     bg: 'bg-[#F3E8FF]',
     textColor: 'text-purple-600',
@@ -28,7 +31,7 @@ const METRIC_CARDS = [
   {
     id: 'revenue',
     title: 'Revenue',
-    value: '865(₦10,00,000)',
+    value: '₦0.00',
     icon: Wallet,
     bg: 'bg-[#E0F2F1]',
     textColor: 'text-teal-700',
@@ -37,78 +40,11 @@ const METRIC_CARDS = [
   {
     id: 'cancelled',
     title: 'Cancelled Bookings',
-    value: '299(₦2,00,000)',
+    value: '0',
     icon: XCircle,
     bg: 'bg-[#FCE4EC]',
     textColor: 'text-pink-600',
     iconBg: 'bg-white'
-  }
-]
-
-// Mock Data for Booking List
-const MOCK_BOOKINGS = [
-  {
-    id: 1,
-    bookedOn: 'Sat, 12 June 2025, 10:00 AM',
-    userName: 'Ayo Famuyiwa',
-    email: 'ayo.famuyiwa@email.com',
-    phoneNumber: '+234 802 123 4567',
-    accessBooked: [
-      '3 x Day Gym Access (Adult) (₦2,000)',
-      '2 x Day Gym Access (Adult) (₦10,000)'
-    ],
-    amount: '₦16,000',
-    status: 'Completed'
-  },
-  {
-    id: 2,
-    bookedOn: 'Sat, 12 June 2025, 10:00 AM',
-    userName: 'Bolu Onabanjo',
-    email: 'bolu.onabanjo@email.com',
-    phoneNumber: '+234 802 234 5678',
-    accessBooked: ['3 x Day Gym Access (Adult) (₦2,000)'],
-    amount: '₦6,000',
-    status: 'Cancelled'
-  },
-  {
-    id: 3,
-    bookedOn: 'Sat, 12 June 2025, 10:00 AM',
-    userName: 'Segun Adebayo',
-    email: 'segun.adebayo@email.com',
-    phoneNumber: '+234 802 345 6789',
-    accessBooked: ['3 x Day Gym Access (Adult) (₦2,000)'],
-    amount: '₦6,000',
-    status: 'Completed'
-  },
-  {
-    id: 4,
-    bookedOn: 'Sat, 12 June 2025, 10:00 AM',
-    userName: 'Tunde Bakare',
-    email: 'tunde.bakare@email.com',
-    phoneNumber: '+234 802 456 7890',
-    accessBooked: ['3 x Day Gym Access (Adult) (₦2,000)'],
-    amount: '₦6,000',
-    status: 'Completed'
-  },
-  {
-    id: 5,
-    bookedOn: 'Sat, 12 June 2025, 10:00 AM',
-    userName: 'Kunle Afolayan',
-    email: 'kunle.afolayan@email.com',
-    phoneNumber: '+234 802 567 8901',
-    accessBooked: ['3 x Day Gym Access (Adult) (₦2,000)'],
-    amount: '₦6,000',
-    status: 'Completed'
-  },
-  {
-    id: 6,
-    bookedOn: 'Sat, 12 June 2025, 10:00 AM',
-    userName: 'Bisi Alimi',
-    email: 'bisi.alimi@email.com',
-    phoneNumber: '+234 802 678 9012',
-    accessBooked: ['3 x Day Gym Access (Adult) (₦2,000)'],
-    amount: '₦6,000',
-    status: 'Completed'
   }
 ]
 
@@ -126,7 +62,89 @@ const TableHeaderCell = ({ children, align = 'left' }) => (
 export default function GymBookingsId () {
   const router = useRouter()
   const [searchTerm, setSearchTerm] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [menuOpenId, setMenuOpenId] = useState(null)
+  const [bookings, setBookings] = useState([])
+  const [loading, setLoading] = useState(false)
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 10,
+    totalPages: 1,
+    totalDocs: 0
+  })
+  const [metrics, setMetrics] = useState(INITIAL_METRIC_CARDS)
+  const [toast, setToast] = useState({
+    open: false,
+    title: '',
+    description: '',
+    variant: 'success'
+  })
+
+  // Debounce search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchTerm)
+      setPagination(prev => ({ ...prev, page: 1 }))
+    }, 500)
+    return () => clearTimeout(timer)
+  }, [searchTerm])
+
+  // Fetch data
+  const fetchBookings = async () => {
+    try {
+      setLoading(true)
+      const params = {
+        page: pagination.page,
+        limit: pagination.limit,
+        search: debouncedSearch
+      }
+      const response = await getAllGymBookings(
+        pagination.page,
+        pagination.limit,
+        params
+      )
+
+      if (response?.success) {
+        setBookings(response.data.gymBookings || [])
+        setPagination(prev => ({
+          ...prev,
+          ...response.data.pagination
+        }))
+
+        // Update metrics
+        const updatedMetrics = [...INITIAL_METRIC_CARDS]
+
+        // Total Bookings
+        updatedMetrics[0].value = response.data.totalBookings?.toString() || '0'
+
+        // Revenue
+        const revenue = response.data.totalRevenue || 0
+        updatedMetrics[1].value = `₦${revenue.toLocaleString('en-NG', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        })}`
+
+        // Cancelled (Not available in API yet, keeping 0)
+        updatedMetrics[2].value = '0'
+
+        setMetrics(updatedMetrics)
+      }
+    } catch (error) {
+      console.error('Error fetching bookings:', error)
+      setToast({
+        open: true,
+        title: 'Error',
+        description: error?.message || 'Failed to fetch bookings',
+        variant: 'error'
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchBookings()
+  }, [pagination.page, pagination.limit, debouncedSearch])
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -141,8 +159,35 @@ export default function GymBookingsId () {
     }
   }, [menuOpenId])
 
+  const formatDate = dateString => {
+    if (!dateString) return '-'
+    const date = new Date(dateString)
+    return date.toLocaleString('en-US', {
+      weekday: 'short',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    })
+  }
+
+  const handlePageChange = newPage => {
+    if (newPage >= 1 && newPage <= pagination.totalPages) {
+      setPagination(prev => ({ ...prev, page: newPage }))
+    }
+  }
+
   return (
     <div className='space-y-6 py-6 px-6'>
+      <Toast
+        open={toast.open}
+        onOpenChange={v => setToast(prev => ({ ...prev, open: v }))}
+        title={toast.title}
+        description={toast.description}
+        variant={toast.variant}
+      />
+
       <div className='flex flex-col gap-1'>
         <button
           onClick={() => router.back()}
@@ -158,7 +203,7 @@ export default function GymBookingsId () {
 
       {/* Metric Cards */}
       <div className='grid grid-cols-1 gap-4 md:grid-cols-3'>
-        {METRIC_CARDS.map(card => {
+        {metrics.map(card => {
           const Icon = card.icon
           return (
             <div
@@ -216,96 +261,172 @@ export default function GymBookingsId () {
               <TableHeaderCell>Booked On</TableHeaderCell>
             </div>
             <div className='col-span-2'>
-              <TableHeaderCell>User Name</TableHeaderCell>
+              <TableHeaderCell>Gym Name</TableHeaderCell>
             </div>
             <div className='col-span-2'>
-              <TableHeaderCell>Email Id</TableHeaderCell>
+              <TableHeaderCell>User Details</TableHeaderCell>
             </div>
             <div className='col-span-2'>
-              <TableHeaderCell>Phone Number</TableHeaderCell>
+              <TableHeaderCell>Contact Info</TableHeaderCell>
             </div>
             <div className='col-span-2'>
-              <TableHeaderCell>Access Booked</TableHeaderCell>
+              <TableHeaderCell>Access Details</TableHeaderCell>
             </div>
             <div className='col-span-1'>
               <TableHeaderCell>Amount</TableHeaderCell>
             </div>
             <div className='col-span-1 text-right'>
-              <TableHeaderCell align='right'>Payment Status</TableHeaderCell>
+              <TableHeaderCell align='right'>Status</TableHeaderCell>
             </div>
           </div>
 
           {/* Table Rows */}
           <div className='divide-y divide-[#EEF1FA] bg-white'>
-            {MOCK_BOOKINGS.map(item => (
-              <div
-                key={item.id}
-                className='grid grid-cols-12 gap-4 px-4 py-3 items-start hover:bg-[#F9FAFD]'
-              >
-                <div className='col-span-2 text-xs text-[#5E6582]'>
-                  {item.bookedOn}
-                </div>
-                <div className='col-span-2 text-xs font-medium text-slate-900'>
-                  {item.userName}
-                </div>
+            {loading ? (
+              <div className='p-8 text-center text-gray-500 text-sm'>
+                Loading...
+              </div>
+            ) : bookings.length === 0 ? (
+              <div className='p-8 text-center text-gray-500 text-sm'>
+                No bookings found
+              </div>
+            ) : (
+              bookings.map(item => (
                 <div
-                  className='col-span-2 text-xs text-[#5E6582] truncate'
-                  title={item.email}
+                  key={item._id}
+                  className='grid grid-cols-12 gap-4 px-4 py-3 items-start hover:bg-[#F9FAFD]'
                 >
-                  {item.email}
-                </div>
-                <div className='col-span-2 text-xs text-[#5E6582]'>
-                  {item.phoneNumber}
-                </div>
-                <div className='col-span-2 space-y-1'>
-                  {item.accessBooked.map((access, idx) => (
-                    <div key={idx} className='text-xs text-[#5E6582]'>
-                      {access}
+                  <div className='col-span-2'>
+                    <div className='text-xs text-[#5E6582]'>
+                      {formatDate(item.createdAt)}
                     </div>
-                  ))}
-                </div>
-                <div className='col-span-1 text-xs font-bold text-slate-900'>
-                  {item.amount}
-                </div>
-                <div className='col-span-1 flex justify-end items-center gap-2'>
-                  <span
-                    className={`inline-flex items-center justify-center rounded-md px-2 py-1 text-[10px] font-semibold ${
-                      item.status === 'Completed'
-                        ? 'bg-emerald-50 text-emerald-600 border border-emerald-200'
-                        : 'bg-orange-50 text-orange-600 border border-orange-200'
-                    }`}
+                    <div className='text-[10px] text-[#8A92AC] mt-0.5 font-mono'>
+                      #{item.orderId || '-'}
+                    </div>
+                  </div>
+                  <div
+                    className='col-span-2 text-xs font-medium text-slate-900 truncate'
+                    title={item.gymId?.gymName}
                   >
-                    {item.status}
-                  </span>
-
-                  {/* Action Menu */}
-                  <div className='relative action-menu'>
-                    <button
-                      onClick={() =>
-                        setMenuOpenId(menuOpenId === item.id ? null : item.id)
-                      }
-                      className='text-[#8A92AC] hover:text-[#2D3658]'
+                    {item.gymId?.gymName || '-'}
+                  </div>
+                  <div className='col-span-2'>
+                    <div className='text-xs font-medium text-slate-900'>
+                      {item.buyer?.fullName || item.userId?.name || '-'}
+                    </div>
+                  </div>
+                  <div className='col-span-2'>
+                    <div
+                      className='text-xs text-[#5E6582] truncate'
+                      title={item.buyer?.email || item.userId?.email || '-'}
                     >
-                      <MoreVertical className='h-4 w-4' />
-                    </button>
-                    {menuOpenId === item.id && (
-                      <div className='absolute right-0 top-6 z-10 w-40 rounded-lg border border-[#E1E6F7] bg-white py-2 shadow-lg'>
-                        <button
-                          onClick={() => {
-                            router.push(`/gym/bookings/view/${item.id}`)
-                          }}
-                          className='block w-full px-4 cursor-pointer py-2 text-left text-xs font-medium text-slate-700 hover:bg-[#F8F9FC]'
-                        >
-                          View Access Details
-                        </button>
+                      {item.buyer?.email || item.userId?.email || '-'}
+                    </div>
+                    <div className='text-xs text-[#5E6582] mt-0.5'>
+                      {item.buyer?.phone || item.userId?.phoneNumber || '-'}
+                    </div>
+                  </div>
+                  <div className='col-span-2 space-y-1'>
+                    {item.passes?.map((pass, idx) => (
+                      <div key={idx} className='text-xs text-[#5E6582]'>
+                        {pass.quantity} x {pass.gymAccessName}
                       </div>
-                    )}
+                    ))}
+                    <div className='text-[10px] text-[#8A92AC] mt-1'>
+                      <span className='font-medium'>Visit:</span>{' '}
+                      {formatDate(item.arrivalDate)}
+                    </div>
+                  </div>
+                  <div className='col-span-1 text-xs font-bold text-slate-900'>
+                    ₦
+                    {item.finalPayableAmount?.toLocaleString('en-NG', {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2
+                    })}
+                  </div>
+                  <div className='col-span-1 flex justify-end items-center gap-2'>
+                    <span
+                      className={`inline-flex items-center justify-center rounded-md px-2 py-1 text-[10px] font-semibold capitalize ${
+                        ['success', 'paid', 'completed'].includes(
+                          (item.paymentStatus || '').toLowerCase()
+                        )
+                          ? 'bg-emerald-50 text-emerald-600 border border-emerald-200'
+                          : [
+                              'abandoned',
+                              'abondoned',
+                              'failed',
+                              'cancelled'
+                            ].includes((item.paymentStatus || '').toLowerCase())
+                          ? 'bg-red-50 text-red-600 border border-red-200'
+                          : 'bg-orange-50 text-orange-600 border border-orange-200'
+                      }`}
+                    >
+                      {item.paymentStatus === 'success'
+                        ? 'Success'
+                        : item.paymentStatus || 'Pending'}
+                    </span>
+
+                    {/* Action Menu */}
+                    <div className='relative action-menu'>
+                      <button
+                        onClick={() =>
+                          setMenuOpenId(
+                            menuOpenId === item._id ? null : item._id
+                          )
+                        }
+                        className='text-[#8A92AC] hover:text-[#2D3658]'
+                      >
+                        <MoreVertical className='h-4 w-4' />
+                      </button>
+                      {menuOpenId === item._id && (
+                        <div className='absolute right-0 top-6 z-10 w-40 rounded-lg border border-[#E1E6F7] bg-white py-2 shadow-lg'>
+                          <button
+                            onClick={() => {
+                              router.push(`/gym/bookings/view/${item._id}`)
+                            }}
+                            className='block w-full px-4 cursor-pointer py-2 text-left text-xs font-medium text-slate-700 hover:bg-[#F8F9FC]'
+                          >
+                            View Access Details
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
+
+        {/* Pagination */}
+        {pagination.totalDocs > 0 && (
+          <div className='mt-4 flex items-center justify-between border-t border-[#E1E6F7] pt-4'>
+            <div className='text-sm text-[#64748B]'>
+              Showing {(pagination.page - 1) * pagination.limit + 1} to{' '}
+              {Math.min(
+                pagination.page * pagination.limit,
+                pagination.totalDocs
+              )}{' '}
+              of {pagination.totalDocs} entries
+            </div>
+            <div className='flex gap-2'>
+              <button
+                onClick={() => handlePageChange(pagination.page - 1)}
+                disabled={pagination.page === 1}
+                className='flex h-8 w-8 items-center justify-center rounded-lg border border-[#E2E8F0] text-[#64748B] hover:bg-gray-50 disabled:opacity-50'
+              >
+                <ChevronLeft className='h-4 w-4' />
+              </button>
+              <button
+                onClick={() => handlePageChange(pagination.page + 1)}
+                disabled={pagination.page === pagination.totalPages}
+                className='flex h-8 w-8 items-center justify-center rounded-lg border border-[#E2E8F0] text-[#64748B] hover:bg-gray-50 disabled:opacity-50'
+              >
+                <ChevronRight className='h-4 w-4' />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

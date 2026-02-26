@@ -674,7 +674,10 @@ export default function UsersForm ({
     registered: 0,
     unregistered: 0
   })
-  const [dateRange, setDateRange] = useState({ start: '', end: '' })
+  const [dateRange, setDateRange] = useState({
+    start: '2025-11-01',
+    end: new Date().toISOString().split('T')[0]
+  })
   const [exporting, setExporting] = useState(false)
 
   const fetchStats = async () => {

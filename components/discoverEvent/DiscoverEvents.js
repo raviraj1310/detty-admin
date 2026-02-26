@@ -102,6 +102,7 @@ export default function DiscoverEvents () {
   const [statusFilter, setStatusFilter] = useState('')
   const [typeFilter, setTypeFilter] = useState('')
   const [locationFilter, setLocationFilter] = useState('')
+  const [yearFilter, setYearFilter] = useState('')
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [toastOpen, setToastOpen] = useState(false)
   const [user, setUser] = useState(null)
@@ -134,6 +135,12 @@ export default function DiscoverEvents () {
     if (!user) return false
     if (!permissionKey) return true
 
+    const roleName = user.role?.name || user.role
+    if (typeof roleName === 'string') {
+      const normalizedRole = roleName.toLowerCase().replace(/[_\s]+/g, '-')
+      if (normalizedRole === 'super-admin') return true
+    }
+
     const permissions = user.role?.permissions
     if (Array.isArray(permissions)) {
       return permissions.some(
@@ -165,10 +172,13 @@ export default function DiscoverEvents () {
       setLoading(true)
       setError('')
       try {
-        const res = await getAllEvents({})
+        const params = {}
+        if (statusFilter) params.status = statusFilter
+        if (yearFilter) params.year = yearFilter
+        const res = await getAllEvents(params)
         const data = Array.isArray(res?.data) ? res.data : []
         setEvents(data)
-        setToastOpen(true)
+        if (!statusFilter && !yearFilter) setToastOpen(true)
       } catch (e) {
         setError('Failed to load events')
         setEvents([])
@@ -177,27 +187,7 @@ export default function DiscoverEvents () {
       }
     }
     fetchEvents()
-  }, [])
-
-  useEffect(() => {
-    const fetchByStatus = async () => {
-      setLoading(true)
-      setError('')
-      try {
-        const params = {}
-        if (statusFilter) params.status = statusFilter
-        const res = await getAllEvents(params)
-        const data = Array.isArray(res?.data) ? res.data : []
-        setEvents(data)
-      } catch (e) {
-        setError('Failed to load events')
-        setEvents([])
-      } finally {
-        setLoading(false)
-      }
-    }
-    if (typeof statusFilter !== 'undefined') fetchByStatus()
-  }, [statusFilter])
+  }, [statusFilter, yearFilter])
 
   const eventRows = events.map((e, idx) => {
     const now = new Date()
@@ -344,7 +334,12 @@ export default function DiscoverEvents () {
       ? String(r.status || '').toLowerCase() ===
         String(statusFilter).toLowerCase()
       : true
-    if (!term) return typeOk && locationOk && statusOk
+
+    const yearOk = yearFilter
+      ? new Date(r.startMs).getFullYear() === parseInt(yearFilter)
+      : true
+
+    if (!term) return typeOk && locationOk && statusOk && yearOk
     const digits = term.replace(/[^0-9]/g, '')
     const name = String(r.eventName || '').toLowerCase()
     const host = String(r.hostedBy || '').toLowerCase()
@@ -363,7 +358,13 @@ export default function DiscoverEvents () {
       statusLc.includes(term) // ✅
 
     const matchesDigits = digits && dateDigits.includes(digits)
-    return (matchesText || matchesDigits) && typeOk && locationOk && statusOk
+    return (
+      (matchesText || matchesDigits) &&
+      typeOk &&
+      locationOk &&
+      statusOk &&
+      yearOk
+    )
   })
 
   const paginatedBookings = useMemo(() => {
@@ -500,26 +501,35 @@ export default function DiscoverEvents () {
           <p className='text-xs text-[#99A1BC]'>Dashboard / Discover Events</p>
         </div>
         <div className='flex flex-wrap items-center gap-3 md:justify-end'>
-          {!isPartner && checkPermission('event-order') && (
-            <button
-              onClick={() => {
-                setViewAllLoading(true)
-                router.push('/discover-events/tickets-booked')
-              }}
-              disabled={viewAllLoading}
-              className='rounded-xl border border-[#E5E6EF] bg-white px-5 py-2.5 text-sm font-medium text-[#1A1F3F] shadow-sm transition hover:bg-[#F9FAFD] disabled:opacity-60 disabled:cursor-not-allowed'
+          <div className='relative'>
+            <select
+              value={yearFilter}
+              onChange={e => setYearFilter(e.target.value)}
+              className='rounded-xl border border-[#E5E6EF] bg-white px-3 py-2.5 text-sm font-medium text-[#1A1F3F] shadow-sm transition focus:outline-none focus:ring-2 focus:ring-[#E5E6EF]'
             >
-              {viewAllLoading ? (
-                <span className='flex items-center gap-2'>
-                  <Loader2 className='h-4 w-4 animate-spin' />
-                  Loading...
-                </span>
-              ) : (
-                'View All Bookings'
-              )}
-            </button>
-          )}
-          {!isPartner && checkPermission('event-create') && (
+              <option value=''>All Years</option>
+              <option value='2025'>2025</option>
+              <option value='2026'>2026</option>
+            </select>
+          </div>
+          <button
+            onClick={() => {
+              setViewAllLoading(true)
+              router.push('/discover-events/tickets-booked')
+            }}
+            disabled={viewAllLoading}
+            className='rounded-xl border border-[#E5E6EF] bg-white px-5 py-2.5 text-sm font-medium text-[#1A1F3F] shadow-sm transition hover:bg-[#F9FAFD] disabled:opacity-60 disabled:cursor-not-allowed'
+          >
+            {viewAllLoading ? (
+              <span className='flex items-center gap-2'>
+                <Loader2 className='h-4 w-4 animate-spin' />
+                Loading...
+              </span>
+            ) : (
+              'View All Bookings'
+            )}
+          </button>
+          {!isPartner && (
             <button
               onClick={handleAddNewEvent}
               disabled={addNewLoading}

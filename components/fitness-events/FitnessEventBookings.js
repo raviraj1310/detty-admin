@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, useRef } from 'react'
+import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import {
   Search,
@@ -11,81 +11,38 @@ import {
   Wallet,
   XCircle,
   Eye,
-  ChevronLeft
+  ChevronLeft,
+  Loader2
 } from 'lucide-react'
 import { IoFilterSharp } from 'react-icons/io5'
 import { TbCaretUpDownFilled } from 'react-icons/tb'
+import Toast from '@/components/ui/Toast'
 
-// Mock Data for Metrics
-const METRICS = {
-  totalBookings: 1155,
-  revenue: '865(₦10,00,000)',
-  cancelledBookings: '299(₦2,00,000)'
+import {
+  getFitnessEventBookings,
+  getBookingsByFitnessId,
+  getFitnessEventById
+} from '@/services/fitness-event/fitness-event.service'
+
+const formatDate = dateString => {
+  if (!dateString) return '-'
+  return new Date(dateString).toLocaleString('en-US', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: 'numeric',
+    hour12: true
+  })
 }
 
-// Mock Data for Bookings
-const MOCK_BOOKINGS = [
-  {
-    id: 1,
-    bookedOn: '2025-06-12T10:00:00',
-    userName: 'Ayo Famuyiwa',
-    email: 'ayo.famuyiwa@email.com',
-    phone: '+234 802 123 4567',
-    passBooked: 'Entry Pass (₦2,000)',
-    amount: '16,000',
-    status: 'Completed'
-  },
-  {
-    id: 2,
-    bookedOn: '2025-06-12T10:00:00',
-    userName: 'Bolu Onabanjo',
-    email: 'bolu.onabanjo@email.com',
-    phone: '+234 802 234 5678',
-    passBooked: 'Entry Pass (₦2,000)',
-    amount: '6,000',
-    status: 'Cancelled'
-  },
-  {
-    id: 3,
-    bookedOn: '2025-06-12T10:00:00',
-    userName: 'Segun Adebayo',
-    email: 'segun.adebayo@email.com',
-    phone: '+234 802 345 6789',
-    passBooked: 'Entry Pass (₦2,000)',
-    amount: '6,000',
-    status: 'Completed'
-  },
-  {
-    id: 4,
-    bookedOn: '2025-06-12T10:00:00',
-    userName: 'Tunde Bakare',
-    email: 'tunde.bakare@email.com',
-    phone: '+234 802 456 7890',
-    passBooked: 'Entry Pass (₦2,000)',
-    amount: '6,000',
-    status: 'Completed'
-  },
-  {
-    id: 5,
-    bookedOn: '2025-06-12T10:00:00',
-    userName: 'Kunle Afolayan',
-    email: 'kunle.afolayan@email.com',
-    phone: '+234 802 567 8901',
-    passBooked: 'Entry Pass (₦2,000)',
-    amount: '6,000',
-    status: 'Completed'
-  },
-  {
-    id: 6,
-    bookedOn: '2025-06-12T10:00:00',
-    userName: 'Bisi Alimi',
-    email: 'bisi.alimi@email.com',
-    phone: '+234 802 678 9012',
-    passBooked: 'Entry Pass (₦2,000)',
-    amount: '6,000',
-    status: 'Completed'
-  }
-]
+const formatCurrency = amount => {
+  return `₦${Number(amount || 0).toLocaleString('en-NG', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  })}`
+}
 
 const MetricCard = ({
   title,
@@ -117,7 +74,103 @@ const TableHeaderCell = ({ children }) => (
 
 export default function FitnessEventBookings ({ eventId }) {
   const router = useRouter()
+  const params = useParams()
+  const id = eventId || params?.id
+
+  const [bookings, setBookings] = useState([])
+  const [metrics, setMetrics] = useState({
+    totalBookings: 0,
+    revenue: 0,
+    cancelledBookings: 0
+  })
+  const [eventName, setEventName] = useState('')
+  const [loading, setLoading] = useState(true)
+  const [searchTerm, setSearchTerm] = useState('')
   const [activeDropdown, setActiveDropdown] = useState(null)
+
+  // Toast State
+  const [toastOpen, setToastOpen] = useState(false)
+  const [toastProps, setToastProps] = useState({
+    title: '',
+    description: '',
+    variant: 'success'
+  })
+
+  const showToast = (title, description, variant = 'success') => {
+    setToastProps({ title, description, variant })
+    setToastOpen(true)
+  }
+
+  const fetchBookings = async () => {
+    try {
+      setLoading(true)
+      let response
+      if (id) {
+        response = await getBookingsByFitnessId(id, 1, 100, searchTerm)
+      } else {
+        response = await getFitnessEventBookings(1, 100, searchTerm)
+      }
+
+      // Handle response structure: Service returns body directly ({ success: true, ... })
+      // but we also handle if it returns the full axios response object
+      const responseData = response?.success
+        ? response
+        : response?.data || response
+
+      if (responseData?.success) {
+        const data = responseData.data || {}
+        const bookingsList = data.bookings || []
+        setBookings(bookingsList)
+
+        // Metrics
+        const totalRevenue = data.totalRevenue || 0
+        const totalBookings = data.totalBookings || bookingsList.length
+
+        // Calculate cancelled bookings if not provided
+        const cancelled = bookingsList.filter(
+          b =>
+            b.status?.toLowerCase() === 'cancelled' ||
+            b.paymentStatus === 'failed'
+        ).length
+
+        setMetrics({
+          totalBookings,
+          revenue: totalRevenue,
+          cancelledBookings: cancelled
+        })
+      }
+    } catch (error) {
+      console.error('Error fetching bookings:', error)
+      showToast('Error', 'Failed to fetch bookings', 'destructive')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchBookings()
+  }, [id, searchTerm])
+
+  useEffect(() => {
+    const fetchEventDetails = async () => {
+      if (id) {
+        try {
+          const response = await getFitnessEventById(id)
+          const data = response?.data?.data || response?.data || {}
+          if (data.fitnessEventName) {
+            setEventName(data.fitnessEventName)
+          } else if (data.name) {
+            setEventName(data.name)
+          }
+        } catch (error) {
+          console.error('Error fetching event details:', error)
+        }
+      } else {
+        setEventName('')
+      }
+    }
+    fetchEventDetails()
+  }, [id])
 
   // Click outside dropdown
   useEffect(() => {
@@ -132,6 +185,14 @@ export default function FitnessEventBookings ({ eventId }) {
 
   return (
     <div className='min-h-screen bg-gray-50 p-8'>
+      <Toast
+        open={toastOpen}
+        onOpenChange={setToastOpen}
+        title={toastProps.title}
+        description={toastProps.description}
+        variant={toastProps.variant}
+      />
+
       {/* Header */}
       <div className='mb-8'>
         <button
@@ -142,7 +203,8 @@ export default function FitnessEventBookings ({ eventId }) {
         </button>
         <div>
           <h1 className='text-2xl font-bold text-gray-900'>
-            Fitness Event Bookings
+            Fitness Event Bookings{' '}
+            {eventName && <span className='text-[#FF4400]'>({eventName})</span>}
           </h1>
           <nav className='mt-1 text-sm text-gray-500'>
             <Link href='/dashboard' className='hover:text-gray-700'>
@@ -158,7 +220,7 @@ export default function FitnessEventBookings ({ eventId }) {
       <div className='grid grid-cols-1 gap-4 sm:grid-cols-3 mb-8'>
         <MetricCard
           title='Total Bookings'
-          value={METRICS.totalBookings}
+          value={metrics.totalBookings}
           icon={User}
           bgClass='bg-[#F3E8FF]'
           iconBgClass='bg-white'
@@ -166,7 +228,7 @@ export default function FitnessEventBookings ({ eventId }) {
         />
         <MetricCard
           title='Revenue'
-          value={METRICS.revenue}
+          value={formatCurrency(metrics.revenue)}
           icon={Wallet}
           bgClass='bg-[#E0F2F1]'
           iconBgClass='bg-white'
@@ -174,7 +236,7 @@ export default function FitnessEventBookings ({ eventId }) {
         />
         <MetricCard
           title='Cancelled Bookings'
-          value={METRICS.cancelledBookings}
+          value={metrics.cancelledBookings}
           icon={XCircle}
           bgClass='bg-[#FFEBEE]'
           iconBgClass='bg-white'
@@ -192,6 +254,8 @@ export default function FitnessEventBookings ({ eventId }) {
               <input
                 type='text'
                 placeholder='Search'
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
                 className='h-10 w-64 rounded-lg border border-gray-200 pl-10 pr-4 text-sm focus:border-[#FF4400] focus:outline-none'
               />
             </div>
@@ -234,74 +298,106 @@ export default function FitnessEventBookings ({ eventId }) {
               </tr>
             </thead>
             <tbody className='divide-y divide-gray-100'>
-              {MOCK_BOOKINGS.map(booking => (
-                <tr key={booking.id} className='hover:bg-gray-50/50'>
-                  <td className='px-6 py-4 text-sm text-gray-600'>
-                    {new Date(booking.bookedOn).toLocaleString('en-GB', {
-                      day: 'numeric',
-                      month: 'long',
-                      year: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}
-                  </td>
-                  <td className='px-6 py-4 text-sm font-medium text-gray-900'>
-                    {booking.userName}
-                  </td>
-                  <td className='px-6 py-4 text-sm text-gray-600'>
-                    {booking.email}
-                  </td>
-                  <td className='px-6 py-4 text-sm text-gray-600'>
-                    {booking.phone}
-                  </td>
-                  <td className='px-6 py-4 text-sm text-gray-600'>
-                    {booking.passBooked}
-                  </td>
-                  <td className='px-6 py-4 text-sm font-medium text-gray-900'>
-                    ₦{booking.amount}
-                  </td>
-                  <td className='px-6 py-4'>
-                    <span
-                      className={`inline-flex items-center gap-1.5 rounded px-2 py-1 text-xs font-medium border ${
-                        booking.status === 'Completed'
-                          ? 'bg-green-50 text-green-700 border-green-200'
-                          : 'bg-orange-50 text-orange-700 border-orange-200'
-                      }`}
-                    >
-                      {booking.status}
-                    </span>
-                  </td>
-                  <td className='px-6 py-4'>
-                    <div className='relative action-dropdown'>
-                      <button
-                        onClick={() =>
-                          setActiveDropdown(
-                            activeDropdown === booking.id ? null : booking.id
-                          )
-                        }
-                        className='flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600'
-                      >
-                        <MoreVertical className='h-4 w-4' />
-                      </button>
-
-                      {activeDropdown === booking.id && (
-                        <div className='absolute right-0 top-full z-10 mt-1 w-40 rounded-lg border border-gray-100 bg-white p-1 shadow-lg'>
-                          <button
-                            onClick={() =>
-                              router.push(
-                                `/fitness-events/bookings/view/${booking.id}`
-                              )
-                            }
-                            className='flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-50'
-                          >
-                            <Eye className='h-4 w-4' /> View Details
-                          </button>
-                        </div>
-                      )}
+              {loading ? (
+                <tr>
+                  <td colSpan='8' className='py-8 text-center text-[#64748B]'>
+                    <div className='flex items-center justify-center gap-2'>
+                      <Loader2 className='h-5 w-5 animate-spin' />
+                      Loading bookings...
                     </div>
                   </td>
                 </tr>
-              ))}
+              ) : bookings.length === 0 ? (
+                <tr>
+                  <td colSpan='8' className='py-8 text-center text-[#64748B]'>
+                    No bookings found
+                  </td>
+                </tr>
+              ) : (
+                bookings.map(booking => (
+                  <tr key={booking._id} className='hover:bg-gray-50/50'>
+                    <td className='px-6 py-4 text-sm text-gray-600'>
+                      {formatDate(booking.createdAt || booking.bookingDate)}
+                    </td>
+                    <td className='px-6 py-4 text-sm font-medium text-gray-900'>
+                      {booking.buyer?.fullName ||
+                        booking.userId?.name ||
+                        booking.userName ||
+                        '-'}
+                    </td>
+                    <td className='px-6 py-4 text-sm text-gray-600'>
+                      {booking.buyer?.email ||
+                        booking.userId?.email ||
+                        booking.email ||
+                        '-'}
+                    </td>
+                    <td className='px-6 py-4 text-sm text-gray-600'>
+                      {booking.buyer?.phone ||
+                        booking.userId?.phone ||
+                        booking.phone ||
+                        '-'}
+                    </td>
+                    <td className='px-6 py-4 text-sm text-gray-600'>
+                      {booking.passes?.[0]?.passName ||
+                        booking.passBooked ||
+                        '-'}
+                    </td>
+                    <td className='px-6 py-4 text-sm font-medium text-gray-900'>
+                      {formatCurrency(
+                        booking.finalPayableAmount ||
+                          booking.totalAmount ||
+                          booking.amount
+                      )}
+                    </td>
+                    <td className='px-6 py-4'>
+                      <span
+                        className={`inline-flex items-center gap-1.5 rounded px-2 py-1 text-xs font-medium border ${
+                          booking.paymentStatus === 'success' ||
+                          booking.status === 'Completed'
+                            ? 'bg-green-50 text-green-700 border-green-200'
+                            : booking.status === 'Cancelled' ||
+                              booking.status === 'failed'
+                            ? 'bg-red-50 text-red-700 border-red-200'
+                            : 'bg-orange-50 text-orange-700 border-orange-200'
+                        }`}
+                      >
+                        {booking.paymentStatus || booking.status || 'Pending'}
+                      </span>
+                    </td>
+                    <td className='px-6 py-4'>
+                      <div className='relative action-dropdown'>
+                        <button
+                          onClick={() =>
+                            setActiveDropdown(
+                              activeDropdown === booking._id
+                                ? null
+                                : booking._id
+                            )
+                          }
+                          className='flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600'
+                        >
+                          <MoreVertical className='h-4 w-4' />
+                        </button>
+
+                        {activeDropdown === booking._id && (
+                          <div className='absolute right-0 top-full z-10 mt-1 w-40 rounded-lg border border-gray-100 bg-white p-1 shadow-lg'>
+                            <button
+                              onClick={() =>
+                                router.push(
+                                  `/fitness-events/bookings/view/${booking._id}`
+                                )
+                              }
+                              className='flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-50'
+                            >
+                              <Eye className='h-4 w-4' /> View Details
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

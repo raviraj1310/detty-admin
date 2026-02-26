@@ -99,6 +99,12 @@ const menuSections = [
         icon: '/images/backend/side_menu/side_menu (7).svg',
         href: '/voucher-distribution-report',
         permission: 'voucher'
+      },
+      {
+        label: 'Podcast',
+        icon: '/images/backend/side_menu/side_menu (12).svg',
+        href: '/podcast',
+        permission: 'podcast'
       }
 
       // { label: 'Ride Services', icon: '/images/backend/side_menu/side_menu (9).svg', href: '/users/ride-services' },
@@ -360,6 +366,12 @@ export default function AdminSidebar () {
   const checkPermission = permissionKey => {
     if (!user) return false
     if (!permissionKey) return true
+
+    const roleName = user.role?.name || user.role
+    if (typeof roleName === 'string') {
+      const normalizedRole = roleName.toLowerCase().replace(/[_\s]+/g, '-')
+      if (normalizedRole === 'super-admin') return true
+    }
 
     const permissions = user.role?.permissions
     if (Array.isArray(permissions)) {

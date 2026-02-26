@@ -33,6 +33,7 @@ export default function AddEvents () {
   const router = useRouter()
   const [formData, setFormData] = useState({
     eventName: '',
+    slug: '',
     location: '',
     mapLocation: '',
     eventStartDate: '',
@@ -137,6 +138,7 @@ export default function AddEvents () {
     if (Object.keys(errs).length > 0) return
     const fd = new FormData()
     fd.append('eventName', formData.eventName.trim())
+    fd.append('slug', formData.slug.trim())
     fd.append('twitterLink', tw)
     fd.append('about', formData.aboutEvent.trim())
     fd.append('eventTypeId', selectedEventTypeId)
@@ -339,6 +341,23 @@ export default function AddEvents () {
                 />
                 {errors.eventName && (
                   <p className='text-xs text-red-600'>{errors.eventName}</p>
+                )}
+              </div>
+
+              {/* Slug */}
+              <div className='space-y-2'>
+                <label className='text-sm font-medium text-slate-700'>
+                  Slug
+                </label>
+                <input
+                  type='text'
+                  value={formData.slug}
+                  onChange={e => handleInputChange('slug', e.target.value)}
+                  className='w-full h-12 rounded-xl border border-[#E5E6EF] bg-[#F8F9FC] px-4 text-sm text-slate-700 placeholder:text-[#B0B7D0] focus:border-[#C5CAE3] focus:outline-none focus:ring-2 focus:ring-[#C2C8E4]'
+                  placeholder='Enter slug'
+                />
+                {errors.slug && (
+                  <p className='text-xs text-red-600'>{errors.slug}</p>
                 )}
               </div>
 
