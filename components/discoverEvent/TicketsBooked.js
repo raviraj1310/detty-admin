@@ -191,24 +191,12 @@ export default function TicketsBooked () {
             0
           )
 
+          const stats = bookingsRes?.data || {}
+
           setSummary({
-            total:
-              totalSold > 0
-                ? totalSold + totalLeft
-                : Number(s.totalTicket) || 0,
-            booked:
-              totalSold > 0
-                ? totalSold
-                : Number(s.totalBooked) || calculatedBooked,
-            unbooked:
-              totalLeft > 0
-                ? totalLeft
-                : Number(s.totalAvailableTicket) ||
-                  Math.max(
-                    0,
-                    (Number(s.totalTicket) || 0) -
-                      (Number(s.totalBooked) || calculatedBooked)
-                  ),
+            total: Number(stats.totalTicketCount) || 0,
+            booked: Number(stats.totalBookedCount) || 0,
+            unbooked: Number(stats.totalUnbookedCount) || 0,
             totalAmount: '-',
             bookedAmount: '-',
             unbookedAmount: '-',
