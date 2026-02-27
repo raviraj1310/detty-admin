@@ -165,12 +165,11 @@ export default function EditPodcast () {
       // Update podcast details
       await updatePodcast(id, fd)
 
-      // Update episodes
-      if (episodes.length > 0) {
-        // Only update existing episodes (ignore new/temp ones for now)
-        const existingEpisodes = episodes.filter(
-          ep => !String(ep.id).startsWith('temp_')
-        )
+      // Update existing episodes
+      const existingEpisodes = episodes.filter(
+        ep => !String(ep.id).startsWith('temp_')
+      )
+      if (existingEpisodes.length > 0) {
         await Promise.all(
           existingEpisodes.map(ep =>
             updatePodcastEpisode(ep.id, {
@@ -185,10 +184,74 @@ export default function EditPodcast () {
         )
       }
 
+      // Create new episodes (must provide a new media file)
+      const newEpisodes = episodes.filter(ep =>
+        String(ep.id).startsWith('temp_')
+      )
+      if (newEpisodes.length > 0) {
+        const missingMedia = newEpisodes.find(ep => !(ep.video instanceof File))
+        if (missingMedia) {
+          setToast({
+            open: true,
+            title: 'Error',
+            description: 'Please select media for all new episodes',
+            variant: 'error'
+          })
+          setLoading(false)
+          return
+        }
+
+        const episodesPayload = new FormData()
+        newEpisodes.forEach((ep, index) => {
+          episodesPayload.append(`episodes[${index}][episodeNo]`, ep.number)
+          episodesPayload.append(`episodes[${index}][title]`, ep.title || '')
+          episodesPayload.append(
+            `episodes[${index}][subText]`,
+            ep.subText || ''
+          )
+          episodesPayload.append(
+            `episodes[${index}][episodeInfo]`,
+            ep.info || ''
+          )
+          episodesPayload.append(
+            `episodes[${index}][scheduleDate]`,
+            ep.scheduledDate || ''
+          )
+          episodesPayload.append(`episodes[${index}][podcastId]`, id)
+          if (ep.video instanceof File) {
+            episodesPayload.append(`episodes[${index}][media]`, ep.video)
+          }
+        })
+
+        await addEpisodeApi(episodesPayload)
+
+        try {
+          const refreshed = await getPodcastById(id)
+          const data = refreshed?.data || refreshed || {}
+          const episodesData = data.episodes || data.podcast_media || []
+          if (Array.isArray(episodesData)) {
+            setEpisodes(
+              episodesData.map(ep => ({
+                id: ep.id || ep._id,
+                number: ep.episodeNo || ep.episodeNumber || ep.number || '',
+                title: ep.title || '',
+                subText: ep.subText || '',
+                info: ep.episodeInfo || ep.info || '',
+                video: ep.media || ep.video || null,
+                scheduledDate: ep.scheduleDate || ep.scheduledDate || ''
+              }))
+            )
+          }
+        } catch {}
+      }
+
       setToast({
         open: true,
         title: 'Success',
-        description: 'Podcast updated successfully',
+        description:
+          newEpisodes.length > 0
+            ? 'Podcast updated and new episodes added'
+            : 'Podcast updated successfully',
         variant: 'success'
       })
     } catch (error) {
@@ -270,7 +333,7 @@ export default function EditPodcast () {
   const openCropWithExisting = e => {
     e.preventDefault() // Prevent form submission if inside a form
     if (imageFile) {
-      setCropFile(imageFile)
+      setRawImageFile(imageFile)
       setCropOpen(true)
     } else if (formData.image) {
       // Create a temporary file object from the URL for the cropper
@@ -284,7 +347,7 @@ export default function EditPodcast () {
           const file = new File([blob], 'existing-image.webp', {
             type: blob.type
           })
-          setCropFile(file)
+          setRawImageFile(file)
           setCropOpen(true)
         })
         .catch(err => {
@@ -312,6 +375,14 @@ export default function EditPodcast () {
     if (fileInputRef.current) {
       fileInputRef.current.value = ''
     }
+  }
+
+  const handleEpisodeFileChange = (episodeId, e) => {
+    const file = e.target.files && e.target.files[0]
+    if (!file) return
+    setEpisodes(prev =>
+      prev.map(ep => (ep.id === episodeId ? { ...ep, video: file } : ep))
+    )
   }
 
   const handleCropped = ({ file, meta }) => {
@@ -652,34 +723,51 @@ export default function EditPodcast () {
                 <div className='mt-4 grid grid-cols-1 gap-4 md:grid-cols-2'>
                   <div>
                     <label className='mb-2 block text-sm font-medium text-gray-700'>
-                      Upload Video*
+                      Upload Media*
                     </label>
-                    <div className='flex'>
-                      <input
-                        type='text'
-                        readOnly
-                        value={
-                          typeof episode.video === 'string'
-                            ? episode.video.split('/').pop()
-                            : 'No video selected'
-                        }
-                        className='w-full rounded-l-lg border border-r-0 border-gray-200 bg-white p-3 text-sm text-gray-900 focus:outline-none'
-                      />
-                      <button
-                        type='button'
-                        onClick={openCropWithExisting}
-                        className='rounded-r-lg border border-gray-200 bg-gray-100 px-4 text-sm font-medium text-gray-700 hover:bg-gray-200'
-                      >
-                        Browse / Crop
-                      </button>
-                    </div>
-                    {episode.video && (
-                      <div className='mt-3'>
-                        <video
-                          src={toImageSrc(episode.video)}
-                          controls
-                          className='max-h-48 w-full rounded-lg border border-gray-200 bg-black'
+                    {String(episode.id).startsWith('temp_') ? (
+                      <div className='relative'>
+                        <div className='flex'>
+                          <div className='w-full rounded-l-lg border border-r-0 border-gray-200 bg-white p-3 text-sm text-gray-900 overflow-hidden text-ellipsis whitespace-nowrap'>
+                            {episode.video instanceof File
+                              ? episode.video.name
+                              : typeof episode.video === 'string'
+                              ? episode.video.split('/').pop()
+                              : 'Choose Image / Video / Audio'}
+                          </div>
+                          <button
+                            type='button'
+                            className='rounded-r-lg border border-gray-200 bg-gray-100 px-4 text-sm font-medium text-gray-700 hover:bg-gray-200 whitespace-nowrap'
+                          >
+                            Browse
+                          </button>
+                        </div>
+                        <input
+                          type='file'
+                          onChange={e => handleEpisodeFileChange(episode.id, e)}
+                          className='absolute inset-0 opacity-0 cursor-pointer'
+                          accept='video/*,audio/*,image/*'
                         />
+                      </div>
+                    ) : (
+                      <div className='flex'>
+                        <input
+                          type='text'
+                          readOnly
+                          value={
+                            typeof episode.video === 'string'
+                              ? episode.video.split('/').pop()
+                              : 'No media selected'
+                          }
+                          className='w-full rounded-l-lg border border-r-0 border-gray-200 bg-white p-3 text-sm text-gray-900 focus:outline-none'
+                        />
+                        <button
+                          type='button'
+                          disabled
+                          className='rounded-r-lg border border-gray-200 bg-gray-100 px-4 text-sm font-medium text-gray-700 opacity-60 cursor-not-allowed'
+                        >
+                          Browse
+                        </button>
                       </div>
                     )}
                   </div>
