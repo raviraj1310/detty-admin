@@ -176,3 +176,25 @@ export const activeInactiveSubscription = async (id, payload) => {
     throw error
   }
 }
+
+export const getPodcastBookings = async (podcastId, params = {}) => {
+  try {
+    const url = `/podcast/get-all-subscriptions`
+    const response = await apiv2.get(url, { params })
+    return response.data
+  } catch (error) {
+    console.error('Error fetching podcast bookings:', error)
+    throw error
+  }
+}
+
+export const getPodcastSubscription = async (podcastId, params = {}) => {
+  try {
+    const url = `/podcast/get-podcast-subscription/${podcastId}`
+    const response = await apiv2.get(url, { params })
+    return response.data
+  } catch (error) {
+    console.error('Error fetching podcast subscriptions:', error)
+    throw error
+  }
+}

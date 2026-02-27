@@ -1,5 +1,5 @@
 import PodcastBookings from '@/components/podcast/PodcastBookings'
 
-export default function PodcastBookingsIdPage () {
+export default function PodcastBookingsPage () {
   return <PodcastBookings />
 }
