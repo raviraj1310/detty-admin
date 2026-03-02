@@ -298,7 +298,13 @@ const menuSections = [
         icon: '/images/backend/side_menu/side_menu (12).svg',
         href: '/spa',
         permission: 'master'
-      }
+      },
+      {
+        label: 'Other Recovery Services',
+        icon: '/images/backend/side_menu/side_menu (12).svg',
+        href: '/other-recovery-services',
+        permission: 'master'
+      } 
     ]
   },
   {
