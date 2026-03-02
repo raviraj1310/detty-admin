@@ -187,3 +187,74 @@ export const deleteSession = async sessionId => {
     throw error
   }
 }
+
+export const createCategory = async data => {
+  try {
+    const response = await apiv2.post(
+      `/recovery/create-recovery-category`,
+      data
+    )
+    return response.data
+  } catch (error) {
+    console.error('Error creating recovery category:', error)
+    throw error
+  }
+}
+
+export const getCategories = async () => {
+  try {
+    const response = await apiv2.get(`/recovery/get-all-categories`)
+    return response.data
+  } catch (error) {
+    console.error('Error fetching recovery categories:', error)
+    throw error
+  }
+}
+
+export const getCategoryById = async categoryId => {
+  try {
+    const response = await apiv2.get(`/recovery/get-category/${categoryId}`)
+    return response.data
+  } catch (error) {
+    console.error('Error fetching recovery category:', error)
+    throw error
+  }
+}
+
+export const updateCategory = async (categoryId, data) => {
+  try {
+    const response = await apiv2.put(
+      `/recovery/update-recovery-category/${categoryId}`,
+      data
+    )
+    return response.data
+  } catch (error) {
+    console.error('Error updating recovery category:', error)
+    throw error
+  }
+}
+
+export const deleteCategory = async categoryId => {
+  try {
+    const response = await apiv2.delete(
+      `/recovery/delete-recovery-category/${categoryId}`
+    )
+    return response.data
+  } catch (error) {
+    console.error('Error deleting recovery category:', error)
+    throw error
+  }
+}
+
+export const updateCategoryStatus = async (categoryId, data) => {
+  try {
+    const response = await apiv2.put(
+      `/recovery/change-recovery-category-status/${categoryId}`,
+      data
+    )
+    return response.data
+  } catch (error) {
+    console.error('Error updating recovery category status:', error)
+    throw error
+  }
+}
