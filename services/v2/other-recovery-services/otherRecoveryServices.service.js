@@ -92,7 +92,7 @@ export const activeInactiveOtherRecoveryService = async (id, data) => {
 
 export const getAllOtherRecoveryServiceBookings = async params => {
   try {
-    const response = await apiv2.get('/recovery/get-all-recovery-bookings', {
+    const response = await apiv2.get('/recovery/get-all-recovery-booking', {
       params
     })
     return response.data
@@ -105,7 +105,7 @@ export const getAllOtherRecoveryServiceBookings = async params => {
 export const getOtherRecoveryServiceBookings = async (serviceId, params) => {
   try {
     const response = await apiv2.get(
-      `/recovery/get-recovery-bookings/${serviceId}`,
+      `/recovery/recovery-booking-by-id/${serviceId}`,
       { params }
     )
     return response.data
