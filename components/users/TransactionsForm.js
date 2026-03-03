@@ -456,7 +456,8 @@ export default function TransactionsForm () {
         const params = {}
         if (dateRange.start) params.startDate = dateRange.start
         if (dateRange.end) params.endDate = dateRange.end
-        if (searchTerm && String(searchTerm).trim()) params.search = String(searchTerm).trim()
+        if (searchTerm && String(searchTerm).trim())
+          params.search = String(searchTerm).trim()
         const res = await getBookingList(undefined, params)
         let raw = []
 
@@ -1228,9 +1229,11 @@ export default function TransactionsForm () {
                       className='h-9 px-3 border border-gray-300 rounded-lg bg-white text-xs text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent'
                     >
                       <option value=''>All Payments</option>
-                      <option value='completed'>Completed</option>
+                      <option value='success'>Success</option>
                       <option value='pending'>Pending</option>
                       <option value='paid'>Paid</option>
+                      <option value='completed'>Completed</option>
+                      <option value='abandoned'>Abandoned</option>
                     </select>
                   </div>
                 )}
