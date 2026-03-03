@@ -83,15 +83,23 @@ export default function PodcastBookingList ({ bookings }) {
                     ₦{booking.amount}
                   </td>
                   <td className='whitespace-nowrap px-6 py-4'>
-                    <span
-                      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                        booking.status === 'Active'
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-orange-100 text-orange-800'
-                      }`}
-                    >
-                      {booking.status}
-                    </span>
+                    {(() => {
+                      const statusText = String(booking.status || '').toLowerCase()
+                      const isSuccess = statusText === 'success'
+                      const label =
+                        statusText.charAt(0).toUpperCase() + statusText.slice(1)
+                      return (
+                        <span
+                          className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                            isSuccess
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-red-100 text-red-800'
+                          }`}
+                        >
+                          {label || 'Unknown'}
+                        </span>
+                      )
+                    })()}
                   </td>
                   <td className='whitespace-nowrap px-6 py-4 text-right'>
                     <button className='text-gray-400 hover:text-gray-600'>

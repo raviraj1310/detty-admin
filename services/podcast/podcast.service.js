@@ -177,7 +177,7 @@ export const activeInactiveSubscription = async (id, payload) => {
   }
 }
 
-export const getPodcastBookings = async (podcastId, params = {}) => {
+export const getPodcastBookings = async (params = {}) => {
   try {
     const url = `/podcast/get-all-subscriptions`
     const response = await apiv2.get(url, { params })

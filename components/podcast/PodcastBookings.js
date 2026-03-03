@@ -42,13 +42,27 @@ export default function PodcastBookings () {
       if (podcastId) {
         bookingsRes = await getPodcastSubscription(podcastId)
       } else {
-        bookingsRes = await getPodcastBookings(podcastId)
+        bookingsRes = await getPodcastBookings()
       }
 
-      // Handle Podcast Title
+      // Handle Podcast Title (support multiple possible response shapes)
+      const firstBooking =
+        bookingsRes?.data?.bookings?.[0] ||
+        bookingsRes?.data?.subscriptions?.[0] ||
+        (Array.isArray(bookingsRes?.data) ? bookingsRes.data[0] : null) ||
+        bookingsRes?.bookings?.[0] ||
+        bookingsRes?.subscriptions?.[0]
+
       const title =
-        bookingsRes?.data?.bookings?.[0]?.subscriptionId?.podcastId?.title ||
-        bookingsRes?.data?.subscriptions?.[0]?.podcastId?.title
+        firstBooking?.subscriptionId?.podcastId?.title ||
+        firstBooking?.subscriptionId?.podcast?.title ||
+        firstBooking?.podcastId?.title ||
+        firstBooking?.podcast?.title ||
+        firstBooking?.podcastTitle ||
+        bookingsRes?.data?.podcast?.title ||
+        bookingsRes?.data?.podcastTitle ||
+        bookingsRes?.podcast?.title ||
+        bookingsRes?.podcastTitle
 
       if (podcastId && title && !podcast?.title) {
         setPodcast({ title })
@@ -94,7 +108,7 @@ export default function PodcastBookings () {
           b.amount ||
           0,
         amount: b.totalAmount || b.amount || 0,
-        status: b.status || 'Pending',
+        status: b.paymentStatus || 'Pending',
         expiryDate: b.expiryDate
       }))
 
@@ -175,7 +189,7 @@ export default function PodcastBookings () {
             Podcast{' '}
             {podcastId && (
               <span className='text-[#FF4400]'>
-                ({podcast?.title || 'Loading...'})
+                ({podcast?.title || 'All Podcasts'})
               </span>
             )}
           </h1>

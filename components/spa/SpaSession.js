@@ -44,9 +44,9 @@ const SpaSession = ({ spaId }) => {
   const [formData, setFormData] = useState({
     name: '',
     duration: '',
-    price: ''
+    sessionPrice: ''
   })
-  const [details, setDetails] = useState('')
+  const [detail, setDetail] = useState('')
 
   // Search/Filter State
   const [searchTerm, setSearchTerm] = useState('')
@@ -55,9 +55,19 @@ const SpaSession = ({ spaId }) => {
     setToast({
       open: true,
       title: type === 'success' ? 'Success' : 'Error',
-      description: message,
+      description: message || (type === 'error' ? 'Something went wrong' : ''),
       variant: type
     })
+  }
+
+  const getApiErrorMessage = (response, error) => {
+    if (response && response.success === false && response.message) {
+      return response.message
+    }
+    if (error?.response?.data?.message) return error.response.data.message
+    if (error?.response?.data?.error) return error.response.data.error
+    if (error?.message) return error.message
+    return null
   }
 
   const fetchSessions = async () => {
@@ -78,10 +88,12 @@ const SpaSession = ({ spaId }) => {
         } else {
           setSessions([])
         }
+      } else if (response?.success === false && response?.message) {
+        showToast(response.message, 'error')
       }
     } catch (error) {
       console.error('Error fetching sessions:', error)
-      showToast('Failed to fetch sessions', 'error')
+      showToast(getApiErrorMessage(null, error) || 'Failed to fetch sessions', 'error')
     } finally {
       setLoading(false)
     }
@@ -99,13 +111,13 @@ const SpaSession = ({ spaId }) => {
   }
 
   const resetForm = () => {
-    setFormData({ name: '', duration: '', price: '' })
-    setDetails('')
+    setFormData({ name: '', duration: '', sessionPrice: '' })
+    setDetail('')
     setEditingId(null)
   }
 
   const handleSubmit = async () => {
-    if (!formData.name || !formData.duration || !formData.price || !details) {
+    if (!formData.name || !formData.duration || !formData.sessionPrice || !detail) {
       showToast('Please fill all required fields', 'error')
       return
     }
@@ -114,10 +126,10 @@ const SpaSession = ({ spaId }) => {
     try {
       const payload = {
         spaId,
-        sessionName: formData.name,
+        spaSessionName: formData.name,
         duration: Number(formData.duration),
-        price: Number(formData.price),
-        details
+        sessionPrice: Number(formData.sessionPrice),
+        detail
       }
 
       let response
@@ -134,10 +146,18 @@ const SpaSession = ({ spaId }) => {
         )
         resetForm()
         fetchSessions()
+      } else {
+        showToast(
+          getApiErrorMessage(response, null) || 'Failed to save session',
+          'error'
+        )
       }
     } catch (error) {
       console.error('Error saving session:', error)
-      showToast('Failed to save session', 'error')
+      showToast(
+        getApiErrorMessage(null, error) || 'Failed to save session',
+        'error'
+      )
     } finally {
       setIsSubmitting(false)
     }
@@ -146,11 +166,11 @@ const SpaSession = ({ spaId }) => {
   const handleEdit = session => {
     setEditingId(session._id)
     setFormData({
-      name: session.spaSessionName || session.sessionName,
+      name: session.spaspaSessionName || session.spaSessionName,
       duration: parseInt(session.duration) || session.duration,
-      price: session.sessionPrice || session.price
+      sessionPrice: session.sessionsessionPrice || session.sessionPrice
     })
-    setDetails(session.detail || session.details)
+    setDetail(session.detail || session.detail)
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
@@ -170,10 +190,18 @@ const SpaSession = ({ spaId }) => {
         fetchSessions()
         setDeleteConfirmOpen(false)
         setSessionToDelete(null)
+      } else {
+        showToast(
+          getApiErrorMessage(response, null) || 'Failed to delete session',
+          'error'
+        )
       }
     } catch (error) {
       console.error('Error deleting session:', error)
-      showToast('Failed to delete session', 'error')
+      showToast(
+        getApiErrorMessage(null, error) || 'Failed to delete session',
+        'error'
+      )
     } finally {
       setDeleting(false)
     }
@@ -189,16 +217,24 @@ const SpaSession = ({ spaId }) => {
           'success'
         )
         fetchSessions()
+      } else {
+        showToast(
+          getApiErrorMessage(response, null) || 'Failed to update status',
+          'error'
+        )
       }
     } catch (error) {
       console.error('Error updating status:', error)
-      showToast('Failed to update status', 'error')
+      showToast(
+        getApiErrorMessage(null, error) || 'Failed to update status',
+        'error'
+      )
     }
   }
 
   const filteredSessions = Array.isArray(sessions)
     ? sessions.filter(session =>
-        (session.spaSessionName || session.sessionName || '')
+        (session.spaspaSessionName || session.spaSessionName || '')
           .toLowerCase()
           .includes(searchTerm.toLowerCase())
       )
@@ -218,7 +254,7 @@ const SpaSession = ({ spaId }) => {
         <div className='mb-6 flex items-center justify-between'>
           <div>
             <h2 className='text-lg font-semibold text-gray-900'>
-              Spa Session Details
+              Spa Session detail
             </h2>
             <p className='text-sm text-gray-500'>
               {editingId ? 'Edit existing session' : 'Add new session'}
@@ -275,7 +311,7 @@ const SpaSession = ({ spaId }) => {
 
           <div className='space-y-2'>
             <label className='text-sm font-medium text-gray-700'>
-              Session Price*
+              Session sessionPrice*
             </label>
             <div className='relative'>
               <span className='absolute left-3 top-1/2 -translate-y-1/2 text-gray-500'>
@@ -283,8 +319,8 @@ const SpaSession = ({ spaId }) => {
               </span>
               <input
                 type='number'
-                name='price'
-                value={formData.price}
+                name='sessionPrice'
+                value={formData.sessionPrice}
                 onChange={handleInputChange}
                 placeholder='10,000'
                 className='h-10 w-full rounded-lg border border-gray-200 bg-white pl-8 pr-4 text-sm text-gray-900 placeholder:text-gray-500 outline-none focus:border-[#FF4400]'
@@ -294,9 +330,9 @@ const SpaSession = ({ spaId }) => {
         </div>
 
         <div className='mt-6 space-y-2'>
-          <label className='text-sm font-medium text-gray-700'>Details*</label>
+          <label className='text-sm font-medium text-gray-700'>detail*</label>
           <div className='rounded-lg border border-gray-200 bg-white overflow-hidden'>
-            <TiptapEditor content={details} onChange={setDetails} />
+            <TiptapEditor content={detail} onChange={setDetail} />
           </div>
         </div>
       </div>
@@ -335,7 +371,7 @@ const SpaSession = ({ spaId }) => {
                 <th className='px-6 py-3 font-medium'>Added On</th>
                 <th className='px-6 py-3 font-medium'>Spa Session Name</th>
                 <th className='px-6 py-3 font-medium'>Duration</th>
-                <th className='px-6 py-3 font-medium'>Price</th>
+                <th className='px-6 py-3 font-medium'>sessionPrice</th>
                 <th className='px-6 py-3 font-medium'>Status</th>
                 <th className='px-6 py-3 font-medium'></th>
               </tr>
@@ -363,7 +399,7 @@ const SpaSession = ({ spaId }) => {
                       {new Date(session.createdAt).toLocaleDateString()}
                     </td>
                     <td className='whitespace-nowrap px-6 py-4 font-medium text-gray-900'>
-                      {session.spaSessionName || session.sessionName}
+                      {session.spaspaSessionName || session.spaSessionName}
                     </td>
                     <td className='whitespace-nowrap px-6 py-4'>
                       {session.duration}
@@ -371,7 +407,7 @@ const SpaSession = ({ spaId }) => {
                     <td className='whitespace-nowrap px-6 py-4'>
                       ₦
                       {(
-                        session.sessionPrice || session.price
+                        session.sessionsessionPrice || session.sessionPrice
                       )?.toLocaleString()}
                     </td>
                     <td className='whitespace-nowrap px-6 py-4'>
