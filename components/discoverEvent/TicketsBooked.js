@@ -114,6 +114,8 @@ export default function TicketsBooked () {
   const [limit, setLimit] = useState(50)
   const [pageCount, setPageCount] = useState(1)
   const [page, setPage] = useState(1)
+  const [filtersOpen, setFiltersOpen] = useState(false)
+  const [paymentStatusFilter, setPaymentStatusFilter] = useState('')
 
   useEffect(() => {
     const fetchData = async () => {
@@ -314,13 +316,27 @@ export default function TicketsBooked () {
 
   const filteredBookings = bookings.filter(booking => {
     const term = String(searchTerm || '').toLowerCase()
+
+    if (paymentStatusFilter) {
+      const paymentStatus = String(booking.paymentStatus || '')
+        .toLowerCase()
+        .trim()
+      const filterLower = paymentStatusFilter.toLowerCase()
+      const matchesFilter =
+        filterLower === 'completed' || filterLower === 'paid'
+          ? paymentStatus === 'success' ||
+            paymentStatus === 'paid' ||
+            paymentStatus === 'completed'
+          : paymentStatus === filterLower
+      if (!matchesFilter) return false
+    }
+
     if (!term) return true
 
     const userName = String(booking.userName || '').toLowerCase()
     const email = String(booking.email || '').toLowerCase()
     const phone = String(booking.phoneNumber || '').toLowerCase()
 
-    // 🔹 Format bookedOn to a searchable string
     let bookedOnStr = ''
     if (booking.bookedOn) {
       const dt = new Date(booking.bookedOn)
@@ -338,7 +354,6 @@ export default function TicketsBooked () {
       }
     }
 
-    // 🔹 Also allow numeric search on date parts
     const bookedOnDigits = bookedOnStr.replace(/[^0-9]/g, '')
     const termDigits = term.replace(/[^0-9]/g, '')
 
@@ -365,6 +380,14 @@ export default function TicketsBooked () {
       setPage(1)
     }
   }, [filteredBookings.length, limit])
+
+  useEffect(() => {
+    setPage(1)
+  }, [paymentStatusFilter])
+
+  const handleToggleFilters = () => {
+    setFiltersOpen(v => !v)
+  }
 
   const handleBack = () => {
     router.push('/discover-events')
@@ -599,9 +622,27 @@ export default function TicketsBooked () {
               />
               <Search className='absolute left-2.5 h-3.5 w-3.5 text-[#A6AEC7]' />
             </div>
-            <button className='flex h-8 items-center gap-1.5 rounded-lg border border-[#E5E6EF] bg-white px-3 text-xs font-medium text-[#2D3658] transition hover:bg-[#F6F7FD]'>
+            {filtersOpen && (
+              <select
+                value={paymentStatusFilter}
+                onChange={e => setPaymentStatusFilter(e.target.value)}
+                className='h-8 rounded-lg border border-[#E5E6EF] bg-white px-3 text-xs text-[#2D3658] focus:border-[#C5CAE3] focus:outline-none focus:ring-2 focus:ring-[#C2C8E4]'
+              >
+                <option value=''>All Payments</option>
+                <option value='completed'>Completed</option>
+                <option value='pending'>Pending</option>
+                <option value='paid'>Paid</option>
+                <option value='success'>Success</option>
+                <option value='abandoned'>Abandoned</option>
+              </select>
+            )}
+            <button
+              type='button'
+              onClick={handleToggleFilters}
+              className='flex h-8 items-center gap-1.5 rounded-lg border border-[#E5E6EF] bg-white px-3 text-xs font-medium text-[#2D3658] transition hover:bg-[#F6F7FD]'
+            >
               <IoFilterSharp className='h-3.5 w-3.5 text-[#8B93AF]' />
-              Filters
+              {filtersOpen ? 'Hide Filters' : 'Filters'}
             </button>
             <button
               onClick={handleDownloadExcel}
