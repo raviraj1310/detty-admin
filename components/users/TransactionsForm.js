@@ -200,6 +200,10 @@ export default function TransactionsForm () {
     avgGrowthPercent: '0%',
     isPctIncreasing: false
   })
+  const [eventBookingStats, setEventBookingStats] = useState({
+    totalBookingCount: 0,
+    totalRevenue: 0
+  })
 
   useEffect(() => {
     if (!bookings) return
@@ -452,68 +456,71 @@ export default function TransactionsForm () {
         const params = {}
         if (dateRange.start) params.startDate = dateRange.start
         if (dateRange.end) params.endDate = dateRange.end
+        if (searchTerm && String(searchTerm).trim()) params.search = String(searchTerm).trim()
         const res = await getBookingList(undefined, params)
         let raw = []
 
-        // Check if API returns stats in res.data object
-        // Expected structure: { success: true, data: { totalBookingsYesterday, ..., bookings: [] } }
-        // Or if res itself is the data object from axios, then res.data is the payload.
-        // Based on user snippet: { success: true, message: ..., data: { totalBookingsYesterday... } }
-        // And assuming the list is inside data.bookings or data.tickets
+        // API response: { success, message, data: { totalBookingCount, totalRevenue, tickets, ... } }
         if (
           res?.data &&
           typeof res.data === 'object' &&
           !Array.isArray(res.data) &&
-          (typeof res.data.totalBookingsYesterday !== 'undefined' ||
+          (typeof res.data.totalBookingCount !== 'undefined' ||
+            res.data.totalRevenue !== 'undefined' ||
             res.data.bookings ||
             res.data.tickets)
         ) {
           const d = res.data
-          // Try to find the list
           if (Array.isArray(d.bookings)) raw = d.bookings
           else if (Array.isArray(d.tickets)) raw = d.tickets
-          else if (Array.isArray(d.data)) raw = d.data // fallback
+          else if (Array.isArray(d.data)) raw = d.data
           else raw = []
 
-          // Extract Stats
-          const yesterdayCount = Number(d.totalBookingsYesterday || 0)
-          let yesterdayDateStr = d.yesterdayDate || ''
-          // Format date if it's YYYY-MM-DD
-          const yDate = new Date(yesterdayDateStr)
-          if (!isNaN(yDate.getTime())) {
-            yesterdayDateStr = yDate.toLocaleDateString('en-US', {
-              month: 'short',
-              day: 'numeric'
-            })
-          }
-
-          const avgGrowthCount = Number(d.avgDailyGrowthCount || 0)
-          let avgGrowthPercentVal = parseFloat(
-            String(d.avgDailyGrowthPercent || '0%').replace('%', '')
-          )
-          if (isNaN(avgGrowthPercentVal)) avgGrowthPercentVal = 0
-
-          // Cap at 100%
-          const finalGrowthPercentVal = Math.min(avgGrowthPercentVal)
-          const avgGrowthPercentStr = `${finalGrowthPercentVal.toFixed(2)}%`
-
-          setStats({
-            yesterdayCount,
-            yesterdayDateStr,
-            avgGrowthCount,
-            isCountIncreasing: avgGrowthCount >= 0,
-            avgGrowthPercent: avgGrowthPercentStr,
-            isPctIncreasing: avgGrowthPercentVal >= 0
+          setEventBookingStats({
+            totalBookingCount: Number(d.totalBookingCount ?? 0),
+            totalRevenue: Number(d.totalRevenue ?? 0)
           })
-          setStatsLoadedFromApi(true)
+
+          if (
+            typeof d.totalBookingsYesterday !== 'undefined' ||
+            d.avgDailyGrowthCount !== undefined
+          ) {
+            const yesterdayCount = Number(d.totalBookingsYesterday || 0)
+            let yesterdayDateStr = d.yesterdayDate || ''
+            const yDate = new Date(yesterdayDateStr)
+            if (!isNaN(yDate.getTime())) {
+              yesterdayDateStr = yDate.toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric'
+              })
+            }
+            const avgGrowthCount = Number(d.avgDailyGrowthCount || 0)
+            let avgGrowthPercentVal = parseFloat(
+              String(d.avgDailyGrowthPercent || '0%').replace('%', '')
+            )
+            if (isNaN(avgGrowthPercentVal)) avgGrowthPercentVal = 0
+            const finalGrowthPercentVal = Math.min(avgGrowthPercentVal, 100)
+            const avgGrowthPercentStr = `${finalGrowthPercentVal.toFixed(2)}%`
+            setStats({
+              yesterdayCount,
+              yesterdayDateStr,
+              avgGrowthCount,
+              isCountIncreasing: avgGrowthCount >= 0,
+              avgGrowthPercent: avgGrowthPercentStr,
+              isPctIncreasing: avgGrowthPercentVal >= 0
+            })
+            setStatsLoadedFromApi(true)
+          } else {
+            setStatsLoadedFromApi(false)
+          }
         } else {
-          // Legacy or different structure
           raw = Array.isArray(res?.data)
             ? res.data
             : Array.isArray(res)
             ? res
             : []
           setStatsLoadedFromApi(false)
+          setEventBookingStats({ totalBookingCount: 0, totalRevenue: 0 })
         }
 
         // console.log("rawdata from the api", raw);
@@ -638,7 +645,7 @@ export default function TransactionsForm () {
       }
     }
     fetchData()
-  }, [dateRange.start, dateRange.end])
+  }, [dateRange.start, dateRange.end, searchTerm])
 
   const filteredBookings = bookings
     .filter(booking => {
@@ -1131,7 +1138,7 @@ export default function TransactionsForm () {
 
       {/* Additional Stats Cards (Filtered) */}
       <div className='grid grid-cols-1 md:grid-cols-2 gap-4 mb-6'>
-        {/* Total Event Bookings (Filtered) */}
+        {/* Total Event Bookings + Revenue (counts from API: totalBookingCount, totalRevenue) */}
         <div className='bg-gradient-to-r from-[#E8EEFF] to-[#C5D5FF] p-4 rounded-lg shadow-md'>
           <div className='flex items-center'>
             <div className='bg-white p-2 rounded-lg mr-3'>
@@ -1142,27 +1149,9 @@ export default function TransactionsForm () {
                 Total Event Bookings
               </p>
               <p className='text-2xl text-black font-bold'>
-                {
-                  filteredBookings.filter(b => {
-                    const status = String(b.paymentStatus || '')
-                      .toLowerCase()
-                      .trim()
-                    return status === 'success' || status === 'paid'
-                  }).length
-                }{' '}
+                {eventBookingStats.totalBookingCount}{' '}
                 <span className='text-lg font-semibold opacity-90'>
-                  (₦
-                  {filteredBookings
-                    .reduce((acc, curr) => {
-                      const status = String(curr.paymentStatus || '')
-                        .toLowerCase()
-                        .trim()
-                      const isSuccessful =
-                        status === 'success' || status === 'paid'
-                      return acc + (isSuccessful ? curr.amountNum || 0 : 0)
-                    }, 0)
-                    .toLocaleString()}
-                  )
+                  (₦{eventBookingStats.totalRevenue.toLocaleString()})
                 </span>
               </p>
             </div>
