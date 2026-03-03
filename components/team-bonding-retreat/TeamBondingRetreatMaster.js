@@ -425,12 +425,21 @@ export default function TeamBondingRetreatMaster () {
                     </td>
                     <td className='py-4 px-6'>
                       <div className='flex items-center gap-1 text-sm'>
-                        <span className='font-semibold text-[#0066FF] underline cursor-pointer hover:text-[#0052CC]'>
-                          {retreat.bookingsCount}
-                        </span>
-                        <span className='font-medium text-[#0066FF] cursor-pointer hover:text-[#0052CC]'>
-                          (View List)
-                        </span>
+                        <button
+                          onClick={() =>
+                            router.push(
+                              `/team-bonding-retreat/bookings/${retreat._id}`
+                            )
+                          }
+                          className='flex w-full items-center justify-start gap-2 rounded-lg px-3 py-2 text-sm text-[#475569] hover:bg-[#F8F9FC] hover:text-[#1E293B] text-left whitespace-normal leading-snug'
+                        >
+                          <span className='font-semibold text-[#0066FF] underline cursor-pointer hover:text-[#0052CC]'>
+                            {retreat.bookingsCount}
+                          </span>
+                          <span className='font-medium text-[#0066FF] cursor-pointer hover:text-[#0052CC]'>
+                            (View List)
+                          </span>
+                        </button>
                       </div>
                     </td>
                     <td className='py-4 px-6'>
