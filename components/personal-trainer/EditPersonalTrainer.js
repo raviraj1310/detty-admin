@@ -6,6 +6,8 @@ import Link from 'next/link'
 import { Clock, Trash2, Plus, ChevronLeft, Loader2 } from 'lucide-react'
 import TiptapEditor from '@/components/editor/TiptapEditor'
 import Toast from '@/components/ui/Toast'
+import ImageCropper from '@/components/ui/ImageCropper'
+import { convertToWebp } from '@/src/utils/image'
 
 import {
   getPersonalTrainerById,
@@ -57,6 +59,8 @@ export default function EditPersonalTrainer ({ id }) {
 
   const [mainImage, setMainImage] = useState(null)
   const [mainImageUrl, setMainImageUrl] = useState('')
+  const [cropOpen, setCropOpen] = useState(false)
+  const [rawImageFile, setRawImageFile] = useState(null)
 
   const [loading, setLoading] = useState(true)
   const [toast, setToast] = useState({
@@ -180,12 +184,33 @@ export default function EditPersonalTrainer ({ id }) {
   }
 
   // Main Image Handling
-  const handleMainImageChange = e => {
+  const handleMainImageChange = async e => {
     const file = e.target.files[0]
-    if (file) {
+    if (!file) return
+
+    try {
+      const { file: webpFile } = await convertToWebp(file)
+      setMainImage(webpFile)
+      setMainImageUrl(URL.createObjectURL(webpFile))
+      setRawImageFile(file)
+      setCropOpen(true)
+    } catch (error) {
+      console.error('Error converting image:', error)
       setMainImage(file)
       setMainImageUrl(URL.createObjectURL(file))
+      setRawImageFile(file)
+      setCropOpen(true)
     }
+  }
+
+  const handleCropped = ({ file }) => {
+    if (!file) {
+      setCropOpen(false)
+      return
+    }
+    setMainImage(file)
+    setMainImageUrl(URL.createObjectURL(file))
+    setCropOpen(false)
   }
 
   const handleSubmit = async () => {
@@ -561,6 +586,8 @@ export default function EditPersonalTrainer ({ id }) {
                     onClick={() => {
                       setMainImage(null)
                       setMainImageUrl('')
+                      setRawImageFile(null)
+                      setCropOpen(false)
                       if (fileInputRef.current) fileInputRef.current.value = ''
                     }}
                     className='absolute top-2 right-2 bg-white/90 p-1.5 rounded-full text-red-500 hover:text-red-600 shadow-sm transition-colors'
@@ -587,6 +614,15 @@ export default function EditPersonalTrainer ({ id }) {
           </div>
         </div>
       </div>
+
+      {cropOpen && (
+        <ImageCropper
+          open={cropOpen}
+          file={rawImageFile}
+          onCropped={handleCropped}
+          onClose={() => setCropOpen(false)}
+        />
+      )}
     </div>
   )
 }

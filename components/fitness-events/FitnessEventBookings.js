@@ -277,6 +277,9 @@ export default function FitnessEventBookings ({ eventId }) {
                   <TableHeaderCell>Booked On</TableHeaderCell>
                 </th>
                 <th className='px-6 py-4 text-left'>
+                  <TableHeaderCell>Arrival Date</TableHeaderCell>
+                </th>
+                <th className='px-6 py-4 text-left'>
                   <TableHeaderCell>User Name</TableHeaderCell>
                 </th>
                 <th className='px-6 py-4 text-left'>
@@ -300,7 +303,7 @@ export default function FitnessEventBookings ({ eventId }) {
             <tbody className='divide-y divide-gray-100'>
               {loading ? (
                 <tr>
-                  <td colSpan='8' className='py-8 text-center text-[#64748B]'>
+                  <td colSpan='9' className='py-8 text-center text-[#64748B]'>
                     <div className='flex items-center justify-center gap-2'>
                       <Loader2 className='h-5 w-5 animate-spin' />
                       Loading bookings...
@@ -309,7 +312,7 @@ export default function FitnessEventBookings ({ eventId }) {
                 </tr>
               ) : bookings.length === 0 ? (
                 <tr>
-                  <td colSpan='8' className='py-8 text-center text-[#64748B]'>
+                  <td colSpan='9' className='py-8 text-center text-[#64748B]'>
                     No bookings found
                   </td>
                 </tr>
@@ -318,6 +321,9 @@ export default function FitnessEventBookings ({ eventId }) {
                   <tr key={booking._id} className='hover:bg-gray-50/50'>
                     <td className='px-6 py-4 text-sm text-gray-600'>
                       {formatDate(booking.createdAt || booking.bookingDate)}
+                    </td>
+                    <td className='px-6 py-4 text-sm text-gray-600'>
+                      {formatDate(booking.slotId?.date || booking.arrivalDate)}
                     </td>
                     <td className='px-6 py-4 text-sm font-medium text-gray-900'>
                       {booking.buyer?.fullName ||

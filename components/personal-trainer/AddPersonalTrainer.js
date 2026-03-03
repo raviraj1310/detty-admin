@@ -6,6 +6,8 @@ import Link from 'next/link'
 import { Clock, Trash2, Plus, ChevronLeft } from 'lucide-react'
 import TiptapEditor from '@/components/editor/TiptapEditor'
 import Toast from '@/components/ui/Toast'
+import ImageCropper from '@/components/ui/ImageCropper'
+import { convertToWebp } from '@/src/utils/image'
 
 import { createPersonalTrainer } from '@/services/v2/personal-trainer/personal-trainer.service'
 import { getTrainerHostList } from '@/services/v2/personal-trainer/personal-trainer.service'
@@ -36,6 +38,8 @@ export default function AddPersonalTrainer () {
 
   const [mainImage, setMainImage] = useState(null)
   const [mainImageUrl, setMainImageUrl] = useState('')
+  const [cropOpen, setCropOpen] = useState(false)
+  const [rawImageFile, setRawImageFile] = useState(null)
 
   const [toast, setToast] = useState({
     open: false,
@@ -89,12 +93,33 @@ export default function AddPersonalTrainer () {
   }
 
   // Main Image Handling
-  const handleMainImageChange = e => {
+  const handleMainImageChange = async e => {
     const file = e.target.files[0]
-    if (file) {
+    if (!file) return
+
+    try {
+      const { file: webpFile } = await convertToWebp(file)
+      setMainImage(webpFile)
+      setMainImageUrl(URL.createObjectURL(webpFile))
+      setRawImageFile(file)
+      setCropOpen(true)
+    } catch (error) {
+      console.error('Error converting image:', error)
       setMainImage(file)
       setMainImageUrl(URL.createObjectURL(file))
+      setRawImageFile(file)
+      setCropOpen(true)
     }
+  }
+
+  const handleCropped = ({ file }) => {
+    if (!file) {
+      setCropOpen(false)
+      return
+    }
+    setMainImage(file)
+    setMainImageUrl(URL.createObjectURL(file))
+    setCropOpen(false)
   }
 
   const handleSubmit = async () => {
@@ -456,6 +481,8 @@ export default function AddPersonalTrainer () {
                     onClick={() => {
                       setMainImage(null)
                       setMainImageUrl('')
+                      setRawImageFile(null)
+                      setCropOpen(false)
                       if (fileInputRef.current) fileInputRef.current.value = ''
                     }}
                     className='absolute top-2 right-2 bg-white/90 p-1.5 rounded-full text-red-500 hover:text-red-600 shadow-sm transition-colors'
@@ -482,6 +509,15 @@ export default function AddPersonalTrainer () {
           </div>
         </div>
       </div>
+
+      {cropOpen && (
+        <ImageCropper
+          open={cropOpen}
+          file={rawImageFile}
+          onCropped={handleCropped}
+          onClose={() => setCropOpen(false)}
+        />
+      )}
     </div>
   )
 }

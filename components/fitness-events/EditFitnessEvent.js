@@ -324,7 +324,7 @@ export default function EditFitnessEvent ({ id }) {
   }
 
   return (
-    <div className='min-h-screen bg-gray-50 p-8'>
+    <div className='min-h-screen bg-gray-50 p-8' style={{ colorScheme: 'light' }}>
       <Toast
         open={toast.open}
         title={toast.title}
@@ -387,7 +387,7 @@ export default function EditFitnessEvent ({ id }) {
                 name='eventName'
                 value={formData.eventName}
                 onChange={handleInputChange}
-                className='w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
+                className='w-full rounded-lg border border-gray-200 bg-white text-gray-900 px-4 py-2.5 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
                 placeholder='Fitness Bootcamp & Yoga'
               />
             </div>
@@ -400,7 +400,7 @@ export default function EditFitnessEvent ({ id }) {
                 name='capacity'
                 value={formData.capacity}
                 onChange={handleInputChange}
-                className='w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
+                className='w-full rounded-lg border border-gray-200 bg-white text-gray-900 px-4 py-2.5 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
                 placeholder='10'
               />
             </div>
@@ -413,7 +413,7 @@ export default function EditFitnessEvent ({ id }) {
                   name='certificateTemplate'
                   value={formData.certificateTemplate}
                   onChange={handleInputChange}
-                  className='w-full appearance-none rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm focus:border-[#FF4400] focus:outline-none'
+                  className='w-full appearance-none rounded-lg border border-gray-200 bg-white text-gray-900 px-4 py-2.5 text-sm focus:border-[#FF4400] focus:outline-none'
                 >
                   <option value=''>Select Template</option>
                   {certificateTemplates.map(template => (
@@ -456,7 +456,7 @@ export default function EditFitnessEvent ({ id }) {
                 name='duration'
                 value={formData.duration}
                 onChange={handleInputChange}
-                className='w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
+                className='w-full rounded-lg border border-gray-200 bg-white text-gray-900 px-4 py-2.5 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
               />
             </div>
             <div>
@@ -469,7 +469,7 @@ export default function EditFitnessEvent ({ id }) {
                   name='startDate'
                   value={formData.startDate}
                   onChange={handleInputChange}
-                  className='w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
+                  className='w-full rounded-lg border border-gray-200 bg-white text-gray-900 px-4 py-2.5 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
                 />
               </div>
             </div>
@@ -483,7 +483,7 @@ export default function EditFitnessEvent ({ id }) {
                   name='endDate'
                   value={formData.endDate}
                   onChange={handleInputChange}
-                  className='w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
+                  className='w-full rounded-lg border border-gray-200 bg-white text-gray-900 px-4 py-2.5 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
                 />
               </div>
             </div>
@@ -501,7 +501,7 @@ export default function EditFitnessEvent ({ id }) {
                   name='startTime'
                   value={formData.startTime}
                   onChange={handleInputChange}
-                  className='w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
+                  className='w-full rounded-lg border border-gray-200 bg-white text-gray-900 px-4 py-2.5 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
                 />
                 <Clock className='absolute right-3 top-2.5 h-5 w-5 text-gray-400 pointer-events-none' />
               </div>
@@ -516,7 +516,7 @@ export default function EditFitnessEvent ({ id }) {
                   name='endTime'
                   value={formData.endTime}
                   onChange={handleInputChange}
-                  className='w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
+                  className='w-full rounded-lg border border-gray-200 bg-white text-gray-900 px-4 py-2.5 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
                 />
                 <Clock className='absolute right-3 top-2.5 h-5 w-5 text-gray-400 pointer-events-none' />
               </div>
@@ -530,7 +530,7 @@ export default function EditFitnessEvent ({ id }) {
                   name='hostedBy'
                   value={formData.hostedBy}
                   onChange={handleInputChange}
-                  className='w-full appearance-none rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm focus:border-[#FF4400] focus:outline-none'
+                  className='w-full appearance-none rounded-lg border border-gray-200 bg-white text-gray-900 px-4 py-2.5 text-sm focus:border-[#FF4400] focus:outline-none'
                 >
                   <option value=''>Select Host</option>
                   {hostList.map(host => (
@@ -559,7 +559,7 @@ export default function EditFitnessEvent ({ id }) {
                 name='location'
                 value={formData.location}
                 onChange={handleInputChange}
-                className='w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
+                className='w-full rounded-lg border border-gray-200 bg-white text-gray-900 px-4 py-2.5 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
               />
             </div>
             <div>
@@ -571,7 +571,7 @@ export default function EditFitnessEvent ({ id }) {
                 name='locationCoordinates'
                 value={formData.locationCoordinates}
                 onChange={handleInputChange}
-                className='w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
+                className='w-full rounded-lg border border-gray-200 bg-white text-gray-900 px-4 py-2.5 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
               />
             </div>
           </div>

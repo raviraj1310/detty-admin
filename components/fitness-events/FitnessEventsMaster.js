@@ -465,12 +465,19 @@ export default function FitnessEventsMaster () {
                     </td>
                     <td className='py-4 px-6'>
                       <div className='flex items-center gap-1 text-sm'>
-                        <span className='font-semibold text-[#0066FF] underline cursor-pointer hover:text-[#0052CC]'>
-                          {event.bookingsCount}
-                        </span>
-                        <span className='font-medium text-[#0066FF] cursor-pointer hover:text-[#0052CC]'>
-                          (View List)
-                        </span>
+                        <button
+                          onClick={() =>
+                            router.push(`/fitness-events/bookings/${event._id}`)
+                          }
+                          className='flex w-full items-center justify-start gap-2 rounded-lg px-3 py-2 text-sm text-[#475569] hover:bg-[#F8F9FC] hover:text-[#1E293B] text-left whitespace-normal leading-snug'
+                        >
+                          <span className='font-semibold text-[#0066FF] underline cursor-pointer hover:text-[#0052CC]'>
+                            {event.bookingsCount}
+                          </span>
+                          <span className='font-medium text-[#0066FF] cursor-pointer hover:text-[#0052CC]'>
+                            (View List)
+                          </span>
+                        </button>
                       </div>
                     </td>
                     <td className='py-4 px-6'>
@@ -511,7 +518,9 @@ export default function FitnessEventsMaster () {
                           <div className='my-1 h-px bg-gray-100' />
                           <button
                             onClick={() =>
-                              router.push(`/fitness-events/bookings`)
+                              router.push(
+                                `/fitness-events/bookings/${event._id}`
+                              )
                             }
                             className='flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-[#475569] hover:bg-[#F8F9FC] hover:text-[#1E293B]'
                           >
@@ -524,7 +533,7 @@ export default function FitnessEventsMaster () {
                                 `/fitness-events/fitness-event-pass/${event._id}`
                               )
                             }
-                            className='flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-[#475569] hover:bg-[#F8F9FC] hover:text-[#1E293B]'
+                            className='flex w-full items-center justify-start gap-2 rounded-lg px-3 py-2 text-sm text-[#475569] hover:bg-[#F8F9FC] hover:text-[#1E293B] text-left whitespace-normal leading-snug'
                           >
                             View/Edit Fitness Event Pass
                           </button>

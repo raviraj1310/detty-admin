@@ -678,6 +678,10 @@ export default function GymAccessEdit () {
                   className='hidden'
                 />
               </div>
+              <span className='text-xs text-gray-500'>
+                Note: Images and videos are allowed. You can select multiple
+                files by holding Ctrl (Cmd on Mac) or Shift while selecting.
+              </span>
             </div>
 
             {/* Gallery Grid */}

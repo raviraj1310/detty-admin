@@ -56,11 +56,13 @@ export default function AddPodcast () {
         setFormData(prev => ({ ...prev, image: webpFile }))
         setImagePreviewUrl(URL.createObjectURL(webpFile))
         setRawImageFile(file)
+        setCropOpen(true)
       } catch (error) {
         console.error('Error converting image:', error)
         setFormData(prev => ({ ...prev, image: file }))
         setImagePreviewUrl(URL.createObjectURL(file))
         setRawImageFile(file)
+        setCropOpen(true)
       }
     }
   }
