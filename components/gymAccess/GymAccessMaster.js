@@ -22,16 +22,46 @@ import {
 import Toast from "@/components/ui/Toast";
 import Modal from "@/components/ui/Modal";
 
-const TableHeaderCell = ({ children, align = "left" }) => (
-  <div
-    className={`flex items-center gap-1 text-xs font-medium uppercase tracking-wide text-[#8A92AC] whitespace-nowrap ${
-      align === "right" ? "justify-end" : "justify-start"
-    }`}
-  >
-    {children}
-    <TbCaretUpDownFilled className="h-3 w-3 text-[#CBCFE2]" />
-  </div>
-);
+const TableHeaderCell = ({
+  children,
+  align = "left",
+  onClick,
+  active = false,
+  order = "asc",
+}) => {
+  const content = (
+    <>
+      {children}
+      {active ? (
+        <span className="text-[#2D3658]">{order === "asc" ? " ↑" : " ↓"}</span>
+      ) : (
+        <TbCaretUpDownFilled className="h-3 w-3 text-[#CBCFE2]" />
+      )}
+    </>
+  );
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        className={`flex items-center gap-1 text-xs font-medium uppercase tracking-wide whitespace-nowrap cursor-pointer hover:text-[#2D3658] ${
+          align === "right" ? "justify-end" : "justify-start"
+        } ${active ? "text-[#2D3658]" : "text-[#8A92AC]"}`}
+      >
+        {content}
+      </button>
+    );
+  }
+  return (
+    <div
+      className={`flex items-center gap-1 text-xs font-medium uppercase tracking-wide text-[#8A92AC] whitespace-nowrap ${
+        align === "right" ? "justify-end" : "justify-start"
+      }`}
+    >
+      {content}
+    </div>
+  );
+};
 
 export default function GymAccessMaster({ gymId: propGymId }) {
   const router = useRouter();
@@ -64,6 +94,9 @@ export default function GymAccessMaster({ gymId: propGymId }) {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [deleteId, setDeleteId] = useState(null);
   const [deleting, setDeleting] = useState(false);
+  const [durationError, setDurationError] = useState("");
+  const [sortKey, setSortKey] = useState("addedOn");
+  const [sortOrder, setSortOrder] = useState("desc");
 
   const showToast = (title, description, variant = "success") => {
     setToastProps({ title, description, variant });
@@ -91,6 +124,45 @@ export default function GymAccessMaster({ gymId: propGymId }) {
     fetchGymAccess();
   }, [gymId]);
 
+  const getSortValue = (item, key) => {
+    switch (key) {
+      case "addedOn":
+        return new Date(item.createdAt || 0).getTime();
+      case "gymAccessName":
+        return (item.gymAccessName || "").toLowerCase();
+      case "accessDuration":
+        return (item.accessDuration || "").toLowerCase();
+      case "packageType":
+        return (item.packageType || "").toLowerCase();
+      case "accessPrice":
+        return Number(item.accessPrice) || 0;
+      case "status":
+        return String(item.status) === "true" ? 1 : 0;
+      default:
+        return "";
+    }
+  };
+
+  const handleSort = (key) => {
+    if (sortKey === key) {
+      setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"));
+    } else {
+      setSortKey(key);
+      setSortOrder("asc");
+    }
+  };
+
+  const sortedGymAccessList = [...gymAccessList].sort((a, b) => {
+    const va = getSortValue(a, sortKey);
+    const vb = getSortValue(b, sortKey);
+    if (typeof va === "string" && typeof vb === "string") {
+      return sortOrder === "asc"
+        ? va.localeCompare(vb)
+        : vb.localeCompare(va);
+    }
+    return sortOrder === "asc" ? va - vb : vb - va;
+  });
+
   // Close menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -105,6 +177,12 @@ export default function GymAccessMaster({ gymId: propGymId }) {
   }, [menuOpenId]);
 
   const handleInputChange = (field, value) => {
+    if (field === "durationValue") {
+      const digitsOnly = value.replace(/\D/g, "");
+      setFormData((prev) => ({ ...prev, [field]: digitsOnly }));
+      setDurationError("");
+      return;
+    }
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -119,11 +197,36 @@ export default function GymAccessMaster({ gymId: propGymId }) {
       packageType: "package",
     });
     setEditId(null);
+    setDurationError("");
+  };
+
+  const validateDuration = () => {
+    const raw = String(formData.durationValue).trim();
+    if (!raw) {
+      setDurationError("Access duration is required");
+      return false;
+    }
+    const num = parseInt(raw, 10);
+    if (Number.isNaN(num) || num < 1) {
+      setDurationError("Duration must be a positive whole number (e.g. 1, 7, 30)");
+      return false;
+    }
+    if (num > 9999) {
+      setDurationError("Duration cannot exceed 9999");
+      return false;
+    }
+    setDurationError("");
+    return true;
   };
 
   const handleSubmit = async () => {
     if (!formData.name || !formData.durationValue || !formData.price) {
       showToast("Error", "Please fill all required fields", "error");
+      return;
+    }
+
+    if (!validateDuration()) {
+      showToast("Error", "Please fix the access duration", "error");
       return;
     }
 
@@ -163,10 +266,13 @@ export default function GymAccessMaster({ gymId: propGymId }) {
   const handleEdit = (item) => {
     const [value, ...unitParts] = item.accessDuration.split(" ");
     const unit = unitParts.join(" ").replace(/s$/, ""); // Remove trailing 's' if present (e.g., "Days" -> "Day")
+    const num = parseInt(String(value).replace(/\D/g, ""), 10);
+    const durationValue = Number.isNaN(num) ? "" : String(num);
 
+    setDurationError("");
     setFormData({
       name: item.gymAccessName,
-      durationValue: value,
+      durationValue,
       durationUnit: unit,
       price: item.accessPrice.toString(),
       details: item.details,
@@ -266,13 +372,21 @@ export default function GymAccessMaster({ gymId: propGymId }) {
               <label className="text-xs font-medium text-slate-700">
                 Access Duration*
               </label>
-              <div className="flex h-10 items-center rounded-lg border border-[#E5E6EF] bg-[#F8F9FC] px-3 focus-within:border-[#C5CAE3] focus-within:ring-2 focus-within:ring-[#C2C8E4]">
+              <div
+                className={`flex h-10 items-center rounded-lg border bg-[#F8F9FC] px-3 focus-within:ring-2 ${
+                  durationError
+                    ? "border-red-400 focus-within:border-red-400 focus-within:ring-red-200"
+                    : "border-[#E5E6EF] focus-within:border-[#C5CAE3] focus-within:ring-[#C2C8E4]"
+                }`}
+              >
                 <input
                   type="text"
+                  inputMode="numeric"
                   value={formData.durationValue}
                   onChange={(e) =>
                     handleInputChange("durationValue", e.target.value)
                   }
+                  placeholder="e.g. 30"
                   className="w-full bg-transparent text-xs text-slate-700 focus:outline-none"
                 />
                 <div className="mx-2 h-4 w-[1px] bg-gray-300"></div>
@@ -289,6 +403,9 @@ export default function GymAccessMaster({ gymId: propGymId }) {
                   <option value="Year">Year</option>
                 </select>
               </div>
+              {durationError && (
+                <p className="text-xs text-red-600">{durationError}</p>
+              )}
             </div>
 
             <div className="space-y-1">
@@ -391,22 +508,58 @@ export default function GymAccessMaster({ gymId: propGymId }) {
           {/* Table Header */}
           <div className="grid grid-cols-12 gap-4 bg-[#F7F9FD] px-4 py-3 border-b border-[#E5E8F6]">
             <div className="col-span-2">
-              <TableHeaderCell>Added On</TableHeaderCell>
+              <TableHeaderCell
+                onClick={() => handleSort("addedOn")}
+                active={sortKey === "addedOn"}
+                order={sortOrder}
+              >
+                Added On
+              </TableHeaderCell>
             </div>
             <div className="col-span-3">
-              <TableHeaderCell>Gym Access Name</TableHeaderCell>
+              <TableHeaderCell
+                onClick={() => handleSort("gymAccessName")}
+                active={sortKey === "gymAccessName"}
+                order={sortOrder}
+              >
+                Gym Access Name
+              </TableHeaderCell>
             </div>
             <div className="col-span-2">
-              <TableHeaderCell>Access Duration</TableHeaderCell>
+              <TableHeaderCell
+                onClick={() => handleSort("accessDuration")}
+                active={sortKey === "accessDuration"}
+                order={sortOrder}
+              >
+                Access Duration
+              </TableHeaderCell>
             </div>
             <div className="col-span-2">
-              <TableHeaderCell>Package Type</TableHeaderCell>
+              <TableHeaderCell
+                onClick={() => handleSort("packageType")}
+                active={sortKey === "packageType"}
+                order={sortOrder}
+              >
+                Package Type
+              </TableHeaderCell>
             </div>
             <div className="col-span-1">
-              <TableHeaderCell>Price</TableHeaderCell>
+              <TableHeaderCell
+                onClick={() => handleSort("accessPrice")}
+                active={sortKey === "accessPrice"}
+                order={sortOrder}
+              >
+                Price
+              </TableHeaderCell>
             </div>
             <div className="col-span-1">
-              <TableHeaderCell>Status</TableHeaderCell>
+              <TableHeaderCell
+                onClick={() => handleSort("status")}
+                active={sortKey === "status"}
+                order={sortOrder}
+              >
+                Status
+              </TableHeaderCell>
             </div>
             <div className="col-span-1 text-right">
               <div className="flex justify-end">
@@ -421,12 +574,12 @@ export default function GymAccessMaster({ gymId: propGymId }) {
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="h-6 w-6 animate-spin text-[#FF5B2C]" />
               </div>
-            ) : gymAccessList.length === 0 ? (
+            ) : sortedGymAccessList.length === 0 ? (
               <div className="flex items-center justify-center py-8 text-xs text-[#8A92AC]">
                 No gym access records found
               </div>
             ) : (
-              gymAccessList.map((item) => (
+              sortedGymAccessList.map((item) => (
                 <div
                   key={item._id}
                   className="grid grid-cols-12 gap-4 px-4 py-3 items-center hover:bg-[#F9FAFD]"
@@ -489,19 +642,21 @@ export default function GymAccessMaster({ gymId: propGymId }) {
                           Delete
                         </button>
                         <div className="my-1 border-t border-[#F1F3F9]"></div>
-                        <button
-                          onClick={() => handleStatusChange(item, true)}
-                          className="block w-full px-4 py-2 text-left text-xs font-medium text-slate-700 hover:bg-[#F8F9FC]"
-                        >
-                          Active
-                        </button>
-                        <div className="my-1 border-t border-[#F1F3F9]"></div>
-                        <button
-                          onClick={() => handleStatusChange(item, false)}
-                          className="block w-full px-4 py-2 text-left text-xs font-medium text-slate-700 hover:bg-[#F8F9FC]"
-                        >
-                          Inactive
-                        </button>
+                        {String(item.status) === "true" ? (
+                          <button
+                            onClick={() => handleStatusChange(item, false)}
+                            className="block w-full px-4 py-2 text-left text-xs font-medium text-slate-700 hover:bg-[#F8F9FC]"
+                          >
+                            Inactive
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => handleStatusChange(item, true)}
+                            className="block w-full px-4 py-2 text-left text-xs font-medium text-slate-700 hover:bg-[#F8F9FC]"
+                          >
+                            Active
+                          </button>
+                        )}
                       </div>
                     )}
                   </div>

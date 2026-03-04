@@ -46,6 +46,7 @@ const SpaSession = ({ spaId }) => {
     duration: '',
     sessionPrice: ''
   })
+  const [durationError, setDurationError] = useState('')
   const [detail, setDetail] = useState('')
 
   // Search/Filter State
@@ -107,18 +108,48 @@ const SpaSession = ({ spaId }) => {
 
   const handleInputChange = e => {
     const { name, value } = e.target
+    if (name === 'duration') {
+      const digitsOnly = value.replace(/\D/g, '')
+      setFormData(prev => ({ ...prev, [name]: digitsOnly }))
+      setDurationError('')
+      return
+    }
     setFormData(prev => ({ ...prev, [name]: value }))
   }
 
   const resetForm = () => {
     setFormData({ name: '', duration: '', sessionPrice: '' })
+    setDurationError('')
     setDetail('')
     setEditingId(null)
   }
 
+  const validateDuration = () => {
+    const raw = String(formData.duration).trim()
+    if (!raw) {
+      setDurationError('Duration is required')
+      return false
+    }
+    const num = parseInt(raw, 10)
+    if (Number.isNaN(num) || num < 1) {
+      setDurationError('Duration must be a positive whole number (e.g. 1, 30, 60)')
+      return false
+    }
+    if (num > 9999) {
+      setDurationError('Duration cannot exceed 9999')
+      return false
+    }
+    setDurationError('')
+    return true
+  }
+
   const handleSubmit = async () => {
-    if (!formData.name || !formData.duration || !formData.sessionPrice || !detail) {
+    if (!formData.name || !formData.sessionPrice || !detail) {
       showToast('Please fill all required fields', 'error')
+      return
+    }
+    if (!validateDuration()) {
+      showToast('Please fix the duration', 'error')
       return
     }
 
@@ -165,9 +196,11 @@ const SpaSession = ({ spaId }) => {
 
   const handleEdit = session => {
     setEditingId(session._id)
+    const durationVal = session.duration != null ? String(session.duration).replace(/\D/g, '') : ''
+    setDurationError('')
     setFormData({
       name: session.spaspaSessionName || session.spaSessionName,
-      duration: parseInt(session.duration) || session.duration,
+      duration: durationVal,
       sessionPrice: session.sessionsessionPrice || session.sessionPrice
     })
     setDetail(session.detail || session.detail)
@@ -296,17 +329,23 @@ const SpaSession = ({ spaId }) => {
             </label>
             <div className='relative'>
               <input
-                type='number'
+                type='text'
                 name='duration'
+                inputMode='numeric'
                 value={formData.duration}
                 onChange={handleInputChange}
                 placeholder='30'
-                className='h-10 w-full rounded-lg border border-gray-200 bg-white px-4 text-sm text-gray-900 placeholder:text-gray-500 outline-none focus:border-[#FF4400]'
+                className={`h-10 w-full rounded-lg border bg-white px-4 text-sm text-gray-900 placeholder:text-gray-500 outline-none focus:border-[#FF4400] ${
+                  durationError ? 'border-red-400' : 'border-gray-200'
+                }`}
               />
               <span className='absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-500'>
                 | Min
               </span>
             </div>
+            {durationError && (
+              <p className='text-xs text-red-600'>{durationError}</p>
+            )}
           </div>
 
           <div className='space-y-2'>

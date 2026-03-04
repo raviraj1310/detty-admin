@@ -48,6 +48,7 @@ export default function EditFitnessEvent ({ id }) {
     description: '',
     variant: ''
   })
+  const [durationError, setDurationError] = useState('')
   const [certificateTemplates, setCertificateTemplates] = useState([])
   const [hostList, setHostList] = useState([])
 
@@ -119,11 +120,12 @@ export default function EditFitnessEvent ({ id }) {
         if (response?.success || response?.data?.success) {
           const data = response?.data?.data || response?.data || {}
 
+          const durationRaw = String(data.duration ?? '').replace(/\D/g, '')
           setFormData({
             eventName: data.fitnessEventName || '',
             capacity: data.participateCapacity || '',
             certificateTemplate: data.certificateTemplateId || '',
-            duration: data.duration || '',
+            duration: durationRaw,
             startDate: data.startDate ? data.startDate.split('T')[0] : '',
             endDate: data.endDate ? data.endDate.split('T')[0] : '',
             startTime: to24h(data.startTime) || '',
@@ -188,6 +190,12 @@ export default function EditFitnessEvent ({ id }) {
   // Handlers
   const handleInputChange = e => {
     const { name, value } = e.target
+    if (name === 'duration') {
+      const digitsOnly = value.replace(/\D/g, '')
+      setFormData(prev => ({ ...prev, [name]: digitsOnly }))
+      setDurationError('')
+      return
+    }
     setFormData(prev => ({ ...prev, [name]: value }))
   }
 
@@ -226,6 +234,25 @@ export default function EditFitnessEvent ({ id }) {
     }
   }
 
+  const validateDuration = () => {
+    const raw = String(formData.duration).trim()
+    if (!raw) {
+      setDurationError('Duration is required')
+      return false
+    }
+    const num = parseInt(raw, 10)
+    if (Number.isNaN(num) || num < 1) {
+      setDurationError('Duration must be a positive whole number (e.g. 1, 60, 120)')
+      return false
+    }
+    if (num > 9999) {
+      setDurationError('Duration cannot exceed 9999')
+      return false
+    }
+    setDurationError('')
+    return true
+  }
+
   const handleSubmit = async () => {
     // Validation
     if (!formData.eventName) return showToast('Event Name is required', 'error')
@@ -234,6 +261,10 @@ export default function EditFitnessEvent ({ id }) {
       return showToast('Dates are required', 'error')
     if (!formData.capacity)
       return showToast('Participate Capacity is required', 'error')
+    if (!validateDuration()) {
+      showToast('Please fix the duration', 'error')
+      return
+    }
     if (!formData.hostedBy) return showToast('Hosted By is required', 'error')
 
     setSaving(true)
@@ -454,10 +485,19 @@ export default function EditFitnessEvent ({ id }) {
               <input
                 type='text'
                 name='duration'
+                inputMode='numeric'
                 value={formData.duration}
                 onChange={handleInputChange}
-                className='w-full rounded-lg border border-gray-200 bg-white text-gray-900 px-4 py-2.5 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
+                placeholder='e.g. 60'
+                className={`w-full rounded-lg border bg-white text-gray-900 px-4 py-2.5 text-sm placeholder:text-gray-500 focus:outline-none focus:border-[#FF4400] ${
+                  durationError
+                    ? 'border-red-400 focus:border-red-400 focus:ring-2 focus:ring-red-200'
+                    : 'border-gray-200 focus:border-[#FF4400]'
+                }`}
               />
+              {durationError && (
+                <p className='mt-1 text-xs text-red-600'>{durationError}</p>
+              )}
             </div>
             <div>
               <label className='mb-2 block text-sm font-medium text-gray-700'>

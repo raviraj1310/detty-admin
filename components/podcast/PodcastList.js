@@ -62,11 +62,24 @@ const MetricCard = ({
   </div>
 )
 
-const TableHeaderCell = ({ children }) => (
-  <div className='flex items-center gap-1 text-xs font-medium uppercase tracking-wide text-[#8A92AC] whitespace-nowrap'>
+const TableHeaderCell = ({
+  children,
+  onClick,
+  active = false,
+  direction = 'asc'
+}) => (
+  <button
+    type='button'
+    onClick={onClick}
+    className={`flex items-center gap-1 text-xs font-medium uppercase tracking-wide whitespace-nowrap w-full justify-start ${active ? 'text-[#2D3658]' : 'text-[#8A92AC]'} hover:text-[#2D3658]`}
+  >
     {children}
-    <TbCaretUpDownFilled className='h-3 w-3 text-[#CBCFE2]' />
-  </div>
+    {active ? (
+      <span className='text-[#2D3658]'>{direction === 'asc' ? ' ↑' : ' ↓'}</span>
+    ) : (
+      <TbCaretUpDownFilled className='h-3 w-3 text-[#CBCFE2]' />
+    )}
+  </button>
 )
 
 const StatusBadge = ({ status }) => {
@@ -98,6 +111,8 @@ export default function PodcastList () {
   const router = useRouter()
   const [searchTerm, setSearchTerm] = useState('')
   const [activeDropdown, setActiveDropdown] = useState(null)
+  const [sortKey, setSortKey] = useState('addedOn')
+  const [sortOrder, setSortOrder] = useState('desc')
   const [podcasts, setPodcasts] = useState([])
   const [loading, setLoading] = useState(true)
   const [pagination, setPagination] = useState({
@@ -344,6 +359,45 @@ export default function PodcastList () {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [activeDropdown])
 
+  const getSortValue = (podcast, key) => {
+    switch (key) {
+      case 'addedOn':
+        return new Date(podcast.addedOn || podcast.createdAt || 0).getTime()
+      case 'name':
+        return (podcast.name || '').toLowerCase()
+      case 'host':
+        return (podcast.host || '').toLowerCase()
+      case 'type':
+        return (podcast.type || '').toLowerCase()
+      case 'duration':
+        return (podcast.duration || '').toLowerCase()
+      case 'status':
+        return podcast.status ? 1 : 0
+      default:
+        return ''
+    }
+  }
+
+  const handleSort = key => {
+    if (sortKey === key) {
+      setSortOrder(prev => (prev === 'asc' ? 'desc' : 'asc'))
+    } else {
+      setSortKey(key)
+      setSortOrder('asc')
+    }
+  }
+
+  const sortedPodcasts = [...podcasts].sort((a, b) => {
+    const va = getSortValue(a, sortKey)
+    const vb = getSortValue(b, sortKey)
+    if (typeof va === 'string' && typeof vb === 'string') {
+      return sortOrder === 'asc'
+        ? va.localeCompare(vb)
+        : vb.localeCompare(va)
+    }
+    return sortOrder === 'asc' ? va - vb : vb - va
+  })
+
   return (
     <div className='min-h-screen bg-gray-50 p-8'>
       <Toast
@@ -465,22 +519,58 @@ export default function PodcastList () {
             <thead>
               <tr className='border-b border-gray-100 bg-gray-50/50'>
                 <th className='px-6 py-4 text-left'>
-                  <TableHeaderCell>Added On</TableHeaderCell>
+                  <TableHeaderCell
+                    onClick={() => handleSort('addedOn')}
+                    active={sortKey === 'addedOn'}
+                    direction={sortOrder}
+                  >
+                    Added On
+                  </TableHeaderCell>
                 </th>
                 <th className='px-6 py-4 text-left'>
-                  <TableHeaderCell>Podcast Name</TableHeaderCell>
+                  <TableHeaderCell
+                    onClick={() => handleSort('name')}
+                    active={sortKey === 'name'}
+                    direction={sortOrder}
+                  >
+                    Podcast Name
+                  </TableHeaderCell>
                 </th>
                 <th className='px-6 py-4 text-left'>
-                  <TableHeaderCell>Host</TableHeaderCell>
+                  <TableHeaderCell
+                    onClick={() => handleSort('host')}
+                    active={sortKey === 'host'}
+                    direction={sortOrder}
+                  >
+                    Host
+                  </TableHeaderCell>
                 </th>
                 <th className='px-6 py-4 text-left'>
-                  <TableHeaderCell>Podcast</TableHeaderCell>
+                  <TableHeaderCell
+                    onClick={() => handleSort('type')}
+                    active={sortKey === 'type'}
+                    direction={sortOrder}
+                  >
+                    Podcast
+                  </TableHeaderCell>
                 </th>
                 <th className='px-6 py-4 text-left'>
-                  <TableHeaderCell>Duration</TableHeaderCell>
+                  <TableHeaderCell
+                    onClick={() => handleSort('duration')}
+                    active={sortKey === 'duration'}
+                    direction={sortOrder}
+                  >
+                    Duration
+                  </TableHeaderCell>
                 </th>
                 <th className='px-6 py-4 text-left'>
-                  <TableHeaderCell>Status</TableHeaderCell>
+                  <TableHeaderCell
+                    onClick={() => handleSort('status')}
+                    active={sortKey === 'status'}
+                    direction={sortOrder}
+                  >
+                    Status
+                  </TableHeaderCell>
                 </th>
                 <th className='px-6 py-4'></th>
               </tr>
@@ -492,14 +582,14 @@ export default function PodcastList () {
                     Loading...
                   </td>
                 </tr>
-              ) : podcasts.length === 0 ? (
+              ) : sortedPodcasts.length === 0 ? (
                 <tr>
                   <td colSpan='7' className='px-6 py-4 text-center'>
                     No podcasts found
                   </td>
                 </tr>
               ) : (
-                podcasts.map(podcast => (
+                sortedPodcasts.map(podcast => (
                   <tr key={podcast.id} className='hover:bg-gray-50/50'>
                     <td className='px-6 py-4 text-sm text-gray-600'>
                       {podcast.addedOn}

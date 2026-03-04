@@ -80,6 +80,7 @@ export default function GymAccessEdit () {
   // Deleting existing images might require backend support not visible here.
 
   const [toast, setToast] = useState({ show: false, message: '', type: '' })
+  const [durationError, setDurationError] = useState('')
   const [cropOpen, setCropOpen] = useState(false)
   const [rawImageFile, setRawImageFile] = useState(null)
 
@@ -99,11 +100,11 @@ export default function GymAccessEdit () {
           const gymResponse = await getGymById(id)
           const gym = gymResponse.data || gymResponse
 
-          // Populate form
+          const durationRaw = String(gym.duration ?? '').replace(/\D/g, '')
           setFormData({
             gymName: gym.gymName || '',
             hostedBy: gym.hostId || gym.hostedBy || '', // Adjust based on API response
-            duration: gym.duration || '',
+            duration: durationRaw,
             startDate: gym.startDate
               ? new Date(gym.startDate).toISOString().split('T')[0]
               : '',
@@ -164,6 +165,12 @@ export default function GymAccessEdit () {
   // Handlers
   const handleInputChange = e => {
     const { name, value } = e.target
+    if (name === 'duration') {
+      const digitsOnly = value.replace(/\D/g, '')
+      setFormData(prev => ({ ...prev, [name]: digitsOnly }))
+      setDurationError('')
+      return
+    }
     setFormData(prev => ({ ...prev, [name]: value }))
   }
 
@@ -230,13 +237,33 @@ export default function GymAccessEdit () {
     setGalleryImages(prev => prev.filter(img => img.id !== imageId))
   }
 
+  const validateDuration = () => {
+    const raw = String(formData.duration).trim()
+    if (!raw) {
+      setDurationError('Duration is required')
+      return false
+    }
+    const num = parseInt(raw, 10)
+    if (Number.isNaN(num) || num < 1) {
+      setDurationError('Duration must be a positive whole number (e.g. 1, 60, 120)')
+      return false
+    }
+    if (num > 9999) {
+      setDurationError('Duration cannot exceed 9999')
+      return false
+    }
+    setDurationError('')
+    return true
+  }
+
   const handleSubmit = async () => {
     // Validation
     if (!formData.gymName) return showToast('Gym Name is required', 'error')
     if (!aboutPlace) return showToast('About Place is required', 'error')
-    // if (!formData.startDate || !formData.endDate)
-    //   return showToast('Dates are required', 'error')
-    // validation can be looser for edit if needed, but keeping same for consistency
+    if (!validateDuration()) {
+      showToast('Please fix the duration', 'error')
+      return
+    }
 
     try {
       const payload = new FormData()
@@ -402,10 +429,19 @@ export default function GymAccessEdit () {
               <input
                 type='text'
                 name='duration'
+                inputMode='numeric'
                 value={formData.duration}
                 onChange={handleInputChange}
-                className='w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
+                placeholder='e.g. 60'
+                className={`w-full rounded-lg border px-4 py-2.5 text-sm placeholder:text-gray-500 focus:outline-none focus:border-[#FF4400] ${
+                  durationError
+                    ? 'border-red-400 focus:border-red-400 focus:ring-2 focus:ring-red-200'
+                    : 'border-gray-200'
+                }`}
               />
+              {durationError && (
+                <p className='mt-1 text-xs text-red-600'>{durationError}</p>
+              )}
             </div>
             <div>
               <label className='mb-2 block text-sm font-medium text-gray-700'>

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useMemo } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
@@ -29,15 +29,27 @@ const DURATION_UNITS = [
   { value: 'Hr', label: 'Hr' }
 ]
 
-const TableHeaderCell = ({ children, align = 'left' }) => (
-  <div
-    className={`flex items-center gap-1 text-xs font-medium uppercase tracking-wide text-[#8A92AC] whitespace-nowrap ${
+const TableHeaderCell = ({
+  children,
+  align = 'left',
+  onClick,
+  active = false,
+  direction = 'asc'
+}) => (
+  <button
+    type='button'
+    onClick={onClick}
+    className={`flex items-center gap-1 text-xs font-medium uppercase tracking-wide whitespace-nowrap w-full ${
       align === 'right' ? 'justify-end' : 'justify-start'
-    }`}
+    } ${active ? 'text-[#2D3658]' : 'text-[#8A92AC]'} hover:text-[#2D3658]`}
   >
     {children}
-    <TbCaretUpDownFilled className='h-3 w-3 text-[#CBCFE2]' />
-  </div>
+    {active ? (
+      <span className='text-[#2D3658]'>{direction === 'asc' ? ' ↑' : ' ↓'}</span>
+    ) : (
+      <TbCaretUpDownFilled className='h-3 w-3 text-[#CBCFE2]' />
+    )}
+  </button>
 )
 
 const formatPrice = value => {
@@ -76,6 +88,9 @@ export default function RecoveryServicesSessions () {
   const [deleteId, setDeleteId] = useState(null)
   const [deleting, setDeleting] = useState(false)
 
+  const [durationError, setDurationError] = useState('')
+  const [sortKey, setSortKey] = useState('addedOn')
+  const [sortOrder, setSortOrder] = useState('desc')
   const [toast, setToast] = useState({
     show: false,
     message: '',
@@ -124,6 +139,12 @@ export default function RecoveryServicesSessions () {
 
   const handleInputChange = e => {
     const { name, value } = e.target
+    if (name === 'duration') {
+      const digitsOnly = value.replace(/\D/g, '')
+      setFormData(prev => ({ ...prev, [name]: digitsOnly }))
+      setDurationError('')
+      return
+    }
     setFormData(prev => ({ ...prev, [name]: value }))
   }
 
@@ -139,8 +160,28 @@ export default function RecoveryServicesSessions () {
       sessionPrice: '',
       details: ''
     })
+    setDurationError('')
     setIsEditing(false)
     setCurrentSessionId(null)
+  }
+
+  const validateDuration = () => {
+    const raw = String(formData.duration).trim()
+    if (!raw) {
+      setDurationError('Duration is required')
+      return false
+    }
+    const num = parseInt(raw, 10)
+    if (Number.isNaN(num) || num < 1) {
+      setDurationError('Duration must be a positive whole number (e.g. 1, 30, 60)')
+      return false
+    }
+    if (num > 9999) {
+      setDurationError('Duration cannot exceed 9999')
+      return false
+    }
+    setDurationError('')
+    return true
   }
 
   const handleFormSubmit = async () => {
@@ -148,8 +189,8 @@ export default function RecoveryServicesSessions () {
       showToast('Recovery Services Session Name is required', 'error')
       return
     }
-    if (!formData.duration?.trim()) {
-      showToast('Duration is required', 'error')
+    if (!validateDuration()) {
+      showToast('Please fix the duration', 'error')
       return
     }
     if (!formData.sessionPrice?.trim()) {
@@ -208,13 +249,15 @@ export default function RecoveryServicesSessions () {
         typeof rawDuration === 'string'
           ? rawDuration.split(' ')
           : [String(rawDuration ?? ''), s.durationUnit]
+      const durationDigits = String(durValue ?? '').replace(/\D/g, '')
+      setDurationError('')
       setFormData({
         recoveryServiceSessionName:
           s.recoveryServiceSessionName ??
           s.recoveryServiceSessionName ??
           s.name ??
           '',
-        duration: (durValue || '').trim(),
+        duration: durationDigits,
         durationUnit: (durUnit || 'Min').trim(),
         sessionPrice:
           s.sessionPrice != null
@@ -235,13 +278,15 @@ export default function RecoveryServicesSessions () {
         typeof rawDuration === 'string'
           ? rawDuration.split(' ')
           : [String(rawDuration ?? ''), session.durationUnit]
+      const durationDigits = String(durValue ?? '').replace(/\D/g, '')
+      setDurationError('')
       setFormData({
         recoveryServiceSessionName:
           session.recoveryServiceSessionName ??
           session.recoveryServiceSessionName ??
           session.name ??
           '',
-        duration: (durValue || '').trim(),
+        duration: durationDigits,
         durationUnit: (durUnit || 'Min').trim(),
         sessionPrice:
           session.sessionPrice != null
@@ -381,6 +426,54 @@ export default function RecoveryServicesSessions () {
     return name.includes(term)
   })
 
+  const getSortValue = (session, key) => {
+    switch (key) {
+      case 'addedOn':
+        return new Date(session.createdAt || 0).getTime()
+      case 'name':
+        return (
+          session.recoveryServiceSessionName ??
+          session.name ??
+          ''
+        ).toLowerCase()
+      case 'duration':
+        return Number(session.duration) || 0
+      case 'price':
+        return Number(session.sessionPrice ?? session.price) || 0
+      case 'status':
+        return session.status === true ||
+          String(session.status || '').toLowerCase() === 'active'
+          ? 1
+          : 0
+      default:
+        return ''
+    }
+  }
+
+  const handleSort = key => {
+    if (sortKey === key) {
+      setSortOrder(prev => (prev === 'asc' ? 'desc' : 'asc'))
+    } else {
+      setSortKey(key)
+      setSortOrder('asc')
+    }
+  }
+
+  const sortedSessions = useMemo(() => {
+    const arr = [...filteredSessions]
+    arr.sort((a, b) => {
+      const va = getSortValue(a, sortKey)
+      const vb = getSortValue(b, sortKey)
+      if (typeof va === 'string' && typeof vb === 'string') {
+        return sortOrder === 'asc'
+          ? va.localeCompare(vb)
+          : vb.localeCompare(va)
+      }
+      return sortOrder === 'asc' ? va - vb : vb - va
+    })
+    return arr
+  }, [filteredSessions, sortKey, sortOrder])
+
   return (
     <div className='min-h-screen bg-[#F8F9FC] p-6'>
       <Toast
@@ -456,12 +549,14 @@ export default function RecoveryServicesSessions () {
             </label>
             <div className='flex gap-2'>
               <input
-                type='number'
+                type='text'
                 name='duration'
+                inputMode='numeric'
                 value={formData.duration}
                 onChange={handleInputChange}
-                min='1'
-                className='flex-1 rounded-lg border border-[#E2E8F0] px-4 py-2.5 text-sm text-[#1E293B] focus:border-[#FF5B2C] focus:outline-none focus:ring-1 focus:ring-[#FF5B2C]'
+                className={`flex-1 rounded-lg border px-4 py-2.5 text-sm text-[#1E293B] focus:outline-none focus:ring-1 focus:border-[#FF5B2C] focus:ring-[#FF5B2C] ${
+                  durationError ? 'border-red-400' : 'border-[#E2E8F0]'
+                }`}
                 placeholder='30'
               />
               <select
@@ -477,6 +572,9 @@ export default function RecoveryServicesSessions () {
                 ))}
               </select>
             </div>
+            {durationError && (
+              <p className='mt-1 text-xs text-red-600'>{durationError}</p>
+            )}
           </div>
 
           <div className='lg:col-span-1'>
@@ -547,21 +645,49 @@ export default function RecoveryServicesSessions () {
             <thead>
               <tr className='border-b border-[#E1E6F7] bg-[#F8F9FC]'>
                 <th className='py-4 px-6 text-left'>
-                  <TableHeaderCell>Added On</TableHeaderCell>
+                  <TableHeaderCell
+                    onClick={() => handleSort('addedOn')}
+                    active={sortKey === 'addedOn'}
+                    direction={sortOrder}
+                  >
+                    Added On
+                  </TableHeaderCell>
                 </th>
                 <th className='py-4 px-6 text-left'>
-                  <TableHeaderCell>
+                  <TableHeaderCell
+                    onClick={() => handleSort('name')}
+                    active={sortKey === 'name'}
+                    direction={sortOrder}
+                  >
                     Recovery Services Session Name
                   </TableHeaderCell>
                 </th>
                 <th className='py-4 px-6 text-left'>
-                  <TableHeaderCell>Duration</TableHeaderCell>
+                  <TableHeaderCell
+                    onClick={() => handleSort('duration')}
+                    active={sortKey === 'duration'}
+                    direction={sortOrder}
+                  >
+                    Duration
+                  </TableHeaderCell>
                 </th>
                 <th className='py-4 px-6 text-left'>
-                  <TableHeaderCell>Price</TableHeaderCell>
+                  <TableHeaderCell
+                    onClick={() => handleSort('price')}
+                    active={sortKey === 'price'}
+                    direction={sortOrder}
+                  >
+                    Price
+                  </TableHeaderCell>
                 </th>
                 <th className='py-4 px-6 text-left'>
-                  <TableHeaderCell>Status</TableHeaderCell>
+                  <TableHeaderCell
+                    onClick={() => handleSort('status')}
+                    active={sortKey === 'status'}
+                    direction={sortOrder}
+                  >
+                    Status
+                  </TableHeaderCell>
                 </th>
                 <th className='py-4 px-6 text-right' />
               </tr>
@@ -576,14 +702,14 @@ export default function RecoveryServicesSessions () {
                     </div>
                   </td>
                 </tr>
-              ) : filteredSessions.length === 0 ? (
+              ) : sortedSessions.length === 0 ? (
                 <tr>
                   <td colSpan='6' className='py-8 text-center text-[#64748B]'>
                     No sessions found
                   </td>
                 </tr>
               ) : (
-                filteredSessions.map(session => (
+                sortedSessions.map(session => (
                   <tr key={session._id} className='hover:bg-[#F8F9FC]'>
                     <td className='py-4 px-6 text-sm text-[#64748B]'>
                       {session.createdAt
@@ -741,39 +867,23 @@ export default function RecoveryServicesSessions () {
                 Delete
               </button>
               <div className='my-1 h-px bg-gray-100' />
-              <button
-                type='button'
-                onClick={() => handleStatusChange(activeDropdown, true)}
-                className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm ${
-                  isActive
-                    ? 'bg-[#E8F8F0] text-[#22C55E] font-medium'
-                    : 'text-[#475569] hover:bg-[#F8F9FC] hover:text-[#1E293B]'
-                }`}
-              >
-                Active
-                {isActive && (
-                  <span className='ml-auto text-[#22C55E]' aria-hidden='true'>
-                    ✓
-                  </span>
-                )}
-              </button>
-              <div className='my-1 h-px bg-gray-100' />
-              <button
-                type='button'
-                onClick={() => handleStatusChange(activeDropdown, false)}
-                className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm ${
-                  !isActive
-                    ? 'bg-[#FFF0F0] text-[#EF4444] font-medium'
-                    : 'text-[#475569] hover:bg-[#F8F9FC] hover:text-[#1E293B]'
-                }`}
-              >
-                Inactive
-                {!isActive && (
-                  <span className='ml-auto text-[#EF4444]' aria-hidden='true'>
-                    ✓
-                  </span>
-                )}
-              </button>
+              {isActive ? (
+                <button
+                  type='button'
+                  onClick={() => handleStatusChange(activeDropdown, false)}
+                  className='flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-[#475569] hover:bg-[#F8F9FC] hover:text-[#1E293B]'
+                >
+                  Inactive
+                </button>
+              ) : (
+                <button
+                  type='button'
+                  onClick={() => handleStatusChange(activeDropdown, true)}
+                  className='flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-[#475569] hover:bg-[#F8F9FC] hover:text-[#1E293B]'
+                >
+                  Active
+                </button>
+              )}
             </div>
           )
         })()}

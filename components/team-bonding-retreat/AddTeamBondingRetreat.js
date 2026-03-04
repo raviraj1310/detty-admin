@@ -16,7 +16,7 @@ export default function AddTeamBondingRetreat () {
   // State
   const [formData, setFormData] = useState({
     retreatName: '',
-    duration: '1-3 hours (based on selected access or activation)',
+    duration: '',
     startDate: '',
     endDate: '',
     startTime: '',
@@ -45,10 +45,17 @@ export default function AddTeamBondingRetreat () {
     description: '',
     variant: 'success'
   })
+  const [durationError, setDurationError] = useState('')
 
   // Handlers
   const handleInputChange = e => {
     const { name, value } = e.target
+    if (name === 'duration') {
+      const digitsOnly = value.replace(/\D/g, '')
+      setFormData(prev => ({ ...prev, [name]: digitsOnly }))
+      setDurationError('')
+      return
+    }
     setFormData(prev => ({ ...prev, [name]: value }))
   }
 
@@ -107,6 +114,25 @@ export default function AddTeamBondingRetreat () {
     setCropOpen(false)
   }
 
+  const validateDuration = () => {
+    const raw = String(formData.duration).trim()
+    if (!raw) {
+      setDurationError('Duration is required')
+      return false
+    }
+    const num = parseInt(raw, 10)
+    if (Number.isNaN(num) || num < 1) {
+      setDurationError('Duration must be a positive whole number (e.g. 1, 60, 120)')
+      return false
+    }
+    if (num > 9999) {
+      setDurationError('Duration cannot exceed 9999')
+      return false
+    }
+    setDurationError('')
+    return true
+  }
+
   const handleSubmit = async () => {
     // Validation
     if (!formData.retreatName)
@@ -119,6 +145,10 @@ export default function AddTeamBondingRetreat () {
       return showToast('Error', 'Start Date is required', 'error')
     if (!formData.endDate)
       return showToast('Error', 'End Date is required', 'error')
+    if (!validateDuration()) {
+      showToast('Error', 'Please fix the duration', 'error')
+      return
+    }
     if (!mainImage)
       return showToast('Error', 'Retreat image is required', 'error')
 
@@ -282,10 +312,19 @@ export default function AddTeamBondingRetreat () {
               <input
                 type='text'
                 name='duration'
+                inputMode='numeric'
                 value={formData.duration}
                 onChange={handleInputChange}
-                className='w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
+                placeholder='e.g. 60'
+                className={`w-full rounded-lg border px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none ${
+                  durationError
+                    ? 'border-red-400 focus:border-red-400 focus:ring-2 focus:ring-red-200'
+                    : 'border-gray-200'
+                }`}
               />
+              {durationError && (
+                <p className='mt-1 text-xs text-red-600'>{durationError}</p>
+              )}
             </div>
             <div>
               <label className='mb-2 block text-sm font-medium text-gray-700'>

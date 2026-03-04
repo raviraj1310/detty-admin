@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import {
@@ -118,7 +118,7 @@ const TableHeaderCell = ({
       active ? 'text-gray-700' : 'text-gray-500'
     } ${
       align === 'right' ? 'justify-end' : 'justify-start'
-    } hover:text-gray-700`}
+    } hover:text-gray-700 w-full`}
   >
     {children}
     {active ? (
@@ -153,6 +153,8 @@ export default function GymAccessMaster () {
   const [statusFilter, setStatusFilter] = useState('')
   const [filterOpen, setFilterOpen] = useState(false)
   const [metrics, setMetrics] = useState(INITIAL_METRICS)
+  const [sortKey, setSortKey] = useState('addedOn')
+  const [sortOrder, setSortOrder] = useState('desc')
 
   // Toast & Alert State
   const [toastOpen, setToastOpen] = useState(false)
@@ -270,6 +272,45 @@ export default function GymAccessMaster () {
       return 'bg-emerald-50 text-emerald-600 border border-emerald-200'
     return 'bg-red-50 text-red-600 border border-red-200'
   }
+
+  const getSortValue = (gym, key) => {
+    switch (key) {
+      case 'addedOn':
+        return new Date(gym.createdAt || 0).getTime()
+      case 'gymName':
+        return (gym.gymName || '').toLowerCase()
+      case 'location':
+        return (gym.location || '').toLowerCase()
+      case 'status':
+        return gym.status ? 1 : 0
+      default:
+        return ''
+    }
+  }
+
+  const handleSort = key => {
+    if (sortKey === key) {
+      setSortOrder(prev => (prev === 'asc' ? 'desc' : 'asc'))
+    } else {
+      setSortKey(key)
+      setSortOrder('asc')
+    }
+  }
+
+  const sortedGyms = useMemo(() => {
+    const arr = [...gyms]
+    arr.sort((a, b) => {
+      const va = getSortValue(a, sortKey)
+      const vb = getSortValue(b, sortKey)
+      if (typeof va === 'string' && typeof vb === 'string') {
+        return sortOrder === 'asc'
+          ? va.localeCompare(vb)
+          : vb.localeCompare(va)
+      }
+      return sortOrder === 'asc' ? va - vb : vb - va
+    })
+    return arr
+  }, [gyms, sortKey, sortOrder])
 
   const handlePageChange = newPage => {
     if (newPage >= 1 && newPage <= pagination.totalPages) {
@@ -427,7 +468,7 @@ export default function GymAccessMaster () {
                   <div className='px-3 py-2 text-xs font-semibold text-gray-500'>
                     Filter by Status
                   </div>
-                  <button
+                  {/* <button
                     onClick={() => {
                       setStatusFilter('')
                       setFilterOpen(false)
@@ -442,7 +483,7 @@ export default function GymAccessMaster () {
                     {statusFilter === '' && (
                       <CheckCircle className='h-3.5 w-3.5' />
                     )}
-                  </button>
+                  </button> */}
                   <button
                     onClick={() => {
                       setStatusFilter('true')
@@ -490,19 +531,43 @@ export default function GymAccessMaster () {
             <thead>
               <tr className='border-b border-[#E5E6EF] bg-gray-50/50'>
                 <th className='py-3 px-4 text-left'>
-                  <TableHeaderCell>Added On</TableHeaderCell>
+                  <TableHeaderCell
+                    onClick={() => handleSort('addedOn')}
+                    active={sortKey === 'addedOn'}
+                    direction={sortOrder}
+                  >
+                    Added On
+                  </TableHeaderCell>
                 </th>
                 <th className='py-3 px-4 text-left'>
-                  <TableHeaderCell>Gym Name</TableHeaderCell>
+                  <TableHeaderCell
+                    onClick={() => handleSort('gymName')}
+                    active={sortKey === 'gymName'}
+                    direction={sortOrder}
+                  >
+                    Gym Name
+                  </TableHeaderCell>
                 </th>
                 <th className='py-3 px-4 text-left'>
-                  <TableHeaderCell>Location</TableHeaderCell>
+                  <TableHeaderCell
+                    onClick={() => handleSort('location')}
+                    active={sortKey === 'location'}
+                    direction={sortOrder}
+                  >
+                    Location
+                  </TableHeaderCell>
                 </th>
                 <th className='py-3 px-4 text-left'>
                   <TableHeaderCell>Bookings</TableHeaderCell>
                 </th>
                 <th className='py-3 px-4 text-left'>
-                  <TableHeaderCell>Status</TableHeaderCell>
+                  <TableHeaderCell
+                    onClick={() => handleSort('status')}
+                    active={sortKey === 'status'}
+                    direction={sortOrder}
+                  >
+                    Status
+                  </TableHeaderCell>
                 </th>
                 <th className='py-3 px-4 text-right'></th>
               </tr>
@@ -514,14 +579,14 @@ export default function GymAccessMaster () {
                     Loading gyms...
                   </td>
                 </tr>
-              ) : gyms.length === 0 ? (
+              ) : sortedGyms.length === 0 ? (
                 <tr>
                   <td colSpan='6' className='py-8 text-center text-gray-500'>
                     No gyms found
                   </td>
                 </tr>
               ) : (
-                gyms.map(gym => (
+                sortedGyms.map(gym => (
                   <tr key={gym._id} className='group hover:bg-gray-50'>
                     <td className='py-3 px-4 text-xs text-gray-500'>
                       {formatDate(gym.createdAt)}
@@ -633,19 +698,21 @@ export default function GymAccessMaster () {
                             Delete
                           </button>
                           <div className='my-1 h-px bg-gray-100' />
-                          <button
-                            onClick={() => handleStatusChange(gym._id, true)}
-                            className='flex w-full items-center cursor-pointer px-4 py-2 text-xs font-medium text-slate-700 hover:bg-gray-50'
-                          >
-                            Active
-                          </button>
-                          <div className='my-1 h-px bg-gray-100' />
-                          <button
-                            onClick={() => handleStatusChange(gym._id, false)}
-                            className='flex w-full items-center cursor-pointer px-4 py-2 text-xs font-medium text-slate-700 hover:bg-gray-50'
-                          >
-                            Inactive
-                          </button>
+                          {gym.status ? (
+                            <button
+                              onClick={() => handleStatusChange(gym._id, false)}
+                              className='flex w-full items-center cursor-pointer px-4 py-2 text-xs font-medium text-slate-700 hover:bg-gray-50'
+                            >
+                              Inactive
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => handleStatusChange(gym._id, true)}
+                              className='flex w-full items-center cursor-pointer px-4 py-2 text-xs font-medium text-slate-700 hover:bg-gray-50'
+                            >
+                              Active
+                            </button>
+                          )}
                         </div>
                       )}
                     </td>

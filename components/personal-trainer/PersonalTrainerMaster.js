@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import {
@@ -16,7 +16,9 @@ import {
   AlertCircle,
   Loader2,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  ChevronUp,
+  ChevronDown
 } from 'lucide-react'
 import { IoFilterSharp } from 'react-icons/io5'
 import { TbCaretUpDownFilled } from 'react-icons/tb'
@@ -37,15 +39,31 @@ const INITIAL_METRICS = {
   cancelledBookings: '0'
 }
 
-const TableHeaderCell = ({ children, align = 'left' }) => (
-  <div
-    className={`flex items-center gap-1 text-xs font-medium uppercase tracking-wide text-[#8A92AC] whitespace-nowrap ${
+const TableHeaderCell = ({
+  children,
+  align = 'left',
+  onClick,
+  active = false,
+  direction = 'asc'
+}) => (
+  <button
+    type='button'
+    onClick={onClick}
+    className={`flex items-center gap-1 text-xs font-medium uppercase tracking-wide whitespace-nowrap w-full ${
       align === 'right' ? 'justify-end' : 'justify-start'
-    }`}
+    } ${active ? 'text-[#2D3658]' : 'text-[#8A92AC]'} hover:text-[#2D3658]`}
   >
     {children}
-    <TbCaretUpDownFilled className='h-3 w-3 text-[#CBCFE2]' />
-  </div>
+    {active ? (
+      direction === 'asc' ? (
+        <ChevronUp className='h-3 w-3 text-[#2D3658]' />
+      ) : (
+        <ChevronDown className='h-3 w-3 text-[#2D3658]' />
+      )
+    ) : (
+      <TbCaretUpDownFilled className='h-3 w-3 text-[#CBCFE2]' />
+    )}
+  </button>
 )
 
 const MetricCard = ({
@@ -95,6 +113,8 @@ export default function PersonalTrainerMaster () {
   const [activeDropdown, setActiveDropdown] = useState(null)
   const [statusFilter, setStatusFilter] = useState('')
   const [filterOpen, setFilterOpen] = useState(false)
+  const [sortKey, setSortKey] = useState('addedOn')
+  const [sortOrder, setSortOrder] = useState('desc')
   const filterRef = useRef(null)
 
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 })
@@ -289,6 +309,47 @@ export default function PersonalTrainerMaster () {
     }
   }
 
+  const getSortValue = (trainer, key) => {
+    switch (key) {
+      case 'addedOn':
+        return new Date(trainer.createdAt || 0).getTime()
+      case 'trainerName':
+        return (trainer.trainerName || '').toLowerCase()
+      case 'location':
+        return (trainer.location || '').toLowerCase()
+      case 'bookings':
+        return Number(trainer.bookingsCount) || 0
+      case 'status':
+        return trainer.isActive ? 1 : 0
+      default:
+        return ''
+    }
+  }
+
+  const handleSort = key => {
+    if (sortKey === key) {
+      setSortOrder(prev => (prev === 'asc' ? 'desc' : 'asc'))
+    } else {
+      setSortKey(key)
+      setSortOrder('asc')
+    }
+  }
+
+  const sortedTrainers = useMemo(() => {
+    const arr = [...trainers]
+    arr.sort((a, b) => {
+      const va = getSortValue(a, sortKey)
+      const vb = getSortValue(b, sortKey)
+      if (typeof va === 'string' && typeof vb === 'string') {
+        return sortOrder === 'asc'
+          ? va.localeCompare(vb)
+          : vb.localeCompare(va)
+      }
+      return sortOrder === 'asc' ? va - vb : vb - va
+    })
+    return arr
+  }, [trainers, sortKey, sortOrder])
+
   return (
     <div className='min-h-screen bg-[#F8F9FC] p-6'>
       <Toast
@@ -412,7 +473,7 @@ export default function PersonalTrainerMaster () {
                   <div className='px-3 py-2 text-xs font-semibold text-gray-500'>
                     Filter by Status
                   </div>
-                  <button
+                  {/* <button
                     onClick={() => {
                       setStatusFilter('')
                       setFilterOpen(false)
@@ -427,7 +488,7 @@ export default function PersonalTrainerMaster () {
                     {statusFilter === '' && (
                       <CheckCircle className='h-3.5 w-3.5' />
                     )}
-                  </button>
+                  </button> */}
                   <button
                     onClick={() => {
                       setStatusFilter('true')
@@ -474,19 +535,49 @@ export default function PersonalTrainerMaster () {
             <thead>
               <tr className='border-b border-[#E1E6F7] bg-[#F8F9FC]'>
                 <th className='py-4 px-6 text-left'>
-                  <TableHeaderCell>Added On</TableHeaderCell>
+                  <TableHeaderCell
+                    onClick={() => handleSort('addedOn')}
+                    active={sortKey === 'addedOn'}
+                    direction={sortOrder}
+                  >
+                    Added On
+                  </TableHeaderCell>
                 </th>
                 <th className='py-4 px-6 text-left'>
-                  <TableHeaderCell>Trainers Name</TableHeaderCell>
+                  <TableHeaderCell
+                    onClick={() => handleSort('trainerName')}
+                    active={sortKey === 'trainerName'}
+                    direction={sortOrder}
+                  >
+                    Trainers Name
+                  </TableHeaderCell>
                 </th>
                 <th className='py-4 px-6 text-left'>
-                  <TableHeaderCell>Location</TableHeaderCell>
+                  <TableHeaderCell
+                    onClick={() => handleSort('location')}
+                    active={sortKey === 'location'}
+                    direction={sortOrder}
+                  >
+                    Location
+                  </TableHeaderCell>
                 </th>
                 <th className='py-4 px-6 text-left'>
-                  <TableHeaderCell>Bookings</TableHeaderCell>
+                  <TableHeaderCell
+                    onClick={() => handleSort('bookings')}
+                    active={sortKey === 'bookings'}
+                    direction={sortOrder}
+                  >
+                    Bookings
+                  </TableHeaderCell>
                 </th>
                 <th className='py-4 px-6 text-left'>
-                  <TableHeaderCell>Status</TableHeaderCell>
+                  <TableHeaderCell
+                    onClick={() => handleSort('status')}
+                    active={sortKey === 'status'}
+                    direction={sortOrder}
+                  >
+                    Status
+                  </TableHeaderCell>
                 </th>
                 <th className='py-4 px-6 text-right'></th>
               </tr>
@@ -501,14 +592,14 @@ export default function PersonalTrainerMaster () {
                     </div>
                   </td>
                 </tr>
-              ) : trainers.length === 0 ? (
+              ) : sortedTrainers.length === 0 ? (
                 <tr>
                   <td colSpan='6' className='py-8 text-center text-[#64748B]'>
                     No trainers found
                   </td>
                 </tr>
               ) : (
-                trainers.map(trainer => (
+                sortedTrainers.map(trainer => (
                   <tr key={trainer._id} className='hover:bg-[#F8F9FC]'>
                     <td className='py-4 px-6 text-sm text-[#64748B]'>
                       {new Date(trainer.createdAt).toLocaleString('en-GB', {
@@ -637,23 +728,25 @@ export default function PersonalTrainerMaster () {
                             Delete
                           </button>
                           <div className='my-1 h-px bg-gray-100' />
-                          <button
-                            onClick={() =>
-                              handleStatusChange(trainer._id, true)
-                            }
-                            className='flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-[#475569] hover:bg-[#F8F9FC] hover:text-[#1E293B]'
-                          >
-                            Active
-                          </button>
-                          <div className='my-1 h-px bg-gray-100' />
-                          <button
-                            onClick={() =>
-                              handleStatusChange(trainer._id, false)
-                            }
-                            className='flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-[#475569] hover:bg-[#F8F9FC] hover:text-[#1E293B]'
-                          >
-                            Inactive
-                          </button>
+                          {trainer.isActive ? (
+                            <button
+                              onClick={() =>
+                                handleStatusChange(trainer._id, false)
+                              }
+                              className='flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-[#475569] hover:bg-[#F8F9FC] hover:text-[#1E293B]'
+                            >
+                              Inactive
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() =>
+                                handleStatusChange(trainer._id, true)
+                              }
+                              className='flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-[#475569] hover:bg-[#F8F9FC] hover:text-[#1E293B]'
+                            >
+                              Active
+                            </button>
+                          )}
                         </div>
                       )}
                     </td>

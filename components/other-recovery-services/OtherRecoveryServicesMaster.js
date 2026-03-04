@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   Search,
@@ -153,6 +153,8 @@ export default function OtherRecoveryServicesMaster () {
   const [statusFilter, setStatusFilter] = useState('')
   const [filterOpen, setFilterOpen] = useState(false)
   const [metrics, setMetrics] = useState(INITIAL_METRICS)
+  const [sortKey, setSortKey] = useState('addedOn')
+  const [sortOrder, setSortOrder] = useState('desc')
 
   // Toast & Alert State
   const [toastOpen, setToastOpen] = useState(false)
@@ -209,7 +211,9 @@ export default function OtherRecoveryServicesMaster () {
           page: response.page ?? pagination.page,
           limit: response.limit ?? pagination.limit,
           totalDocs: response.total ?? response.totalRecords ?? 0,
-          totalPages: response.totalPages ?? Math.ceil((response.total ?? 1) / pagination.limit)
+          totalPages:
+            response.totalPages ??
+            Math.ceil((response.total ?? 1) / pagination.limit)
         })
 
         // Update metrics from API response
@@ -233,13 +237,17 @@ export default function OtherRecoveryServicesMaster () {
         if (response.totalRevenue !== undefined) {
           newMetrics[4] = {
             ...newMetrics[4],
-            value: `${response.totalRevenue}(₦${(response.totalRevenueAmount ?? 0).toLocaleString()})`
+            value: `${response.totalRevenue}(₦${(
+              response.totalRevenueAmount ?? 0
+            ).toLocaleString()})`
           }
         }
         if (response.totalCancelled !== undefined) {
           newMetrics[5] = {
             ...newMetrics[5],
-            value: `${response.totalCancelled}(₦${(response.totalCancelledAmount ?? 0).toLocaleString()})`
+            value: `${response.totalCancelled}(₦${(
+              response.totalCancelledAmount ?? 0
+            ).toLocaleString()})`
           }
         }
         setMetrics(newMetrics)
@@ -295,6 +303,49 @@ export default function OtherRecoveryServicesMaster () {
       return 'bg-emerald-50 text-emerald-600 border border-emerald-200'
     return 'bg-red-50 text-red-600 border border-red-200'
   }
+
+  const getSortValue = (service, key) => {
+    switch (key) {
+      case 'addedOn':
+        return new Date(service.createdAt || 0).getTime()
+      case 'serviceName':
+        return (service.recoveryServiceName || '').toLowerCase()
+      case 'category':
+        return typeof service.serviceCategory === 'object' && service.serviceCategory?.serviceCategoryName
+          ? service.serviceCategory.serviceCategoryName.toLowerCase()
+          : (String(service.serviceCategory || '')).toLowerCase()
+      case 'location':
+        return (service.location || '').toLowerCase()
+      case 'status':
+        return service.status ? 1 : 0
+      default:
+        return ''
+    }
+  }
+
+  const handleSort = key => {
+    if (sortKey === key) {
+      setSortOrder(prev => (prev === 'asc' ? 'desc' : 'asc'))
+    } else {
+      setSortKey(key)
+      setSortOrder('asc')
+    }
+  }
+
+  const sortedServices = useMemo(() => {
+    const arr = [...services]
+    arr.sort((a, b) => {
+      const va = getSortValue(a, sortKey)
+      const vb = getSortValue(b, sortKey)
+      if (typeof va === 'string' && typeof vb === 'string') {
+        return sortOrder === 'asc'
+          ? va.localeCompare(vb)
+          : vb.localeCompare(va)
+      }
+      return sortOrder === 'asc' ? va - vb : vb - va
+    })
+    return arr
+  }, [services, sortKey, sortOrder])
 
   const handlePageChange = newPage => {
     if (newPage >= 1 && newPage <= pagination.totalPages) {
@@ -394,9 +445,7 @@ export default function OtherRecoveryServicesMaster () {
             View All Bookings
           </button>
           <button
-            onClick={() =>
-              router.push('/other-recovery-services/category')
-            }
+            onClick={() => router.push('/other-recovery-services/category')}
             className='flex items-center gap-2 rounded-lg border border-[#FF5B2C] bg-white px-4 py-2 text-xs font-medium text-[#FF5B2C] shadow-sm transition hover:bg-[#FFF5F2]'
           >
             <Users className='h-3.5 w-3.5' />
@@ -474,7 +523,7 @@ export default function OtherRecoveryServicesMaster () {
                   <div className='px-3 py-2 text-xs font-semibold text-gray-500'>
                     Filter by Status
                   </div>
-                  <button
+                  {/* <button
                     onClick={() => {
                       setStatusFilter('')
                       setFilterOpen(false)
@@ -489,7 +538,7 @@ export default function OtherRecoveryServicesMaster () {
                     {statusFilter === '' && (
                       <CheckCircle className='h-3.5 w-3.5' />
                     )}
-                  </button>
+                  </button> */}
                   <button
                     onClick={() => {
                       setStatusFilter('true')
@@ -537,22 +586,52 @@ export default function OtherRecoveryServicesMaster () {
             <thead>
               <tr className='border-b border-[#E5E6EF] bg-gray-50/50'>
                 <th className='py-3 px-4 text-left'>
-                  <TableHeaderCell>Added On</TableHeaderCell>
+                  <TableHeaderCell
+                    onClick={() => handleSort('addedOn')}
+                    active={sortKey === 'addedOn'}
+                    direction={sortOrder}
+                  >
+                    Added On
+                  </TableHeaderCell>
                 </th>
                 <th className='py-3 px-4 text-left'>
-                  <TableHeaderCell>Services Name</TableHeaderCell>
+                  <TableHeaderCell
+                    onClick={() => handleSort('serviceName')}
+                    active={sortKey === 'serviceName'}
+                    direction={sortOrder}
+                  >
+                    Services Name
+                  </TableHeaderCell>
                 </th>
                 <th className='py-3 px-4 text-left'>
-                  <TableHeaderCell>Categories</TableHeaderCell>
+                  <TableHeaderCell
+                    onClick={() => handleSort('category')}
+                    active={sortKey === 'category'}
+                    direction={sortOrder}
+                  >
+                    Categories
+                  </TableHeaderCell>
                 </th>
                 <th className='py-3 px-4 text-left'>
-                  <TableHeaderCell>Location</TableHeaderCell>
+                  <TableHeaderCell
+                    onClick={() => handleSort('location')}
+                    active={sortKey === 'location'}
+                    direction={sortOrder}
+                  >
+                    Location
+                  </TableHeaderCell>
                 </th>
                 <th className='py-3 px-4 text-left'>
                   <TableHeaderCell>Bookings</TableHeaderCell>
                 </th>
                 <th className='py-3 px-4 text-left'>
-                  <TableHeaderCell>Status</TableHeaderCell>
+                  <TableHeaderCell
+                    onClick={() => handleSort('status')}
+                    active={sortKey === 'status'}
+                    direction={sortOrder}
+                  >
+                    Status
+                  </TableHeaderCell>
                 </th>
                 <th className='py-3 px-4 text-right'></th>
               </tr>
@@ -564,14 +643,14 @@ export default function OtherRecoveryServicesMaster () {
                     Loading services...
                   </td>
                 </tr>
-              ) : services.length === 0 ? (
+              ) : sortedServices.length === 0 ? (
                 <tr>
                   <td colSpan='7' className='py-8 text-center text-gray-500'>
                     No recovery services found
                   </td>
                 </tr>
               ) : (
-                services.map(service => (
+                sortedServices.map(service => (
                   <tr key={service._id} className='group hover:bg-gray-50'>
                     <td className='py-3 px-4 text-xs text-gray-500'>
                       {formatDate(service.createdAt)}
@@ -602,11 +681,12 @@ export default function OtherRecoveryServicesMaster () {
                       </div>
                     </td>
                     <td className='py-3 px-4 text-xs text-gray-500 capitalize'>
-                      {typeof service.serviceCategory === 'object' && service.serviceCategory?.serviceCategoryName
+                      {typeof service.serviceCategory === 'object' &&
+                      service.serviceCategory?.serviceCategoryName
                         ? service.serviceCategory.serviceCategoryName
                         : typeof service.serviceCategory === 'string'
-                          ? service.serviceCategory
-                          : '—'}
+                        ? service.serviceCategory
+                        : '—'}
                     </td>
                     <td className='py-3 px-4 text-xs text-gray-500'>
                       {service.location || '—'}

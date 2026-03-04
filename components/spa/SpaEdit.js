@@ -73,6 +73,7 @@ export default function SpaEdit () {
   const [galleryImages, setGalleryImages] = useState([])
 
   const [toast, setToast] = useState({ show: false, message: '', type: '' })
+  const [durationError, setDurationError] = useState('')
   const [cropOpen, setCropOpen] = useState(false)
   const [rawImageFile, setRawImageFile] = useState(null)
 
@@ -102,11 +103,11 @@ export default function SpaEdit () {
           const spaResponse = await getSpaById(id)
           const spa = spaResponse.data || spaResponse
 
-          // Populate form
+          const durationRaw = String(spa.duration ?? '').replace(/\D/g, '')
           setFormData({
             spaName: spa.spaName || '',
             slug: spa.slug || '',
-            duration: spa.duration || '',
+            duration: durationRaw,
             startTime: convertTo24Hour(spa.startTime) || '',
             endTime: convertTo24Hour(spa.endTime) || '',
             location: spa.location || '',
@@ -271,12 +272,34 @@ export default function SpaEdit () {
     return `${formattedHour.toString().padStart(2, '0')}:${minutes} ${ampm}`
   }
 
+  const validateDuration = () => {
+    const raw = String(formData.duration).trim()
+    if (!raw) {
+      setDurationError('Duration is required')
+      return false
+    }
+    const num = parseInt(raw, 10)
+    if (Number.isNaN(num) || num < 1) {
+      setDurationError('Duration must be a positive whole number (e.g. 1, 60, 120)')
+      return false
+    }
+    if (num > 9999) {
+      setDurationError('Duration cannot exceed 9999')
+      return false
+    }
+    setDurationError('')
+    return true
+  }
+
   const handleSubmit = async () => {
     // Validation
     if (!formData.spaName) return showToast('Spa Name is required', 'error')
     if (!formData.slug) return showToast('Slug is required', 'error')
     if (!aboutSpa) return showToast('About Spa is required', 'error')
-    if (!formData.duration) return showToast('Duration is required', 'error')
+    if (!validateDuration()) {
+      showToast('Please fix the duration', 'error')
+      return
+    }
     if (!formData.startTime) return showToast('Start Time is required', 'error')
     if (!formData.endTime) return showToast('End Time is required', 'error')
     if (!formData.location) return showToast('Location is required', 'error')
@@ -459,10 +482,17 @@ export default function SpaEdit () {
               <input
                 type='text'
                 name='duration'
+                inputMode='numeric'
                 value={formData.duration}
                 onChange={handleInputChange}
-                className='w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
+                placeholder='e.g. 60'
+                className={`w-full rounded-lg border bg-white px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none ${
+                  durationError ? 'border-red-400' : 'border-gray-200'
+                }`}
               />
+              {durationError && (
+                <p className='mt-1 text-xs text-red-600'>{durationError}</p>
+              )}
             </div>
             <div>
               <label className='mb-2 block text-sm font-medium text-gray-700'>

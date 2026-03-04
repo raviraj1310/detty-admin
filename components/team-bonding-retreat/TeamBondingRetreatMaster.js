@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import {
@@ -40,15 +40,27 @@ const getRetreatImageUrl = imagePath => {
   }
 }
 
-const TableHeaderCell = ({ children, align = 'left' }) => (
-  <div
-    className={`flex items-center gap-1 text-xs font-medium uppercase tracking-wide text-[#8A92AC] whitespace-nowrap ${
+const TableHeaderCell = ({
+  children,
+  align = 'left',
+  onClick,
+  active = false,
+  direction = 'asc'
+}) => (
+  <button
+    type='button'
+    onClick={onClick}
+    className={`flex items-center gap-1 text-xs font-medium uppercase tracking-wide whitespace-nowrap w-full ${
       align === 'right' ? 'justify-end' : 'justify-start'
-    }`}
+    } ${active ? 'text-[#2D3658]' : 'text-[#8A92AC]'} hover:text-[#2D3658]`}
   >
     {children}
-    <TbCaretUpDownFilled className='h-3 w-3 text-[#CBCFE2]' />
-  </div>
+    {active ? (
+      <span className='text-[#2D3658]'>{direction === 'asc' ? ' ↑' : ' ↓'}</span>
+    ) : (
+      <TbCaretUpDownFilled className='h-3 w-3 text-[#CBCFE2]' />
+    )}
+  </button>
 )
 
 const MetricCard = ({
@@ -80,6 +92,8 @@ export default function TeamBondingRetreatMaster () {
 
   const [retreats, setRetreats] = useState([])
   const [loading, setLoading] = useState(true)
+  const [sortKey, setSortKey] = useState('addedOn')
+  const [sortOrder, setSortOrder] = useState('desc')
   const [metrics, setMetrics] = useState({
     totalRetreats: 0,
     activeRetreats: 0,
@@ -235,6 +249,50 @@ export default function TeamBondingRetreatMaster () {
     }
   }
 
+  const getSortValue = (retreat, key) => {
+    switch (key) {
+      case 'addedOn':
+        return new Date(retreat.createdAt || 0).getTime()
+      case 'name':
+        return (retreat.name || '').toLowerCase()
+      case 'location':
+        return (retreat.location || '').toLowerCase()
+      case 'bookings':
+        return Number(retreat.bookingsCount ?? retreat.bookings ?? 0) || 0
+      case 'status':
+        return retreat.isActive === true ||
+          String(retreat.status || '').toLowerCase() === 'active'
+          ? 1
+          : 0
+      default:
+        return ''
+    }
+  }
+
+  const handleSort = key => {
+    if (sortKey === key) {
+      setSortOrder(prev => (prev === 'asc' ? 'desc' : 'asc'))
+    } else {
+      setSortKey(key)
+      setSortOrder('asc')
+    }
+  }
+
+  const sortedRetreats = useMemo(() => {
+    const arr = [...retreats]
+    arr.sort((a, b) => {
+      const va = getSortValue(a, sortKey)
+      const vb = getSortValue(b, sortKey)
+      if (typeof va === 'string' && typeof vb === 'string') {
+        return sortOrder === 'asc'
+          ? va.localeCompare(vb)
+          : vb.localeCompare(va)
+      }
+      return sortOrder === 'asc' ? va - vb : vb - va
+    })
+    return arr
+  }, [retreats, sortKey, sortOrder])
+
   return (
     <div className='min-h-screen bg-[#F8F9FC] p-6'>
       <Toast
@@ -357,19 +415,49 @@ export default function TeamBondingRetreatMaster () {
             <thead>
               <tr className='border-b border-[#E1E6F7] bg-[#F8F9FC]'>
                 <th className='py-4 px-6 text-left'>
-                  <TableHeaderCell>Added On</TableHeaderCell>
+                  <TableHeaderCell
+                    onClick={() => handleSort('addedOn')}
+                    active={sortKey === 'addedOn'}
+                    direction={sortOrder}
+                  >
+                    Added On
+                  </TableHeaderCell>
                 </th>
                 <th className='py-4 px-6 text-left'>
-                  <TableHeaderCell>Team Bonding Retreats Name</TableHeaderCell>
+                  <TableHeaderCell
+                    onClick={() => handleSort('name')}
+                    active={sortKey === 'name'}
+                    direction={sortOrder}
+                  >
+                    Team Bonding Retreats Name
+                  </TableHeaderCell>
                 </th>
                 <th className='py-4 px-6 text-left'>
-                  <TableHeaderCell>Location</TableHeaderCell>
+                  <TableHeaderCell
+                    onClick={() => handleSort('location')}
+                    active={sortKey === 'location'}
+                    direction={sortOrder}
+                  >
+                    Location
+                  </TableHeaderCell>
                 </th>
                 <th className='py-4 px-6 text-left'>
-                  <TableHeaderCell>Bookings</TableHeaderCell>
+                  <TableHeaderCell
+                    onClick={() => handleSort('bookings')}
+                    active={sortKey === 'bookings'}
+                    direction={sortOrder}
+                  >
+                    Bookings
+                  </TableHeaderCell>
                 </th>
                 <th className='py-4 px-6 text-left'>
-                  <TableHeaderCell>Status</TableHeaderCell>
+                  <TableHeaderCell
+                    onClick={() => handleSort('status')}
+                    active={sortKey === 'status'}
+                    direction={sortOrder}
+                  >
+                    Status
+                  </TableHeaderCell>
                 </th>
                 <th className='py-4 px-6 text-right'></th>
               </tr>
@@ -384,14 +472,14 @@ export default function TeamBondingRetreatMaster () {
                     </div>
                   </td>
                 </tr>
-              ) : retreats.length === 0 ? (
+              ) : sortedRetreats.length === 0 ? (
                 <tr>
                   <td colSpan='6' className='py-8 text-center text-[#64748B]'>
                     No retreats found
                   </td>
                 </tr>
               ) : (
-                retreats.map(retreat => (
+                sortedRetreats.map(retreat => (
                   <tr key={retreat._id} className='hover:bg-[#F8F9FC]'>
                     <td className='py-4 px-6 text-sm text-[#64748B]'>
                       {new Date(retreat.createdAt).toLocaleString('en-GB', {
@@ -572,19 +660,24 @@ export default function TeamBondingRetreatMaster () {
             Delete
           </button>
           <div className='my-1 h-px bg-gray-100' />
-          <button
-            onClick={() => handleStatusChange(activeDropdown, true)}
-            className='flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-[#475569] hover:bg-[#F8F9FC] hover:text-[#1E293B]'
-          >
-            Active
-          </button>
-          <div className='my-1 h-px bg-gray-100' />
-          <button
-            onClick={() => handleStatusChange(activeDropdown, false)}
-            className='flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-[#475569] hover:bg-[#F8F9FC] hover:text-[#1E293B]'
-          >
-            Inactive
-          </button>
+          {(() => {
+            const retreat = retreats.find(r => r._id === activeDropdown)
+            return retreat?.isActive ? (
+              <button
+                onClick={() => handleStatusChange(activeDropdown, false)}
+                className='flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-[#475569] hover:bg-[#F8F9FC] hover:text-[#1E293B]'
+              >
+                Inactive
+              </button>
+            ) : (
+              <button
+                onClick={() => handleStatusChange(activeDropdown, true)}
+                className='flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-[#475569] hover:bg-[#F8F9FC] hover:text-[#1E293B]'
+              >
+                Active
+              </button>
+            )
+          })()}
         </div>
       )}
     </div>

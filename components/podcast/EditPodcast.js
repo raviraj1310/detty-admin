@@ -69,6 +69,7 @@ export default function EditPodcast () {
     image: null
   })
 
+  const [durationError, setDurationError] = useState('')
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
   const [episodeToDelete, setEpisodeToDelete] = useState(null)
   const [deletingEpisode, setDeletingEpisode] = useState(false)
@@ -95,13 +96,14 @@ export default function EditPodcast () {
         const response = await getPodcastById(id)
         if (response?.success || response?.data) {
           const data = response.data || response
+          const durationRaw = String(data.duration ?? '').replace(/\D/g, '')
           setFormData({
             name: data.title || data.name || '',
             about: data.about || '',
             episodeInfo: data.episodeInfo || '',
             category: data.podcastCategory || data.category || '',
             type: data.podcastType || data.type || 'Video',
-            duration: data.duration || '',
+            duration: durationRaw,
             episodeTime: data.episodeTime || '',
             image: data.image || null
           })
@@ -137,8 +139,36 @@ export default function EditPodcast () {
     fetchPodcast()
   }, [id])
 
+  const validateDuration = () => {
+    const raw = String(formData.duration).trim()
+    if (!raw) {
+      setDurationError('Duration is required')
+      return false
+    }
+    const num = parseInt(raw, 10)
+    if (Number.isNaN(num) || num < 1) {
+      setDurationError('Duration must be a positive whole number (e.g. 1, 45, 120)')
+      return false
+    }
+    if (num > 9999) {
+      setDurationError('Duration cannot exceed 9999')
+      return false
+    }
+    setDurationError('')
+    return true
+  }
+
   const handleUpdate = async () => {
     if (!id) return
+    if (!validateDuration()) {
+      setToast({
+        open: true,
+        title: 'Error',
+        description: 'Please fix the duration',
+        variant: 'error'
+      })
+      return
+    }
     setLoading(true)
     try {
       const fd = new FormData()
@@ -546,13 +576,21 @@ export default function EditPodcast () {
               </label>
               <input
                 type='text'
+                inputMode='numeric'
                 value={formData.duration}
-                onChange={e =>
-                  setFormData({ ...formData, duration: e.target.value })
-                }
-                className='w-full rounded-lg border border-gray-200 p-3 text-sm text-gray-900 placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
-                placeholder='e.g. 2-4 hours'
+                onChange={e => {
+                  const v = e.target.value.replace(/\D/g, '')
+                  setFormData(prev => ({ ...prev, duration: v }))
+                  setDurationError('')
+                }}
+                className={`w-full rounded-lg border p-3 text-sm text-gray-900 placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none ${
+                  durationError ? 'border-red-400' : 'border-gray-200'
+                }`}
+                placeholder='e.g. 45'
               />
+              {durationError && (
+                <p className='mt-1 text-xs text-red-600'>{durationError}</p>
+              )}
             </div>
           </div>
 

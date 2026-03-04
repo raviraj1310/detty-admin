@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
@@ -10,7 +10,9 @@ import {
   MoreVertical,
   Trash2,
   Edit2,
-  Loader2
+  Loader2,
+  ChevronUp,
+  ChevronDown
 } from 'lucide-react'
 import { IoFilterSharp } from 'react-icons/io5'
 import { TbCaretUpDownFilled } from 'react-icons/tb'
@@ -36,15 +38,31 @@ const mapPassFromApi = api => ({
   details: api.details
 })
 
-const TableHeaderCell = ({ children, align = 'left' }) => (
-  <div
-    className={`flex items-center gap-1 text-xs font-medium uppercase tracking-wide text-[#8A92AC] whitespace-nowrap ${
+const TableHeaderCell = ({
+  children,
+  align = 'left',
+  onClick,
+  active = false,
+  direction = 'asc'
+}) => (
+  <button
+    type='button'
+    onClick={onClick}
+    className={`flex items-center gap-1 text-xs font-medium uppercase tracking-wide whitespace-nowrap w-full ${
       align === 'right' ? 'justify-end' : 'justify-start'
-    }`}
+    } ${active ? 'text-[#2D3658]' : 'text-[#8A92AC]'} hover:text-[#2D3658]`}
   >
     {children}
-    <TbCaretUpDownFilled className='h-3 w-3 text-[#CBCFE2]' />
-  </div>
+    {active ? (
+      direction === 'asc' ? (
+        <ChevronUp className='h-3 w-3 text-[#2D3658]' />
+      ) : (
+        <ChevronDown className='h-3 w-3 text-[#2D3658]' />
+      )
+    ) : (
+      <TbCaretUpDownFilled className='h-3 w-3 text-[#CBCFE2]' />
+    )}
+  </button>
 )
 
 export default function FitnessEventPassManager ({ eventId }) {
@@ -61,6 +79,8 @@ export default function FitnessEventPassManager ({ eventId }) {
   const [details, setDetails] = useState('')
   const [isEditing, setIsEditing] = useState(null) // null or pass ID
   const [activeDropdown, setActiveDropdown] = useState(null)
+  const [sortKey, setSortKey] = useState('addedOn')
+  const [sortOrder, setSortOrder] = useState('desc')
   const [toast, setToast] = useState({ show: false, message: '', type: '' })
   const [loading, setLoading] = useState(false)
   const [editLoading, setEditLoading] = useState(false)
@@ -229,6 +249,49 @@ export default function FitnessEventPassManager ({ eventId }) {
     setToast({ show: true, message, type })
     setTimeout(() => setToast({ ...toast, show: false }), 3000)
   }
+
+  const getSortValue = (pass, key) => {
+    switch (key) {
+      case 'addedOn':
+        return new Date(pass.addedOn || 0).getTime()
+      case 'passName':
+        return (pass.passName || '').toLowerCase()
+      case 'passType':
+        return (pass.passType || '').toLowerCase()
+      case 'participants':
+        return Number(pass.participants) || 0
+      case 'price':
+        return Number(String(pass.price).replace(/[^0-9.]/g, '')) || 0
+      case 'status':
+        return pass.status === 'Active' ? 1 : 0
+      default:
+        return ''
+    }
+  }
+
+  const handleSort = key => {
+    if (sortKey === key) {
+      setSortOrder(prev => (prev === 'asc' ? 'desc' : 'asc'))
+    } else {
+      setSortKey(key)
+      setSortOrder('asc')
+    }
+  }
+
+  const sortedPasses = useMemo(() => {
+    const arr = [...passes]
+    arr.sort((a, b) => {
+      const va = getSortValue(a, sortKey)
+      const vb = getSortValue(b, sortKey)
+      if (typeof va === 'string' && typeof vb === 'string') {
+        return sortOrder === 'asc'
+          ? va.localeCompare(vb)
+          : vb.localeCompare(va)
+      }
+      return sortOrder === 'asc' ? va - vb : vb - va
+    })
+    return arr
+  }, [passes, sortKey, sortOrder])
 
   // Click outside dropdown
   useEffect(() => {
@@ -442,28 +505,64 @@ export default function FitnessEventPassManager ({ eventId }) {
             <thead>
               <tr className='border-b border-gray-100 bg-gray-50/50'>
                 <th className='px-6 py-4 text-left'>
-                  <TableHeaderCell>Added On</TableHeaderCell>
+                  <TableHeaderCell
+                    onClick={() => handleSort('addedOn')}
+                    active={sortKey === 'addedOn'}
+                    direction={sortOrder}
+                  >
+                    Added On
+                  </TableHeaderCell>
                 </th>
                 <th className='px-6 py-4 text-left'>
-                  <TableHeaderCell>Pass Name</TableHeaderCell>
+                  <TableHeaderCell
+                    onClick={() => handleSort('passName')}
+                    active={sortKey === 'passName'}
+                    direction={sortOrder}
+                  >
+                    Pass Name
+                  </TableHeaderCell>
                 </th>
                 <th className='px-6 py-4 text-left'>
-                  <TableHeaderCell>Pass Type</TableHeaderCell>
+                  <TableHeaderCell
+                    onClick={() => handleSort('passType')}
+                    active={sortKey === 'passType'}
+                    direction={sortOrder}
+                  >
+                    Pass Type
+                  </TableHeaderCell>
                 </th>
                 <th className='px-6 py-4 text-left'>
-                  <TableHeaderCell>Entry For</TableHeaderCell>
+                  <TableHeaderCell
+                    onClick={() => handleSort('participants')}
+                    active={sortKey === 'participants'}
+                    direction={sortOrder}
+                  >
+                    Entry For
+                  </TableHeaderCell>
                 </th>
                 <th className='px-6 py-4 text-left'>
-                  <TableHeaderCell>Price</TableHeaderCell>
+                  <TableHeaderCell
+                    onClick={() => handleSort('price')}
+                    active={sortKey === 'price'}
+                    direction={sortOrder}
+                  >
+                    Price
+                  </TableHeaderCell>
                 </th>
                 <th className='px-6 py-4 text-left'>
-                  <TableHeaderCell>Status</TableHeaderCell>
+                  <TableHeaderCell
+                    onClick={() => handleSort('status')}
+                    active={sortKey === 'status'}
+                    direction={sortOrder}
+                  >
+                    Status
+                  </TableHeaderCell>
                 </th>
                 <th className='px-6 py-4'></th>
               </tr>
             </thead>
             <tbody className='divide-y divide-gray-100'>
-              {passes.map(pass => (
+              {sortedPasses.map(pass => (
                 <tr key={pass.id} className='hover:bg-gray-50/50'>
                   <td className='px-6 py-4 text-sm text-gray-600'>
                     {new Date(pass.addedOn).toLocaleString('en-GB', {
@@ -535,72 +634,71 @@ export default function FitnessEventPassManager ({ eventId }) {
                             <Trash2 className='h-4 w-4' /> Delete
                           </button>
                           <div className='my-1 h-px bg-gray-100' />
-                          <button
-                            onClick={async () => {
-                              try {
-                                const res = await activeInactiveEventPass(
-                                  pass.id,
-                                  {
-                                    status: true
+                          {pass.status === 'Active' ? (
+                            <button
+                              onClick={async () => {
+                                try {
+                                  const res = await activeInactiveEventPass(
+                                    pass.id,
+                                    { status: false }
+                                  )
+                                  if (res?.success || res?.data?.success) {
+                                    showToast('Pass set to Inactive', 'success')
+                                    await fetchPasses()
+                                  } else {
+                                    showToast(
+                                      res?.message || 'Failed to update status',
+                                      'error'
+                                    )
                                   }
-                                )
-                                if (res?.success || res?.data?.success) {
-                                  showToast('Pass set to Active', 'success')
-                                  await fetchPasses()
-                                } else {
+                                } catch (err) {
                                   showToast(
-                                    res?.message || 'Failed to update status',
+                                    err?.response?.data?.message ||
+                                      err?.message ||
+                                      'Status update failed',
                                     'error'
                                   )
+                                } finally {
+                                  setActiveDropdown(null)
                                 }
-                              } catch (err) {
-                                showToast(
-                                  err?.response?.data?.message ||
-                                    err?.message ||
-                                    'Status update failed',
-                                  'error'
-                                )
-                              } finally {
-                                setActiveDropdown(null)
-                              }
-                            }}
-                            className='flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-50'
-                          >
-                            Active
-                          </button>
-                          <button
-                            onClick={async () => {
-                              try {
-                                const res = await activeInactiveEventPass(
-                                  pass.id,
-                                  {
-                                    status: false
+                              }}
+                              className='flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-50'
+                            >
+                              Inactive
+                            </button>
+                          ) : (
+                            <button
+                              onClick={async () => {
+                                try {
+                                  const res = await activeInactiveEventPass(
+                                    pass.id,
+                                    { status: true }
+                                  )
+                                  if (res?.success || res?.data?.success) {
+                                    showToast('Pass set to Active', 'success')
+                                    await fetchPasses()
+                                  } else {
+                                    showToast(
+                                      res?.message || 'Failed to update status',
+                                      'error'
+                                    )
                                   }
-                                )
-                                if (res?.success || res?.data?.success) {
-                                  showToast('Pass set to Inactive', 'success')
-                                  await fetchPasses()
-                                } else {
+                                } catch (err) {
                                   showToast(
-                                    res?.message || 'Failed to update status',
+                                    err?.response?.data?.message ||
+                                      err?.message ||
+                                      'Status update failed',
                                     'error'
                                   )
+                                } finally {
+                                  setActiveDropdown(null)
                                 }
-                              } catch (err) {
-                                showToast(
-                                  err?.response?.data?.message ||
-                                    err?.message ||
-                                    'Status update failed',
-                                  'error'
-                                )
-                              } finally {
-                                setActiveDropdown(null)
-                              }
-                            }}
-                            className='flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-50'
-                          >
-                            Inactive
-                          </button>
+                              }}
+                              className='flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-50'
+                            >
+                              Active
+                            </button>
+                          )}
                         </div>
                       )}
                     </div>
