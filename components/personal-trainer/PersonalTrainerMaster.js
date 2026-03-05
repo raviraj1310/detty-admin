@@ -645,7 +645,7 @@ export default function PersonalTrainerMaster () {
                           className='flex w-full items-center justify-start gap-2 rounded-lg px-3 py-2 text-sm text-[#475569] hover:bg-[#F8F9FC] hover:text-[#1E293B] text-left whitespace-normal leading-snug'
                         >
                           <span className='font-semibold text-[#0066FF] underline cursor-pointer hover:text-[#0052CC]'>
-                            {trainer.bookingsCount || 0}
+                            {trainer.totalBookings ?? trainer.bookingsCount ?? 0}
                           </span>
                           <span className='font-medium text-[#0066FF] cursor-pointer hover:text-[#0052CC]'>
                             (View List)

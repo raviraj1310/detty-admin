@@ -636,7 +636,7 @@ export default function SpaMaster () {
                         onClick={() => router.push(`/spa/bookings/${spa._id}`)}
                       >
                         <span className='font-semibold text-indigo-600 underline'>
-                          0
+                          {spa.totalBookings ?? 0}
                         </span>
                         <span className='font-medium text-indigo-600'>
                           (View List)

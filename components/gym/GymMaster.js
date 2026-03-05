@@ -626,7 +626,7 @@ export default function GymAccessMaster () {
                         onClick={() => router.push(`/gym/bookings/${gym._id}`)}
                       >
                         <span className='font-semibold text-indigo-600 underline'>
-                          0
+                          {gym.totalBookings ?? 0}
                         </span>
                         <span className='font-medium text-indigo-600'>
                           (View List)

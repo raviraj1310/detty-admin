@@ -183,7 +183,9 @@ export default function TeamBondingRetreatMaster () {
           name: item.teamBondingRetreatName,
           image: item.image,
           location: item.location,
-          bookingsCount: 0, // Not provided in API
+          // prefer totalBookings from API, fall back to any existing bookingsCount
+          totalBookings: item.totalBookings ?? item.bookingsCount ?? 0,
+          bookingsCount: item.bookingsCount ?? item.totalBookings ?? 0,
           isActive: item.status
         }))
         setRetreats(mappedRetreats)
@@ -522,7 +524,7 @@ export default function TeamBondingRetreatMaster () {
                           className='flex w-full items-center justify-start gap-2 rounded-lg px-3 py-2 text-sm text-[#475569] hover:bg-[#F8F9FC] hover:text-[#1E293B] text-left whitespace-normal leading-snug'
                         >
                           <span className='font-semibold text-[#0066FF] underline cursor-pointer hover:text-[#0052CC]'>
-                            {retreat.bookingsCount}
+                            {retreat.totalBookings ?? retreat.bookingsCount ?? 0}
                           </span>
                           <span className='font-medium text-[#0066FF] cursor-pointer hover:text-[#0052CC]'>
                             (View List)
