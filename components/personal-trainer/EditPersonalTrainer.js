@@ -38,6 +38,7 @@ const toImageSrc = u => {
 export default function EditPersonalTrainer ({ id }) {
   const router = useRouter()
   const fileInputRef = useRef(null)
+  const videoInputRef = useRef(null)
 
   // State
   const [formData, setFormData] = useState({
@@ -61,6 +62,9 @@ export default function EditPersonalTrainer ({ id }) {
   const [mainImageUrl, setMainImageUrl] = useState('')
   const [cropOpen, setCropOpen] = useState(false)
   const [rawImageFile, setRawImageFile] = useState(null)
+  const [existingVideoUrl, setExistingVideoUrl] = useState('')
+  const [videoFile, setVideoFile] = useState(null)
+  const [videoPreviewUrl, setVideoPreviewUrl] = useState('')
 
   const [loading, setLoading] = useState(true)
   const [durationError, setDurationError] = useState('')
@@ -107,6 +111,39 @@ export default function EditPersonalTrainer ({ id }) {
 
           if (trainer.image) {
             setMainImageUrl(toImageSrc(trainer.image))
+          }
+
+          if (trainer.video) {
+            const s = String(trainer.video || '').trim()
+            if (/^https?:\/\//i.test(s)) {
+              setExistingVideoUrl(s)
+            } else {
+              const originEnv = process.env.NEXT_PUBLIC_SIM_IMAGE_BASE_ORIGIN
+              const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || ''
+              let origin = originEnv
+              if (!origin) {
+                try {
+                  origin = new URL(apiBase).origin
+                } catch {
+                  origin = ''
+                }
+              }
+              const base = String(origin || '').replace(/\/+$/, '')
+              const path = s.replace(/^\/+/, '')
+              if (base) {
+                if (path.includes('upload/')) {
+                  setExistingVideoUrl(`${base}/${path}`)
+                } else {
+                  setExistingVideoUrl(`${base}/upload/${path}`)
+                }
+              } else {
+                setExistingVideoUrl(
+                  path.startsWith('upload/') ? `/${path}` : `/upload/${path}`
+                )
+              }
+            }
+          } else {
+            setExistingVideoUrl('')
           }
 
           if (
@@ -221,6 +258,21 @@ export default function EditPersonalTrainer ({ id }) {
     setCropOpen(false)
   }
 
+  const handleVideoChange = e => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (videoPreviewUrl) URL.revokeObjectURL(videoPreviewUrl)
+    setVideoFile(file)
+    setVideoPreviewUrl(URL.createObjectURL(file))
+  }
+
+  const clearSelectedVideo = () => {
+    if (videoPreviewUrl) URL.revokeObjectURL(videoPreviewUrl)
+    setVideoFile(null)
+    setVideoPreviewUrl('')
+    if (videoInputRef.current) videoInputRef.current.value = ''
+  }
+
   const validateDuration = () => {
     const raw = String(formData.duration).trim()
     if (!raw) {
@@ -285,6 +337,10 @@ export default function EditPersonalTrainer ({ id }) {
       // Append image only if changed
       if (mainImage) {
         payload.append('image', mainImage)
+      }
+
+      if (videoFile) {
+        payload.append('video', videoFile)
       }
 
       const response = await updatePersonalTrainer(id, payload)
@@ -636,6 +692,54 @@ export default function EditPersonalTrainer ({ id }) {
                 </div>
               )}
             </div>
+          </div>
+
+          {/* Video (optional) */}
+          <div>
+            <label className='mb-2 block text-sm font-medium text-gray-700'>
+              Upload Video (optional)
+            </label>
+            <div className='flex max-w-md rounded-lg border border-gray-200 bg-white'>
+              <div className='flex-1 truncate px-4 py-2.5 text-sm text-gray-500'>
+                {videoFile ? videoFile.name : existingVideoUrl ? 'Video attached' : 'Video.mp4'}
+              </div>
+              <button
+                type='button'
+                onClick={() => videoInputRef.current?.click()}
+                className='bg-gray-100 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-200 rounded-r-lg'
+              >
+                Browse
+              </button>
+              <input
+                type='file'
+                ref={videoInputRef}
+                onChange={handleVideoChange}
+                accept='video/*'
+                className='hidden'
+              />
+            </div>
+            <p className='mt-1 text-xs text-gray-500'>
+              Upload an mp4/mov video to showcase this trainer. Uploading a new file will replace the existing video.
+            </p>
+
+            {(videoPreviewUrl || existingVideoUrl) && (
+              <div className='mt-3 relative w-full max-w-xl rounded-lg overflow-hidden border border-gray-200 bg-black'>
+                <video
+                  src={videoPreviewUrl || existingVideoUrl}
+                  controls
+                  className='w-full max-h-[260px]'
+                />
+                {videoPreviewUrl && (
+                  <button
+                    type='button'
+                    onClick={clearSelectedVideo}
+                    className='absolute top-2 right-2 bg-white/90 p-1.5 rounded-full text-red-500 hover:text-red-600 shadow-sm transition-colors'
+                  >
+                    <Trash2 className='w-4 h-4' />
+                  </button>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Important Information */}

@@ -48,6 +48,7 @@ export default function GymAccessEdit () {
   const id = gymId // Map gymId to id for existing logic
   const fileInputRef = useRef(null)
   const galleryInputRef = useRef(null)
+  const videoInputRef = useRef(null)
 
   // State
   const [formData, setFormData] = useState({
@@ -74,6 +75,9 @@ export default function GymAccessEdit () {
   const [mainImage, setMainImage] = useState(null)
   const [mainImageUrl, setMainImageUrl] = useState('')
   const [galleryImages, setGalleryImages] = useState([])
+  const [existingVideoUrl, setExistingVideoUrl] = useState('')
+  const [videoFile, setVideoFile] = useState(null)
+  const [videoPreviewUrl, setVideoPreviewUrl] = useState('')
 
   // Track deleted existing images if needed, or just handle current view
   // For now we will just display existing and allow adding new.
@@ -149,6 +153,42 @@ export default function GymAccessEdit () {
                 isExisting: true
               }))
             )
+          }
+
+          if (gym.video) {
+            const s = String(gym.video || '').trim()
+            if (/^https?:\/\//i.test(s)) {
+              setExistingVideoUrl(s)
+            } else {
+              const baseUrl =
+                process.env.NEXT_PUBLIC_API_BASE_URL2 ||
+                process.env.NEXT_PUBLIC_API_BASE_URL ||
+                ''
+              try {
+                const origin = baseUrl ? new URL(baseUrl).origin : ''
+                if (origin) {
+                  const path = s.replace(/^\/+/, '')
+                  // backend typically serves uploaded files under /upload/<path>
+                  setExistingVideoUrl(
+                    path.startsWith('upload/')
+                      ? `${origin}/${path}`
+                      : `${origin}/upload/${path}`
+                  )
+                } else {
+                  const path = s.replace(/^\/+/, '')
+                  setExistingVideoUrl(
+                    path.startsWith('upload/') ? `/${path}` : `/upload/${path}`
+                  )
+                }
+              } catch {
+                const path = s.replace(/^\/+/, '')
+                setExistingVideoUrl(
+                  path.startsWith('upload/') ? `/${path}` : `/upload/${path}`
+                )
+              }
+            }
+          } else {
+            setExistingVideoUrl('')
           }
         }
       } catch (error) {
@@ -245,7 +285,9 @@ export default function GymAccessEdit () {
     }
     const num = parseInt(raw, 10)
     if (Number.isNaN(num) || num < 1) {
-      setDurationError('Duration must be a positive whole number (e.g. 1, 60, 120)')
+      setDurationError(
+        'Duration must be a positive whole number (e.g. 1, 60, 120)'
+      )
       return false
     }
     if (num > 9999) {
@@ -254,6 +296,21 @@ export default function GymAccessEdit () {
     }
     setDurationError('')
     return true
+  }
+
+  const handleVideoChange = e => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (videoPreviewUrl) URL.revokeObjectURL(videoPreviewUrl)
+    setVideoFile(file)
+    setVideoPreviewUrl(URL.createObjectURL(file))
+  }
+
+  const clearSelectedVideo = () => {
+    if (videoPreviewUrl) URL.revokeObjectURL(videoPreviewUrl)
+    setVideoFile(null)
+    setVideoPreviewUrl('')
+    if (videoInputRef.current) videoInputRef.current.value = ''
   }
 
   const handleSubmit = async () => {
@@ -305,6 +362,10 @@ export default function GymAccessEdit () {
             payload.append('imageGallery', img.file)
           }
         })
+      }
+
+      if (videoFile) {
+        payload.append('video', videoFile)
       }
 
       // Call API
@@ -667,6 +728,59 @@ export default function GymAccessEdit () {
                 </div>
               )}
             </div>
+          </div>
+
+          {/* Video (optional) */}
+          <div>
+            <label className='mb-2 block text-sm font-medium text-gray-700'>
+              Upload Video (optional)
+            </label>
+            <div className='flex max-w-md rounded-lg border border-gray-200 bg-white'>
+              <div className='flex-1 truncate px-4 py-2.5 text-sm text-gray-500'>
+                {videoFile
+                  ? videoFile.name
+                  : existingVideoUrl
+                  ? 'Video attached'
+                  : 'Video.mp4'}
+              </div>
+              <button
+                type='button'
+                onClick={() => videoInputRef.current?.click()}
+                className='bg-gray-100 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-200 rounded-r-lg'
+              >
+                Browse
+              </button>
+              <input
+                type='file'
+                ref={videoInputRef}
+                onChange={handleVideoChange}
+                accept='video/*'
+                className='hidden'
+              />
+            </div>
+            <p className='mt-1 text-xs text-gray-500'>
+              Upload an mp4/mov video to showcase this gym. Uploading a new file
+              will replace the existing video.
+            </p>
+
+            {(videoPreviewUrl || existingVideoUrl) && (
+              <div className='mt-3 relative w-full max-w-xl rounded-lg overflow-hidden border border-gray-200 bg-black'>
+                <video
+                  src={videoPreviewUrl || existingVideoUrl}
+                  controls
+                  className='w-full max-h-[260px]'
+                />
+                {videoPreviewUrl && (
+                  <button
+                    type='button'
+                    onClick={clearSelectedVideo}
+                    className='absolute top-2 right-2 bg-white/90 p-1.5 rounded-full text-red-500 hover:text-red-600 shadow-sm transition-colors'
+                  >
+                    <Trash2 className='w-4 h-4' />
+                  </button>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Important Information */}

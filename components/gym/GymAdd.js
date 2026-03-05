@@ -23,6 +23,7 @@ export default function GymAccessAdd () {
   const router = useRouter()
   const fileInputRef = useRef(null)
   const galleryInputRef = useRef(null)
+  const videoInputRef = useRef(null)
 
   // State
   const [formData, setFormData] = useState({
@@ -66,6 +67,8 @@ export default function GymAccessAdd () {
   const [mainImage, setMainImage] = useState(null)
   const [mainImageUrl, setMainImageUrl] = useState('')
   const [galleryImages, setGalleryImages] = useState([])
+  const [videoFile, setVideoFile] = useState(null)
+  const [videoPreviewUrl, setVideoPreviewUrl] = useState('')
 
   const [toast, setToast] = useState({ show: false, message: '', type: '' })
   const [durationError, setDurationError] = useState('')
@@ -138,6 +141,21 @@ export default function GymAccessAdd () {
     setGalleryImages(galleryImages.filter(img => img.id !== id))
   }
 
+  const handleVideoChange = e => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (videoPreviewUrl) URL.revokeObjectURL(videoPreviewUrl)
+    setVideoFile(file)
+    setVideoPreviewUrl(URL.createObjectURL(file))
+  }
+
+  const clearVideo = () => {
+    if (videoPreviewUrl) URL.revokeObjectURL(videoPreviewUrl)
+    setVideoFile(null)
+    setVideoPreviewUrl('')
+    if (videoInputRef.current) videoInputRef.current.value = ''
+  }
+
   const validateDuration = () => {
     const raw = String(formData.duration).trim()
     if (!raw) {
@@ -202,6 +220,10 @@ export default function GymAccessAdd () {
         galleryImages.forEach(img => {
           payload.append('imageGallery', img.file)
         })
+      }
+
+      if (videoFile) {
+        payload.append('video', videoFile)
       }
 
       // Call API
@@ -517,6 +539,54 @@ export default function GymAccessAdd () {
                 </div>
               )}
             </div>
+          </div>
+
+          {/* Video (optional) */}
+          <div>
+            <label className='mb-2 block text-sm font-medium text-gray-700'>
+              Upload Video (optional)
+            </label>
+            <div className='flex max-w-md rounded-lg border border-gray-200 bg-white'>
+              <div className='flex-1 truncate px-4 py-2.5 text-sm text-gray-500'>
+                {videoFile ? videoFile.name : 'Video.mp4'}
+              </div>
+              <button
+                type='button'
+                onClick={() => videoInputRef.current?.click()}
+                className='bg-gray-100 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-200 rounded-r-lg'
+              >
+                Browse
+              </button>
+              <input
+                type='file'
+                ref={videoInputRef}
+                onChange={handleVideoChange}
+                accept='video/*'
+                className='hidden'
+              />
+            </div>
+            <p className='mt-1 text-xs text-gray-500'>
+              Upload an mp4/mov video to showcase this gym.
+            </p>
+
+            {(videoPreviewUrl || videoFile) && (
+              <div className='mt-3 relative w-full max-w-xl rounded-lg overflow-hidden border border-gray-200 bg-black'>
+                {videoPreviewUrl ? (
+                  <video
+                    src={videoPreviewUrl}
+                    controls
+                    className='w-full max-h-[260px]'
+                  />
+                ) : null}
+                <button
+                  type='button'
+                  onClick={clearVideo}
+                  className='absolute top-2 right-2 bg-white/90 p-1.5 rounded-full text-red-500 hover:text-red-600 shadow-sm transition-colors'
+                >
+                  <Trash2 className='w-4 h-4' />
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Important Information */}
