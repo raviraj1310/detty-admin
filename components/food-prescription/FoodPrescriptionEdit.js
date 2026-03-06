@@ -1,16 +1,90 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
-import { ChevronLeft } from 'lucide-react'
+import { ChevronLeft, Loader2 } from 'lucide-react'
 import Toast from '@/components/ui/Toast'
+import ImageCropper from '@/components/ui/ImageCropper'
 import FoodPrescriptionFormFields from './FoodPrescriptionFormFields'
+import { getFoodById, updateFood } from '@/services/nutrition/nutrition.service'
+
+const FORMAT_LABELS = {
+  'digital-view': 'Digital content (view-based program)',
+  'digital-download': 'Digital content (view-based and downloadable..',
+  'pdf-only': 'Downloadable PDF only'
+}
+
+const toPlainText = html => {
+  const raw = String(html || '')
+  if (!raw.trim()) return ''
+  try {
+    const el = document.createElement('div')
+    el.innerHTML = raw
+    return String(el.innerText || el.textContent || '').trim()
+  } catch (_) {
+    return raw
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<\/(p|div|li)>/gi, '\n')
+      .replace(/<[^>]*>/g, '')
+      .replace(/&nbsp;/g, ' ')
+      .trim()
+  }
+}
+
+const ensureHtml = v => {
+  const s = String(v || '').trim()
+  if (!s) return ''
+  if (/<[a-z][\s\S]*>/i.test(s)) return s
+  const withBreaks = s.replace(/\r?\n/g, '<br/>')
+  return `<p>${withBreaks}</p>`
+}
+
+const getUploadOrigin = () => {
+  const sim = String(process.env.NEXT_PUBLIC_SIM_IMAGE_BASE_ORIGIN || '').trim()
+  if (sim) return sim.replace(/\/+$/, '')
+
+  const api2 = String(process.env.NEXT_PUBLIC_API_BASE_URL2 || '').trim()
+  if (api2) {
+    return api2
+      .replace(/\/+$/, '')
+      .replace(/\/api\/v2\/?$/i, '')
+      .replace(/\/+$/, '')
+  }
+
+  return 'https://accessdettyfusion.com'
+}
+
+const toUploadUrl = (value, folder) => {
+  const s = String(value || '').trim()
+  if (!s) return ''
+  if (/^https?:\/\//i.test(s)) return s
+
+  // If API already returns a path like "upload/image/xxx.webp"
+  const path = s.startsWith('/') ? s : `/${s}`
+  if (path.includes('/upload/')) return `${getUploadOrigin()}${path}`
+
+  // Otherwise treat it as a filename
+  const safeFolder = String(folder || '').replace(/^\/+|\/+$/g, '')
+  return `${getUploadOrigin()}/upload/${safeFolder}/${encodeURIComponent(s)}`
+}
+
+const guessFormatValue = fmt => {
+  const s = String(fmt || '').trim()
+  if (!s) return ''
+  if (FORMAT_LABELS[s]) return s
+  const lower = s.toLowerCase()
+  if (lower.includes('download')) return 'digital-download'
+  if (lower.includes('view')) return 'digital-view'
+  if (lower.includes('pdf')) return 'pdf-only'
+  return ''
+}
 
 export default function FoodPrescriptionEdit () {
   const router = useRouter()
   const params = useParams()
   const id = params?.id
+  const imageInputRef = useRef(null)
 
   const [formData, setFormData] = useState({
     name: '',
@@ -22,9 +96,12 @@ export default function FoodPrescriptionEdit () {
   const [disclaimer, setDisclaimer] = useState('')
   const [imagePreview, setImagePreview] = useState('')
   const [documents, setDocuments] = useState([
-    { id: 1, title: '', subText: '', file: null }
+    { id: 1, backendId: null, title: '', subText: '', file: null }
   ])
   const [loading, setLoading] = useState(!!id)
+  const [saving, setSaving] = useState(false)
+  const [cropOpen, setCropOpen] = useState(false)
+  const [cropFile, setCropFile] = useState(null)
   const [toast, setToast] = useState({
     show: false,
     message: '',
@@ -37,22 +114,57 @@ export default function FoodPrescriptionEdit () {
 
   useEffect(() => {
     if (!id) return
-    setLoading(true)
-    const timer = setTimeout(() => {
-      setFormData({
-        name: 'Balanced Daily Nutrition',
-        duration: 'ongoing',
-        format: 'digital-download',
-        image: null
-      })
-      setDescription('<p>Balanced daily nutrition is the foundation of a healthy lifestyle.</p>')
-      setDisclaimer('<p>Nutrition content is for general wellness and informational purposes only.</p>')
-      setDocuments([
-        { id: 1, title: 'Balanced Daily Nutrition', subText: 'A well-balanced meal includes a combination of carbohydrates for energy', file: null }
-      ])
-      setLoading(false)
-    }, 300)
-    return () => clearTimeout(timer)
+    let alive = true
+    const run = async () => {
+      setLoading(true)
+      try {
+        const res = await getFoodById(id)
+        const food = res?.data ?? res?.data?.data ?? res?.food ?? res
+        const docsFromRes = Array.isArray(res?.documents)
+          ? res.documents
+          : Array.isArray(res?.data?.documents)
+            ? res.data.documents
+            : []
+        if (!alive) return
+
+        setFormData(prev => ({
+          ...prev,
+          name: String(food?.name || ''),
+          duration: String(food?.duration || ''),
+          format: guessFormatValue(food?.format) || String(food?.format || ''),
+          image: null
+        }))
+
+        setDescription(ensureHtml(food?.detail))
+        setDisclaimer(ensureHtml(food?.nonDisclaimer))
+
+        if (docsFromRes.length) {
+          setDocuments(
+            docsFromRes.map((d, idx) => ({
+              id: d?._id || d?.id || `${Date.now()}_${idx}`,
+              backendId: d?._id || d?.id || null,
+              title: String(d?.title || ''),
+              subText: String(d?.subTitle || d?.subText || ''),
+              uploadDocument: String(d?.uploadDocument || ''),
+              file: null
+            }))
+          )
+        } else {
+          setDocuments([{ id: 1, backendId: null, title: '', subText: '', file: null }])
+        }
+
+        const img = toUploadUrl(food?.image, 'image')
+        setImagePreview(img)
+      } catch (err) {
+        showToast('Failed to load food prescription', 'error')
+      } finally {
+        if (alive) setLoading(false)
+      }
+    }
+    run()
+    return () => {
+      alive = false
+    }
   }, [id])
 
   const handleInputChange = e => {
@@ -63,8 +175,22 @@ export default function FoodPrescriptionEdit () {
   const handleImageChange = e => {
     const file = e.target.files?.[0]
     if (!file) return
+    setCropFile(file)
+    setCropOpen(true)
+    e.target.value = ''
+  }
+
+  const openImagePicker = () => {
+    try {
+      imageInputRef.current?.click?.()
+    } catch (_) {}
+  }
+
+  const handleCropped = ({ file }) => {
     setFormData(prev => ({ ...prev, image: file }))
     setImagePreview(URL.createObjectURL(file))
+    setCropOpen(false)
+    setCropFile(null)
   }
 
   const handleDocumentChange = (docId, field, value) => {
@@ -83,7 +209,7 @@ export default function FoodPrescriptionEdit () {
   const addDocumentRow = () => {
     setDocuments(prev => [
       ...prev,
-      { id: Date.now(), title: '', subText: '', file: null }
+      { id: Date.now(), backendId: null, title: '', subText: '', file: null }
     ])
   }
 
@@ -93,16 +219,16 @@ export default function FoodPrescriptionEdit () {
     )
   }
 
-  const handleSubmit = () => {
-    if (!formData.name) {
+  const handleSubmit = async () => {
+    if (!formData.name?.trim()) {
       showToast('Food Prescriptions Name is required', 'error')
       return
     }
-    if (!description) {
+    if (!String(description || '').trim()) {
       showToast('Food Prescriptions content is required', 'error')
       return
     }
-    if (!formData.duration) {
+    if (!formData.duration?.trim()) {
       showToast('Duration is required', 'error')
       return
     }
@@ -114,11 +240,53 @@ export default function FoodPrescriptionEdit () {
       showToast('Upload Image is required', 'error')
       return
     }
-    if (!disclaimer) {
+    if (!String(disclaimer || '').trim()) {
       showToast('Non Medical Disclaimer is required', 'error')
       return
     }
-    showToast('Food Prescription updated successfully (mock)', 'success')
+    if (!id) {
+      showToast('Missing ID', 'error')
+      return
+    }
+
+    setSaving(true)
+    try {
+      const fd = new FormData()
+      fd.append('name', formData.name.trim())
+      fd.append('detail', toPlainText(description))
+      fd.append('duration', formData.duration.trim())
+      fd.append('format', FORMAT_LABELS[formData.format] ?? formData.format)
+      fd.append('nonDisclaimer', toPlainText(disclaimer))
+      if (formData.image) fd.append('image', formData.image)
+
+      const documentsPayload = documents
+        .filter(d => d.title?.trim() && d.subText?.trim())
+        .map(d => ({
+          ...(d.backendId ? { _id: d.backendId } : {}),
+          title: d.title.trim(),
+          subTitle: d.subText.trim()
+        }))
+
+      if (documentsPayload.length) {
+        fd.append('documents', JSON.stringify(documentsPayload))
+      }
+
+      documents
+        .filter(d => d.file)
+        .forEach(d => fd.append('documents', d.file))
+
+      await updateFood(id, fd)
+      showToast('Food Prescription updated successfully', 'success')
+      router.push('/food-prescription')
+    } catch (err) {
+      const data = err?.response?.data
+      const msg = String(
+        data?.message || (data ? JSON.stringify(data) : '') || err?.message || 'Failed to update'
+      )
+      showToast(msg, 'error')
+    } finally {
+      setSaving(false)
+    }
   }
 
   if (loading) {
@@ -167,25 +335,21 @@ export default function FoodPrescriptionEdit () {
             Food Prescriptions Details
           </h2>
           <div className='flex gap-3'>
-            <button
-              type='button'
-              onClick={() => {
-                if (id) {
-                  router.push(`/food-prescription/food-access/${id}`)
-                } else {
-                  showToast('Edit Passes is available after saving', 'info')
-                }
-              }}
-              className='rounded-lg border border-[#FF4400] px-6 py-2 text-sm font-medium text-[#FF4400] hover:bg-orange-50'
-            >
-              Edit Passes
-            </button>
+          
             <button
               type='button'
               onClick={handleSubmit}
-              className='rounded-lg bg-[#FF4400] px-6 py-2 text-sm font-medium text-white hover:bg-[#ff551e]'
+              disabled={saving}
+              className='rounded-lg bg-[#FF4400] px-6 py-2 text-sm font-medium text-white hover:bg-[#ff551e] disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2'
             >
-              Update
+              {saving ? (
+                <>
+                  <Loader2 className='h-4 w-4 animate-spin' />
+                  Updating...
+                </>
+              ) : (
+                'Update'
+              )}
             </button>
           </div>
         </div>
@@ -199,6 +363,16 @@ export default function FoodPrescriptionEdit () {
           setDisclaimer={setDisclaimer}
           imagePreview={imagePreview}
           handleImageChange={handleImageChange}
+          imageInputRef={imageInputRef}
+          onBrowseImage={openImagePicker}
+          onCropImage={
+            formData.image
+              ? () => {
+                  setCropFile(formData.image)
+                  setCropOpen(true)
+                }
+              : null
+          }
           documents={documents}
           handleDocumentChange={handleDocumentChange}
           handleDocumentFileChange={handleDocumentFileChange}
@@ -206,6 +380,18 @@ export default function FoodPrescriptionEdit () {
           removeDocumentRow={removeDocumentRow}
         />
       </div>
+
+      {cropOpen && (
+        <ImageCropper
+          open={cropOpen}
+          file={cropFile}
+          onClose={() => {
+            setCropOpen(false)
+            setCropFile(null)
+          }}
+          onCropped={handleCropped}
+        />
+      )}
     </div>
   )
 }

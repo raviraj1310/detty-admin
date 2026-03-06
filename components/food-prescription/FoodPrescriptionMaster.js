@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect, useMemo } from 'react'
+import { useState, useRef, useEffect, useMemo, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   Search,
@@ -22,6 +22,11 @@ import {
 import { IoFilterSharp } from 'react-icons/io5'
 import { TbCaretUpDownFilled } from 'react-icons/tb'
 import Toast from '@/components/ui/Toast'
+import {
+  getAllFoods,
+  deleteFood,
+  updateFoodStatus
+} from '@/services/nutrition/nutrition.service'
 
 const formatDate = dateString => {
   if (!dateString) return '—'
@@ -30,6 +35,31 @@ const formatDate = dateString => {
     month: 'short',
     year: 'numeric'
   })
+}
+
+const getUploadOrigin = () => {
+  const sim = String(process.env.NEXT_PUBLIC_SIM_IMAGE_BASE_ORIGIN || '').trim()
+  if (sim) return sim.replace(/\/+$/, '')
+
+  const api2 = String(process.env.NEXT_PUBLIC_API_BASE_URL2 || '').trim()
+  if (api2) {
+    return api2
+      .replace(/\/+$/, '')
+      .replace(/\/api\/v2\/?$/i, '')
+      .replace(/\/+$/, '')
+  }
+
+  return 'https://accessdettyfusion.com'
+}
+
+const toUploadUrl = (value, folder) => {
+  const s = String(value || '').trim()
+  if (!s) return ''
+  if (/^https?:\/\//i.test(s)) return s
+  const path = s.startsWith('/') ? s : `/${s}`
+  if (path.includes('/upload/')) return `${getUploadOrigin()}${path}`
+  const safeFolder = String(folder || '').replace(/^\/+|\/+$/g, '')
+  return `${getUploadOrigin()}/upload/${safeFolder}/${encodeURIComponent(s)}`
 }
 
 const INITIAL_METRICS = [
@@ -44,7 +74,7 @@ const INITIAL_METRICS = [
   },
   {
     id: 'active',
-    title: 'Active',
+    title: 'Active Food Prescriptions',
     value: '0',
     icon: CheckCircle,
     bg: 'bg-[#E8F8F0]',
@@ -53,7 +83,7 @@ const INITIAL_METRICS = [
   },
   {
     id: 'inactive',
-    title: 'Inactive',
+    title: 'Inactive Food Prescriptions',
     value: '0',
     icon: MinusCircle,
     bg: 'bg-[#FFE8E8]',
@@ -86,36 +116,6 @@ const INITIAL_METRICS = [
     bg: 'bg-[#FCE4EC]',
     textColor: 'text-pink-600',
     iconBg: 'bg-white'
-  }
-]
-
-const MOCK_LIST = [
-  {
-    _id: '1',
-    createdAt: '2025-06-12T10:00:00.000Z',
-    name: 'Balanced Daily Nutrition',
-    duration: 'Ongoing',
-    format: 'Digital (view + download)',
-    totalBookings: 42,
-    status: true
-  },
-  {
-    _id: '2',
-    createdAt: '2025-06-10T10:00:00.000Z',
-    name: '4 Weeks Meal Plan',
-    duration: '4 Weeks',
-    format: 'PDF only',
-    totalBookings: 18,
-    status: true
-  },
-  {
-    _id: '3',
-    createdAt: '2025-06-08T10:00:00.000Z',
-    name: '8 Weeks Program',
-    duration: '8 Weeks',
-    format: 'Digital (view + download)',
-    totalBookings: 0,
-    status: false
   }
 ]
 
@@ -164,6 +164,13 @@ export default function FoodPrescriptionMaster () {
   const [metrics, setMetrics] = useState(INITIAL_METRICS)
   const [sortKey, setSortKey] = useState('addedOn')
   const [sortOrder, setSortOrder] = useState('desc')
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 1
+  })
+  const [statusUpdating, setStatusUpdating] = useState(null)
 
   const [toastOpen, setToastOpen] = useState(false)
   const [toastProps, setToastProps] = useState({
@@ -185,30 +192,48 @@ export default function FoodPrescriptionMaster () {
     return () => clearTimeout(timer)
   }, [searchTerm])
 
-  useEffect(() => {
+  const fetchFoods = useCallback(async () => {
     setLoading(true)
-    // When API exists: fetch list and metrics here
-    const timer = setTimeout(() => {
-      let data = MOCK_LIST.filter(item => {
-        const matchSearch =
-          !debouncedSearch ||
-          (item.name || '').toLowerCase().includes(debouncedSearch.toLowerCase())
-        const matchStatus =
-          statusFilter === '' ||
-          (statusFilter === 'true' && item.status) ||
-          (statusFilter === 'false' && !item.status)
-        return matchSearch && matchStatus
-      })
-      setList(data)
-      const newMetrics = [...INITIAL_METRICS]
-      newMetrics[0].value = String(data.length)
-      newMetrics[1].value = String(data.filter(x => x.status).length)
-      newMetrics[2].value = String(data.filter(x => !x.status).length)
-      setMetrics(newMetrics)
+    try {
+      const params = {
+        page: pagination.page,
+        limit: pagination.limit,
+        ...(debouncedSearch && { search: debouncedSearch }),
+        ...(statusFilter && { status: statusFilter })
+      }
+      const res = await getAllFoods(pagination.page, pagination.limit, params)
+      setList(res?.data ?? [])
+      if (res?.pagination) {
+        setPagination(prev => ({
+          ...prev,
+          page: res.pagination.page,
+          limit: res.pagination.limit,
+          total: res.pagination.total,
+          totalPages: res.pagination.totalPages ?? 1
+        }))
+      }
+      if (res?.counts) {
+        const newMetrics = [...INITIAL_METRICS]
+        newMetrics[0].value = String(res.counts.total ?? 0)
+        newMetrics[1].value = String(res.counts.active ?? 0)
+        newMetrics[2].value = String(res.counts.inactive ?? 0)
+        setMetrics(newMetrics)
+      }
+    } catch (err) {
+      showToast('Error', 'Failed to load food prescriptions', 'destructive')
+      setList([])
+    } finally {
       setLoading(false)
-    }, 300)
-    return () => clearTimeout(timer)
+    }
+  }, [pagination.page, pagination.limit, debouncedSearch, statusFilter])
+
+  useEffect(() => {
+    setPagination(prev => ({ ...prev, page: 1 }))
   }, [debouncedSearch, statusFilter])
+
+  useEffect(() => {
+    fetchFoods()
+  }, [fetchFoods])
 
   useEffect(() => {
     const handleClickOutside = event => {
@@ -248,7 +273,8 @@ export default function FoodPrescriptionMaster () {
   }
 
   const getStatusColor = status => {
-    if (status) return 'bg-emerald-50 text-emerald-600 border border-emerald-200'
+    if (status)
+      return 'bg-emerald-50 text-emerald-600 border border-emerald-200'
     return 'bg-red-50 text-red-600 border border-red-200'
   }
 
@@ -258,10 +284,6 @@ export default function FoodPrescriptionMaster () {
         return new Date(item.createdAt || 0).getTime()
       case 'name':
         return (item.name || '').toLowerCase()
-      case 'duration':
-        return (item.duration || '').toLowerCase()
-      case 'format':
-        return (item.format || '').toLowerCase()
       case 'status':
         return item.status ? 1 : 0
       default:
@@ -284,9 +306,7 @@ export default function FoodPrescriptionMaster () {
       const va = getSortValue(a, sortKey)
       const vb = getSortValue(b, sortKey)
       if (typeof va === 'string' && typeof vb === 'string') {
-        return sortOrder === 'asc'
-          ? va.localeCompare(vb)
-          : vb.localeCompare(va)
+        return sortOrder === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va)
       }
       return sortOrder === 'asc' ? va - vb : vb - va
     })
@@ -303,9 +323,9 @@ export default function FoodPrescriptionMaster () {
     if (!deleteId) return
     setDeleting(true)
     try {
-      // When API exists: await deleteFoodPrescription(deleteId)
+      await deleteFood(deleteId)
       showToast('Deleted', 'Food prescription has been deleted')
-      setList(prev => prev.filter(item => item._id !== deleteId))
+      await fetchFoods()
     } catch (err) {
       showToast('Error', 'Failed to delete', 'destructive')
     } finally {
@@ -315,15 +335,34 @@ export default function FoodPrescriptionMaster () {
     }
   }
 
-  const handleStatusChange = (id, status) => {
-    // When API exists: call activeInactive API
-    setList(prev =>
-      prev.map(item =>
-        item._id === id ? { ...item, status } : item
-      )
-    )
-    showToast('Status updated', `Prescription is now ${status ? 'Active' : 'Inactive'}`)
+  const handleStatusChange = async (id, status) => {
+    setStatusUpdating(id)
     setActiveDropdown(null)
+    try {
+      await updateFoodStatus(id, { status })
+      setList(prev =>
+        prev.map(item => (item._id === id ? { ...item, status } : item))
+      )
+      setMetrics(prev => {
+        const next = [...prev]
+        const updatedList = list.map(item =>
+          item._id === id ? { ...item, status } : item
+        )
+        const active = updatedList.filter(x => x.status).length
+        const inactive = updatedList.filter(x => !x.status).length
+        next[1].value = String(active)
+        next[2].value = String(inactive)
+        return next
+      })
+      showToast(
+        'Status updated',
+        `Prescription is now ${status ? 'Active' : 'Inactive'}`
+      )
+    } catch (err) {
+      showToast('Error', 'Failed to update status', 'destructive')
+    } finally {
+      setStatusUpdating(null)
+    }
   }
 
   return (
@@ -339,8 +378,12 @@ export default function FoodPrescriptionMaster () {
       />
       <div className='flex flex-col gap-4 md:flex-row md:items-start md:justify-between'>
         <div className='flex flex-col gap-1'>
-          <h1 className='text-xl font-semibold text-slate-900'>Food Prescription Master</h1>
-          <p className='text-xs text-[#99A1BC]'>Dashboard / Food Prescription Master</p>
+          <h1 className='text-xl font-semibold text-slate-900'>
+            Food Prescriptions Master
+          </h1>
+          <p className='text-xs text-[#99A1BC]'>
+            Dashboard / Food Prescriptions
+          </p>
         </div>
         <div className='flex flex-wrap items-center gap-2 md:justify-end'>
           <button
@@ -364,15 +407,19 @@ export default function FoodPrescriptionMaster () {
           return (
             <div
               key={card.id}
-              className={`relative overflow-hidden rounded-xl p-4 ${card.bg}`}
+              className={`relative overflow-hidden rounded-2xl border border-white/60 p-4 shadow-sm ${card.bg}`}
             >
-              <div className='flex items-center justify-between'>
-                <div className={`rounded-full p-2 ${card.iconBg}`}>
-                  <Icon className={`h-5 w-5 ${card.textColor}`} />
+              <div className='flex items-center justify-between gap-3'>
+                <div className={`rounded-xl p-2.5 ${card.iconBg} shadow-sm`}>
+                  <Icon className={`h-5 w-5 ${card.textColor}`} strokeWidth={2.2} />
                 </div>
                 <div className='text-right'>
-                  <p className={`text-xs font-medium ${card.textColor}`}>{card.title}</p>
-                  <h3 className={`mt-1 text-xl font-bold ${card.textColor}`}>{card.value}</h3>
+                  <p className={`text-xs font-medium ${card.textColor}`}>
+                    {card.title}
+                  </p>
+                  <h3 className={`mt-1 text-xl font-bold ${card.textColor}`}>
+                    {card.value}
+                  </h3>
                 </div>
               </div>
             </div>
@@ -382,7 +429,9 @@ export default function FoodPrescriptionMaster () {
 
       <div className='rounded-xl border border-[#E5E6EF] bg-white p-4 shadow-sm'>
         <div className='mb-4 flex flex-col gap-4 md:flex-row md:items-center md:justify-between'>
-          <h2 className='text-base font-semibold text-slate-900'>Food Prescription List</h2>
+          <h2 className='text-base font-semibold text-slate-900'>
+            Food Prescription List
+          </h2>
           <div className='flex flex-wrap items-center gap-2'>
             <div className='relative'>
               <Search className='absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400' />
@@ -408,24 +457,40 @@ export default function FoodPrescriptionMaster () {
               </button>
               {filterOpen && (
                 <div className='absolute right-0 top-10 z-50 w-48 rounded-lg border border-[#E5E6EF] bg-white p-1 shadow-lg'>
-                  <div className='px-3 py-2 text-xs font-semibold text-gray-500'>Filter by Status</div>
+                  <div className='px-3 py-2 text-xs font-semibold text-gray-500'>
+                    Filter by Status
+                  </div>
                   <button
-                    onClick={() => { setStatusFilter('true'); setFilterOpen(false) }}
+                    onClick={() => {
+                      setStatusFilter('true')
+                      setFilterOpen(false)
+                    }}
                     className={`flex w-full items-center justify-between px-3 py-2 text-xs font-medium hover:bg-gray-50 rounded-md ${
-                      statusFilter === 'true' ? 'text-[#FF5B2C] bg-[#FFF5F2]' : 'text-slate-700'
+                      statusFilter === 'true'
+                        ? 'text-[#FF5B2C] bg-[#FFF5F2]'
+                        : 'text-slate-700'
                     }`}
                   >
                     Active
-                    {statusFilter === 'true' && <CheckCircle className='h-3.5 w-3.5' />}
+                    {statusFilter === 'true' && (
+                      <CheckCircle className='h-3.5 w-3.5' />
+                    )}
                   </button>
                   <button
-                    onClick={() => { setStatusFilter('false'); setFilterOpen(false) }}
+                    onClick={() => {
+                      setStatusFilter('false')
+                      setFilterOpen(false)
+                    }}
                     className={`flex w-full items-center justify-between px-3 py-2 text-xs font-medium hover:bg-gray-50 rounded-md ${
-                      statusFilter === 'false' ? 'text-[#FF5B2C] bg-[#FFF5F2]' : 'text-slate-700'
+                      statusFilter === 'false'
+                        ? 'text-[#FF5B2C] bg-[#FFF5F2]'
+                        : 'text-slate-700'
                     }`}
                   >
                     Inactive
-                    {statusFilter === 'false' && <CheckCircle className='h-3.5 w-3.5' />}
+                    {statusFilter === 'false' && (
+                      <CheckCircle className='h-3.5 w-3.5' />
+                    )}
                   </button>
                 </div>
               )}
@@ -441,28 +506,31 @@ export default function FoodPrescriptionMaster () {
             <thead>
               <tr className='border-b border-[#E5E6EF] bg-gray-50/50'>
                 <th className='py-3 px-4 text-left'>
-                  <TableHeaderCell onClick={() => handleSort('addedOn')} active={sortKey === 'addedOn'} direction={sortOrder}>
+                  <TableHeaderCell
+                    onClick={() => handleSort('addedOn')}
+                    active={sortKey === 'addedOn'}
+                    direction={sortOrder}
+                  >
                     Added On
                   </TableHeaderCell>
                 </th>
                 <th className='py-3 px-4 text-left'>
-                  <TableHeaderCell onClick={() => handleSort('name')} active={sortKey === 'name'} direction={sortOrder}>
-                    Name
+                  <TableHeaderCell
+                    onClick={() => handleSort('name')}
+                    active={sortKey === 'name'}
+                    direction={sortOrder}
+                  >
+                    Food Prescriptions
                   </TableHeaderCell>
                 </th>
-                <th className='py-3 px-4 text-left'>
-                  <TableHeaderCell onClick={() => handleSort('duration')} active={sortKey === 'duration'} direction={sortOrder}>
-                    Duration
-                  </TableHeaderCell>
-                </th>
-                <th className='py-3 px-4 text-left'>
-                  <TableHeaderCell onClick={() => handleSort('format')} active={sortKey === 'format'} direction={sortOrder}>
-                    Format
-                  </TableHeaderCell>
-                </th>
+                <th className='py-3 px-4 text-left'>Detail</th>
                 <th className='py-3 px-4 text-left'>Bookings</th>
                 <th className='py-3 px-4 text-left'>
-                  <TableHeaderCell onClick={() => handleSort('status')} active={sortKey === 'status'} direction={sortOrder}>
+                  <TableHeaderCell
+                    onClick={() => handleSort('status')}
+                    active={sortKey === 'status'}
+                    direction={sortOrder}
+                  >
                     Status
                   </TableHeaderCell>
                 </th>
@@ -472,27 +540,53 @@ export default function FoodPrescriptionMaster () {
             <tbody className='divide-y divide-[#E5E6EF]'>
               {loading ? (
                 <tr>
-                  <td colSpan='7' className='py-8 text-center text-gray-500'>
+                  <td colSpan='6' className='py-8 text-center text-gray-500'>
                     Loading...
                   </td>
                 </tr>
               ) : sortedList.length === 0 ? (
                 <tr>
-                  <td colSpan='7' className='py-8 text-center text-gray-500'>
+                  <td colSpan='6' className='py-8 text-center text-gray-500'>
                     No food prescriptions found
                   </td>
                 </tr>
               ) : (
                 sortedList.map(item => (
                   <tr key={item._id} className='group hover:bg-gray-50'>
-                    <td className='py-3 px-4 text-xs text-gray-500'>{formatDate(item.createdAt)}</td>
-                    <td className='py-3 px-4 text-xs font-medium text-slate-900'>{item.name}</td>
-                    <td className='py-3 px-4 text-xs text-gray-500'>{item.duration}</td>
-                    <td className='py-3 px-4 text-xs text-gray-500'>{item.format}</td>
+                    <td className='py-3 px-4 text-xs text-gray-500'>
+                      {formatDate(item.createdAt)}
+                    </td>
+                    <td className='py-3 px-4'>
+                      <div className='flex items-center gap-3'>
+                        <div className='h-10 w-10 overflow-hidden rounded-lg bg-gray-100 ring-1 ring-gray-200 shrink-0'>
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={toUploadUrl(item.image, 'image') || '/images/no-image.webp'}
+                            alt={item.name || 'Food'}
+                            className='h-full w-full object-cover'
+                            onError={e => {
+                              e.currentTarget.src = '/images/no-image.webp'
+                            }}
+                          />
+                        </div>
+                        <div className='min-w-0'>
+                          <div className='truncate text-xs font-semibold text-slate-900'>
+                            {item.name || '—'}
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className='py-3 px-4 text-xs text-gray-500'>
+                      <div className='max-w-[520px] overflow-hidden text-ellipsis line-clamp-2'>
+                        {item.detail || '—'}
+                      </div>
+                    </td>
                     <td className='py-3 px-4'>
                       <button
                         type='button'
-                        onClick={() => router.push(`/food-prescription/bookings/${item._id}`)}
+                        onClick={() =>
+                          router.push(`/food-prescription/bookings/${item._id}`)
+                        }
                         className='flex items-center gap-1 text-xs cursor-pointer font-semibold text-indigo-600 underline'
                       >
                         {item.totalBookings ?? 0} (View List)
@@ -500,9 +594,15 @@ export default function FoodPrescriptionMaster () {
                     </td>
                     <td className='py-3 px-4'>
                       <span
-                        className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${getStatusColor(item.status)}`}
+                        className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${getStatusColor(
+                          item.status
+                        )}`}
                       >
-                        <span className={`mr-1 h-1.5 w-1.5 rounded-full ${item.status ? 'bg-emerald-500' : 'bg-red-500'}`} />
+                        <span
+                          className={`mr-1 h-1.5 w-1.5 rounded-full ${
+                            item.status ? 'bg-emerald-500' : 'bg-red-500'
+                          }`}
+                        />
                         {item.status ? 'Active' : 'Inactive'}
                       </span>
                     </td>
@@ -516,25 +616,43 @@ export default function FoodPrescriptionMaster () {
                       {activeDropdown === item._id && (
                         <div
                           ref={dropdownRef}
-                          style={{ position: 'fixed', top: `${dropdownPos.top}px`, right: `${dropdownPos.right}px`, zIndex: 50 }}
+                          style={{
+                            position: 'fixed',
+                            top: `${dropdownPos.top}px`,
+                            right: `${dropdownPos.right}px`,
+                            zIndex: 50
+                          }}
                           className='w-48 rounded-lg border border-[#E5E6EF] bg-white py-1 shadow-lg'
                         >
                           <button
-                            onClick={() => { router.push(`/food-prescription/edit/${item._id}`); setActiveDropdown(null) }}
+                            onClick={() => {
+                              router.push(`/food-prescription/edit/${item._id}`)
+                              setActiveDropdown(null)
+                            }}
                             className='flex w-full items-center cursor-pointer px-4 py-2 text-xs font-medium text-slate-700 hover:bg-gray-50'
                           >
                             View/Edit Detail
                           </button>
                           <div className='my-1 h-px bg-gray-100' />
                           <button
-                            onClick={() => { router.push(`/food-prescription/bookings/${item._id}`); setActiveDropdown(null) }}
+                            onClick={() => {
+                              router.push(
+                                `/food-prescription/bookings/${item._id}`
+                              )
+                              setActiveDropdown(null)
+                            }}
                             className='flex w-full items-center cursor-pointer px-4 py-2 text-xs font-medium text-slate-700 hover:bg-gray-50'
                           >
                             View Bookings
                           </button>
                           <div className='my-1 h-px bg-gray-100' />
                           <button
-                            onClick={() => { router.push(`/food-prescription/food-access/${item._id}`); setActiveDropdown(null) }}
+                            onClick={() => {
+                              router.push(
+                                `/food-prescription/food-access/${item._id}`
+                              )
+                              setActiveDropdown(null)
+                            }}
                             className='flex w-full items-center cursor-pointer px-4 py-2 text-xs font-medium text-slate-700 hover:bg-gray-50'
                           >
                             View/Edit Passes
@@ -549,7 +667,9 @@ export default function FoodPrescriptionMaster () {
                           <div className='my-1 h-px bg-gray-100' />
                           {item.status ? (
                             <button
-                              onClick={() => handleStatusChange(item._id, false)}
+                              onClick={() =>
+                                handleStatusChange(item._id, false)
+                              }
                               className='flex w-full items-center cursor-pointer px-4 py-2 text-xs font-medium text-slate-700 hover:bg-gray-50'
                             >
                               Inactive
@@ -571,13 +691,53 @@ export default function FoodPrescriptionMaster () {
             </tbody>
           </table>
         </div>
+        {pagination.totalPages > 1 && (
+          <div className='mt-4 flex items-center justify-between border-t border-[#E5E6EF] pt-4'>
+            <p className='text-xs text-gray-500'>
+              Page {pagination.page} of {pagination.totalPages} (
+              {pagination.total} items)
+            </p>
+            <div className='flex items-center gap-2'>
+              <button
+                type='button'
+                onClick={() =>
+                  setPagination(prev => ({
+                    ...prev,
+                    page: Math.max(1, prev.page - 1)
+                  }))
+                }
+                disabled={pagination.page <= 1 || loading}
+                className='flex h-8 items-center gap-1 rounded-lg border border-[#E5E6EF] bg-white px-3 text-xs font-medium text-slate-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed'
+              >
+                <ChevronLeft className='h-4 w-4' />
+                Previous
+              </button>
+              <button
+                type='button'
+                onClick={() =>
+                  setPagination(prev => ({
+                    ...prev,
+                    page: Math.min(prev.totalPages, prev.page + 1)
+                  }))
+                }
+                disabled={pagination.page >= pagination.totalPages || loading}
+                className='flex h-8 items-center gap-1 rounded-lg border border-[#E5E6EF] bg-white px-3 text-xs font-medium text-slate-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed'
+              >
+                Next
+                <ChevronRight className='h-4 w-4' />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {confirmOpen && (
         <div className='fixed inset-0 z-40 flex items-center justify-center'>
           <div
             className='absolute inset-0 bg-black/40'
-            onClick={() => { if (!deleting) setConfirmOpen(false) }}
+            onClick={() => {
+              if (!deleting) setConfirmOpen(false)
+            }}
           />
           <div className='relative z-50 w-full max-w-md rounded-2xl border border-[#E5E8F6] bg-white p-6 shadow-[0_24px_60px_-40px_rgba(15,23,42,0.55)]'>
             <div className='flex items-start gap-4'>
@@ -585,13 +745,19 @@ export default function FoodPrescriptionMaster () {
                 <AlertCircle className='h-6 w-6 text-red-600' />
               </div>
               <div className='flex-1'>
-                <div className='text-lg font-semibold text-slate-900'>Delete this food prescription?</div>
-                <div className='mt-1 text-sm text-[#5E6582]'>This action cannot be undone.</div>
+                <div className='text-lg font-semibold text-slate-900'>
+                  Delete this food prescription?
+                </div>
+                <div className='mt-1 text-sm text-[#5E6582]'>
+                  This action cannot be undone.
+                </div>
               </div>
             </div>
             <div className='mt-6 flex justify-end gap-3'>
               <button
-                onClick={() => { if (!deleting) setConfirmOpen(false) }}
+                onClick={() => {
+                  if (!deleting) setConfirmOpen(false)
+                }}
                 disabled={deleting}
                 className='rounded-xl border border-[#E5E6EF] bg-white px-5 py-2.5 text-sm font-medium text-[#1A1F3F] shadow-sm transition hover:bg-[#F9FAFD]'
               >

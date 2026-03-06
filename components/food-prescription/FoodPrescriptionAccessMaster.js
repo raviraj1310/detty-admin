@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import {
   Search,
@@ -14,6 +14,14 @@ import { TbCaretUpDownFilled } from 'react-icons/tb'
 import TiptapEditor from '@/components/editor/TiptapEditor'
 import Toast from '@/components/ui/Toast'
 import Modal from '@/components/ui/Modal'
+import {
+  createFoodAccess,
+  getAllPrescriptionsAccess,
+  getPrescriptionsAccessById,
+  updatePrescriptionsAccess,
+  deletePrescriptionsAccess,
+  updatePrescriptionsAccessStatus
+} from '@/services/nutrition/nutrition.service'
 
 const DURATION_UNITS = [
   { value: 'Day', label: 'Day' },
@@ -47,49 +55,47 @@ const TableHeaderCell = ({
   </button>
 )
 
-const MOCK_LIST = [
-  {
-    _id: '1',
-    createdAt: '2025-06-12T10:00:00.000Z',
-    gymAccessName: 'Starter Access',
-    accessDuration: '1 Day',
-    accessPrice: '₦10,000',
-    details: 'Introductory nutrition guidance covering daily balance, meal planning basics.',
-    status: true
-  },
-  {
-    _id: '2',
-    createdAt: '2025-06-12T10:00:00.000Z',
-    gymAccessName: 'Premium Access',
-    accessDuration: '7 Days',
-    accessPrice: '₦10,000',
-    details: '',
-    status: true
-  },
-  {
-    _id: '3',
-    createdAt: '2025-06-12T10:00:00.000Z',
-    gymAccessName: 'Deluxe Access',
-    accessDuration: '25 Days',
-    accessPrice: '₦10,000',
-    details: '',
-    status: false
+const toPlainText = html => {
+  const raw = String(html || '')
+  if (!raw.trim()) return ''
+  try {
+    const el = document.createElement('div')
+    el.innerHTML = raw
+    return String(el.innerText || el.textContent || '').trim()
+  } catch (_) {
+    return raw
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<\/(p|div|li)>/gi, '\n')
+      .replace(/<[^>]*>/g, '')
+      .replace(/&nbsp;/g, ' ')
+      .trim()
   }
-]
+}
+
+const formatNaira = v => {
+  const n = Number(String(v ?? '').replace(/[^\d.]/g, ''))
+  if (!Number.isFinite(n)) return '—'
+  try {
+    return `₦${n.toLocaleString('en-NG')}`
+  } catch {
+    return `₦${n}`
+  }
+}
 
 export default function FoodPrescriptionAccessMaster () {
   const router = useRouter()
   const params = useParams()
-  const id = params?.id
+  const foodPrescriptionId = params?.id
 
   const [formData, setFormData] = useState({
     name: '',
     durationValue: '1',
     durationUnit: 'Day',
-    price: '₦10,000',
+    price: '',
     details: ''
   })
   const [accessList, setAccessList] = useState([])
+  const [listLoading, setListLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [editId, setEditId] = useState(null)
   const [searchTerm, setSearchTerm] = useState('')
@@ -97,6 +103,7 @@ export default function FoodPrescriptionAccessMaster () {
   const [durationError, setDurationError] = useState('')
   const [sortKey, setSortKey] = useState('addedOn')
   const [sortOrder, setSortOrder] = useState('desc')
+  const [statusUpdatingId, setStatusUpdatingId] = useState(null)
 
   const [toastOpen, setToastOpen] = useState(false)
   const [toastProps, setToastProps] = useState({
@@ -108,25 +115,50 @@ export default function FoodPrescriptionAccessMaster () {
   const [deleteId, setDeleteId] = useState(null)
   const [deleting, setDeleting] = useState(false)
 
-  useEffect(() => {
-    setAccessList(MOCK_LIST.map(i => ({ ...i })))
-  }, [])
-
   const showToast = (title, description, variant = 'success') => {
     setToastProps({ title, description, variant })
     setToastOpen(true)
   }
 
+  const fetchAccessList = useCallback(async () => {
+    if (!foodPrescriptionId) return
+    setListLoading(true)
+    try {
+      const res = await getAllPrescriptionsAccess(
+        foodPrescriptionId,
+        1,
+        100,
+        { foodPrescriptionId }
+      )
+      setAccessList(Array.isArray(res?.data) ? res.data : [])
+    } catch (err) {
+      setAccessList([])
+      showToast(
+        'Error',
+        err?.response?.data?.message ||
+          err?.message ||
+          'Failed to load access list',
+        'error'
+      )
+    } finally {
+      setListLoading(false)
+    }
+  }, [foodPrescriptionId])
+
+  useEffect(() => {
+    fetchAccessList()
+  }, [fetchAccessList])
+
   const getSortValue = (item, key) => {
     switch (key) {
       case 'addedOn':
         return new Date(item.createdAt || 0).getTime()
-      case 'gymAccessName':
-        return (item.gymAccessName || '').toLowerCase()
-      case 'accessDuration':
-        return (item.accessDuration || '').toLowerCase()
-      case 'accessPrice':
-        return (item.accessPrice || '').replace(/[^0-9.]/g, '') || 0
+      case 'accessName':
+        return (item.accessName || '').toLowerCase()
+      case 'duration':
+        return (item.duration || '').toLowerCase()
+      case 'price':
+        return Number(item.price || 0)
       case 'status':
         return item.status === true ? 1 : 0
       default:
@@ -149,8 +181,8 @@ export default function FoodPrescriptionAccessMaster () {
     if (term) {
       list = list.filter(
         item =>
-          (item.gymAccessName || '').toLowerCase().includes(term) ||
-          (item.accessDuration || '').toLowerCase().includes(term)
+          (item.accessName || '').toLowerCase().includes(term) ||
+          (item.duration || '').toLowerCase().includes(term)
       )
     }
     return list
@@ -188,6 +220,11 @@ export default function FoodPrescriptionAccessMaster () {
       setDurationError('')
       return
     }
+    if (field === 'price') {
+      const digitsOnly = String(value || '').replace(/\D/g, '')
+      setFormData(prev => ({ ...prev, [field]: digitsOnly }))
+      return
+    }
     setFormData(prev => ({ ...prev, [field]: value }))
   }
 
@@ -196,7 +233,7 @@ export default function FoodPrescriptionAccessMaster () {
       name: '',
       durationValue: '1',
       durationUnit: 'Day',
-      price: '₦10,000',
+      price: '',
       details: ''
     })
     setEditId(null)
@@ -222,7 +259,11 @@ export default function FoodPrescriptionAccessMaster () {
     return true
   }
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
+    if (!foodPrescriptionId) {
+      showToast('Error', 'Missing food prescription id', 'error')
+      return
+    }
     if (!formData.name || !formData.durationValue || !formData.price) {
       showToast('Error', 'Please fill all required fields', 'error')
       return
@@ -233,47 +274,67 @@ export default function FoodPrescriptionAccessMaster () {
     }
 
     setSubmitting(true)
-    const accessDuration = `${formData.durationValue} ${formData.durationUnit}`
-    const payload = {
-      gymAccessName: formData.name,
-      accessDuration,
-      accessPrice: formData.price,
-      details: formData.details,
-      status: true,
-      createdAt: new Date().toISOString()
-    }
+    try {
+      const accessDuration = `${String(formData.durationValue).trim()} ${formData.durationUnit}`
+      const payload = {
+        foodPrescriptionsId: String(foodPrescriptionId),
+        accessName: String(formData.name || '').trim(),
+        accessDuration,
+        price: String(formData.price || '').trim(),
+        detail: toPlainText(formData.details)
+      }
 
-    if (editId) {
-      setAccessList(prev =>
-        prev.map(item =>
-          item._id === editId ? { ...item, ...payload } : item
-        )
+      if (editId) {
+        await updatePrescriptionsAccess(editId, payload)
+        showToast('Success', 'Food prescription access updated successfully', 'success')
+      } else {
+        await createFoodAccess(payload)
+        showToast('Success', 'Food prescription access created successfully', 'success')
+      }
+
+      resetForm()
+      await fetchAccessList()
+    } catch (err) {
+      showToast(
+        'Error',
+        err?.response?.data?.message ||
+          err?.message ||
+          'Failed to save access',
+        'error'
       )
-      showToast('Success', 'Food prescription access updated successfully', 'success')
-    } else {
-      setAccessList(prev => [
-        ...prev,
-        { ...payload, _id: String(Date.now()) }
-      ])
-      showToast('Success', 'Food prescription access created successfully', 'success')
+    } finally {
+      setSubmitting(false)
     }
-    setSubmitting(false)
-    resetForm()
   }
 
-  const handleEdit = item => {
-    const parts = (item.accessDuration || '').split(' ')
-    const value = parts[0] || '1'
-    const unit = parts.slice(1).join(' ') || 'Day'
-    setFormData({
-      name: item.gymAccessName || '',
-      durationValue: value.replace(/\D/g, '') || '1',
-      durationUnit: DURATION_UNITS.some(d => d.value === unit) ? unit : 'Day',
-      price: item.accessPrice || '',
-      details: item.details || ''
-    })
-    setEditId(item._id)
+  const handleEdit = async item => {
     setMenuOpenId(null)
+    const rowId = item?._id
+    if (!rowId) return
+    try {
+      const res = await getPrescriptionsAccessById(rowId)
+      const access = res?.data ?? res?.access ?? res
+      const durationStr = String(access?.duration || access?.accessDuration || '').trim()
+      const parts = durationStr.split(' ')
+      const value = parts[0] || '1'
+      const unit = parts.slice(1).join(' ') || 'Day'
+      setFormData({
+        name: String(access?.accessName || '').trim(),
+        durationValue: value.replace(/\D/g, '') || '1',
+        durationUnit: DURATION_UNITS.some(d => d.value === unit) ? unit : 'Day',
+        price: String(access?.price ?? '').replace(/\D/g, ''),
+        details: String(access?.detail || '')
+      })
+      setEditId(rowId)
+    } catch (err) {
+      showToast(
+        'Error',
+        err?.response?.data?.message ||
+          err?.message ||
+          'Failed to load access record',
+        'error'
+      )
+    }
   }
 
   const handleDelete = rowId => {
@@ -282,26 +343,54 @@ export default function FoodPrescriptionAccessMaster () {
     setDeleteModalOpen(true)
   }
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (!deleteId) return
     setDeleting(true)
-    setAccessList(prev => prev.filter(item => item._id !== deleteId))
-    showToast('Success', 'Access has been deleted.', 'success')
-    setDeleteModalOpen(false)
-    setDeleting(false)
-    setDeleteId(null)
+    try {
+      await deletePrescriptionsAccess(deleteId)
+      showToast('Success', 'Access has been deleted.', 'success')
+      setDeleteModalOpen(false)
+      setDeleteId(null)
+      await fetchAccessList()
+    } catch (err) {
+      showToast(
+        'Error',
+        err?.response?.data?.message ||
+          err?.message ||
+          'Failed to delete access',
+        'error'
+      )
+    } finally {
+      setDeleting(false)
+    }
   }
 
-  const handleStatusChange = (item, status) => {
+  const handleStatusChange = async (item, status) => {
     setMenuOpenId(null)
-    setAccessList(prev =>
-      prev.map(i => (i._id === item._id ? { ...i, status } : i))
-    )
-    showToast(
-      'Success',
-      `Status updated to ${status ? 'Active' : 'Inactive'}`,
-      'success'
-    )
+    const rowId = item?._id
+    if (!rowId) return
+    setStatusUpdatingId(rowId)
+    try {
+      await updatePrescriptionsAccessStatus(rowId, { status })
+      setAccessList(prev =>
+        prev.map(i => (i._id === rowId ? { ...i, status } : i))
+      )
+      showToast(
+        'Success',
+        `Status updated to ${status ? 'Active' : 'Inactive'}`,
+        'success'
+      )
+    } catch (err) {
+      showToast(
+        'Error',
+        err?.response?.data?.message ||
+          err?.message ||
+          'Failed to update status',
+        'error'
+      )
+    } finally {
+      setStatusUpdatingId(null)
+    }
   }
 
   return (
@@ -473,17 +562,17 @@ export default function FoodPrescriptionAccessMaster () {
                 </th>
                 <th className='py-3 px-4 text-left'>
                   <TableHeaderCell
-                    onClick={() => handleSort('gymAccessName')}
-                    active={sortKey === 'gymAccessName'}
+                    onClick={() => handleSort('accessName')}
+                    active={sortKey === 'accessName'}
                     order={sortOrder}
                   >
-                    Gym Access Name
+                    Access Name
                   </TableHeaderCell>
                 </th>
                 <th className='py-3 px-4 text-left'>
                   <TableHeaderCell
-                    onClick={() => handleSort('accessDuration')}
-                    active={sortKey === 'accessDuration'}
+                    onClick={() => handleSort('duration')}
+                    active={sortKey === 'duration'}
                     order={sortOrder}
                   >
                     Access Duration
@@ -491,8 +580,8 @@ export default function FoodPrescriptionAccessMaster () {
                 </th>
                 <th className='py-3 px-4 text-left'>
                   <TableHeaderCell
-                    onClick={() => handleSort('accessPrice')}
-                    active={sortKey === 'accessPrice'}
+                    onClick={() => handleSort('price')}
+                    active={sortKey === 'price'}
                     order={sortOrder}
                   >
                     Price
@@ -511,7 +600,16 @@ export default function FoodPrescriptionAccessMaster () {
               </tr>
             </thead>
             <tbody className='divide-y divide-[#E1E6F7]'>
-              {sortedList.length === 0 ? (
+              {listLoading ? (
+                <tr>
+                  <td
+                    colSpan={6}
+                    className='py-8 text-center text-sm text-[#64748B]'
+                  >
+                    Loading...
+                  </td>
+                </tr>
+              ) : sortedList.length === 0 ? (
                 <tr>
                   <td
                     colSpan={6}
@@ -537,13 +635,13 @@ export default function FoodPrescriptionAccessMaster () {
                       })}
                     </td>
                     <td className='py-3 px-4 text-sm font-medium text-[#1E293B]'>
-                      {item.gymAccessName}
+                      {item.accessName}
                     </td>
                     <td className='py-3 px-4 text-sm text-[#64748B]'>
-                      {item.accessDuration}
+                      {item.duration}
                     </td>
                     <td className='py-3 px-4 text-sm text-[#64748B]'>
-                      {item.accessPrice}
+                      {formatNaira(item.price)}
                     </td>
                     <td className='py-3 px-4'>
                       <span
@@ -592,7 +690,8 @@ export default function FoodPrescriptionAccessMaster () {
                             <button
                               type='button'
                               onClick={() => handleStatusChange(item, false)}
-                              className='block w-full px-4 py-2 text-left text-sm text-[#475569] hover:bg-[#F8F9FC]'
+                              disabled={statusUpdatingId === item._id}
+                              className='block w-full px-4 py-2 text-left text-sm text-[#475569] hover:bg-[#F8F9FC] disabled:opacity-60 disabled:cursor-not-allowed'
                             >
                               Inactive
                             </button>
@@ -600,7 +699,8 @@ export default function FoodPrescriptionAccessMaster () {
                             <button
                               type='button'
                               onClick={() => handleStatusChange(item, true)}
-                              className='block w-full px-4 py-2 text-left text-sm text-[#475569] hover:bg-[#F8F9FC]'
+                              disabled={statusUpdatingId === item._id}
+                              className='block w-full px-4 py-2 text-left text-sm text-[#475569] hover:bg-[#F8F9FC] disabled:opacity-60 disabled:cursor-not-allowed'
                             >
                               Active
                             </button>

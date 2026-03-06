@@ -1,14 +1,51 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ChevronLeft } from 'lucide-react'
+import { ChevronLeft, Loader2 } from 'lucide-react'
 import Toast from '@/components/ui/Toast'
+import ImageCropper from '@/components/ui/ImageCropper'
 import FoodPrescriptionFormFields from './FoodPrescriptionFormFields'
+import { createFood } from '@/services/nutrition/nutrition.service'
+
+const FORMAT_LABELS = {
+  'digital-view': 'Digital content (view-based program)',
+  'digital-download': 'Digital content (view-based and downloadable..',
+  'pdf-only': 'Downloadable PDF only'
+}
+
+const IMAGE_TYPES = [
+  'image/jpeg',
+  'image/jpg',
+  'image/png',
+  'image/webp',
+  'image/avif',
+  'image/pjpeg'
+]
+// const IMAGE_MAX_SIZE = 2 * 1024 * 1024
 
 export default function FoodPrescriptionAdd () {
   const router = useRouter()
+  const imageInputRef = useRef(null)
+
+  const toPlainText = html => {
+    const raw = String(html || '')
+    if (!raw.trim()) return ''
+    try {
+      const el = document.createElement('div')
+      el.innerHTML = raw
+      // innerText preserves line breaks better than textContent for rich text
+      return String(el.innerText || el.textContent || '').trim()
+    } catch (_) {
+      return raw
+        .replace(/<br\s*\/?>/gi, '\n')
+        .replace(/<\/(p|div|li)>/gi, '\n')
+        .replace(/<[^>]*>/g, '')
+        .replace(/&nbsp;/g, ' ')
+        .trim()
+    }
+  }
 
   const [formData, setFormData] = useState({
     name: '',
@@ -22,11 +59,27 @@ export default function FoodPrescriptionAdd () {
   const [documents, setDocuments] = useState([
     { id: 1, title: '', subText: '', file: null }
   ])
+  const [cropOpen, setCropOpen] = useState(false)
+  const [cropFile, setCropFile] = useState(null)
+  const [saving, setSaving] = useState(false)
   const [toast, setToast] = useState({
     show: false,
     message: '',
     type: 'success'
   })
+
+  const imagePreviewRef = useRef(imagePreview)
+  imagePreviewRef.current = imagePreview
+
+  useEffect(() => {
+    return () => {
+      if (imagePreviewRef.current) {
+        try {
+          URL.revokeObjectURL(imagePreviewRef.current)
+        } catch (_) {}
+      }
+    }
+  }, [])
 
   const showToast = (message, type = 'success') => {
     setToast({ show: true, message, type })
@@ -37,11 +90,43 @@ export default function FoodPrescriptionAdd () {
     setFormData(prev => ({ ...prev, [name]: value }))
   }
 
+  const validateImage = file => {
+    if (!file) return 'Please select an image file'
+    if (!IMAGE_TYPES.includes(file.type))
+      return 'Only JPG, JPEG, PNG, WEBP, and AVIF are allowed'
+    // if (file.size > IMAGE_MAX_SIZE) return 'Image must be less than 2MB'
+    return ''
+  }
+
   const handleImageChange = e => {
     const file = e.target.files?.[0]
     if (!file) return
+    const err = validateImage(file)
+    if (err) {
+      showToast(err, 'error')
+      return
+    }
+    setCropFile(file)
+    setCropOpen(true)
+    e.target.value = ''
+  }
+
+  const openImagePicker = () => {
+    try {
+      imageInputRef.current?.click?.()
+    } catch (_) {}
+  }
+
+  const handleCropped = ({ file }) => {
+    if (imagePreview) {
+      try {
+        URL.revokeObjectURL(imagePreview)
+      } catch (_) {}
+    }
     setFormData(prev => ({ ...prev, image: file }))
     setImagePreview(URL.createObjectURL(file))
+    setCropOpen(false)
+    setCropFile(null)
   }
 
   const handleDocumentChange = (id, field, value) => {
@@ -70,16 +155,16 @@ export default function FoodPrescriptionAdd () {
     )
   }
 
-  const handleSubmit = () => {
-    if (!formData.name) {
+  const handleSubmit = async () => {
+    if (!formData.name?.trim()) {
       showToast('Food Prescriptions Name is required', 'error')
       return
     }
-    if (!description) {
+    if (!description?.trim()) {
       showToast('Food Prescriptions content is required', 'error')
       return
     }
-    if (!formData.duration) {
+    if (!formData.duration?.trim()) {
       showToast('Duration is required', 'error')
       return
     }
@@ -91,11 +176,83 @@ export default function FoodPrescriptionAdd () {
       showToast('Upload Image is required', 'error')
       return
     }
-    if (!disclaimer) {
+    if (!disclaimer?.trim()) {
       showToast('Non Medical Disclaimer is required', 'error')
       return
     }
-    showToast('Food Prescription added successfully (mock)', 'success')
+    const docsWithFiles = documents.filter(
+      d => d.title?.trim() && d.subText?.trim() && d.file
+    )
+    if (
+      documents.some(d => d.title?.trim() || d.subText?.trim() || d.file) &&
+      !docsWithFiles.length
+    ) {
+      showToast('Each document must have Title, Sub Title and a file', 'error')
+      return
+    }
+
+    setSaving(true)
+    try {
+      const detailText = toPlainText(description)
+      const disclaimerText = toPlainText(disclaimer)
+
+      const fd = new FormData()
+      fd.append('name', formData.name.trim())
+      fd.append('detail', detailText)
+      fd.append('duration', formData.duration.trim())
+      fd.append('format', FORMAT_LABELS[formData.format] ?? formData.format)
+      fd.append('nonDisclaimer', disclaimerText)
+      fd.append('image', formData.image)
+
+      const documentsPayload = documents
+        .filter(d => d.title?.trim() && d.subText?.trim() && d.file)
+        .map(d => ({ title: d.title.trim(), subTitle: d.subText?.trim() }))
+      if (documentsPayload.length) {
+        fd.append('documents', JSON.stringify(documentsPayload))
+      }
+
+      documents
+        .filter(d => d.title?.trim() && d.subText?.trim() && d.file)
+        .forEach(doc => {
+          // Backend expects repeated "documents" file fields (see payload screenshot)
+          fd.append('documents', doc.file)
+        })
+
+      try {
+        // eslint-disable-next-line no-console
+        console.log('[FoodPrescriptionAdd] createFood FormData entries:')
+        // eslint-disable-next-line no-console
+        console.table(
+          Array.from(fd.entries()).map(([k, v]) =>
+            v instanceof File
+              ? { key: k, type: 'file', name: v.name, mime: v.type, size: v.size }
+              : { key: k, type: 'text', value: String(v) }
+          )
+        )
+      } catch {}
+
+      await createFood(fd)
+      showToast('Food Prescription added successfully', 'success')
+      router.push('/food-prescription')
+    } catch (err) {
+      if (!err?.response) {
+        showToast(
+          'Network/CORS error. Request payload will not appear because the POST was blocked before sending. Check browser console.',
+          'error'
+        )
+        return
+      }
+      const data = err?.response?.data
+      const msg = String(
+        data?.message ||
+          (data ? JSON.stringify(data) : '') ||
+          err?.message ||
+          'Failed to add food prescription'
+      )
+      showToast(msg, 'error')
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
@@ -138,9 +295,17 @@ export default function FoodPrescriptionAdd () {
           <button
             type='button'
             onClick={handleSubmit}
-            className='rounded-lg bg-[#FF4400] px-6 py-2 text-sm font-medium text-white hover:bg-[#ff551e]'
+            disabled={saving}
+            className='rounded-lg bg-[#FF4400] px-6 py-2 text-sm font-medium text-white hover:bg-[#ff551e] disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2'
           >
-            Add
+            {saving ? (
+              <>
+                <Loader2 className='h-4 w-4 animate-spin' />
+                Saving...
+              </>
+            ) : (
+              'Add'
+            )}
           </button>
         </div>
 
@@ -153,6 +318,16 @@ export default function FoodPrescriptionAdd () {
           setDisclaimer={setDisclaimer}
           imagePreview={imagePreview}
           handleImageChange={handleImageChange}
+          imageInputRef={imageInputRef}
+          onBrowseImage={openImagePicker}
+          onCropImage={
+            formData.image
+              ? () => {
+                  setCropFile(formData.image)
+                  setCropOpen(true)
+                }
+              : null
+          }
           documents={documents}
           handleDocumentChange={handleDocumentChange}
           handleDocumentFileChange={handleDocumentFileChange}
@@ -160,6 +335,18 @@ export default function FoodPrescriptionAdd () {
           removeDocumentRow={removeDocumentRow}
         />
       </div>
+
+      {cropOpen && (
+        <ImageCropper
+          open={cropOpen}
+          file={cropFile}
+          onClose={() => {
+            setCropOpen(false)
+            setCropFile(null)
+          }}
+          onCropped={handleCropped}
+        />
+      )}
     </div>
   )
 }

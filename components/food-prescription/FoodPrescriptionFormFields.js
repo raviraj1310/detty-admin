@@ -12,6 +12,9 @@ export default function FoodPrescriptionFormFields ({
   setDisclaimer,
   imagePreview,
   handleImageChange,
+  imageInputRef = null,
+  onBrowseImage = null,
+  onCropImage = null,
   documents,
   handleDocumentChange,
   handleDocumentFileChange,
@@ -52,19 +55,14 @@ export default function FoodPrescriptionFormFields ({
           <label className='mb-2 block text-sm font-medium text-gray-700'>
             Duration*
           </label>
-          <select
+          <input
+            type='text'
             name='duration'
             value={formData.duration}
             onChange={handleInputChange}
-            className='w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm focus:border-[#FF4400] focus:outline-none'
-          >
-            <option value=''>Select Duration</option>
-            <option value='ongoing'>
-              Ongoing access (Self-paced, view-based program)
-            </option>
-            <option value='4-weeks'>4 Weeks Program</option>
-            <option value='8-weeks'>8 Weeks Program</option>
-          </select>
+            className='w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
+            placeholder='Ongoing access (Self-paced, view-based program)'
+          />
         </div>
         <div>
           <label className='mb-2 block text-sm font-medium text-gray-700'>
@@ -88,21 +86,35 @@ export default function FoodPrescriptionFormFields ({
         </div>
         <div>
           <label className='mb-2 block text-sm font-medium text-gray-700'>
-            Upload Image*
+            Upload Image* (cropped & converted to WebP)
           </label>
-          <div className='flex rounded-lg border border-gray-200 bg-white'>
-            <div className='flex-1 truncate px-4 py-2.5 text-sm text-gray-500'>
-              {formData.image ? formData.image.name : 'Image.jpg'}
+          <div className='flex flex-wrap items-center gap-2 rounded-lg border border-gray-200 bg-white'>
+            <div className='flex-1 min-w-0 truncate px-4 py-2.5 text-sm text-gray-500'>
+              {formData.image ? formData.image.name : 'Choose image…'}
             </div>
-            <label className='cursor-pointer bg-gray-100 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-200 rounded-r-lg'>
+            <input
+              ref={imageInputRef}
+              type='file'
+              className='sr-only'
+              accept='.jpg,.jpeg,.png,.webp,.avif'
+              onChange={handleImageChange}
+            />
+            <button
+              type='button'
+              onClick={onBrowseImage}
+              className='shrink-0 bg-gray-100 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-200 rounded-lg'
+            >
               Browse
-              <input
-                type='file'
-                className='hidden'
-                accept='image/*'
-                onChange={handleImageChange}
-              />
-            </label>
+            </button>
+            {onCropImage && formData.image && (
+              <button
+                type='button'
+                onClick={onCropImage}
+                className='shrink-0 rounded-lg border border-gray-200 px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50'
+              >
+                Crop
+              </button>
+            )}
           </div>
           {imagePreview && (
             <div className='mt-3 relative h-32 w-full overflow-hidden rounded-lg border border-gray-200'>
@@ -114,6 +126,7 @@ export default function FoodPrescriptionFormFields ({
               />
             </div>
           )}
+          <p className='mt-1 text-[10px] text-gray-500'>Max 2MB. JPG, JPEG, PNG, WEBP, AVIF. Cropped and saved as WebP.</p>
         </div>
       </div>
 
@@ -160,7 +173,7 @@ export default function FoodPrescriptionFormFields ({
                 </div>
                 <div>
                   <label className='mb-1 block text-xs font-medium text-gray-600'>
-                    Sub Text*
+                    Sub Title*
                   </label>
                   <input
                     type='text'
@@ -169,7 +182,7 @@ export default function FoodPrescriptionFormFields ({
                       handleDocumentChange(doc.id, 'subText', e.target.value)
                     }
                     className='w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
-                    placeholder='Short supporting description'
+                    placeholder='e.g. diet-chart.pdf'
                   />
                 </div>
               </div>
@@ -187,8 +200,8 @@ export default function FoodPrescriptionFormFields ({
                       Browse
                       <input
                         type='file'
-                        className='hidden'
-                        accept='.pdf,.doc,.docx'
+                        className='sr-only'
+                        accept='.pdf,.doc,.docx,image/*'
                         onChange={e =>
                           handleDocumentFileChange(
                             doc.id,
