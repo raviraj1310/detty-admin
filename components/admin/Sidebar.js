@@ -310,6 +310,12 @@ const menuSections = [
         icon: '/images/backend/side_menu/side_menu (12).svg',
         href: '/food-prescription',
         permission: 'master'
+      },
+      {
+        label: 'Weight Management Events',
+        icon: '/images/backend/side_menu/side_menu (12).svg',
+        href: '/weight-management-event',
+        permission: 'master'
       }
     ]
   },
