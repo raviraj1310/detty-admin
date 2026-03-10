@@ -1,28 +1,42 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Clock, Trash2, Plus, ChevronLeft, Loader2, Calendar } from 'lucide-react'
+import {
+  Clock,
+  Trash2,
+  Plus,
+  ChevronLeft,
+  Loader2,
+  Calendar
+} from 'lucide-react'
 import TiptapEditor from '@/components/editor/TiptapEditor'
 import Toast from '@/components/ui/Toast'
 import ImageCropper from '@/components/ui/ImageCropper'
+import {
+  createWeightManagementEvent,
+  getAllCertificates
+} from '@/services/weight-management-event/weight-management-event.service'
+import { getGymHostList } from '@/services/v2/gym/gym.service'
 
-const CERTIFICATE_OPTIONS = [
-  { _id: '1', certificateName: 'Fitness Bootcamp & Yoga' },
-  { _id: '2', certificateName: 'Weight Management Certificate' }
-]
-
-const HOST_OPTIONS = [
-  { _id: '1', name: 'ProActive Gym' },
-  { _id: '2', name: 'Tunde Adeyemi' }
-]
+const slugify = value =>
+  String(value || '')
+    .toLowerCase()
+    .trim()
+    .replace(/['"]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
 
 export default function WeightManagementEventAdd () {
   const router = useRouter()
   const fileInputRef = useRef(null)
 
   const [loading, setLoading] = useState(false)
+  const [certificatesLoading, setCertificatesLoading] = useState(false)
+  const [certificates, setCertificates] = useState([])
+  const [hostsLoading, setHostsLoading] = useState(false)
+  const [hosts, setHosts] = useState([])
   const [formData, setFormData] = useState({
     eventName: '',
     certificateTemplate: '',
@@ -76,6 +90,81 @@ export default function WeightManagementEventAdd () {
     setFormData(prev => ({ ...prev, [name]: value }))
   }
 
+  useEffect(() => {
+    const fetchCertificates = async () => {
+      setCertificatesLoading(true)
+      try {
+        const res = await getAllCertificates()
+        if (!res?.success) {
+          showToast(res?.message || 'Failed to fetch certificates', 'error')
+          setCertificates([])
+          return
+        }
+        const list = Array.isArray(res?.data) ? res.data : []
+        const activeList = list.filter(c => c?.status !== false)
+        setCertificates(activeList)
+
+        // If currently selected certificate no longer exists, clear it
+        setFormData(prev => {
+          if (!prev.certificateTemplate) return prev
+          const exists = activeList.some(
+            c => String(c?._id) === String(prev.certificateTemplate)
+          )
+          return exists ? prev : { ...prev, certificateTemplate: '' }
+        })
+      } catch (err) {
+        showToast(
+          err?.response?.data?.message ||
+            err?.message ||
+            'Failed to fetch certificates',
+          'error'
+        )
+        setCertificates([])
+      } finally {
+        setCertificatesLoading(false)
+      }
+    }
+    fetchCertificates()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  useEffect(() => {
+    const fetchHosts = async () => {
+      setHostsLoading(true)
+      try {
+        const res = await getGymHostList()
+        if (!res?.success) {
+          showToast(res?.message || 'Failed to fetch host list', 'error')
+          setHosts([])
+          return
+        }
+        const list = Array.isArray(res?.data) ? res.data : []
+        const activeList = list.filter(h => h?.status !== false)
+        setHosts(activeList)
+
+        setFormData(prev => {
+          if (!prev.hostedBy) return prev
+          const exists = activeList.some(
+            h => String(h?._id) === String(prev.hostedBy)
+          )
+          return exists ? prev : { ...prev, hostedBy: '' }
+        })
+      } catch (err) {
+        showToast(
+          err?.response?.data?.message ||
+            err?.message ||
+            'Failed to fetch host list',
+          'error'
+        )
+        setHosts([])
+      } finally {
+        setHostsLoading(false)
+      }
+    }
+    fetchHosts()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   const handleSlotChange = (id, field, value) => {
     setSlots(prev =>
       prev.map(slot => (slot.id === id ? { ...slot, [field]: value } : slot))
@@ -115,10 +204,6 @@ export default function WeightManagementEventAdd () {
     setMainImageUrl(URL.createObjectURL(file))
     setRawImageFile(null)
     setCropOpen(false)
-  }
-
-  const handleEditPasses = () => {
-    showToast('Save the event first to edit passes.', 'error')
   }
 
   const handleSubmit = async () => {
@@ -162,14 +247,72 @@ export default function WeightManagementEventAdd () {
       showToast('Important Information is required', 'error')
       return
     }
+    const normalizedSlots = (slots || []).map(s => ({
+      slotName: String(s.name || '').trim(),
+      date: String(s.date || '').trim(),
+      time: String(s.time || '').trim(),
+      inventory: Number(s.inventory || 0),
+      price: Number(s.price || 0)
+    }))
+    const hasInvalidSlot = normalizedSlots.some(
+      s =>
+        !s.slotName ||
+        !s.date ||
+        !s.time ||
+        !Number.isFinite(s.inventory) ||
+        s.inventory <= 0 ||
+        !Number.isFinite(s.price) ||
+        s.price <= 0
+    )
+    if (hasInvalidSlot) {
+      showToast(
+        'All slots must have Slot Name, Date, Time, Inventory (>0) and Price (>0)',
+        'error'
+      )
+      return
+    }
 
     setLoading(true)
     try {
-      // TODO: call create weight management event API
-      showToast('Weight management event added successfully', 'success')
+      const payload = new FormData()
+      payload.append('eventName', String(formData.eventName || '').trim())
+      payload.append('slug', slugify(formData.eventName))
+      if (formData.certificateTemplate) {
+        payload.append('certificateId', String(formData.certificateTemplate))
+      }
+      payload.append('about', aboutEvent)
+      payload.append('duration', String(formData.duration || '').trim())
+      payload.append('startDate', String(formData.startDate || '').trim())
+      payload.append('endDate', String(formData.endDate || '').trim())
+      payload.append('startTime', String(formData.startTime || '').trim())
+      payload.append('endTime', String(formData.endTime || '').trim())
+      payload.append('hostedBy', String(formData.hostedBy || '').trim())
+      payload.append('location', String(formData.location || '').trim())
+      payload.append(
+        'locationCoordinates',
+        String(formData.locationCoordinates || '').trim()
+      )
+      payload.append('importantInformation', importantInfo)
+      payload.append('status', 'true')
+      payload.append('slots', JSON.stringify(normalizedSlots))
+      payload.append('image', mainImage)
+
+      const res = await createWeightManagementEvent(payload)
+      if (!res?.success) {
+        showToast(res?.message || 'Failed to add event', 'error')
+        return
+      }
+
+      showToast(
+        res?.message || 'Weight management event added successfully',
+        'success'
+      )
       setTimeout(() => router.push('/weight-management-event'), 1200)
     } catch (err) {
-      showToast(err?.message || 'Failed to add event', 'error')
+      showToast(
+        err?.response?.data?.message || err?.message || 'Failed to add event',
+        'error'
+      )
     } finally {
       setLoading(false)
     }
@@ -202,7 +345,9 @@ export default function WeightManagementEventAdd () {
               Dashboard
             </Link>
             <span className='mx-2'>/</span>
-            <span className='text-gray-900'>Add New Weight Management Event</span>
+            <span className='text-gray-900'>
+              Add New Weight Management Event
+            </span>
           </nav>
         </div>
       </div>
@@ -213,13 +358,6 @@ export default function WeightManagementEventAdd () {
             Weight Management Event Details
           </h2>
           <div className='flex gap-3'>
-            <button
-              type='button'
-              onClick={handleEditPasses}
-              className='rounded-lg border border-[#FF5B2C] bg-white px-6 py-2 text-sm font-medium text-[#FF5B2C] hover:bg-[#FFF5F2] transition'
-            >
-              Edit Passes
-            </button>
             <button
               type='button'
               onClick={handleSubmit}
@@ -258,11 +396,17 @@ export default function WeightManagementEventAdd () {
                 className='w-full appearance-none rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm text-slate-700 focus:border-[#FF4400] focus:outline-none'
               >
                 <option value=''>Select Template</option>
-                {CERTIFICATE_OPTIONS.map(t => (
-                  <option key={t._id} value={t._id}>
-                    {t.certificateName}
+                {certificatesLoading ? (
+                  <option value='' disabled>
+                    Loading...
                   </option>
-                ))}
+                ) : (
+                  certificates.map(t => (
+                    <option key={t._id} value={t._id}>
+                      {t.certificateName}
+                    </option>
+                  ))
+                )}
               </select>
             </div>
           </div>
@@ -369,11 +513,17 @@ export default function WeightManagementEventAdd () {
                 className='w-full appearance-none rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm text-slate-700 focus:border-[#FF4400] focus:outline-none'
               >
                 <option value=''>Select Host</option>
-                {HOST_OPTIONS.map(h => (
-                  <option key={h._id} value={h._id}>
-                    {h.name}
+                {hostsLoading ? (
+                  <option value='' disabled>
+                    Loading...
                   </option>
-                ))}
+                ) : (
+                  hosts.map(h => (
+                    <option key={h._id} value={h._id}>
+                      {h.name || h.hostName || h.gymHostName || 'Host'}
+                    </option>
+                  ))
+                )}
               </select>
             </div>
           </div>
@@ -451,7 +601,11 @@ export default function WeightManagementEventAdd () {
                           min='0'
                           value={slot.inventory}
                           onChange={e =>
-                            handleSlotChange(slot.id, 'inventory', e.target.value)
+                            handleSlotChange(
+                              slot.id,
+                              'inventory',
+                              e.target.value
+                            )
                           }
                           className='w-full rounded-lg border border-gray-200 px-3 py-2 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
                           placeholder='50'

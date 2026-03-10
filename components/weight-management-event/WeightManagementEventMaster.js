@@ -6,6 +6,8 @@ import {
   Search,
   Download,
   MoreVertical,
+  ToggleLeft,
+  ToggleRight,
   Calendar,
   CheckCircle,
   Clock,
@@ -22,6 +24,11 @@ import {
 import { IoFilterSharp } from 'react-icons/io5'
 import { TbCaretUpDownFilled } from 'react-icons/tb'
 import Toast from '@/components/ui/Toast'
+import {
+  getAllWeightManagementEvents,
+  deleteWeightManagementEvent,
+  updateWeightManagementEventStatus
+} from '@/services/weight-management-event/weight-management-event.service'
 
 const formatDate = dateString => {
   if (!dateString) return '—'
@@ -34,6 +41,31 @@ const formatDate = dateString => {
     minute: '2-digit',
     hour12: true
   })
+}
+
+const getUploadOrigin = () => {
+  const sim = String(process.env.NEXT_PUBLIC_SIM_IMAGE_BASE_ORIGIN || '').trim()
+  if (sim) return sim.replace(/\/+$/, '')
+
+  const api2 = String(process.env.NEXT_PUBLIC_API_BASE_URL2 || '').trim()
+  if (api2) {
+    return api2
+      .replace(/\/+$/, '')
+      .replace(/\/api\/v2\/?$/i, '')
+      .replace(/\/+$/, '')
+  }
+
+  return 'https://accessdettyfusion.com'
+}
+
+const toUploadUrl = (value, folder) => {
+  const s = String(value || '').trim()
+  if (!s) return ''
+  if (/^https?:\/\//i.test(s)) return s
+  const path = s.startsWith('/') ? s : `/${s}`
+  if (path.includes('/upload/')) return `${getUploadOrigin()}${path}`
+  const safeFolder = String(folder || '').replace(/^\/+|\/+$/g, '')
+  return `${getUploadOrigin()}/upload/${safeFolder}/${encodeURIComponent(s)}`
 }
 
 const INITIAL_METRICS = [
@@ -102,38 +134,38 @@ const INITIAL_METRICS = [
   }
 ]
 
-const MOCK_LIST = [
-  {
-    _id: '1',
-    createdAt: '2025-06-12T10:00:00.000Z',
-    eventName: 'Everyday Nutrition Workshop',
-    image: '/images/no-image.webp',
-    hostedBy: 'Tunde Adeyemi',
-    location: 'Ikoyi, Lagos',
-    totalBookings: 100,
-    status: 'done'
-  },
-  {
-    _id: '2',
-    createdAt: '2025-06-11T14:30:00.000Z',
-    eventName: 'Mindful Eating Session',
-    image: '/images/no-image.webp',
-    hostedBy: 'Tunde Adeyemi',
-    location: 'Ikoyi, Lagos',
-    totalBookings: 100,
-    status: 'upcoming'
-  },
-  {
-    _id: '3',
-    createdAt: '2025-06-10T09:00:00.000Z',
-    eventName: 'Lifestyle Nutrition Talk',
-    image: '/images/no-image.webp',
-    hostedBy: 'Tunde Adeyemi',
-    location: 'Ikoyi, Lagos',
-    totalBookings: 100,
-    status: 'done'
-  }
-]
+const formatRevenueCardValue = value =>
+  typeof value === 'number'
+    ? `₦${Number(value || 0).toLocaleString('en-NG')}`
+    : String(value || '₦0')
+
+const computeEventState = (startDate, endDate) => {
+  const now = new Date().getTime()
+  const start = startDate ? new Date(startDate).getTime() : null
+  const end = endDate ? new Date(endDate).getTime() : null
+
+  if (start && now < start) return 'upcoming'
+  if (end && now > end) return 'done'
+  if (start && end && now >= start && now <= end) return 'ongoing'
+  return 'upcoming'
+}
+
+const mapEventFromApi = api => ({
+  _id: api._id,
+  createdAt: api.createdAt,
+  eventName: api.eventName,
+  image: api.image,
+  hostedBy:
+    typeof api.hostedBy === 'string'
+      ? api.hostedBy
+      : api.hostedBy?.name || api.hostedBy?.fullName || api.hostedBy?.email || '',
+  location: api.location,
+  totalBookings: api.totalBookings ?? 0,
+  // eventState drives table label + filter (Done/Ongoing/Upcoming)
+  eventState: computeEventState(api.startDate, api.endDate),
+  // status is active/inactive boolean from API (toggle)
+  status: Boolean(api.status)
+})
 
 const TableHeaderCell = ({
   children,
@@ -182,6 +214,14 @@ export default function WeightManagementEventMaster () {
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [deleteId, setDeleteId] = useState(null)
+  const [statusTogglingId, setStatusTogglingId] = useState(null)
+
+  const [pagination, setPagination] = useState({
+    total: 0,
+    page: 1,
+    limit: 10,
+    totalPages: 1
+  })
 
   const [toastOpen, setToastOpen] = useState(false)
   const [toastProps, setToastProps] = useState({
@@ -196,20 +236,57 @@ export default function WeightManagementEventMaster () {
   }
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setList(MOCK_LIST)
-      const newMetrics = [...INITIAL_METRICS]
-      newMetrics[0].value = '1155'
-      newMetrics[1].value = '1137'
-      newMetrics[2].value = '1137'
-      newMetrics[3].value = '299'
-      newMetrics[4].value = '1155'
-      newMetrics[5].value = '865(₦10,00,000)'
-      newMetrics[6].value = '299(₦2,00,000)'
-      setMetrics(newMetrics)
-      setLoading(false)
-    }, 400)
-    return () => clearTimeout(timer)
+    const fetchEvents = async () => {
+      setLoading(true)
+      try {
+        const res = await getAllWeightManagementEvents()
+        if (!res?.success) {
+          showToast(
+            'Error',
+            res?.message || 'Failed to fetch events',
+            'destructive'
+          )
+          setList([])
+          return
+        }
+
+        const data = res?.data || {}
+        const stats = data?.stats || {}
+        const events = Array.isArray(data?.events) ? data.events : []
+        const pg = data?.pagination || {}
+
+        setPagination({
+          total: pg.total ?? events.length,
+          page: pg.page ?? 1,
+          limit: pg.limit ?? 10,
+          totalPages: pg.totalPages ?? 1
+        })
+
+        setList(events.map(mapEventFromApi))
+
+        const newMetrics = [...INITIAL_METRICS]
+        newMetrics[0].value = String(stats.totalEvents ?? 0)
+        newMetrics[1].value = String(stats.doneEvents ?? 0)
+        newMetrics[2].value = String(stats.ongoingEvents ?? 0)
+        newMetrics[3].value = String(stats.upcomingEvents ?? 0)
+        newMetrics[4].value = String(stats.totalBookings ?? 0)
+        newMetrics[5].value = formatRevenueCardValue(stats.totalRevenue ?? 0)
+        newMetrics[6].value = String(stats.canceledBookings ?? 0)
+        setMetrics(newMetrics)
+      } catch (err) {
+        showToast(
+          'Error',
+          err?.response?.data?.message ||
+            err?.message ||
+            'Failed to fetch events',
+          'destructive'
+        )
+        setList([])
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchEvents()
   }, [])
 
   useEffect(() => {
@@ -249,29 +326,33 @@ export default function WeightManagementEventMaster () {
     }
   }
 
-  const getStatusDisplay = status => {
-    const s = String(status || '').toLowerCase()
+  const getStatusDisplay = eventState => {
+    const s = String(eventState || '').toLowerCase()
     if (s === 'done') {
       return {
         label: 'Done',
-        className: 'bg-emerald-50 text-emerald-600 border border-emerald-200'
+        className: 'bg-emerald-50 text-emerald-600 border border-emerald-200',
+        dot: 'bg-emerald-500'
       }
     }
     if (s === 'upcoming') {
       return {
         label: 'Upcoming',
-        className: 'bg-amber-50 text-amber-600 border border-amber-200'
+        className: 'bg-amber-50 text-amber-600 border border-amber-200',
+        dot: 'bg-amber-500'
       }
     }
     if (s === 'ongoing') {
       return {
         label: 'Ongoing',
-        className: 'bg-sky-50 text-sky-600 border border-sky-200'
+        className: 'bg-sky-50 text-sky-600 border border-sky-200',
+        dot: 'bg-sky-500'
       }
     }
     return {
-      label: status || '—',
-      className: 'bg-gray-50 text-gray-600 border border-gray-200'
+      label: eventState || '—',
+      className: 'bg-gray-50 text-gray-600 border border-gray-200',
+      dot: 'bg-gray-400'
     }
   }
 
@@ -287,8 +368,10 @@ export default function WeightManagementEventMaster () {
         return (item.location || '').toLowerCase()
       case 'bookings':
         return item.totalBookings ?? 0
+      case 'eventStatus':
+        return (item.eventState || '').toLowerCase()
       case 'status':
-        return (item.status || '').toLowerCase()
+        return item.status ? 1 : 0
       default:
         return ''
     }
@@ -316,7 +399,9 @@ export default function WeightManagementEventMaster () {
 
   const statusFilteredList = useMemo(() => {
     if (!statusFilter) return filteredList
-    return filteredList.filter(item => String(item.status || '').toLowerCase() === statusFilter)
+    return filteredList.filter(
+      item => String(item.eventState || '').toLowerCase() === statusFilter
+    )
   }, [filteredList, statusFilter])
 
   const sortedList = useMemo(() => {
@@ -325,9 +410,7 @@ export default function WeightManagementEventMaster () {
       const va = getSortValue(a, sortKey)
       const vb = getSortValue(b, sortKey)
       if (typeof va === 'string' && typeof vb === 'string') {
-        return sortOrder === 'asc'
-          ? va.localeCompare(vb)
-          : vb.localeCompare(va)
+        return sortOrder === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va)
       }
       return sortOrder === 'asc' ? va - vb : vb - va
     })
@@ -344,14 +427,68 @@ export default function WeightManagementEventMaster () {
     if (!deleteId) return
     setDeleting(true)
     try {
+      const res = await deleteWeightManagementEvent(deleteId)
+      if (!res?.success) {
+        showToast('Error', res?.message || 'Failed to delete', 'destructive')
+        return
+      }
       setList(prev => prev.filter(item => item._id !== deleteId))
-      showToast('Deleted', 'Weight management event has been deleted')
+      showToast(
+        'Deleted',
+        res?.message || 'Weight management event has been deleted'
+      )
     } catch (err) {
-      showToast('Error', 'Failed to delete', 'destructive')
+      showToast(
+        'Error',
+        err?.response?.data?.message || err?.message || 'Failed to delete',
+        'destructive'
+      )
     } finally {
       setDeleting(false)
       setConfirmOpen(false)
       setDeleteId(null)
+    }
+  }
+
+  const handleToggleActive = async item => {
+    if (!item?._id) return
+    const nextStatus = !Boolean(item.status)
+    setStatusTogglingId(item._id)
+    // optimistic
+    setList(prev =>
+      prev.map(i => (i._id === item._id ? { ...i, status: nextStatus } : i))
+    )
+    try {
+      const res = await updateWeightManagementEventStatus(item._id, nextStatus)
+      if (!res?.success) {
+        // revert
+        setList(prev =>
+          prev.map(i =>
+            i._id === item._id ? { ...i, status: !nextStatus } : i
+          )
+        )
+        showToast(
+          'Error',
+          res?.message || 'Failed to update status',
+          'destructive'
+        )
+      } else {
+        showToast('Updated', res?.message || 'Status updated')
+      }
+    } catch (err) {
+      setList(prev =>
+        prev.map(i => (i._id === item._id ? { ...i, status: !nextStatus } : i))
+      )
+      showToast(
+        'Error',
+        err?.response?.data?.message ||
+          err?.message ||
+          'Failed to update status',
+        'destructive'
+      )
+    } finally {
+      setStatusTogglingId(null)
+      setActiveDropdown(null)
     }
   }
 
@@ -402,13 +539,20 @@ export default function WeightManagementEventMaster () {
             >
               <div className='flex items-center justify-between gap-3'>
                 <div className={`rounded-xl p-2.5 ${card.iconBg} shadow-sm`}>
-                  <Icon className={`h-5 w-5 ${card.textColor}`} strokeWidth={2.2} />
+                  <Icon
+                    className={`h-5 w-5 ${card.textColor}`}
+                    strokeWidth={2.2}
+                  />
                 </div>
                 <div className='text-right min-w-0'>
-                  <p className={`text-xs font-medium ${card.textColor} truncate`}>
+                  <p
+                    className={`text-xs font-medium ${card.textColor} truncate`}
+                  >
                     {card.title}
                   </p>
-                  <h3 className={`mt-1 text-lg font-bold ${card.textColor} truncate`}>
+                  <h3
+                    className={`mt-1 text-lg font-bold ${card.textColor} truncate`}
+                  >
                     {card.value}
                   </h3>
                 </div>
@@ -457,7 +601,9 @@ export default function WeightManagementEventMaster () {
                       setFilterOpen(false)
                     }}
                     className={`flex w-full items-center justify-between px-3 py-2 text-xs font-medium hover:bg-gray-50 rounded-md ${
-                      statusFilter === 'done' ? 'text-[#FF5B2C] bg-[#FFF5F2]' : 'text-slate-700'
+                      statusFilter === 'done'
+                        ? 'text-[#FF5B2C] bg-[#FFF5F2]'
+                        : 'text-slate-700'
                     }`}
                   >
                     Done
@@ -468,7 +614,9 @@ export default function WeightManagementEventMaster () {
                       setFilterOpen(false)
                     }}
                     className={`flex w-full items-center justify-between px-3 py-2 text-xs font-medium hover:bg-gray-50 rounded-md ${
-                      statusFilter === 'ongoing' ? 'text-[#FF5B2C] bg-[#FFF5F2]' : 'text-slate-700'
+                      statusFilter === 'ongoing'
+                        ? 'text-[#FF5B2C] bg-[#FFF5F2]'
+                        : 'text-slate-700'
                     }`}
                   >
                     Ongoing
@@ -479,7 +627,9 @@ export default function WeightManagementEventMaster () {
                       setFilterOpen(false)
                     }}
                     className={`flex w-full items-center justify-between px-3 py-2 text-xs font-medium hover:bg-gray-50 rounded-md ${
-                      statusFilter === 'upcoming' ? 'text-[#FF5B2C] bg-[#FFF5F2]' : 'text-slate-700'
+                      statusFilter === 'upcoming'
+                        ? 'text-[#FF5B2C] bg-[#FFF5F2]'
+                        : 'text-slate-700'
                     }`}
                   >
                     Upcoming
@@ -556,6 +706,15 @@ export default function WeightManagementEventMaster () {
                 </th>
                 <th className='py-3 px-4 text-left'>
                   <TableHeaderCell
+                    onClick={() => handleSort('eventStatus')}
+                    active={sortKey === 'eventStatus'}
+                    direction={sortOrder}
+                  >
+                    Event Status
+                  </TableHeaderCell>
+                </th>
+                <th className='py-3 px-4 text-left'>
+                  <TableHeaderCell
                     onClick={() => handleSort('status')}
                     active={sortKey === 'status'}
                     direction={sortOrder}
@@ -581,7 +740,7 @@ export default function WeightManagementEventMaster () {
                 </tr>
               ) : (
                 sortedList.map(item => {
-                  const statusDisplay = getStatusDisplay(item.status)
+                  const statusDisplay = getStatusDisplay(item.eventState)
                   return (
                     <tr key={item._id} className='group hover:bg-gray-50'>
                       <td className='py-3 px-4 text-xs text-gray-500'>
@@ -592,7 +751,10 @@ export default function WeightManagementEventMaster () {
                           <div className='h-10 w-10 overflow-hidden rounded-lg bg-gray-100 ring-1 ring-gray-200 shrink-0'>
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img
-                              src={item.image || '/images/no-image.webp'}
+                              src={
+                                toUploadUrl(item.image, 'image') ||
+                                '/images/no-image.webp'
+                              }
                               alt={item.eventName || 'Event'}
                               className='h-full w-full object-cover'
                               onError={e => {
@@ -617,7 +779,9 @@ export default function WeightManagementEventMaster () {
                         <button
                           type='button'
                           onClick={() =>
-                            router.push(`/weight-management-event/bookings/${item._id}`)
+                            router.push(
+                              `/weight-management-event/bookings/${item._id}`
+                            )
                           }
                           className='flex items-center gap-1 text-xs cursor-pointer font-semibold text-indigo-600 underline'
                         >
@@ -629,15 +793,25 @@ export default function WeightManagementEventMaster () {
                           className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${statusDisplay.className}`}
                         >
                           <span
-                            className={`mr-1 h-1.5 w-1.5 rounded-full ${
-                              item.status === 'done'
-                                ? 'bg-emerald-500'
-                                : item.status === 'upcoming'
-                                  ? 'bg-amber-500'
-                                  : 'bg-sky-500'
-                            }`}
+                            className={`mr-1 h-1.5 w-1.5 rounded-full ${statusDisplay.dot}`}
                           />
                           {statusDisplay.label}
+                        </span>
+                      </td>
+                      <td className='py-3 px-4'>
+                        <span
+                          className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium border ${
+                            item.status
+                              ? 'bg-emerald-50 text-emerald-600 border-emerald-200'
+                              : 'bg-red-50 text-red-600 border-red-200'
+                          }`}
+                        >
+                          <span
+                            className={`mr-1 h-1.5 w-1.5 rounded-full ${
+                              item.status ? 'bg-emerald-500' : 'bg-red-500'
+                            }`}
+                          />
+                          {item.status ? 'Active' : 'Inactive'}
                         </span>
                       </td>
                       <td className='relative py-3 px-4 text-right'>
@@ -660,7 +834,9 @@ export default function WeightManagementEventMaster () {
                           >
                             <button
                               onClick={() => {
-                                router.push(`/weight-management-event/edit/${item._id}`)
+                                router.push(
+                                  `/weight-management-event/edit/${item._id}`
+                                )
                                 setActiveDropdown(null)
                               }}
                               className='flex w-full items-center cursor-pointer px-4 py-2 text-xs font-medium text-slate-700 hover:bg-gray-50'
@@ -670,7 +846,9 @@ export default function WeightManagementEventMaster () {
                             <div className='my-1 h-px bg-gray-100' />
                             <button
                               onClick={() => {
-                                router.push(`/weight-management-event/bookings/${item._id}`)
+                                router.push(
+                                  `/weight-management-event/bookings/${item._id}`
+                                )
                                 setActiveDropdown(null)
                               }}
                               className='flex w-full items-center cursor-pointer px-4 py-2 text-xs font-medium text-slate-700 hover:bg-gray-50'
@@ -680,7 +858,9 @@ export default function WeightManagementEventMaster () {
                             <div className='my-1 h-px bg-gray-100' />
                             <button
                               onClick={() => {
-                                router.push(`/weight-management-event/event-pass/${item._id}`)
+                                router.push(
+                                  `/weight-management-event/event-pass/${item._id}`
+                                )
                                 setActiveDropdown(null)
                               }}
                               className='flex w-full items-center cursor-pointer px-4 py-2 text-xs font-medium text-slate-700 hover:bg-gray-50'
@@ -696,30 +876,21 @@ export default function WeightManagementEventMaster () {
                             </button>
                             <div className='my-1 h-px bg-gray-100' />
                             <button
-                              onClick={() => {
-                                setList(prev =>
-                                  prev.map(i =>
-                                    i._id === item._id ? { ...i, isActive: true } : i
-                                  )
-                                )
-                                setActiveDropdown(null)
-                              }}
-                              className='flex w-full items-center cursor-pointer px-4 py-2 text-xs font-medium text-slate-700 hover:bg-gray-50'
+                              type='button'
+                              onClick={() => handleToggleActive(item)}
+                              disabled={statusTogglingId === item._id}
+                              className='flex w-full items-center justify-between cursor-pointer px-4 py-2 text-xs font-medium text-slate-700 hover:bg-gray-50 disabled:opacity-60 disabled:cursor-not-allowed'
                             >
-                              Active
-                            </button>
-                            <button
-                              onClick={() => {
-                                setList(prev =>
-                                  prev.map(i =>
-                                    i._id === item._id ? { ...i, isActive: false } : i
-                                  )
-                                )
-                                setActiveDropdown(null)
-                              }}
-                              className='flex w-full items-center cursor-pointer px-4 py-2 text-xs font-medium text-slate-700 hover:bg-gray-50'
-                            >
-                              Inactive
+                              <span>Active / Inactive</span>
+                              <span className='flex items-center gap-2'>
+                                {statusTogglingId === item._id ? (
+                                  <Loader2 className='h-4 w-4 animate-spin text-gray-400' />
+                                ) : item.status ? (
+                                  <ToggleRight className='h-5 w-5 text-emerald-600' />
+                                ) : (
+                                  <ToggleLeft className='h-5 w-5 text-gray-400' />
+                                )}
+                              </span>
                             </button>
                           </div>
                         )}

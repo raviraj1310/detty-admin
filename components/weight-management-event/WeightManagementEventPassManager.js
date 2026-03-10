@@ -18,15 +18,25 @@ import { IoFilterSharp } from 'react-icons/io5'
 import { TbCaretUpDownFilled } from 'react-icons/tb'
 import TiptapEditor from '@/components/editor/TiptapEditor'
 import Toast from '@/components/ui/Toast'
+import {
+  getAllPasses,
+  createWeightManagementEventPass,
+  getWeightManagementEventPassById,
+  updateWeightManagementEventPass,
+  deleteWeightManagementEventPass,
+  activeInactiveWeightManagementEventPass
+} from '@/services/weight-management-event/weight-management-event.service'
 
 const mapPassFromApi = api => ({
   id: api._id || api.id,
   addedOn: api.createdAt,
   passName: api.eventPassName || api.passName,
   passType: api.passType === 'group' ? 'Group Entry' : 'Single Entry',
-  participants: api.entryFor ?? (api.passType === 'group' ? api.participants : 1),
+  participants:
+    api.entryFor ?? (api.passType === 'group' ? api.participants : 1),
   price: api.passPrice ?? api.price,
-  status: api.status === true || api.status === 'active' ? 'Active' : 'Inactive',
+  status:
+    api.status === true || api.status === 'active' ? 'Active' : 'Inactive',
   details: api.details || ''
 })
 
@@ -57,39 +67,6 @@ const TableHeaderCell = ({
   </button>
 )
 
-const MOCK_PASSES = [
-  {
-    id: '1',
-    addedOn: '2025-06-12T10:00:00.000Z',
-    passName: 'Entry Pass',
-    passType: 'Single Entry',
-    participants: 1,
-    price: '10,000',
-    status: 'Active',
-    details: ''
-  },
-  {
-    id: '2',
-    addedOn: '2025-06-12T10:00:00.000Z',
-    passName: 'Premium Pass',
-    passType: 'Group Entry',
-    participants: 4,
-    price: '10,000',
-    status: 'Active',
-    details: ''
-  },
-  {
-    id: '3',
-    addedOn: '2025-06-12T10:00:00.000Z',
-    passName: 'Deluxe Pass',
-    passType: 'Single Entry',
-    participants: 1,
-    price: '10,000',
-    status: 'Inactive',
-    details: ''
-  }
-]
-
 export default function WeightManagementEventPassManager () {
   const router = useRouter()
   const params = useParams()
@@ -108,7 +85,12 @@ export default function WeightManagementEventPassManager () {
   const [searchTerm, setSearchTerm] = useState('')
   const [sortKey, setSortKey] = useState('addedOn')
   const [sortOrder, setSortOrder] = useState('desc')
-  const [toast, setToast] = useState({ show: false, message: '', type: '' })
+  const [toastOpen, setToastOpen] = useState(false)
+  const [toastProps, setToastProps] = useState({
+    title: '',
+    description: '',
+    variant: 'success'
+  })
   const [loading, setLoading] = useState(false)
   const [editLoading, setEditLoading] = useState(false)
 
@@ -129,10 +111,22 @@ export default function WeightManagementEventPassManager () {
     if (!weightId) return
     setLoading(true)
     try {
-      await new Promise(r => setTimeout(r, 300))
-      setPasses(MOCK_PASSES.map(p => ({ ...p })))
+      const res = await getAllPasses(weightId)
+      if (!res?.success) {
+        showToast(res?.message || 'Failed to fetch passes', 'error')
+        setPasses([])
+        return
+      }
+      const list = Array.isArray(res?.data) ? res.data : []
+      setPasses(list.map(mapPassFromApi))
     } catch (err) {
-      showToast(err?.message || 'Failed to fetch passes', 'error')
+      showToast(
+        err?.response?.data?.message ||
+          err?.message ||
+          'Failed to fetch passes',
+        'error'
+      )
+      setPasses([])
     } finally {
       setLoading(false)
     }
@@ -142,13 +136,14 @@ export default function WeightManagementEventPassManager () {
     fetchPasses()
   }, [weightId])
 
-  const showToast = (message, type) => {
-    setToast({ show: true, message, type })
-    const t = setTimeout(
-      () => setToast(prev => ({ ...prev, show: false })),
-      3000
-    )
-    return () => clearTimeout(t)
+  const showToast = (message, type = 'success') => {
+    const variant = type === 'error' ? 'error' : 'success'
+    setToastProps({
+      title: variant === 'success' ? 'Success' : 'Error',
+      description: String(message || ''),
+      variant
+    })
+    setToastOpen(true)
   }
 
   const handleAddOrUpdate = async () => {
@@ -159,44 +154,49 @@ export default function WeightManagementEventPassManager () {
 
     setEditLoading(true)
     try {
-      await new Promise(r => setTimeout(r, 400))
+      const payload = {
+        weightManagementId: weightId,
+        eventPassName: formData.passName,
+        passType: formData.passType === 'Group Entry' ? 'group' : 'single',
+        entryFor:
+          formData.passType === 'Group Entry'
+            ? Number(formData.participants || 0)
+            : 1,
+        passPrice: String(formData.price || ''),
+        details,
+        status: true
+      }
+
       if (isEditing) {
-        setPasses(prev =>
-          prev.map(p =>
-            p.id === isEditing
-              ? {
-                  ...p,
-                  passName: formData.passName,
-                  passType: formData.passType,
-                  participants: formData.passType === 'Group Entry' ? Number(formData.participants) || 0 : 1,
-                  price: formData.price,
-                  details
-                }
-              : p
-          )
-        )
-        showToast('Pass updated successfully', 'success')
+        const res = await updateWeightManagementEventPass(isEditing, payload)
+        if (!res?.success) {
+          showToast(res?.message || 'Failed to update pass', 'error')
+          return
+        }
+        showToast(res?.message || 'Pass updated successfully', 'success')
         setIsEditing(null)
+        await fetchPasses()
       } else {
-        setPasses(prev => [
-          ...prev,
-          {
-            id: String(Date.now()),
-            addedOn: new Date().toISOString(),
-            passName: formData.passName,
-            passType: formData.passType,
-            participants: formData.passType === 'Group Entry' ? Number(formData.participants) || 0 : 1,
-            price: formData.price,
-            status: 'Active',
-            details
-          }
-        ])
-        showToast('Pass added successfully', 'success')
-        setFormData({ passName: '', passType: 'Single Entry', participants: '', price: '' })
+        const res = await createWeightManagementEventPass(payload)
+        if (!res?.success) {
+          showToast(res?.message || 'Failed to add pass', 'error')
+          return
+        }
+        showToast(res?.message || 'Pass added successfully', 'success')
+        await fetchPasses()
+        setFormData({
+          passName: '',
+          passType: 'Single Entry',
+          participants: '',
+          price: ''
+        })
         setDetails('')
       }
     } catch (err) {
-      showToast(err?.message || 'Failed to save pass', 'error')
+      showToast(
+        err?.response?.data?.message || err?.message || 'Failed to save pass',
+        'error'
+      )
     } finally {
       setEditLoading(false)
     }
@@ -208,14 +208,32 @@ export default function WeightManagementEventPassManager () {
     window.scrollTo({ top: 0, behavior: 'smooth' })
     setEditLoading(true)
     try {
-      await new Promise(r => setTimeout(r, 200))
+      const res = await getWeightManagementEventPassById(pass.id)
+      if (!res?.success) {
+        showToast(res?.message || 'Failed to fetch pass details', 'error')
+        return
+      }
+      const data = res?.data
+      const p = Array.isArray(data) ? data[0] : data
+      const mapped = mapPassFromApi(p || {})
+
       setFormData({
-        passName: pass.passName,
-        passType: pass.passType,
-        participants: pass.passType === 'Group Entry' ? String(pass.participants || '') : '',
-        price: pass.price
+        passName: mapped.passName || '',
+        passType: mapped.passType || 'Single Entry',
+        participants:
+          mapped.passType === 'Group Entry'
+            ? String(mapped.participants || '')
+            : '',
+        price: String(mapped.price || '')
       })
-      setDetails(pass.details || '')
+      setDetails(mapped.details || '')
+    } catch (err) {
+      showToast(
+        err?.response?.data?.message ||
+          err?.message ||
+          'Failed to fetch pass details',
+        'error'
+      )
     } finally {
       setEditLoading(false)
     }
@@ -223,24 +241,44 @@ export default function WeightManagementEventPassManager () {
 
   const handleDelete = async id => {
     try {
+      const res = await deleteWeightManagementEventPass(id)
+      if (!res?.success) {
+        showToast(res?.message || 'Failed to delete pass', 'error')
+        return
+      }
       setPasses(prev => prev.filter(p => p.id !== id))
-      showToast('Pass deleted', 'success')
+      showToast(res?.message || 'Pass deleted', 'success')
     } catch (err) {
-      showToast(err?.message || 'Delete failed', 'error')
+      showToast(
+        err?.response?.data?.message || err?.message || 'Delete failed',
+        'error'
+      )
     }
     setActiveDropdown(null)
   }
 
   const handleStatusChange = async (passId, active) => {
     try {
+      const res = await activeInactiveWeightManagementEventPass(passId, active)
+      if (!res?.success) {
+        showToast(res?.message || 'Status update failed', 'error')
+        return
+      }
       setPasses(prev =>
         prev.map(p =>
           p.id === passId ? { ...p, status: active ? 'Active' : 'Inactive' } : p
         )
       )
-      showToast(active ? 'Pass set to Active' : 'Pass set to Inactive', 'success')
+      showToast(
+        res?.message ||
+          (active ? 'Pass set to Active' : 'Pass set to Inactive'),
+        'success'
+      )
     } catch (err) {
-      showToast(err?.message || 'Status update failed', 'error')
+      showToast(
+        err?.response?.data?.message || err?.message || 'Status update failed',
+        'error'
+      )
     }
     setActiveDropdown(null)
   }
@@ -289,9 +327,7 @@ export default function WeightManagementEventPassManager () {
       const va = getSortValue(a, sortKey)
       const vb = getSortValue(b, sortKey)
       if (typeof va === 'string' && typeof vb === 'string') {
-        return sortOrder === 'asc'
-          ? va.localeCompare(vb)
-          : vb.localeCompare(va)
+        return sortOrder === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va)
       }
       return sortOrder === 'asc' ? va - vb : vb - va
     })
@@ -309,12 +345,18 @@ export default function WeightManagementEventPassManager () {
   }, [activeDropdown])
 
   return (
-    <div className='min-h-screen bg-gray-50 p-8' style={{ colorScheme: 'light' }}>
+    <div
+      className='min-h-screen bg-gray-50 p-8'
+      style={{ colorScheme: 'light' }}
+    >
       <Toast
-        show={toast.show}
-        message={toast.message}
-        type={toast.type}
-        onClose={() => setToast(prev => ({ ...prev, show: false }))}
+        open={toastOpen}
+        onOpenChange={setToastOpen}
+        title={toastProps.title}
+        description={toastProps.description}
+        variant={toastProps.variant}
+        duration={3000}
+        position='top-right'
       />
 
       {/* Header */}
@@ -570,13 +612,19 @@ export default function WeightManagementEventPassManager () {
             <tbody className='divide-y divide-gray-100'>
               {loading ? (
                 <tr>
-                  <td colSpan={8} className='px-6 py-8 text-center text-sm text-gray-500'>
+                  <td
+                    colSpan={8}
+                    className='px-6 py-8 text-center text-sm text-gray-500'
+                  >
                     Loading...
                   </td>
                 </tr>
               ) : sortedPasses.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className='px-6 py-8 text-center text-sm text-gray-500'>
+                  <td
+                    colSpan={8}
+                    className='px-6 py-8 text-center text-sm text-gray-500'
+                  >
                     No passes found
                   </td>
                 </tr>
