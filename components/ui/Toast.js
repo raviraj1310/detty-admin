@@ -10,7 +10,7 @@ export default function Toast({
   description = '',
   variant = 'success',
   duration = 4000,
-  position = 'top-right',
+  position = 'top-left',
   className = ''
 }) {
   const [visible, setVisible] = useState(open);
@@ -46,17 +46,17 @@ export default function Toast({
       case 'top-left':
         return 'top-6 left-6 justify-start';
       case 'top-right':
-        return 'top-6 right-6 justify-end';
+        return 'top-6 right-[500px] justify-end';
       case 'bottom-left':
         return 'bottom-6 left-6 justify-start';
       case 'bottom-right':
-        return 'bottom-6 right-6 justify-end';
+        return 'bottom-6 right-12 justify-end';
       case 'top':
         return 'top-6 inset-x-0 justify-center';
       case 'bottom':
         return 'bottom-6 inset-x-0 justify-center';
       default:
-        return 'top-6 right-6 justify-end';
+        return 'top-6 left-6 justify-start';
     }
   })();
 
@@ -66,14 +66,14 @@ export default function Toast({
       style={{ pointerEvents: 'none' }}
     >
       <div
-        className={`transition-all duration-300 ease-out ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2'} pointer-events-auto`}
+        className={`transition-all duration-300 ease-out  ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2'} pointer-events-auto`}
       >
-        <div className="mx-auto flex max-w-3xl items-center gap-4 rounded-2xl border border-[#E5E6EF] bg-white px-5 py-4 shadow-[0_24px_60px_-40px_rgba(15,23,42,0.55)]">
+        <div className="flex max-w-3xl items-center gap-4 rounded-2xl border border-[#E5E6EF] bg-white px-5 py-4 shadow-[0_24px_60px_-40px_rgba(15,23,42,0.55)]">
           <div className={`${iconBg} rounded-full p-2`}> 
             <Icon className="h-6 w-6 text-white" />
           </div>
           <div className="flex-1">
-            <div className="text-base font-semibold text-slate-900">{title}</div>
+            <div className="text-base font-semibold text-slate-900 ">{title}</div>
             {description ? (
               <div className="text-sm text-[#5E6582]">{description}</div>
             ) : null}

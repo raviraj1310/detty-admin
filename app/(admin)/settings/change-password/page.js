@@ -116,7 +116,7 @@ export default function ChangePasswordPage () {
           </button>
         </div>
       </div>
-      <Toast open={toast.open} onOpenChange={v => setToast(prev => ({ ...prev, open: v }))} title={toast.title} description={toast.description} variant={toast.variant} duration={2500} position='top-right' />
+      <Toast open={toast.open} onOpenChange={v => setToast(prev => ({ ...prev, open: v }))} title={toast.title} description={toast.description} variant={toast.variant} duration={2500} position='top-left' />
     </div>
   )
 }
