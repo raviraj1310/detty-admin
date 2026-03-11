@@ -87,10 +87,10 @@ const mapBookingFromApi = api => {
     pay === 'success' || pay === 'completed'
       ? 'Completed'
       : pay === 'pending'
-        ? 'Pending'
-        : bookingStatus === 'cancelled' || bookingStatus === 'canceled'
-          ? 'Cancelled'
-          : 'Pending'
+      ? 'Pending'
+      : bookingStatus === 'cancelled' || bookingStatus === 'canceled'
+      ? 'Cancelled'
+      : 'Pending'
 
   return {
     _id: api?._id,
@@ -150,7 +150,11 @@ export default function WeightManagementEventBookingsList () {
           showToast('Error', res?.message || 'Failed to load bookings', 'error')
           setBookings([])
           setEventName('')
-          setMetrics({ totalBookings: '0', revenue: formatCurrency(0), cancelledBookings: '0' })
+          setMetrics({
+            totalBookings: '0',
+            revenue: formatCurrency(0),
+            cancelledBookings: '0'
+          })
           return
         }
 
@@ -185,12 +189,18 @@ export default function WeightManagementEventBookingsList () {
       } catch (err) {
         showToast(
           'Error',
-          err?.response?.data?.message || err?.message || 'Failed to load bookings',
+          err?.response?.data?.message ||
+            err?.message ||
+            'Failed to load bookings',
           'error'
         )
         setBookings([])
         setEventName('')
-        setMetrics({ totalBookings: '0', revenue: formatCurrency(0), cancelledBookings: '0' })
+        setMetrics({
+          totalBookings: '0',
+          revenue: formatCurrency(0),
+          cancelledBookings: '0'
+        })
       } finally {
         setLoading(false)
       }
@@ -258,9 +268,7 @@ export default function WeightManagementEventBookingsList () {
           vb = b[sortKey]
       }
       if (typeof va === 'string' && typeof vb === 'string') {
-        return sortOrder === 'asc'
-          ? va.localeCompare(vb)
-          : vb.localeCompare(va)
+        return sortOrder === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va)
       }
       return sortOrder === 'asc' ? va - vb : vb - va
     })
@@ -336,9 +344,7 @@ export default function WeightManagementEventBookingsList () {
 
       <div className='rounded-2xl border border-[#E1E6F7] bg-white p-6 shadow-sm'>
         <div className='mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between'>
-          <h2 className='text-lg font-semibold text-[#1E293B]'>
-            Booking List
-          </h2>
+          <h2 className='text-lg font-semibold text-[#1E293B]'>Booking List</h2>
           <div className='flex items-center gap-2'>
             <div className='relative'>
               <Search className='absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94A3B8]' />
@@ -467,9 +473,9 @@ export default function WeightManagementEventBookingsList () {
                           'completed'
                             ? 'border-emerald-200 bg-emerald-50 text-emerald-600'
                             : (item.paymentStatus || '').toLowerCase() ===
-                                'pending'
-                              ? 'border-amber-200 bg-amber-50 text-amber-600'
-                              : 'border-red-200 bg-red-50 text-red-600'
+                              'pending'
+                            ? 'border-amber-200 bg-amber-50 text-amber-600'
+                            : 'border-red-200 bg-red-50 text-red-600'
                         }`}
                       >
                         {item.paymentStatus || 'Pending'}
@@ -510,20 +516,6 @@ export default function WeightManagementEventBookingsList () {
             </tbody>
           </table>
         </div>
-      </div>
-
-      <div className='mt-6 flex justify-end'>
-        <button
-          type='button'
-          onClick={() =>
-            eventId
-              ? router.push(`/weight-management-event/edit/${eventId}`)
-              : router.push('/weight-management-event')
-          }
-          className='rounded-lg bg-[#1E293B] px-6 py-2.5 text-sm font-medium text-white hover:bg-[#334155] transition'
-        >
-          View Details
-        </button>
       </div>
     </div>
   )

@@ -5,6 +5,7 @@ import { useRouter, useParams } from 'next/navigation'
 import Image from 'next/image'
 import { QRCodeCanvas } from 'qrcode.react'
 import { Check } from 'lucide-react'
+import { getBookingDetailWeightManagementEvent } from '@/services/nutrition/nutrition.service'
 
 const formatIssuedOn = dateString => {
   if (!dateString) return '—'
@@ -43,27 +44,79 @@ const formatCurrency = amount => {
   })}`
 }
 
-const MOCK_BOOKING = {
-  orderId: '78393002875234152',
-  issuedOn: '2026-01-27T00:00:00.000Z',
-  visitDate: '2026-01-28T00:00:00.000Z',
-  eventTitle: 'Everyday Nutrition Workshop',
-  eventType: 'Weight Management Event',
-  eventDate: '2025-12-14T00:00:00.000Z',
-  eventTime: '3pm',
-  location: 'Landmark Event Centre, Lagos',
-  eventImage: '/images/dashboard/image-1.webp',
-  passLabel: '2* General Pass',
-  passPrice: 3000,
-  total: 6110,
-  paymentStatus: 'Completed',
-  bookingStatus: 'Pending',
-  buyer: {
-    name: 'Oromuno Okiemute Grace',
-    email: 'loveokiemute@gmail.com',
-    phone: '2347031962591',
-    country: 'Nigeria',
-    city: 'Lagos'
+const getUploadOrigin = () => {
+  const sim = String(process.env.NEXT_PUBLIC_SIM_IMAGE_BASE_ORIGIN || '').trim()
+  if (sim) return sim.replace(/\/+$/, '')
+
+  const api2 = String(process.env.NEXT_PUBLIC_API_BASE_URL2 || '').trim()
+  if (api2) {
+    return api2
+      .replace(/\/+$/, '')
+      .replace(/\/api\/v2\/?$/i, '')
+      .replace(/\/+$/, '')
+  }
+
+  return 'https://accessdettyfusion.com'
+}
+
+const toUploadUrl = (value, folder) => {
+  const s = String(value || '').trim()
+  if (!s) return ''
+  if (/^https?:\/\//i.test(s)) return s
+  const path = s.startsWith('/') ? s : `/${s}`
+  if (path.includes('/upload/')) return `${getUploadOrigin()}${path}`
+  const safeFolder = String(folder || '').replace(/^\/+|\/+$/g, '')
+  return `${getUploadOrigin()}/upload/${safeFolder}/${encodeURIComponent(s)}`
+}
+
+const mapBookingDetailFromApi = api => {
+  const data = api?.data || {}
+  const buyer = data?.buyer || {}
+  const user = data?.userId || {}
+  const event = data?.weightManagementEventId || {}
+  const slot = data?.slotId || {}
+  const passes = Array.isArray(data?.passes) ? data.passes : []
+  const firstPass = passes[0] || {}
+
+  const qty = Number(firstPass?.quantity || data?.totalQuantity || 1) || 1
+  const passName = firstPass?.passName || 'Pass'
+
+  const payment = String(data?.paymentStatus || '').toLowerCase()
+  const bookingStatus = String(data?.status || '').toLowerCase()
+
+  return {
+    orderId: data?.orderId || data?.transactionRef || data?._id,
+    issuedOn: data?.createdAt,
+    visitDate: data?.bookingDate || slot?.date,
+    eventTitle: event?.eventName || '—',
+    eventType: 'Weight Management Event',
+    eventDate: slot?.date || event?.startDate,
+    eventTime: slot?.time || event?.startTime,
+    location: event?.location || '—',
+    eventImage:
+      toUploadUrl(event?.image, 'image') || '/images/dashboard/image-1.webp',
+    passLabel: `${qty}* ${passName}`,
+    passPrice:
+      firstPass?.perPassPrice ?? data?.pricing?.total ?? data?.totalAmount ?? 0,
+    total:
+      data?.finalPayableAmount ??
+      data?.pricing?.total ??
+      data?.totalAmount ??
+      0,
+    paymentStatus:
+      payment === 'success' || payment === 'completed'
+        ? 'Completed'
+        : 'Pending',
+    bookingStatus: bookingStatus
+      ? bookingStatus[0].toUpperCase() + bookingStatus.slice(1)
+      : 'Pending',
+    buyer: {
+      name: buyer?.fullName || user?.name || '—',
+      email: buyer?.email || user?.email || '—',
+      phone: buyer?.phone || '—',
+      country: buyer?.country || '—',
+      city: buyer?.city || '—'
+    }
   }
 }
 
@@ -76,14 +129,23 @@ export default function WeightManagementEventBookingView () {
   const [booking, setBooking] = useState(null)
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setBooking({
-        ...MOCK_BOOKING,
-        orderId: id || MOCK_BOOKING.orderId
-      })
-      setLoading(false)
-    }, 200)
-    return () => clearTimeout(timer)
+    const fetchDetail = async () => {
+      if (!id) return
+      setLoading(true)
+      try {
+        const res = await getBookingDetailWeightManagementEvent(id)
+        if (!res?.success) {
+          setBooking(null)
+          return
+        }
+        setBooking(mapBookingDetailFromApi(res))
+      } catch (err) {
+        setBooking(null)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchDetail()
   }, [id])
 
   if (loading || !booking) {
@@ -112,14 +174,6 @@ export default function WeightManagementEventBookingView () {
                 fill
                 className='object-contain object-left'
               />
-            </div>
-            <div className='flex flex-col'>
-              <span className='text-[10px] font-medium uppercase tracking-wide text-white/80 md:text-xs'>
-                access bank
-              </span>
-              <span className='font-serif text-lg italic text-white md:text-xl'>
-                detty fusion
-              </span>
             </div>
           </div>
           <div className='text-left text-xs text-white/90 md:text-right md:text-sm'>
@@ -223,41 +277,41 @@ export default function WeightManagementEventBookingView () {
         {/* Buyer details */}
         <div className='px-6 pb-6 md:px-8'>
           <div className='rounded-xl bg-[#F1F5F9] p-5'>
-          <h4 className='mb-4 text-sm font-bold text-[#1E293B]'>
-            Buyer Details
-          </h4>
-          <div className='space-y-3 text-sm'>
-            <div className='flex justify-between'>
-              <span className='text-[#64748B]'>Name</span>
-              <span className='font-medium text-[#1E293B]'>
-                {booking.buyer?.name || '—'}
-              </span>
+            <h4 className='mb-4 text-sm font-bold text-[#1E293B]'>
+              Buyer Details
+            </h4>
+            <div className='space-y-3 text-sm'>
+              <div className='flex justify-between'>
+                <span className='text-[#64748B]'>Name</span>
+                <span className='font-medium text-[#1E293B]'>
+                  {booking.buyer?.name || '—'}
+                </span>
+              </div>
+              <div className='flex justify-between'>
+                <span className='text-[#64748B]'>Email Address</span>
+                <span className='font-medium text-[#1E293B]'>
+                  {booking.buyer?.email || '—'}
+                </span>
+              </div>
+              <div className='flex justify-between'>
+                <span className='text-[#64748B]'>Phone Number</span>
+                <span className='font-medium text-[#1E293B]'>
+                  {booking.buyer?.phone || '—'}
+                </span>
+              </div>
+              <div className='flex justify-between'>
+                <span className='text-[#64748B]'>Country</span>
+                <span className='font-medium text-[#1E293B]'>
+                  {booking.buyer?.country || '—'}
+                </span>
+              </div>
+              <div className='flex justify-between'>
+                <span className='text-[#64748B]'>City</span>
+                <span className='font-medium text-[#1E293B]'>
+                  {booking.buyer?.city || '—'}
+                </span>
+              </div>
             </div>
-            <div className='flex justify-between'>
-              <span className='text-[#64748B]'>Email Address</span>
-              <span className='font-medium text-[#1E293B]'>
-                {booking.buyer?.email || '—'}
-              </span>
-            </div>
-            <div className='flex justify-between'>
-              <span className='text-[#64748B]'>Phone Number</span>
-              <span className='font-medium text-[#1E293B]'>
-                {booking.buyer?.phone || '—'}
-              </span>
-            </div>
-            <div className='flex justify-between'>
-              <span className='text-[#64748B]'>Country</span>
-              <span className='font-medium text-[#1E293B]'>
-                {booking.buyer?.country || '—'}
-              </span>
-            </div>
-            <div className='flex justify-between'>
-              <span className='text-[#64748B]'>City</span>
-              <span className='font-medium text-[#1E293B]'>
-                {booking.buyer?.city || '—'}
-              </span>
-            </div>
-          </div>
           </div>
         </div>
       </div>

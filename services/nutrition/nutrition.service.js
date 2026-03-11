@@ -208,3 +208,13 @@ export const getBookingWeightManagementEventById = async id => {
     throw error
   }
 }
+
+export const getBookingDetailWeightManagementEvent = async bookingId => {
+  try {
+    const response = await apiv2.get(`/nutrition/get-booking-weight-management-events-detail/${bookingId}`)
+    return response.data
+  } catch (error) {
+    console.error('Error getting booking detail weight management event:', error)
+    throw error
+  }
+}
