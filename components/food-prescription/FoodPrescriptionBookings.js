@@ -16,6 +16,8 @@ import {
 } from 'lucide-react'
 import { IoFilterSharp } from 'react-icons/io5'
 import { TbCaretUpDownFilled } from 'react-icons/tb'
+import Toast from '@/components/ui/Toast'
+import { getBookingFoodPrescriptionsByFoodPrescriptionsId } from '@/services/nutrition/nutrition.service'
 
 const formatDate = dateString => {
   if (!dateString) return '—'
@@ -28,6 +30,13 @@ const formatDate = dateString => {
     minute: 'numeric',
     hour12: true
   })
+}
+
+const formatCurrency = amount => {
+  return `₦${Number(amount || 0).toLocaleString('en-NG', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  })}`
 }
 
 const TableHeaderCell = ({
@@ -53,72 +62,150 @@ const TableHeaderCell = ({
   </button>
 )
 
-const MOCK_BOOKINGS = [
-  {
-    _id: '1',
-    createdAt: '2025-06-12T10:00:00.000Z',
-    userName: 'Ayo Famuyiwa',
-    email: 'ayo.famuyiwa@email.com',
-    phone: '+234 802 123 4567',
-    accessBooked: 'Starter Access(N2,000)',
-    amount: 'N16,000',
-    paymentStatus: 'Completed'
-  },
-  {
-    _id: '2',
-    createdAt: '2025-06-12T10:00:00.000Z',
-    userName: 'Bolu Onabanjo',
-    email: 'bolu.onabanjo@email.com',
-    phone: '+234 802 234 5678',
-    accessBooked: 'Starter Access(N2,000)',
-    amount: 'N6,000',
-    paymentStatus: 'Pending'
-  },
-  {
-    _id: '3',
-    createdAt: '2025-06-12T10:00:00.000Z',
-    userName: 'Chidi Okonkwo',
-    email: 'chidi.okonkwo@email.com',
-    phone: '+234 802 345 6789',
-    accessBooked: 'Starter Access(N2,000)',
-    amount: 'N6,000',
-    paymentStatus: 'Completed'
-  },
-  {
-    _id: '4',
-    createdAt: '2025-06-12T10:00:00.000Z',
-    userName: 'Dami Adeyemi',
-    email: 'dami.adeyemi@email.com',
-    phone: '+234 802 456 7890',
-    accessBooked: 'Starter Access(N2,000)',
-    amount: 'N6,000',
-    paymentStatus: 'Completed'
-  }
-]
+const mapBookingFromApi = api => {
+  const buyer = api?.buyerInfo || {}
+  const user = api?.userId || {}
+  const access = api?.foodPrescriptionsAccessId || {}
+  const pricing = api?.pricing || {}
 
-const MOCK_METRICS = {
-  totalBookings: 1155,
-  completedBookings: 1137,
-  pendingBookings: 299,
-  revenue: '865 (N10,00,000)',
-  cancelledBookings: '299 (N2,00,000)'
+  const pay = String(api?.paymentStatus || '').toLowerCase()
+  const bookingStatus = String(api?.status || '').toLowerCase()
+
+  const accessName = access?.accessName || '—'
+  const accessPrice =
+    access?.price ??
+    pricing?.total ??
+    api?.finalPayableAmount ??
+    api?.totalAmount
+
+  const accessBooked =
+    accessName && accessPrice != null
+      ? `${accessName} (${formatCurrency(accessPrice)})`
+      : accessName
+
+  const paymentStatus =
+    pay === 'success' || pay === 'completed'
+      ? 'Completed'
+      : bookingStatus === 'cancelled' || bookingStatus === 'canceled'
+      ? 'Cancelled'
+      : 'Pending'
+
+  return {
+    _id: api?._id,
+    createdAt: api?.createdAt || api?.bookingDate,
+    userName: buyer?.name || user?.name || '—',
+    email: buyer?.email || user?.email || '—',
+    phone:
+      buyer?.contactNo || buyer?.phone || api?.phoneNumber || api?.phone || '—',
+    accessBooked,
+    amount: formatCurrency(
+      api?.finalPayableAmount ?? pricing?.total ?? api?.totalAmount ?? 0
+    ),
+    paymentStatus
+  }
 }
 
 export default function FoodPrescriptionBookings () {
   const router = useRouter()
   const params = useParams()
   const id = params?.id
+  const [toastOpen, setToastOpen] = useState(false)
+  const [toastProps, setToastProps] = useState({
+    title: '',
+    description: '',
+    variant: 'success'
+  })
   const [searchTerm, setSearchTerm] = useState('')
   const [menuOpenId, setMenuOpenId] = useState(null)
-  const [prescriptionName, setPrescriptionName] = useState('Balanced Daily Nutrition')
+  const [prescriptionName, setPrescriptionName] = useState('')
   const [bookings, setBookings] = useState([])
-  const [metrics, setMetrics] = useState(MOCK_METRICS)
+  const [metrics, setMetrics] = useState({
+    totalBookings: 0,
+    completedBookings: 0,
+    pendingBookings: 0,
+    revenue: formatCurrency(0),
+    cancelledBookings: 0
+  })
   const [sortKey, setSortKey] = useState('bookedOn')
   const [sortOrder, setSortOrder] = useState('desc')
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    setBookings(MOCK_BOOKINGS.map(b => ({ ...b })))
-    // When API exists: fetch prescription name by id and setPrescriptionName; fetch bookings and metrics
+    const fetchBookings = async () => {
+      if (!id) return
+      setLoading(true)
+      try {
+        const res = await getBookingFoodPrescriptionsByFoodPrescriptionsId(id)
+        if (!res?.success) {
+          setBookings([])
+          setPrescriptionName('')
+          setMetrics({
+            totalBookings: 0,
+            completedBookings: 0,
+            pendingBookings: 0,
+            revenue: formatCurrency(0),
+            cancelledBookings: 0
+          })
+          setToastProps({
+            title: 'Error',
+            description: res?.message || 'Failed to fetch bookings',
+            variant: 'error'
+          })
+          setToastOpen(true)
+          return
+        }
+
+        const list = Array.isArray(res?.data) ? res.data : []
+        const mapped = list.map(mapBookingFromApi)
+        setBookings(mapped)
+
+        const first = list[0]
+        const name = first?.foodPrescriptionId?.name || ''
+        setPrescriptionName(name)
+
+        const totalBookings = Number(res?.total ?? mapped.length ?? 0)
+        const completedBookings = mapped.filter(
+          b => String(b.paymentStatus || '').toLowerCase() === 'completed'
+        ).length
+        const cancelledBookings = mapped.filter(
+          b => String(b.paymentStatus || '').toLowerCase() === 'cancelled'
+        ).length
+        const pendingBookings = Math.max(
+          0,
+          totalBookings - completedBookings - cancelledBookings
+        )
+        const revenue = list.reduce((sum, b) => {
+          const pricing = b?.pricing || {}
+          const amt =
+            Number(
+              b?.finalPayableAmount ?? pricing?.total ?? b?.totalAmount ?? 0
+            ) || 0
+          return sum + amt
+        }, 0)
+
+        setMetrics({
+          totalBookings,
+          completedBookings,
+          pendingBookings,
+          revenue: formatCurrency(revenue),
+          cancelledBookings
+        })
+      } catch (err) {
+        setBookings([])
+        setToastProps({
+          title: 'Error',
+          description:
+            err?.response?.data?.message ||
+            err?.message ||
+            'Failed to fetch bookings',
+          variant: 'error'
+        })
+        setToastOpen(true)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchBookings()
   }, [id])
 
   useEffect(() => {
@@ -172,15 +259,22 @@ export default function FoodPrescriptionBookings () {
         vb = b[sortKey]
     }
     if (typeof va === 'string' && typeof vb === 'string') {
-      return sortOrder === 'asc'
-        ? va.localeCompare(vb)
-        : vb.localeCompare(va)
+      return sortOrder === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va)
     }
     return sortOrder === 'asc' ? va - vb : vb - va
   })
 
   return (
     <div className='min-h-screen bg-[#F8F9FC] p-6'>
+      <Toast
+        open={toastOpen}
+        onOpenChange={setToastOpen}
+        title={toastProps.title}
+        description={toastProps.description}
+        variant={toastProps.variant}
+        duration={3000}
+        position='top-right'
+      />
       <div className='mb-6'>
         <button
           type='button'
@@ -190,7 +284,7 @@ export default function FoodPrescriptionBookings () {
           <ChevronLeft className='h-4 w-4' /> Back
         </button>
         <h1 className='text-2xl font-bold text-[#1E293B]'>
-          Food Prescriptions Access
+          Food Prescription Bookings
           {prescriptionName ? (
             <>
               {' '}
@@ -205,7 +299,9 @@ export default function FoodPrescriptionBookings () {
       <div className='mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3'>
         <div className='flex items-center justify-between rounded-2xl bg-[#E8EEFF] p-4'>
           <div>
-            <p className='text-xs font-medium text-indigo-600'>Total Bookings</p>
+            <p className='text-xs font-medium text-indigo-600'>
+              Total Bookings
+            </p>
             <p className='text-xl font-bold text-indigo-600'>
               {metrics.totalBookings}
             </p>
@@ -229,9 +325,7 @@ export default function FoodPrescriptionBookings () {
         </div>
         <div className='flex items-center justify-between rounded-2xl bg-[#FFE8E8] p-4'>
           <div>
-            <p className='text-xs font-medium text-red-600'>
-              Pending Bookings
-            </p>
+            <p className='text-xs font-medium text-red-600'>Pending Bookings</p>
             <p className='text-xl font-bold text-red-600'>
               {metrics.pendingBookings}
             </p>
@@ -260,9 +354,7 @@ export default function FoodPrescriptionBookings () {
         <div className='flex items-center justify-between rounded-2xl bg-[#E0F2F1] p-4'>
           <div>
             <p className='text-xs font-medium text-teal-700'>Revenue</p>
-            <p className='text-xl font-bold text-teal-700'>
-              {metrics.revenue}
-            </p>
+            <p className='text-xl font-bold text-teal-700'>{metrics.revenue}</p>
           </div>
           <div className='rounded-full bg-white p-2.5'>
             <Wallet className='h-5 w-5 text-teal-700' />
@@ -286,9 +378,7 @@ export default function FoodPrescriptionBookings () {
       {/* Booking List */}
       <div className='rounded-2xl border border-[#E1E6F7] bg-white p-6 shadow-sm'>
         <div className='mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between'>
-          <h2 className='text-lg font-semibold text-[#1E293B]'>
-            Booking List
-          </h2>
+          <h2 className='text-lg font-semibold text-[#1E293B]'>Booking List</h2>
           <div className='flex items-center gap-2'>
             <div className='relative'>
               <Search className='absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#94A3B8]' />
@@ -369,7 +459,16 @@ export default function FoodPrescriptionBookings () {
               </tr>
             </thead>
             <tbody className='divide-y divide-[#E1E6F7]'>
-              {sortedBookings.length === 0 ? (
+              {loading ? (
+                <tr>
+                  <td
+                    colSpan={8}
+                    className='py-8 text-center text-sm text-[#64748B]'
+                  >
+                    Loading...
+                  </td>
+                </tr>
+              ) : sortedBookings.length === 0 ? (
                 <tr>
                   <td
                     colSpan={8}
@@ -406,9 +505,12 @@ export default function FoodPrescriptionBookings () {
                           'completed'
                             ? 'bg-emerald-100 text-emerald-700'
                             : (item.paymentStatus || '').toLowerCase() ===
-                                'pending'
-                              ? 'bg-amber-100 text-amber-700'
-                              : 'bg-red-100 text-red-700'
+                              'pending'
+                            ? 'bg-amber-100 text-amber-700'
+                            : (item.paymentStatus || '').toLowerCase() ===
+                              'cancelled'
+                            ? 'bg-red-100 text-red-700'
+                            : 'bg-amber-100 text-amber-700'
                         }`}
                       >
                         {item.paymentStatus || 'Pending'}
@@ -449,16 +551,6 @@ export default function FoodPrescriptionBookings () {
             </tbody>
           </table>
         </div>
-      </div>
-
-      <div className='mt-6 flex justify-end'>
-        <button
-          type='button'
-          onClick={() => router.back()}
-          className='rounded-lg border border-[#E2E8F0] bg-gray-100 px-6 py-2.5 text-sm font-medium text-[#64748B] hover:bg-gray-200'
-        >
-          View Details
-        </button>
       </div>
     </div>
   )

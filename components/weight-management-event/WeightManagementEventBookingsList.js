@@ -14,6 +14,10 @@ import {
 import { IoFilterSharp } from 'react-icons/io5'
 import { TbCaretUpDownFilled } from 'react-icons/tb'
 import Toast from '@/components/ui/Toast'
+import {
+  getAllBookingWeightManagementEvent,
+  getBookingWeightManagementEventById
+} from '@/services/nutrition/nutrition.service'
 
 const formatDate = dateString => {
   if (!dateString) return '—'
@@ -26,6 +30,13 @@ const formatDate = dateString => {
     minute: '2-digit',
     hour12: true
   })
+}
+
+const formatCurrency = amount => {
+  return `₦${Number(amount || 0).toLocaleString('en-NG', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  })}`
 }
 
 const TableHeaderCell = ({
@@ -51,38 +62,48 @@ const TableHeaderCell = ({
   </button>
 )
 
-const MOCK_BOOKINGS = [
-  {
-    _id: '1',
-    createdAt: '2025-06-12T10:00:00.000Z',
-    userName: 'Ayo Famuyiwa',
-    email: 'ayo.famuyiwa@email.com',
-    phone: '+234 802 123 4567',
-    passBooked: 'Entry Pass (₦2,000)',
-    amount: '₦16,000',
-    paymentStatus: 'Completed'
-  },
-  {
-    _id: '2',
-    createdAt: '2025-06-11T14:30:00.000Z',
-    userName: 'Bolu Onabanjo',
-    email: 'bolu.onabanjo@email.com',
-    phone: '+234 802 234 5678',
-    passBooked: 'Entry Pass (₦2,000)',
-    amount: '₦6,000',
-    paymentStatus: 'Pending'
-  },
-  {
-    _id: '3',
-    createdAt: '2025-06-10T09:00:00.000Z',
-    userName: 'Chidi Okonkwo',
-    email: 'chidi.okonkwo@email.com',
-    phone: '+234 802 345 6789',
-    passBooked: 'Entry Pass (₦2,000)',
-    amount: '₦6,000',
-    paymentStatus: 'Completed'
+const mapBookingFromApi = api => {
+  const buyer = api?.buyer || {}
+  const user = api?.userId || {}
+  const event = api?.weightManagementEventId || {}
+  const passes = Array.isArray(api?.passes) ? api.passes : []
+  const firstPass = passes[0] || {}
+
+  const pay = String(api?.paymentStatus || '').toLowerCase()
+  const bookingStatus = String(api?.status || '').toLowerCase()
+
+  const passName = firstPass?.passName || 'Pass'
+  const perPassPrice = firstPass?.perPassPrice ?? firstPass?.totalPrice
+  const passBooked =
+    perPassPrice != null
+      ? `${passName} (${formatCurrency(perPassPrice)})`
+      : passName
+
+  const amount = formatCurrency(
+    api?.finalPayableAmount ?? api?.pricing?.total ?? api?.totalAmount ?? 0
+  )
+
+  const paymentStatus =
+    pay === 'success' || pay === 'completed'
+      ? 'Completed'
+      : pay === 'pending'
+        ? 'Pending'
+        : bookingStatus === 'cancelled' || bookingStatus === 'canceled'
+          ? 'Cancelled'
+          : 'Pending'
+
+  return {
+    _id: api?._id,
+    createdAt: api?.createdAt || api?.bookingDate,
+    userName: buyer?.fullName || user?.name || '—',
+    email: buyer?.email || user?.email || '—',
+    phone: buyer?.phone || buyer?.contactNo || '—',
+    passBooked,
+    amount,
+    paymentStatus,
+    eventName: event?.eventName || ''
   }
-]
+}
 
 export default function WeightManagementEventBookingsList () {
   const router = useRouter()
@@ -114,27 +135,68 @@ export default function WeightManagementEventBookingsList () {
     setToastOpen(true)
   }
 
+  const serverSearchEnabled = !eventId
+
   useEffect(() => {
     const load = async () => {
       setLoading(true)
       try {
-        await new Promise(r => setTimeout(r, 300))
-        if (eventId) setEventName('Everyday Nutrition Workshop')
-        else setEventName('')
-        setBookings(MOCK_BOOKINGS.map(b => ({ ...b })))
+        const res = eventId
+          ? await getBookingWeightManagementEventById(eventId)
+          : await getAllBookingWeightManagementEvent(1, 10, {
+              search: searchTerm?.trim() || undefined
+            })
+        if (!res?.success) {
+          showToast('Error', res?.message || 'Failed to load bookings', 'error')
+          setBookings([])
+          setEventName('')
+          setMetrics({ totalBookings: '0', revenue: formatCurrency(0), cancelledBookings: '0' })
+          return
+        }
+
+        const list = Array.isArray(res?.data) ? res.data : []
+        const mapped = list.map(mapBookingFromApi)
+        setBookings(mapped)
+
+        const first = list[0]
+        const evName = first?.weightManagementEventId?.eventName || ''
+        setEventName(eventId ? evName : '')
+
+        const totalBookings = Number(res?.total ?? mapped.length ?? 0)
+        const revenue = list.reduce((sum, b) => {
+          const pay = String(b?.paymentStatus || '').toLowerCase()
+          const isPaid = pay === 'success' || pay === 'completed'
+          const amt =
+            Number(
+              b?.finalPayableAmount ?? b?.pricing?.total ?? b?.totalAmount ?? 0
+            ) || 0
+          return sum + (isPaid ? amt : 0)
+        }, 0)
+        const cancelledBookings = list.filter(b => {
+          const st = String(b?.status || '').toLowerCase()
+          return st === 'cancelled' || st === 'canceled'
+        }).length
+
         setMetrics({
-          totalBookings: '1155',
-          revenue: '865(₦10,00,000)',
-          cancelledBookings: '299(₦2,00,000)'
+          totalBookings: String(totalBookings),
+          revenue: formatCurrency(revenue),
+          cancelledBookings: String(cancelledBookings)
         })
       } catch (err) {
-        showToast('Error', 'Failed to load bookings', 'destructive')
+        showToast(
+          'Error',
+          err?.response?.data?.message || err?.message || 'Failed to load bookings',
+          'error'
+        )
+        setBookings([])
+        setEventName('')
+        setMetrics({ totalBookings: '0', revenue: formatCurrency(0), cancelledBookings: '0' })
       } finally {
         setLoading(false)
       }
     }
     load()
-  }, [eventId])
+  }, [eventId, serverSearchEnabled ? searchTerm : null])
 
   useEffect(() => {
     const handleClickOutside = e => {

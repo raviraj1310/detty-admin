@@ -143,10 +143,68 @@ export const deletePrescriptionsAccess = async id => {
 
 export const updatePrescriptionsAccessStatus = async (id, data) => {
   try {
-    const response = await apiv2.put(`/food/update-food-prescriptions-access-status/${id}`, data)
+    const response = await apiv2.put(
+      `/food/update-food-prescriptions-access-status/${id}`,
+      data
+    )
     return response.data
   } catch (error) {
     console.error('Error updating prescriptions access status:', error)
+    throw error
+  }
+}
+
+export const getAllFoodPrescriptionBookings = async (page, limit, params) => {
+  try {
+    const response = await apiv2.get(
+      '/food/get-all-food-prescriptions-booking',
+      { params }
+    )
+    return response.data
+  } catch (error) {
+    console.error('Error getting all food prescription bookings:', error)
+    throw error
+  }
+}
+
+export const getBookingFoodPrescriptionsByFoodPrescriptionsId =
+  async foodPrescriptionId => {
+    try {
+      const response = await apiv2.get(
+        `/nutrition/get-booking-foodprescriptions-by-foodprescriptionsid/${foodPrescriptionId}`
+      )
+      return response.data
+    } catch (error) {
+      console.error('Error getting food prescription booking by id:', error)
+      throw error
+    }
+  }
+
+export const getAllBookingWeightManagementEvent = async (
+  page,
+  limit,
+  params
+) => {
+  try {
+    const response = await apiv2.get(
+      '/nutrition/get-all-booking-list-weight-management-events',
+      { params }
+    )
+    return response.data
+  } catch (error) {
+    console.error('Error getting all booking weight management event:', error)
+    throw error
+  }
+}
+
+export const getBookingWeightManagementEventById = async id => {
+  try {
+    const response = await apiv2.get(
+      `/nutrition/get-booking-weight-management-events-by-weightManagementEventId/${id}`
+    )
+    return response.data
+  } catch (error) {
+    console.error('Error getting booking weight management event by id:', error)
     throw error
   }
 }
