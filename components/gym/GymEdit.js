@@ -441,7 +441,7 @@ export default function GymAccessEdit () {
                 name='gymName'
                 value={formData.gymName}
                 onChange={handleInputChange}
-                className='w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
+                className='w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
                 placeholder='Elevate Fitness Club'
               />
             </div>
@@ -453,7 +453,7 @@ export default function GymAccessEdit () {
                 name='hostedBy'
                 value={formData.hostedBy}
                 onChange={handleInputChange}
-                className='w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
+                className='w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
               >
                 <option value=''>Select Host</option>
                 {hosts.map(host => (
@@ -494,7 +494,7 @@ export default function GymAccessEdit () {
                 value={formData.duration}
                 onChange={handleInputChange}
                 placeholder='e.g. 60'
-                className={`w-full rounded-lg border px-4 py-2.5 text-sm placeholder:text-gray-500 focus:outline-none focus:border-[#FF4400] ${
+                className={`w-full rounded-lg border px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-500 focus:outline-none focus:border-[#FF4400] ${
                   durationError
                     ? 'border-red-400 focus:border-red-400 focus:ring-2 focus:ring-red-200'
                     : 'border-gray-200'
@@ -514,7 +514,7 @@ export default function GymAccessEdit () {
                   name='startDate'
                   value={formData.startDate}
                   onChange={handleInputChange}
-                  className='w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
+                  className='w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
                 />
               </div>
             </div>
@@ -528,7 +528,7 @@ export default function GymAccessEdit () {
                   name='endDate'
                   value={formData.endDate}
                   onChange={handleInputChange}
-                  className='w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
+                  className='w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
                 />
               </div>
             </div>
@@ -546,9 +546,8 @@ export default function GymAccessEdit () {
                   name='startTime'
                   value={formData.startTime}
                   onChange={handleInputChange}
-                  className='w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
+                  className='w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
                 />
-                <Clock className='absolute right-3 top-2.5 h-5 w-5 text-gray-400 pointer-events-none' />
               </div>
             </div>
             <div>
@@ -561,9 +560,8 @@ export default function GymAccessEdit () {
                   name='endTime'
                   value={formData.endTime}
                   onChange={handleInputChange}
-                  className='w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
+                  className='w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
                 />
-                <Clock className='absolute right-3 top-2.5 h-5 w-5 text-gray-400 pointer-events-none' />
               </div>
             </div>
           </div>
@@ -601,7 +599,7 @@ export default function GymAccessEdit () {
                       onChange={e =>
                         handleSlotChange(slot.id, 'name', e.target.value)
                       }
-                      className='w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
+                      className='w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
                       placeholder='Slot 1'
                     />
                   </div>
@@ -612,7 +610,7 @@ export default function GymAccessEdit () {
                       onChange={e =>
                         handleSlotChange(slot.id, 'date', e.target.value)
                       }
-                      className='w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
+                      className='w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
                     />
                   </div>
                   <div className='col-span-2'>
@@ -622,7 +620,7 @@ export default function GymAccessEdit () {
                       onChange={e =>
                         handleSlotChange(slot.id, 'time', e.target.value)
                       }
-                      className='w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
+                      className='w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
                     />
                   </div>
                   <div className='col-span-2'>
@@ -632,7 +630,7 @@ export default function GymAccessEdit () {
                       onChange={e =>
                         handleSlotChange(slot.id, 'inventory', e.target.value)
                       }
-                      className='w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
+                      className='w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
                       placeholder='50'
                     />
                   </div>
@@ -643,7 +641,7 @@ export default function GymAccessEdit () {
                       onChange={e =>
                         handleSlotChange(slot.id, 'price', e.target.value)
                       }
-                      className='w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
+                      className='w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
                       placeholder='₦10,000'
                     />
                     <button
@@ -669,7 +667,7 @@ export default function GymAccessEdit () {
                 name='location'
                 value={formData.location}
                 onChange={handleInputChange}
-                className='w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
+                className='w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
                 placeholder='Lekki Phase 1, Lagos'
               />
             </div>
@@ -682,7 +680,7 @@ export default function GymAccessEdit () {
                 name='locationCoordinates'
                 value={formData.locationCoordinates}
                 onChange={handleInputChange}
-                className='w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
+                className='w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
                 placeholder='6.449942, 3.442864'
               />
             </div>
