@@ -258,3 +258,15 @@ export const updateCategoryStatus = async (categoryId, data) => {
     throw error
   }
 }
+
+export const getRecoveryBookingById = async bookingId => {
+  try {
+    const response = await apiv2.get(
+      `/recovery/recovery-booking-by-id/${bookingId}`
+    )
+    return response.data
+  } catch (error) {
+    console.error('Error fetching recovery booking:', error)
+    throw error
+  }
+}

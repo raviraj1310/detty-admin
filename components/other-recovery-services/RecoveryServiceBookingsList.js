@@ -29,7 +29,10 @@ const TableHeaderCell = ({ children }) => (
 
 const formatAmount = val => {
   if (val == null || val === '') return '—'
-  const n = typeof val === 'number' ? val : parseFloat(String(val).replace(/[^0-9.]/g, ''))
+  const n =
+    typeof val === 'number'
+      ? val
+      : parseFloat(String(val).replace(/[^0-9.]/g, ''))
   if (Number.isNaN(n)) return String(val)
   return `₦${Number(n).toLocaleString()}`
 }
@@ -51,24 +54,39 @@ const formatDate = d => {
 
 /** Map API booking fields to display values (response shape: buyer, userId, recoverySessionId, recoverySlotId, etc.) */
 const getBookingDisplay = b => {
-  const userName = b.buyer?.fullName ?? b.userId?.name ?? b.userName ?? b.user?.name ?? '—'
-  const email = b.buyer?.email ?? b.userId?.email ?? b.email ?? b.user?.email ?? '—'
-  const phone = b.buyer?.phone ?? b.phoneNumber ?? b.user?.phone ?? b.phone ?? '—'
-  const sessionName = b.recoverySessionId?.recoveryServiceSessionName ?? b.accessBooked ?? b.sessionName ?? b.serviceName ?? '—'
+  const userName =
+    b.buyer?.fullName ?? b.userId?.name ?? b.userName ?? b.user?.name ?? '—'
+  const email =
+    b.buyer?.email ?? b.userId?.email ?? b.email ?? b.user?.email ?? '—'
+  const phone =
+    b.buyer?.phone ?? b.phoneNumber ?? b.user?.phone ?? b.phone ?? '—'
+  const sessionName =
+    b.recoverySessionId?.recoveryServiceSessionName ??
+    b.accessBooked ??
+    b.sessionName ??
+    b.serviceName ??
+    '—'
   const qty = b.quantity ?? 1
   const slot = b.recoverySlotId
-    ? ` (${b.recoverySlotId.slotName ?? ''} ${b.recoverySlotId.slotTime ?? ''})`.trim()
+    ? ` (${b.recoverySlotId.slotName ?? ''} ${
+        b.recoverySlotId.slotTime ?? ''
+      })`.trim()
     : ''
-  const accessBooked = qty > 1 ? `${qty} x ${sessionName}${slot}` : `${sessionName}${slot}`
-  const amount = b.totalAmount ?? b.pricing?.total ?? b.finalPayableAmount ?? b.amount
+  const accessBooked =
+    qty > 1 ? `${qty} x ${sessionName}${slot}` : `${sessionName}${slot}`
+  const amount =
+    b.totalAmount ?? b.pricing?.total ?? b.finalPayableAmount ?? b.amount
   const payStatus = String(b.paymentStatus ?? b.status ?? '').toLowerCase()
-  const paymentLabel = payStatus === 'success' || payStatus === 'completed' || payStatus === 'paid'
-    ? 'Completed'
-    : payStatus === 'pending' || payStatus === 'pending payment'
+  const paymentLabel =
+    payStatus === 'success' || payStatus === 'completed' || payStatus === 'paid'
+      ? 'Completed'
+      : payStatus === 'pending' || payStatus === 'pending payment'
       ? 'Pending'
       : b.paymentStatus ?? b.status ?? '—'
-  const isPaymentSuccess = payStatus === 'success' || payStatus === 'completed' || payStatus === 'paid'
-  const isPaymentPending = payStatus === 'pending' || payStatus === 'pending payment'
+  const isPaymentSuccess =
+    payStatus === 'success' || payStatus === 'completed' || payStatus === 'paid'
+  const isPaymentPending =
+    payStatus === 'pending' || payStatus === 'pending payment'
   return {
     userName,
     email,
@@ -87,13 +105,20 @@ export default function RecoveryServiceBookingsList ({
   serviceName = null
 }) {
   const [bookings, setBookings] = useState([])
-  const [apiTotals, setApiTotals] = useState({ totalBookings: null, totalCancelledBookings: null })
+  const [apiTotals, setApiTotals] = useState({
+    totalBookings: null,
+    totalCancelledBookings: null
+  })
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [activeDropdown, setActiveDropdown] = useState(null)
   const dropdownRef = useRef(null)
   const [dropdownPos, setDropdownPos] = useState({ top: 0, right: 0 })
-  const [toast, setToast] = useState({ show: false, message: '', type: 'success' })
+  const [toast, setToast] = useState({
+    show: false,
+    message: '',
+    type: 'success'
+  })
   const router = useRouter()
 
   const showToast = (message, type = 'success') => {
@@ -126,7 +151,9 @@ export default function RecoveryServiceBookingsList ({
     } catch (err) {
       console.error('Failed to fetch bookings:', err)
       showToast(
-        err?.response?.data?.message || err?.message || 'Failed to fetch bookings',
+        err?.response?.data?.message ||
+          err?.message ||
+          'Failed to fetch bookings',
         'error'
       )
       setBookings([])
@@ -144,7 +171,10 @@ export default function RecoveryServiceBookingsList ({
     if (!searchTerm) return true
     const term = searchTerm.toLowerCase()
     const d = getBookingDisplay(b)
-    return d.userName.toLowerCase().includes(term) || d.email.toLowerCase().includes(term)
+    return (
+      d.userName.toLowerCase().includes(term) ||
+      d.email.toLowerCase().includes(term)
+    )
   })
 
   const totalBookingsCount =
@@ -153,25 +183,37 @@ export default function RecoveryServiceBookingsList ({
       : filteredBookings.length
   const revenue = filteredBookings.reduce((sum, b) => {
     const amt = b.totalAmount ?? b.pricing?.total ?? b.amount ?? 0
-    return sum + (typeof amt === 'number' ? amt : parseFloat(String(amt).replace(/[^0-9.]/g, '')) || 0)
+    return (
+      sum +
+      (typeof amt === 'number'
+        ? amt
+        : parseFloat(String(amt).replace(/[^0-9.]/g, '')) || 0)
+    )
   }, 0)
   const cancelledCount =
     apiTotals.totalCancelledBookings != null && !searchTerm
       ? apiTotals.totalCancelledBookings
       : filteredBookings.filter(
           b =>
-            String(b.paymentStatus ?? b.status ?? '').toLowerCase() === 'cancelled' ||
+            String(b.paymentStatus ?? b.status ?? '').toLowerCase() ===
+              'cancelled' ||
             String(b.bookingStatus ?? '').toLowerCase() === 'cancelled'
         ).length
   const cancelledRevenue = filteredBookings
     .filter(
       b =>
-        String(b.paymentStatus ?? b.status ?? '').toLowerCase() === 'cancelled' ||
+        String(b.paymentStatus ?? b.status ?? '').toLowerCase() ===
+          'cancelled' ||
         String(b.bookingStatus ?? '').toLowerCase() === 'cancelled'
     )
     .reduce((sum, b) => {
       const amt = b.totalAmount ?? b.pricing?.total ?? b.amount ?? 0
-      return sum + (typeof amt === 'number' ? amt : parseFloat(String(amt).replace(/[^0-9.]/g, '')) || 0)
+      return (
+        sum +
+        (typeof amt === 'number'
+          ? amt
+          : parseFloat(String(amt).replace(/[^0-9.]/g, '')) || 0)
+      )
     }, 0)
 
   const toggleDropdown = (e, id) => {
@@ -180,7 +222,10 @@ export default function RecoveryServiceBookingsList ({
       setActiveDropdown(null)
     } else {
       const rect = e.currentTarget.getBoundingClientRect()
-      setDropdownPos({ top: rect.bottom, right: window.innerWidth - rect.right })
+      setDropdownPos({
+        top: rect.bottom,
+        right: window.innerWidth - rect.right
+      })
       setActiveDropdown(id)
     }
   }
@@ -213,7 +258,9 @@ export default function RecoveryServiceBookingsList ({
     })
     const csv = [
       headers.join(','),
-      ...rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(','))
+      ...rows.map(r =>
+        r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')
+      )
     ].join('\n')
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
     const link = document.createElement('a')
@@ -224,7 +271,8 @@ export default function RecoveryServiceBookingsList ({
     showToast('Export started', 'success')
   }
 
-  const subtitle = serviceName || (serviceId ? 'Recovery Service' : 'All Services')
+  const subtitle =
+    serviceName || (serviceId ? 'Recovery Service' : 'All Services')
 
   return (
     <div className='min-h-screen bg-[#F8F9FC] p-6'>
@@ -268,8 +316,12 @@ export default function RecoveryServiceBookingsList ({
               <User className='h-6 w-6 text-purple-600' />
             </div>
             <div>
-              <p className='text-xs font-medium text-[#64748B]'>Total Bookings</p>
-              <p className='text-xl font-bold text-[#1E293B]'>{totalBookingsCount}</p>
+              <p className='text-xs font-medium text-[#64748B]'>
+                Total Bookings
+              </p>
+              <p className='text-xl font-bold text-[#1E293B]'>
+                {totalBookingsCount}
+              </p>
             </div>
           </div>
         </div>
@@ -410,8 +462,8 @@ export default function RecoveryServiceBookingsList ({
                             d.isPaymentSuccess
                               ? 'border-emerald-200 bg-emerald-50 text-emerald-600'
                               : d.isPaymentPending
-                                ? 'border-amber-200 bg-amber-50 text-amber-600'
-                                : 'border-gray-200 bg-gray-50 text-gray-600'
+                              ? 'border-amber-200 bg-amber-50 text-amber-600'
+                              : 'border-gray-200 bg-gray-50 text-gray-600'
                           }`}
                         >
                           {d.paymentLabel}
@@ -446,7 +498,7 @@ export default function RecoveryServiceBookingsList ({
             href={
               serviceId
                 ? `/other-recovery-services/bookings/${serviceId}/${activeDropdown}`
-                : `/other-recovery-services/bookings/details/${activeDropdown}`
+                : `/other-recovery-services/bookings/view/${activeDropdown}`
             }
             className='flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-[#475569] hover:bg-[#F8F9FC] hover:text-[#1E293B]'
           >
