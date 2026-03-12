@@ -105,7 +105,7 @@ export const getAllOtherRecoveryServiceBookings = async params => {
 export const getOtherRecoveryServiceBookings = async (serviceId, params) => {
   try {
     const response = await apiv2.get(
-      `/recovery/recovery-booking-by-id/${serviceId}`,
+      `/recovery/get-all-recovery-booking-by-recovery-id/${serviceId}`,
       { params }
     )
     return response.data
