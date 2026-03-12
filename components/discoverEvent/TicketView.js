@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useParams, useSearchParams, useRouter } from 'next/navigation'
-import { Tag } from 'lucide-react'
+import { ArrowLeft, MapPin, Ticket } from 'lucide-react'
 import { getTicketDetail } from '@/services/discover-events/event.service'
 import { formatEventDate } from '@/utils/excelExport'
 import QRCodeGenerator from '../common/QRCodeGenerator'
@@ -23,6 +23,14 @@ const toImageSrc = u => {
   }
   if (!origin) origin = originEnv
   return `${origin.replace(/\/$/, '')}/${s.replace(/^\/+/, '')}`
+}
+
+// Avoid "Objects are not valid as a React child" when API returns populated refs { _id, name }
+const toDisplayString = v => {
+  if (v == null) return ''
+  if (typeof v === 'string' || typeof v === 'number') return String(v)
+  if (typeof v === 'object' && v !== null) return v?.name ?? v?.email ?? ''
+  return String(v)
 }
 
 export default function TicketView () {
@@ -62,7 +70,6 @@ export default function TicketView () {
     return isNaN(n) ? String(v || '-') : `₦${n.toLocaleString()}`
   }
   const arrivalDate = booking?.event?.arrivalDate || ''
-  console.log('🚀 ~ file: TicketView.js:55 ~ arrivalDate:', arrivalDate)
   const buyer = booking?.buyer || {}
   const issuedOn = booking?.createdAt || booking?.bookedOn || booking?.updatedAt
   const issuedDate = issuedOn
@@ -75,7 +82,7 @@ export default function TicketView () {
   const tickets = Array.isArray(booking?.tickets) ? booking.tickets : []
   const items = tickets.map(t => ({
     quantity: t.quantity,
-    name: t.ticketName || t.ticketType,
+    name: toDisplayString(t.ticketName ?? t.ticketType),
     price: t.totalPrice
   }))
   const total = items.reduce((sum, it) => sum + (Number(it.price) || 0), 0)
@@ -88,223 +95,282 @@ export default function TicketView () {
       : []
   )
 
-  const vendorId = booking?.event?.eventId?.hostedBy?._id
+  // API shape: booking.event.eventId contains actual event master fields
+  const eventDetails = booking?.event?.eventId || event?.eventId || event || null
 
-  const qrData = `https://dettyfusion.accessbankplc.com/vendor/scanned-ticket?vendorId=${vendorId}
-&bookingId=${bookingId}`
+  const vendorId =
+    eventDetails?.hostedBy?._id ||
+    booking?.event?.vendorProfile?.userId ||
+    booking?.event?.vendorProfile?._id
+  const qrData = `https://dettyfusion.accessbankplc.com/vendor/scanned-ticket?vendorId=${vendorId}&bookingId=${bookingId}`
+
+  const orderId =
+    toDisplayString(booking?.event?.orderId) ||
+    toDisplayString(booking?.orderId) ||
+    toDisplayString(event?.orderId) ||
+    bookingId ||
+    '-'
+  const paymentStatus = toDisplayString(booking?.paymentStatus) || ''
+  const bookingStatus = toDisplayString(booking?.bookingStatus) || ''
+  const isPaymentSuccess = /success|paid|completed/i.test(paymentStatus)
+  const isBookingSuccess = /success|confirmed|completed/i.test(bookingStatus)
+
+  const eventStartDate = eventDetails?.eventStartDate
+  const eventEndDate = eventDetails?.eventEndDate
+  const startDate = eventStartDate
+    ? new Date(typeof eventStartDate === 'object' && eventStartDate.$date ? eventStartDate.$date : eventStartDate)
+    : null
+  const endDate = eventEndDate
+    ? new Date(typeof eventEndDate === 'object' && eventEndDate.$date ? eventEndDate.$date : eventEndDate)
+    : null
+  const openingHours =
+    toDisplayString(eventDetails?.openingHours) ||
+    [eventDetails?.eventStartTime, eventDetails?.eventEndTime]
+      .filter(Boolean)
+      .join(' - ') ||
+    '—'
+  const eventDateRange = startDate && endDate
+    ? `${formatEventDate(startDate)}${eventDetails?.eventStartTime ? `, ${eventDetails.eventStartTime}` : ''} to ${formatEventDate(endDate)}${eventDetails?.eventEndTime ? `, ${eventDetails.eventEndTime}` : ''}`
+    : startDate
+      ? `${formatEventDate(startDate)}${eventDetails?.eventStartTime ? `, ${eventDetails.eventStartTime}` : ''}`
+      : '—'
+  const hostName =
+    toDisplayString(eventDetails?.hostedBy?.name || eventDetails?.hostedBy) ||
+    toDisplayString(booking?.event?.vendorProfile?.businessName) ||
+    '—'
+  const locationStr =
+    toDisplayString(eventDetails?.location) ||
+    toDisplayString(event?.eventId?.location) ||
+    'Landmark Event Centre, Lagos'
+
+  const totalQty = items.reduce((s, it) => s + (Number(it.quantity) || 0), 0)
+  const serviceFee = Number(booking?.pricing?.serviceFee) || 0
+  const discountApplied = Number(booking?.pricing?.discountApplied) || 0
+  const totalAmount = Number(booking?.totalAmount) || total
+  const finalPayable =
+    Number(booking?.finalPayableAmount) ||
+    (totalAmount + serviceFee - discountApplied)
+  const transactionRef = toDisplayString(booking?.transactionRef ?? booking?.transactionId ?? booking?.paymentReference) || '—'
+
+  const firstAttendee = attendees[0]
+  const ticket1Name = toDisplayString(firstAttendee?.ticketName ?? items[0]?.name) || '—'
+  const ticket1FullName = toDisplayString(firstAttendee?.fullName ?? buyer?.fullName) || '—'
+  const ticket1Email = toDisplayString(firstAttendee?.email ?? buyer?.email) || '—'
+  const ticket1Phone = toDisplayString(firstAttendee?.phone ?? buyer?.phone) || '—'
+
+  const cardClass = 'bg-white rounded-xl border border-[#E5E8F6] shadow-sm p-5'
+
+  if (loading) {
+    return (
+      <div className='min-h-screen bg-[#F5F6FA] p-6 md:p-10'>
+        <div className='mx-auto max-w-3xl text-sm text-[#5E6582]'>Loading...</div>
+      </div>
+    )
+  }
+  if (error) {
+    return (
+      <div className='min-h-screen bg-[#F5F6FA] p-6 md:p-10'>
+        <div className='mx-auto max-w-3xl text-sm text-red-600'>{error}</div>
+        <button
+          type='button'
+          onClick={() => router.back()}
+          className='mt-4 flex items-center gap-1 text-sm text-[#1A1F3F] hover:underline'
+        >
+          <ArrowLeft className='h-4 w-4' /> Back
+        </button>
+      </div>
+    )
+  }
 
   return (
-    <div className='min-h-screen bg-[#fffff] p-12'>
-      {loading && (
-        <div className='mx-auto max-w-3xl mb-4 text-sm text-[#5E6582]'>
-          Loading...
-        </div>
-      )}
-      {error && !loading && (
-        <div className='mx-auto max-w-3xl mb-4 text-sm text-red-600'>
-          {error}
-        </div>
-      )}
-      <div className='mx-auto max-w-3xl bg-white rounded-lg overflow-hidden shadow-[0_24px_60px_-40px_rgba(15,23,42,0.55)]'>
-        <div className='bg-black text-white p-5 flex items-start justify-between'>
-          <div className='flex items-center gap-3'>
-            <img
-              src='/images/logo/fotter_logo.webp'
-              alt='logo'
-              className='h-8 w-auto'
-            />
-          </div>
-          <div className='text-right text-sm'>
-            <div className='font-semibold'>
-              Order ID: {String(event?.orderId || bookingId || '-')}
-            </div>
-            <div className='text-white/80'>
-              Issued on: {issuedDate ? issuedDate.toLocaleDateString() : '-'}
-            </div>
-            <div className='text-white/80'>
-              Visit Date: {arrivalDate ? formatEventDate(arrivalDate) : '-'}
-            </div>
-          </div>
-        </div>
-
-        <div className='p-6 space-y-6'>
-          <div className='flex items-start justify-between gap-4'>
-            <div className='flex items-start gap-3'>
-              <div className='h-16 w-16 rounded-lg bg-gray-100 overflow-hidden'>
-                {event?.image ? (
-                  <img
-                    src={toImageSrc(event.image)}
-                    alt={event?.eventName || 'Event'}
-                    className='h-full w-full object-cover'
-                  />
-                ) : null}
-              </div>
-              <div>
-                <div className='text-base font-semibold text-slate-900'>
-                  {event?.eventName || booking?.ticketName || 'Event'}
-                </div>
-                <div className='text-sm text-[#5E6582]'>
-                  {(() => {
-                    const d = event?.eventStartDate
-                    const date = d
-                      ? new Date(typeof d === 'object' && d.$date ? d.$date : d)
-                      : null
-                    const time = event?.eventStartTime
-                    return `${
-                      date
-                        ? date.toLocaleDateString(undefined, {
-                            month: 'short',
-                            day: 'numeric'
-                          })
-                        : 'Sat, Dec 14'
-                    } • ${time || '3pm'}`
-                  })()}
-                </div>
-                <div className='text-sm text-[#5E6582]'>
-                  {event?.eventId?.location || 'Landmark Event Centre, Lagos'}
-                </div>
-              </div>
-            </div>
-            <div className='h-20 w-20 rounded-lg bg-gray-100 flex items-center justify-center text-xs text-gray-600'>
-              <QRCodeGenerator value={qrData} size={180} />
-            </div>
-          </div>
-
-          <div className='divide-y divide-[#EEF1FA]'>
-            <div className='py-3 space-y-2'>
-              {items.length > 0
-                ? items.map((it, i) => (
-                    <div
-                      key={i}
-                      className='flex items-center justify-between text-sm'
-                    >
-                      <span>
-                        {it.quantity}* {it.name}
-                      </span>
-                      <span>{formatNaira(it.price)}</span>
-                    </div>
-                  ))
-                : null}
-            </div>
-            <div className='py-3 space-y-2'>
-              {items.length > 0 &&
-                items.map((it, i) => (
-                  <div
-                    key={i}
-                    className='flex items-center justify-between text-sm'
-                  >
-                    <span>Total</span>
-
-                    {/* item total */}
-                    <span className='font-medium'>
-                      {formatNaira(it.quantity * it.price)}
-                    </span>
-                  </div>
-                ))}
-            </div>
-            {booking?.paymentStatus || booking?.bookingStatus ? (
-              <div className='py-3 grid grid-cols-2 gap-4'>
-                <div className='text-sm text-[#5E6582]'>Payment Status</div>
-                <div className='text-right text-sm font-semibold text-slate-900'>
-                  {booking?.paymentStatus || '-'}
-                </div>
-                <div className='text-sm text-[#5E6582]'>Booking Status</div>
-                <div className='text-right text-sm font-semibold text-slate-900'>
-                  {booking?.bookingStatus || '-'}
-                </div>
-              </div>
-            ) : null}
-          </div>
-
-          {/* {attendees.map((a, idx) => (
-            <div
-              key={idx}
-              className="rounded-xl border border-[#E5E8F6] bg-white p-4"
+    <div className='min-h-screen bg-[#F5F6FA] p-6 md:p-10'>
+      <div className='mx-auto max-w-3xl space-y-6'>
+        {/* Main card: Back + Event + Tickets + Ticket 1 */}
+        <div className='bg-white rounded-xl border border-[#E5E8F6] shadow-sm overflow-hidden'>
+          <div className='p-5 md:p-7'>
+            <button
+              type='button'
+              onClick={() => router.back()}
+              className='flex items-center gap-1 text-sm text-[#5E6582] hover:text-[#1A1F3F]'
             >
-              <div className="text-sm font-semibold text-slate-900 mb-3">
-                Ticket {idx + 1}
-              </div>
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div className="text-[#5E6582]">Name</div>
-                <div className="text-right font-semibold text-slate-900">
-                  {a.fullName || buyer.fullName || "-"}
-                </div>
-                <div className="text-[#5E6582]">Email Address</div>
-                <div className="text-right font-semibold text-slate-900">
-                  {a.email || buyer.email || "-"}
-                </div>
-                <div className="text-[#5E6582]">Phone Number</div>
-                <div className="text-right font-semibold text-slate-900">
-                  {a.phone || buyer.phone || "-"}
-                </div>
-                <div className="text-[#5E6582]">Purchased on</div>
-                <div className="text-right font-semibold text-slate-900">
-                  {issuedDate ? issuedDate.toLocaleDateString() : "-"}
-                </div>
-                <div className="text-[#5E6582]">Ticket Name</div>
-                <div className="text-right font-semibold text-slate-900">
-                  {a.ticketName || booking?.ticketName || "General Admission"}
-                </div>
-              </div>
-            </div>
-          ))} */}
+              <ArrowLeft className='h-4 w-4' /> Back
+            </button>
 
-          {buyer?.fullName || buyer?.email || buyer?.phone ? (
-            <div className='rounded-xl border border-[#E5E8F6] bg-white p-4'>
-              <div className='text-sm font-semibold text-slate-900 mb-3'>
-                Buyer Details
+            <div className='mt-6 flex flex-col gap-8 sm:flex-row sm:items-start sm:justify-between'>
+              <div className='flex flex-1 gap-4'>
+                <div className='h-[74px] w-[74px] shrink-0 rounded-lg bg-gray-100 overflow-hidden'>
+                  {eventDetails?.image ? (
+                    <img
+                      src={toImageSrc(eventDetails.image)}
+                      alt={toDisplayString(eventDetails?.eventName) || 'Event'}
+                      className='h-full w-full object-cover'
+                    />
+                  ) : (
+                    <div className='h-full w-full flex items-center justify-center text-xs text-gray-400'>
+                      Event
+                    </div>
+                  )}
+                </div>
+                <div className='min-w-0'>
+                  <h1 className='text-xl font-bold text-slate-900'>
+                    {toDisplayString(eventDetails?.eventName) ||
+                      toDisplayString(booking?.ticketName) ||
+                      'Event'}
+                  </h1>
+                  <p className='mt-2 text-sm text-[#5E6582]'>
+                    Opening Hours: {openingHours}
+                  </p>
+                  <p className='mt-2 flex items-center gap-1 text-sm text-[#5E6582]'>
+                    <MapPin className='h-4 w-4 shrink-0 text-[#9CA3AF]' />
+                    {locationStr}
+                  </p>
+                  <p className='mt-2 text-sm text-[#5E6582]'>
+                    Hosted by : {hostName}
+                  </p>
+                  <p className='mt-2 text-sm text-[#5E6582]'>
+                    {eventDateRange}
+                  </p>
+                </div>
               </div>
-              <div className='grid grid-cols-2 gap-4 text-sm'>
-                <div className='text-[#5E6582]'>Full Name</div>
-                <div className='text-right font-semibold text-slate-900'>
-                  {buyer.fullName || '-'}
-                </div>
-                <div className='text-[#5E6582]'>Email Address</div>
-                <div className='text-right font-semibold text-slate-900'>
-                  {buyer.email || '-'}
-                </div>
-                <div className='text-[#5E6582]'>Phone</div>
-                <div className='text-right font-semibold text-slate-900'>
-                  {buyer.phone || '-'}
-                </div>
-                <div className='text-[#5E6582]'>Country</div>
-                <div className='text-right font-semibold text-slate-900'>
-                  {buyer.country || '-'}
-                </div>
-                <div className='text-[#5E6582]'>City</div>
-                <div className='text-right font-semibold text-slate-900'>
-                  {buyer.city || '-'}
-                </div>
-              </div>
-            </div>
-          ) : null}
 
-          {booking?.pricing?.serviceFee || booking?.pricing?.discountApplied ? (
-            <div className='rounded-xl border border-[#E5E8F6] bg-white p-4'>
-              <div className='text-sm font-semibold text-slate-900 mb-3'>
-                Pricing
-              </div>
-              <div className='grid grid-cols-2 gap-4 text-sm'>
-                <div className='text-[#5E6582]'>Service Fee</div>
-                <div className='text-right font-semibold text-slate-900'>
-                  {formatNaira(booking?.pricing?.serviceFee || 0)}
+              <div className='flex flex-col items-start sm:items-end'>
+                <div className='text-right text-sm'>
+                  <p className='font-semibold text-slate-900'>
+                    Order ID: <span className='font-semibold'>{orderId}</span>
+                  </p>
+                  <p className='mt-1 font-semibold'>
+                    <span className='text-slate-700'>Status: </span>
+                    <span
+                      className={
+                        isPaymentSuccess
+                          ? 'text-[#16A34A]'
+                          : 'text-[#EAB308]'
+                      }
+                    >
+                      {paymentStatus || 'Pending'}
+                    </span>
+                  </p>
+                  <p className='mt-1 text-[#5E6582]'>
+                    Issued on:{' '}
+                    {issuedDate
+                      ? issuedDate.toLocaleDateString('en-GB', {
+                          weekday: 'short',
+                          day: 'numeric',
+                          month: 'short',
+                          year: 'numeric'
+                        })
+                      : '—'}
+                  </p>
+                  <p className='mt-1 text-[#5E6582]'>
+                    Visit Date: {arrivalDate ? formatEventDate(arrivalDate) : '—'}
+                  </p>
                 </div>
-                <div className='text-[#5E6582]'>Discount Applied</div>
-                <div className='text-right font-semibold text-slate-900'>
-                  {formatNaira(booking?.pricing?.discountApplied || 0)}
+
+                <div className='mt-5 flex flex-col items-center'>
+                  <QRCodeGenerator value={qrData} size={150} />
+                  <span className='mt-3 inline-flex items-center gap-2 rounded-full border border-[#FDE68A] bg-[#FFFBEB] px-4 py-1.5 text-xs font-medium text-[#854D0E]'>
+                    <span className='h-1.5 w-1.5 rounded-full bg-[#EAB308]' />{' '}
+                    Pending
+                  </span>
+                  <p className='mt-2 text-xs text-[#9CA3AF]'>
+                    Scan this QR code to verify your booking
+                  </p>
                 </div>
               </div>
             </div>
-          ) : null}
+          </div>
+
+          <div className='border-t border-[#EEF1FA]' />
+
+          {/* Tickets section inside main card */}
+          <div className='p-5 md:p-7'>
+            <h2 className='text-base font-bold text-slate-900'>Tickets</h2>
+            <div className='mt-3 space-y-2'>
+              {items.map((it, i) => (
+                <div key={i} className='flex items-center justify-between text-sm'>
+                  <span className='text-slate-700'>
+                    {it.quantity}× {it.name}
+                  </span>
+                  <span className='font-medium text-slate-900'>{formatNaira(it.price)}</span>
+                </div>
+              ))}
+            </div>
+
+            <div className='mt-4 border-t border-[#EEF1FA] pt-4 flex items-center justify-between'>
+              <span className='flex items-center gap-2 font-bold text-slate-900'>
+                <Ticket className='h-4 w-4 text-[#EF4444]' /> Total
+              </span>
+              <span className='font-bold text-[#EF4444]'>{formatNaira(totalAmount)}</span>
+            </div>
+          </div>
+
+          <div className='border-t border-[#EEF1FA]' />
+
+          {/* Ticket 1 section inside main card */}
+          <div className='p-5 md:p-7'>
+            <div className='rounded-xl bg-[#F8FAFC] border border-[#EEF1FA] p-5'>
+              <h2 className='text-base font-bold text-slate-900'>Ticket 1</h2>
+              <div className='mt-4 grid grid-cols-1 gap-y-3 text-sm sm:grid-cols-2 sm:gap-x-12'>
+                <div className='text-[#9CA3AF]'>Name</div>
+                <div className='sm:text-right font-medium text-slate-900'>{ticket1FullName}</div>
+                <div className='text-[#9CA3AF]'>Email Address</div>
+                <div className='sm:text-right font-medium text-slate-900'>{ticket1Email}</div>
+                <div className='text-[#9CA3AF]'>Phone Number</div>
+                <div className='sm:text-right font-medium text-slate-900'>{ticket1Phone}</div>
+                <div className='text-[#9CA3AF]'>Purchased on</div>
+                <div className='sm:text-right font-medium text-slate-900'>
+                  {issuedDate
+                    ? issuedDate.toLocaleDateString('en-GB', {
+                        weekday: 'short',
+                        day: 'numeric',
+                        month: 'short',
+                        year: 'numeric'
+                      })
+                    : '—'}
+                </div>
+                <div className='text-[#9CA3AF]'>Ticket Name</div>
+                <div className='sm:text-right font-medium text-slate-900'>{ticket1Name}</div>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
-      <div className='mt-6 flex justify-center'>
-        <button
-          onClick={() => router.back()}
-          className='rounded-xl border border-[#E5E6EF] bg-white px-5 py-2.5 text-sm font-medium text-[#1A1F3F] shadow-sm transition hover:bg-[#F9FAFD]'
-        >
-          Back
-        </button>
+
+        {/* Buyer Details - two columns: Full Name, Phone, City | Email, Country */}
+        <div className={cardClass}>
+          <h2 className='mb-4 text-base font-bold text-slate-900'>Buyer Details</h2>
+          <div className='grid grid-cols-1 gap-6 text-sm sm:grid-cols-2'>
+            <div className='space-y-3'>
+              <div><span className='text-[#5E6582]'>Full Name</span><br /><span className='font-semibold text-slate-900'>{toDisplayString(buyer.fullName) || '—'}</span></div>
+              <div><span className='text-[#5E6582]'>Phone Number</span><br /><span className='font-semibold text-slate-900'>{toDisplayString(buyer.phone) || '—'}</span></div>
+              <div><span className='text-[#5E6582]'>City</span><br /><span className='font-semibold text-slate-900'>{toDisplayString(buyer.city) || '—'}</span></div>
+            </div>
+            <div className='space-y-3'>
+              <div><span className='text-[#5E6582]'>Email Address</span><br /><span className='font-semibold text-slate-900'>{toDisplayString(buyer.email) || '—'}</span></div>
+              <div><span className='text-[#5E6582]'>Country</span><br /><span className='font-semibold text-slate-900'>{toDisplayString(buyer.country) || '—'}</span></div>
+            </div>
+          </div>
+        </div>
+
+        {/* Booking Summary - left: Booking ID, Payment Status, Total Amount, Transaction Ref, Service Fee | right: Order ID, Booking Status, Final Payable, Quantity, Discount */}
+        <div className={cardClass}>
+          <h2 className='mb-4 text-base font-bold text-slate-900'>Booking Summary</h2>
+          <div className='grid grid-cols-1 gap-6 text-sm sm:grid-cols-2'>
+            <div className='space-y-3'>
+              <div className='flex justify-between'><span className='text-[#5E6582]'>Booking ID</span><span className='font-semibold text-slate-900'>{bookingId || '—'}</span></div>
+              <div className='flex justify-between'><span className='text-[#5E6582]'>Payment Status</span><span className={`font-semibold ${isPaymentSuccess ? 'text-[#16A34A]' : 'text-[#EAB308]'}`}>{paymentStatus || '—'}</span></div>
+              <div className='flex justify-between'><span className='text-[#5E6582]'>Total Amount</span><span className='font-semibold text-slate-900'>{formatNaira(total)}</span></div>
+              <div className='flex justify-between'><span className='text-[#5E6582]'>Transaction Ref</span><span className='font-semibold text-slate-900'>{transactionRef}</span></div>
+              <div className='flex justify-between'><span className='text-[#5E6582]'>Service Fee</span><span className='font-semibold text-slate-900'>{formatNaira(serviceFee)}</span></div>
+            </div>
+            <div className='space-y-3'>
+              <div className='flex justify-between'><span className='text-[#5E6582]'>Order ID</span><span className='font-semibold text-[#2563EB]'>{orderId}</span></div>
+              <div className='flex justify-between'><span className='text-[#5E6582]'>Booking Status</span><span className={`font-semibold ${isBookingSuccess ? 'text-[#16A34A]' : 'text-[#EAB308]'}`}>{bookingStatus || '—'}</span></div>
+              <div className='flex justify-between'><span className='text-[#5E6582]'>Final Payable Amount</span><span className='font-semibold text-slate-900'>{formatNaira(finalPayable)}</span></div>
+              <div className='flex justify-between'><span className='text-[#5E6582]'>Quantity</span><span className='font-semibold text-slate-900'>{totalQty}</span></div>
+              <div className='flex justify-between'><span className='text-[#5E6582]'>Discount Applied</span><span className='font-semibold text-slate-900'>{formatNaira(discountApplied)}</span></div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   )
