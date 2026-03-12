@@ -96,7 +96,8 @@ export default function TicketView () {
   )
 
   // API shape: booking.event.eventId contains actual event master fields
-  const eventDetails = booking?.event?.eventId || event?.eventId || event || null
+  const eventDetails =
+    booking?.event?.eventId || event?.eventId || event || null
 
   const vendorId =
     eventDetails?.hostedBy?._id ||
@@ -118,10 +119,18 @@ export default function TicketView () {
   const eventStartDate = eventDetails?.eventStartDate
   const eventEndDate = eventDetails?.eventEndDate
   const startDate = eventStartDate
-    ? new Date(typeof eventStartDate === 'object' && eventStartDate.$date ? eventStartDate.$date : eventStartDate)
+    ? new Date(
+        typeof eventStartDate === 'object' && eventStartDate.$date
+          ? eventStartDate.$date
+          : eventStartDate
+      )
     : null
   const endDate = eventEndDate
-    ? new Date(typeof eventEndDate === 'object' && eventEndDate.$date ? eventEndDate.$date : eventEndDate)
+    ? new Date(
+        typeof eventEndDate === 'object' && eventEndDate.$date
+          ? eventEndDate.$date
+          : eventEndDate
+      )
     : null
   const openingHours =
     toDisplayString(eventDetails?.openingHours) ||
@@ -129,10 +138,17 @@ export default function TicketView () {
       .filter(Boolean)
       .join(' - ') ||
     '—'
-  const eventDateRange = startDate && endDate
-    ? `${formatEventDate(startDate)}${eventDetails?.eventStartTime ? `, ${eventDetails.eventStartTime}` : ''} to ${formatEventDate(endDate)}${eventDetails?.eventEndTime ? `, ${eventDetails.eventEndTime}` : ''}`
-    : startDate
-      ? `${formatEventDate(startDate)}${eventDetails?.eventStartTime ? `, ${eventDetails.eventStartTime}` : ''}`
+  const eventDateRange =
+    startDate && endDate
+      ? `${formatEventDate(startDate)}${
+          eventDetails?.eventStartTime ? `, ${eventDetails.eventStartTime}` : ''
+        } to ${formatEventDate(endDate)}${
+          eventDetails?.eventEndTime ? `, ${eventDetails.eventEndTime}` : ''
+        }`
+      : startDate
+      ? `${formatEventDate(startDate)}${
+          eventDetails?.eventStartTime ? `, ${eventDetails.eventStartTime}` : ''
+        }`
       : '—'
   const hostName =
     toDisplayString(eventDetails?.hostedBy?.name || eventDetails?.hostedBy) ||
@@ -149,21 +165,32 @@ export default function TicketView () {
   const totalAmount = Number(booking?.totalAmount) || total
   const finalPayable =
     Number(booking?.finalPayableAmount) ||
-    (totalAmount + serviceFee - discountApplied)
-  const transactionRef = toDisplayString(booking?.transactionRef ?? booking?.transactionId ?? booking?.paymentReference) || '—'
+    totalAmount + serviceFee - discountApplied
+  const transactionRef =
+    toDisplayString(
+      booking?.transactionRef ??
+        booking?.transactionId ??
+        booking?.paymentReference
+    ) || '—'
 
   const firstAttendee = attendees[0]
-  const ticket1Name = toDisplayString(firstAttendee?.ticketName ?? items[0]?.name) || '—'
-  const ticket1FullName = toDisplayString(firstAttendee?.fullName ?? buyer?.fullName) || '—'
-  const ticket1Email = toDisplayString(firstAttendee?.email ?? buyer?.email) || '—'
-  const ticket1Phone = toDisplayString(firstAttendee?.phone ?? buyer?.phone) || '—'
+  const ticket1Name =
+    toDisplayString(firstAttendee?.ticketName ?? items[0]?.name) || '—'
+  const ticket1FullName =
+    toDisplayString(firstAttendee?.fullName ?? buyer?.fullName) || '—'
+  const ticket1Email =
+    toDisplayString(firstAttendee?.email ?? buyer?.email) || '—'
+  const ticket1Phone =
+    toDisplayString(firstAttendee?.phone ?? buyer?.phone) || '—'
 
   const cardClass = 'bg-white rounded-xl border border-[#E5E8F6] shadow-sm p-5'
 
   if (loading) {
     return (
       <div className='min-h-screen bg-[#F5F6FA] p-6 md:p-10'>
-        <div className='mx-auto max-w-3xl text-sm text-[#5E6582]'>Loading...</div>
+        <div className='mx-auto max-w-3xl text-sm text-[#5E6582]'>
+          Loading...
+        </div>
       </div>
     )
   }
@@ -242,9 +269,7 @@ export default function TicketView () {
                     <span className='text-slate-700'>Status: </span>
                     <span
                       className={
-                        isPaymentSuccess
-                          ? 'text-[#16A34A]'
-                          : 'text-[#EAB308]'
+                        isPaymentSuccess ? 'text-[#16A34A]' : 'text-[#EAB308]'
                       }
                     >
                       {paymentStatus || 'Pending'}
@@ -262,7 +287,8 @@ export default function TicketView () {
                       : '—'}
                   </p>
                   <p className='mt-1 text-[#5E6582]'>
-                    Visit Date: {arrivalDate ? formatEventDate(arrivalDate) : '—'}
+                    Visit Date:{' '}
+                    {arrivalDate ? formatEventDate(arrivalDate) : '—'}
                   </p>
                 </div>
 
@@ -272,9 +298,6 @@ export default function TicketView () {
                     <span className='h-1.5 w-1.5 rounded-full bg-[#EAB308]' />{' '}
                     Pending
                   </span>
-                  <p className='mt-2 text-xs text-[#9CA3AF]'>
-                    Scan this QR code to verify your booking
-                  </p>
                 </div>
               </div>
             </div>
@@ -287,11 +310,16 @@ export default function TicketView () {
             <h2 className='text-base font-bold text-slate-900'>Tickets</h2>
             <div className='mt-3 space-y-2'>
               {items.map((it, i) => (
-                <div key={i} className='flex items-center justify-between text-sm'>
+                <div
+                  key={i}
+                  className='flex items-center justify-between text-sm'
+                >
                   <span className='text-slate-700'>
                     {it.quantity}× {it.name}
                   </span>
-                  <span className='font-medium text-slate-900'>{formatNaira(it.price)}</span>
+                  <span className='font-medium text-slate-900'>
+                    {formatNaira(it.price)}
+                  </span>
                 </div>
               ))}
             </div>
@@ -300,7 +328,9 @@ export default function TicketView () {
               <span className='flex items-center gap-2 font-bold text-slate-900'>
                 <Ticket className='h-4 w-4 text-[#EF4444]' /> Total
               </span>
-              <span className='font-bold text-[#EF4444]'>{formatNaira(totalAmount)}</span>
+              <span className='font-bold text-[#EF4444]'>
+                {formatNaira(totalAmount)}
+              </span>
             </div>
           </div>
 
@@ -312,11 +342,17 @@ export default function TicketView () {
               <h2 className='text-base font-bold text-slate-900'>Ticket 1</h2>
               <div className='mt-4 grid grid-cols-1 gap-y-3 text-sm sm:grid-cols-2 sm:gap-x-12'>
                 <div className='text-[#9CA3AF]'>Name</div>
-                <div className='sm:text-right font-medium text-slate-900'>{ticket1FullName}</div>
+                <div className='sm:text-right font-medium text-slate-900'>
+                  {ticket1FullName}
+                </div>
                 <div className='text-[#9CA3AF]'>Email Address</div>
-                <div className='sm:text-right font-medium text-slate-900'>{ticket1Email}</div>
+                <div className='sm:text-right font-medium text-slate-900'>
+                  {ticket1Email}
+                </div>
                 <div className='text-[#9CA3AF]'>Phone Number</div>
-                <div className='sm:text-right font-medium text-slate-900'>{ticket1Phone}</div>
+                <div className='sm:text-right font-medium text-slate-900'>
+                  {ticket1Phone}
+                </div>
                 <div className='text-[#9CA3AF]'>Purchased on</div>
                 <div className='sm:text-right font-medium text-slate-900'>
                   {issuedDate
@@ -329,7 +365,9 @@ export default function TicketView () {
                     : '—'}
                 </div>
                 <div className='text-[#9CA3AF]'>Ticket Name</div>
-                <div className='sm:text-right font-medium text-slate-900'>{ticket1Name}</div>
+                <div className='sm:text-right font-medium text-slate-900'>
+                  {ticket1Name}
+                </div>
               </div>
             </div>
           </div>
@@ -337,37 +375,125 @@ export default function TicketView () {
 
         {/* Buyer Details - two columns: Full Name, Phone, City | Email, Country */}
         <div className={cardClass}>
-          <h2 className='mb-4 text-base font-bold text-slate-900'>Buyer Details</h2>
+          <h2 className='mb-4 text-base font-bold text-slate-900'>
+            Buyer Details
+          </h2>
           <div className='grid grid-cols-1 gap-6 text-sm sm:grid-cols-2'>
             <div className='space-y-3'>
-              <div><span className='text-[#5E6582]'>Full Name</span><br /><span className='font-semibold text-slate-900'>{toDisplayString(buyer.fullName) || '—'}</span></div>
-              <div><span className='text-[#5E6582]'>Phone Number</span><br /><span className='font-semibold text-slate-900'>{toDisplayString(buyer.phone) || '—'}</span></div>
-              <div><span className='text-[#5E6582]'>City</span><br /><span className='font-semibold text-slate-900'>{toDisplayString(buyer.city) || '—'}</span></div>
+              <div>
+                <span className='text-[#5E6582]'>Full Name</span>
+                <br />
+                <span className='font-semibold text-slate-900'>
+                  {toDisplayString(buyer.fullName) || '—'}
+                </span>
+              </div>
+              <div>
+                <span className='text-[#5E6582]'>Phone Number</span>
+                <br />
+                <span className='font-semibold text-slate-900'>
+                  {toDisplayString(buyer.phone) || '—'}
+                </span>
+              </div>
+              <div>
+                <span className='text-[#5E6582]'>City</span>
+                <br />
+                <span className='font-semibold text-slate-900'>
+                  {toDisplayString(buyer.city) || '—'}
+                </span>
+              </div>
             </div>
             <div className='space-y-3'>
-              <div><span className='text-[#5E6582]'>Email Address</span><br /><span className='font-semibold text-slate-900'>{toDisplayString(buyer.email) || '—'}</span></div>
-              <div><span className='text-[#5E6582]'>Country</span><br /><span className='font-semibold text-slate-900'>{toDisplayString(buyer.country) || '—'}</span></div>
+              <div>
+                <span className='text-[#5E6582]'>Email Address</span>
+                <br />
+                <span className='font-semibold text-slate-900'>
+                  {toDisplayString(buyer.email) || '—'}
+                </span>
+              </div>
+              <div>
+                <span className='text-[#5E6582]'>Country</span>
+                <br />
+                <span className='font-semibold text-slate-900'>
+                  {toDisplayString(buyer.country) || '—'}
+                </span>
+              </div>
             </div>
           </div>
         </div>
 
         {/* Booking Summary - left: Booking ID, Payment Status, Total Amount, Transaction Ref, Service Fee | right: Order ID, Booking Status, Final Payable, Quantity, Discount */}
         <div className={cardClass}>
-          <h2 className='mb-4 text-base font-bold text-slate-900'>Booking Summary</h2>
+          <h2 className='mb-4 text-base font-bold text-slate-900'>
+            Booking Summary
+          </h2>
           <div className='grid grid-cols-1 gap-6 text-sm sm:grid-cols-2'>
             <div className='space-y-3'>
-              <div className='flex justify-between'><span className='text-[#5E6582]'>Booking ID</span><span className='font-semibold text-slate-900'>{bookingId || '—'}</span></div>
-              <div className='flex justify-between'><span className='text-[#5E6582]'>Payment Status</span><span className={`font-semibold ${isPaymentSuccess ? 'text-[#16A34A]' : 'text-[#EAB308]'}`}>{paymentStatus || '—'}</span></div>
-              <div className='flex justify-between'><span className='text-[#5E6582]'>Total Amount</span><span className='font-semibold text-slate-900'>{formatNaira(total)}</span></div>
-              <div className='flex justify-between'><span className='text-[#5E6582]'>Transaction Ref</span><span className='font-semibold text-slate-900'>{transactionRef}</span></div>
-              <div className='flex justify-between'><span className='text-[#5E6582]'>Service Fee</span><span className='font-semibold text-slate-900'>{formatNaira(serviceFee)}</span></div>
+              <div className='flex justify-between'>
+                <span className='text-[#5E6582]'>Booking ID</span>
+                <span className='font-semibold text-slate-900'>
+                  {bookingId || '—'}
+                </span>
+              </div>
+              <div className='flex justify-between'>
+                <span className='text-[#5E6582]'>Payment Status</span>
+                <span
+                  className={`font-semibold ${
+                    isPaymentSuccess ? 'text-[#16A34A]' : 'text-[#EAB308]'
+                  }`}
+                >
+                  {paymentStatus || '—'}
+                </span>
+              </div>
+              <div className='flex justify-between'>
+                <span className='text-[#5E6582]'>Total Amount</span>
+                <span className='font-semibold text-slate-900'>
+                  {formatNaira(total)}
+                </span>
+              </div>
+              <div className='flex justify-between'>
+                <span className='text-[#5E6582]'>Transaction Ref</span>
+                <span className='font-semibold text-slate-900'>
+                  {transactionRef}
+                </span>
+              </div>
+              <div className='flex justify-between'>
+                <span className='text-[#5E6582]'>Service Fee</span>
+                <span className='font-semibold text-slate-900'>
+                  {formatNaira(serviceFee)}
+                </span>
+              </div>
             </div>
             <div className='space-y-3'>
-              <div className='flex justify-between'><span className='text-[#5E6582]'>Order ID</span><span className='font-semibold text-[#2563EB]'>{orderId}</span></div>
-              <div className='flex justify-between'><span className='text-[#5E6582]'>Booking Status</span><span className={`font-semibold ${isBookingSuccess ? 'text-[#16A34A]' : 'text-[#EAB308]'}`}>{bookingStatus || '—'}</span></div>
-              <div className='flex justify-between'><span className='text-[#5E6582]'>Final Payable Amount</span><span className='font-semibold text-slate-900'>{formatNaira(finalPayable)}</span></div>
-              <div className='flex justify-between'><span className='text-[#5E6582]'>Quantity</span><span className='font-semibold text-slate-900'>{totalQty}</span></div>
-              <div className='flex justify-between'><span className='text-[#5E6582]'>Discount Applied</span><span className='font-semibold text-slate-900'>{formatNaira(discountApplied)}</span></div>
+              <div className='flex justify-between'>
+                <span className='text-[#5E6582]'>Order ID</span>
+                <span className='font-semibold text-[#2563EB]'>{orderId}</span>
+              </div>
+              <div className='flex justify-between'>
+                <span className='text-[#5E6582]'>Booking Status</span>
+                <span
+                  className={`font-semibold ${
+                    isBookingSuccess ? 'text-[#16A34A]' : 'text-[#EAB308]'
+                  }`}
+                >
+                  {bookingStatus || '—'}
+                </span>
+              </div>
+              <div className='flex justify-between'>
+                <span className='text-[#5E6582]'>Final Payable Amount</span>
+                <span className='font-semibold text-slate-900'>
+                  {formatNaira(finalPayable)}
+                </span>
+              </div>
+              <div className='flex justify-between'>
+                <span className='text-[#5E6582]'>Quantity</span>
+                <span className='font-semibold text-slate-900'>{totalQty}</span>
+              </div>
+              <div className='flex justify-between'>
+                <span className='text-[#5E6582]'>Discount Applied</span>
+                <span className='font-semibold text-slate-900'>
+                  {formatNaira(discountApplied)}
+                </span>
+              </div>
             </div>
           </div>
         </div>
