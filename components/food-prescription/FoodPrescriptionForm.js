@@ -191,7 +191,7 @@ export default function FoodPrescriptionForm ({ mode = 'add', id }) {
               name='name'
               value={formData.name}
               onChange={handleInputChange}
-              className='w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
+              className='w-full rounded-lg border border-gray-200 text-gray-900 px-4 py-2.5 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
               placeholder='Balanced Daily Nutrition'
             />
           </div>
@@ -218,7 +218,7 @@ export default function FoodPrescriptionForm ({ mode = 'add', id }) {
                 name='duration'
                 value={formData.duration}
                 onChange={handleInputChange}
-                className='w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm focus:border-[#FF4400] focus:outline-none'
+                className='w-full rounded-lg border border-gray-200 px-4 py-2.5 text-gray-900 text-sm focus:border-[#FF4400] focus:outline-none'
               >
                 <option value=''>Select Duration</option>
                 <option value='ongoing'>

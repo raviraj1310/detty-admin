@@ -381,7 +381,7 @@ export default function WeightManagementEventAdd () {
                 name='eventName'
                 value={formData.eventName}
                 onChange={handleInputChange}
-                className='w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm text-slate-700 placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
+                className='w-full rounded-lg border border-gray-200 px-4 py-2.5 text-gray-900 text-sm text-slate-700 placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
                 placeholder='Everyday Nutrition Workshop'
               />
             </div>
@@ -451,7 +451,6 @@ export default function WeightManagementEventAdd () {
                   onChange={handleInputChange}
                   className='w-full rounded-lg border border-gray-200 px-4 py-2.5 pr-10 text-sm text-slate-700 placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
                 />
-                <Calendar className='absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 pointer-events-none' />
               </div>
             </div>
             <div>
@@ -466,7 +465,6 @@ export default function WeightManagementEventAdd () {
                   onChange={handleInputChange}
                   className='w-full rounded-lg border border-gray-200 px-4 py-2.5 pr-10 text-sm text-slate-700 placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
                 />
-                <Calendar className='absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 pointer-events-none' />
               </div>
             </div>
           </div>
@@ -484,7 +482,6 @@ export default function WeightManagementEventAdd () {
                   onChange={handleInputChange}
                   className='w-full rounded-lg border border-gray-200 px-4 py-2.5 pr-10 text-sm text-slate-700 placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
                 />
-                <Clock className='absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 pointer-events-none' />
               </div>
             </div>
             <div>
@@ -499,7 +496,6 @@ export default function WeightManagementEventAdd () {
                   onChange={handleInputChange}
                   className='w-full rounded-lg border border-gray-200 px-4 py-2.5 pr-10 text-sm text-slate-700 placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
                 />
-                <Clock className='absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 pointer-events-none' />
               </div>
             </div>
             <div>
@@ -571,7 +567,7 @@ export default function WeightManagementEventAdd () {
                           onChange={e =>
                             handleSlotChange(slot.id, 'name', e.target.value)
                           }
-                          className='w-full rounded-lg border border-gray-200 px-3 py-2 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
+                          className='w-full rounded-lg border border-gray-200 text-gray-900 px-3 py-2 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
                           placeholder='Slot 1'
                         />
                       </td>
@@ -582,7 +578,7 @@ export default function WeightManagementEventAdd () {
                           onChange={e =>
                             handleSlotChange(slot.id, 'date', e.target.value)
                           }
-                          className='w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#FF4400] focus:outline-none'
+                          className='w-full rounded-lg border border-gray-200 text-gray-900 px-3 py-2 text-sm focus:border-[#FF4400] focus:outline-none'
                         />
                       </td>
                       <td className='py-2 px-3'>
@@ -592,7 +588,7 @@ export default function WeightManagementEventAdd () {
                           onChange={e =>
                             handleSlotChange(slot.id, 'time', e.target.value)
                           }
-                          className='w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#FF4400] focus:outline-none'
+                          className='w-full rounded-lg border border-gray-200 text-gray-900 px-3 py-2 text-sm focus:border-[#FF4400] focus:outline-none'
                         />
                       </td>
                       <td className='py-2 px-3'>
@@ -607,7 +603,7 @@ export default function WeightManagementEventAdd () {
                               e.target.value
                             )
                           }
-                          className='w-full rounded-lg border border-gray-200 px-3 py-2 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
+                          className='w-full rounded-lg border border-gray-200 text-gray-900 px-3 py-2 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
                           placeholder='50'
                         />
                       </td>
@@ -625,7 +621,7 @@ export default function WeightManagementEventAdd () {
                                 e.target.value.replace(/\D/g, '')
                               )
                             }
-                            className='w-full rounded-lg border border-gray-200 px-3 py-2 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
+                            className='w-full rounded-lg border border-gray-200 text-gray-900 px-3 py-2 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
                             placeholder='10,000'
                           />
                         </div>
