@@ -32,7 +32,7 @@ export default function FoodPrescriptionFormFields ({
           name='name'
           value={formData.name}
           onChange={handleInputChange}
-          className='w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
+          className='w-full rounded-lg border border-gray-200 px-4 py-2.5  text-gray-900 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
           placeholder='Balanced Daily Nutrition'
         />
       </div>
@@ -72,7 +72,7 @@ export default function FoodPrescriptionFormFields ({
             name='format'
             value={formData.format}
             onChange={handleInputChange}
-            className='w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm focus:border-[#FF4400] focus:outline-none'
+            className='w-full rounded-lg border border-gray-200 px-4  text-gray-900 py-2.5 text-sm focus:border-[#FF4400] focus:outline-none'
           >
             <option value=''>Select Format</option>
             <option value='digital-view'>
@@ -167,7 +167,7 @@ export default function FoodPrescriptionFormFields ({
                     onChange={e =>
                       handleDocumentChange(doc.id, 'title', e.target.value)
                     }
-                    className='w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
+                    className='w-full rounded-lg border border-gray-200 text-gray-900 px-3 py-2.5 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
                     placeholder='Balanced Daily Nutrition'
                   />
                 </div>
@@ -181,7 +181,7 @@ export default function FoodPrescriptionFormFields ({
                     onChange={e =>
                       handleDocumentChange(doc.id, 'subText', e.target.value)
                     }
-                    className='w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
+                    className='w-full rounded-lg border border-gray-200 px-3  text-gray-900 py-2.5 text-sm placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
                     placeholder='e.g. diet-chart.pdf'
                   />
                 </div>

@@ -332,7 +332,6 @@ export default function OtherRecoveryServicesAdd () {
                   onChange={handleInputChange}
                   className='w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 focus:border-[#FF5B2C] focus:outline-none focus:ring-1 focus:ring-[#FF5B2C]'
                 />
-                <Clock className='absolute right-3 top-2.5 h-4 w-4 text-gray-400 pointer-events-none' />
               </div>
             </div>
             <div>
@@ -347,7 +346,6 @@ export default function OtherRecoveryServicesAdd () {
                   onChange={handleInputChange}
                   className='w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 focus:border-[#FF5B2C] focus:outline-none focus:ring-1 focus:ring-[#FF5B2C]'
                 />
-                <Clock className='absolute right-3 top-2.5 h-4 w-4 text-gray-400 pointer-events-none' />
               </div>
             </div>
           </div>
