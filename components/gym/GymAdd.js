@@ -74,6 +74,9 @@ export default function GymAccessAdd () {
   const [durationError, setDurationError] = useState('')
   const [cropOpen, setCropOpen] = useState(false)
   const [rawImageFile, setRawImageFile] = useState(null)
+  const [galleryCropOpen, setGalleryCropOpen] = useState(false)
+  const [galleryRawImageFile, setGalleryRawImageFile] = useState(null)
+  const [galleryCropQueue, setGalleryCropQueue] = useState([])
 
   // Handlers
   const handleInputChange = e => {
@@ -128,16 +131,71 @@ export default function GymAccessAdd () {
 
   // Gallery Handling
   const handleGalleryUpload = e => {
-    const files = Array.from(e.target.files)
-    const newImages = files.map(file => ({
-      file,
-      url: URL.createObjectURL(file),
-      id: Date.now() + Math.random()
-    }))
-    setGalleryImages([...galleryImages, ...newImages])
+    const files = Array.from(e.target.files || [])
+    if (e.target) e.target.value = ''
+
+    const imageFiles = files.filter(f => f?.type?.startsWith('image/'))
+    const videoFiles = files.filter(f => f?.type?.startsWith('video/'))
+
+    if (videoFiles.length > 0) {
+      const videoItems = videoFiles.map(file => ({
+        file,
+        url: URL.createObjectURL(file),
+        id: Date.now() + Math.random(),
+        mediaType: 'video'
+      }))
+      setGalleryImages(prev => [...prev, ...videoItems])
+    }
+
+    if (imageFiles.length > 0) {
+      if (galleryCropOpen) {
+        setGalleryCropQueue(prev => [...prev, ...imageFiles])
+      } else {
+        setGalleryCropQueue(imageFiles)
+        setGalleryRawImageFile(imageFiles[0])
+        setGalleryCropOpen(true)
+      }
+    }
+  }
+
+  const closeGalleryCropper = () => {
+    setGalleryCropOpen(false)
+    setGalleryRawImageFile(null)
+    setGalleryCropQueue([])
+  }
+
+  const handleGalleryCropped = ({ file }) => {
+    setGalleryImages(prev => [
+      ...prev,
+      {
+        file,
+        url: URL.createObjectURL(file),
+        id: Date.now() + Math.random(),
+        mediaType: 'image'
+      }
+    ])
+
+    setGalleryCropQueue(prev => {
+      const rest = prev.slice(1)
+      if (rest.length > 0) {
+        setGalleryRawImageFile(rest[0])
+      } else {
+        setGalleryCropOpen(false)
+        setGalleryRawImageFile(null)
+      }
+      return rest
+    })
   }
 
   const removeGalleryImage = id => {
+    const mediaToRemove = galleryImages.find(img => img.id === id)
+    if (
+      mediaToRemove?.file &&
+      typeof mediaToRemove?.url === 'string' &&
+      mediaToRemove.url.startsWith('blob:')
+    ) {
+      URL.revokeObjectURL(mediaToRemove.url)
+    }
     setGalleryImages(galleryImages.filter(img => img.id !== id))
   }
 
@@ -164,7 +222,9 @@ export default function GymAccessAdd () {
     }
     const num = parseInt(raw, 10)
     if (Number.isNaN(num) || num < 1) {
-      setDurationError('Duration must be a positive whole number (e.g. 1, 60, 120)')
+      setDurationError(
+        'Duration must be a positive whole number (e.g. 1, 60, 120)'
+      )
       return false
     }
     if (num > 9999) {
@@ -629,7 +689,7 @@ export default function GymAccessAdd () {
                   type='file'
                   ref={galleryInputRef}
                   onChange={handleGalleryUpload}
-                  // accept='image/*'
+                  accept='image/*,video/*'
                   multiple
                   className='hidden'
                 />
@@ -647,11 +707,21 @@ export default function GymAccessAdd () {
                   key={img.id}
                   className='group relative aspect-video overflow-hidden rounded-xl bg-gray-100'
                 >
-                  <img
-                    src={img.url}
-                    alt='Gallery'
-                    className='h-full w-full object-cover'
-                  />
+                  {img.mediaType === 'video' ||
+                  img.file?.type?.startsWith('video/') ? (
+                    <video
+                      src={img.url}
+                      controls
+                      playsInline
+                      className='h-full w-full object-cover'
+                    />
+                  ) : (
+                    <img
+                      src={img.url}
+                      alt='Gallery'
+                      className='h-full w-full object-cover'
+                    />
+                  )}
                   <button
                     onClick={() => removeGalleryImage(img.id)}
                     className='absolute right-2 top-2 rounded-full bg-white p-1.5 text-gray-900 shadow-sm hover:bg-red-50 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity'
@@ -679,6 +749,15 @@ export default function GymAccessAdd () {
           file={rawImageFile}
           onCropped={handleCroppedImage}
           onClose={() => setCropOpen(false)}
+        />
+      )}
+
+      {galleryCropOpen && (
+        <ImageCropper
+          open={galleryCropOpen}
+          file={galleryRawImageFile}
+          onCropped={handleGalleryCropped}
+          onClose={closeGalleryCropper}
         />
       )}
     </div>

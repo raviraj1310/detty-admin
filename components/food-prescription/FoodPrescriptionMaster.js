@@ -124,7 +124,8 @@ const TableHeaderCell = ({
   align = 'left',
   onClick,
   active = false,
-  direction = 'asc'
+  direction = 'asc',
+  showIcon = true
 }) => (
   <button
     type='button'
@@ -136,15 +137,17 @@ const TableHeaderCell = ({
     } hover:text-gray-700 w-full`}
   >
     {children}
-    {active ? (
-      direction === 'asc' ? (
-        <ChevronUp className='h-3.5 w-3.5 text-[#2D3658]' />
+    {showIcon ? (
+      active ? (
+        direction === 'asc' ? (
+          <ChevronUp className='h-3.5 w-3.5 text-[#2D3658]' />
+        ) : (
+          <ChevronDown className='h-3.5 w-3.5 text-[#2D3658]' />
+        )
       ) : (
-        <ChevronDown className='h-3.5 w-3.5 text-[#2D3658]' />
+        <TbCaretUpDownFilled className='h-3.5 w-3.5 text-[#CBCFE2]' />
       )
-    ) : (
-      <TbCaretUpDownFilled className='h-3.5 w-3.5 text-[#CBCFE2]' />
-    )}
+    ) : null}
   </button>
 )
 
@@ -411,7 +414,10 @@ export default function FoodPrescriptionMaster () {
             >
               <div className='flex items-center justify-between gap-3'>
                 <div className={`rounded-xl p-2.5 ${card.iconBg} shadow-sm`}>
-                  <Icon className={`h-5 w-5 ${card.textColor}`} strokeWidth={2.2} />
+                  <Icon
+                    className={`h-5 w-5 ${card.textColor}`}
+                    strokeWidth={2.2}
+                  />
                 </div>
                 <div className='text-right'>
                   <p className={`text-xs font-medium ${card.textColor}`}>
@@ -523,8 +529,12 @@ export default function FoodPrescriptionMaster () {
                     Food Prescriptions
                   </TableHeaderCell>
                 </th>
-                <th className='py-3 px-4 text-left'>Detail</th>
-                <th className='py-3 px-4 text-left'>Bookings</th>
+                <th className='py-3 px-4 text-left'>
+                  <TableHeaderCell showIcon={false}>Detail</TableHeaderCell>
+                </th>
+                <th className='py-3 px-4 text-left'>
+                  <TableHeaderCell showIcon={false}>Bookings</TableHeaderCell>
+                </th>
                 <th className='py-3 px-4 text-left'>
                   <TableHeaderCell
                     onClick={() => handleSort('status')}
@@ -561,7 +571,10 @@ export default function FoodPrescriptionMaster () {
                         <div className='h-10 w-10 overflow-hidden rounded-lg bg-gray-100 ring-1 ring-gray-200 shrink-0'>
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
-                            src={toUploadUrl(item.image, 'image') || '/images/no-image.webp'}
+                            src={
+                              toUploadUrl(item.image, 'image') ||
+                              '/images/no-image.webp'
+                            }
                             alt={item.name || 'Food'}
                             className='h-full w-full object-cover'
                             onError={e => {
