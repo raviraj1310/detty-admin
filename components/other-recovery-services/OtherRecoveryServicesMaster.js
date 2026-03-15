@@ -47,6 +47,14 @@ const getServiceImageUrl = imagePath => {
   }
 }
 
+const formatCurrency = amount => {
+  return new Intl.NumberFormat('en-NG', {
+    style: 'currency',
+    currency: 'NGN',
+    minimumFractionDigits: 0
+  }).format(Number(amount) || 0)
+}
+
 const INITIAL_METRICS = [
   {
     id: 'total-services',
@@ -232,23 +240,19 @@ export default function OtherRecoveryServicesMaster () {
         }
         newMetrics[3] = {
           ...newMetrics[3],
-          value: response.totalBookings ?? 0
+          value: Number(response.totalBookingCounts) || 0
         }
-        if (response.totalRevenue !== undefined) {
-          newMetrics[4] = {
-            ...newMetrics[4],
-            value: `${response.totalRevenue}(₦${(
-              response.totalRevenueAmount ?? 0
-            ).toLocaleString()})`
-          }
+        const totalBookings = Number(response.totalBookingCounts) || 0
+        const totalRevenue = Number(response.totalRevenue) || 0
+        const cancelledBookings = Number(response.cancelledBookingCounts) || 0
+
+        newMetrics[4] = {
+          ...newMetrics[4],
+          value: `${totalBookings} (${formatCurrency(totalRevenue)})`
         }
-        if (response.totalCancelled !== undefined) {
-          newMetrics[5] = {
-            ...newMetrics[5],
-            value: `${response.totalCancelled}(₦${(
-              response.totalCancelledAmount ?? 0
-            ).toLocaleString()})`
-          }
+        newMetrics[5] = {
+          ...newMetrics[5],
+          value: `${cancelledBookings} (${formatCurrency(0)})`
         }
         setMetrics(newMetrics)
       }
@@ -311,9 +315,10 @@ export default function OtherRecoveryServicesMaster () {
       case 'serviceName':
         return (service.recoveryServiceName || '').toLowerCase()
       case 'category':
-        return typeof service.serviceCategory === 'object' && service.serviceCategory?.serviceCategoryName
+        return typeof service.serviceCategory === 'object' &&
+          service.serviceCategory?.serviceCategoryName
           ? service.serviceCategory.serviceCategoryName.toLowerCase()
-          : (String(service.serviceCategory || '')).toLowerCase()
+          : String(service.serviceCategory || '').toLowerCase()
       case 'location':
         return (service.location || '').toLowerCase()
       case 'status':
@@ -338,9 +343,7 @@ export default function OtherRecoveryServicesMaster () {
       const va = getSortValue(a, sortKey)
       const vb = getSortValue(b, sortKey)
       if (typeof va === 'string' && typeof vb === 'string') {
-        return sortOrder === 'asc'
-          ? va.localeCompare(vb)
-          : vb.localeCompare(va)
+        return sortOrder === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va)
       }
       return sortOrder === 'asc' ? va - vb : vb - va
     })

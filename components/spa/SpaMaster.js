@@ -47,6 +47,14 @@ const getSpaImageUrl = imagePath => {
   }
 }
 
+const formatCurrency = amount => {
+  return new Intl.NumberFormat('en-NG', {
+    style: 'currency',
+    currency: 'NGN',
+    minimumFractionDigits: 0
+  }).format(Number(amount) || 0)
+}
+
 const INITIAL_METRICS = [
   {
     id: 'total-spa',
@@ -215,11 +223,19 @@ export default function SpaMaster () {
         })
 
         // Update metrics
-        const newMetrics = [...metrics]
-        newMetrics[0].value = response.totalSpa || 0
-        newMetrics[1].value = response.totalActiveSpa || 0
-        newMetrics[2].value = response.totalInactiveSpa || 0
-        // Keeping others as 0 or placeholders since API doesn't provide them yet
+        const newMetrics = [...INITIAL_METRICS]
+        const totalBookings = Number(response.totalBookingCounts) || 0
+        const totalRevenue = Number(response.totalRevenue) || 0
+        const cancelledBookings = Number(response.cancelledBookingCounts) || 0
+
+        newMetrics[0].value = String(response.totalSpa || 0)
+        newMetrics[1].value = String(response.totalActiveSpa || 0)
+        newMetrics[2].value = String(response.totalInactiveSpa || 0)
+        newMetrics[3].value = String(totalBookings)
+        newMetrics[4].value = `${totalBookings} (${formatCurrency(
+          totalRevenue
+        )})`
+        newMetrics[5].value = `${cancelledBookings} (${formatCurrency(0)})`
         setMetrics(newMetrics)
       }
     } catch (error) {
@@ -308,9 +324,7 @@ export default function SpaMaster () {
       const va = getSortValue(a, sortKey)
       const vb = getSortValue(b, sortKey)
       if (typeof va === 'string' && typeof vb === 'string') {
-        return sortOrder === 'asc'
-          ? va.localeCompare(vb)
-          : vb.localeCompare(va)
+        return sortOrder === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va)
       }
       return sortOrder === 'asc' ? va - vb : vb - va
     })

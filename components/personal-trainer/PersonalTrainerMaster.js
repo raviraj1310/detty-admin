@@ -35,8 +35,8 @@ const INITIAL_METRICS = {
   activeTrainers: 0,
   inactiveTrainers: 0,
   totalBookings: 0,
-  revenue: '0',
-  cancelledBookings: '0'
+  revenue: '0 (₦0)',
+  cancelledBookings: '0 (₦0)'
 }
 
 const TableHeaderCell = ({
@@ -105,6 +105,14 @@ const toImageSrc = u => {
   const base = origin.replace(/\/+$/, '')
   const path = s.replace(/^\/+/, '')
   return base ? `${base}/upload/image/${path}` : `/upload/image/${path}`
+}
+
+const formatCurrency = amount => {
+  return new Intl.NumberFormat('en-NG', {
+    style: 'currency',
+    currency: 'NGN',
+    minimumFractionDigits: 0
+  }).format(Number(amount) || 0)
 }
 
 export default function PersonalTrainerMaster () {
@@ -227,14 +235,23 @@ export default function PersonalTrainerMaster () {
               ...response.data.pagination
             }))
           }
-          if (response.data.counts) {
-            setMetrics(prev => ({
+          setMetrics(prev => {
+            const counts = response.data.counts || {}
+            const totalBookings = Number(response.data.totalBookingCounts) || 0
+            const totalRevenue = Number(response.data.totalRevenue) || 0
+            const cancelledBookings =
+              Number(response.data.cancelledBookingCounts) || 0
+
+            return {
               ...prev,
-              totalTrainers: response.data.counts.totalTrainers || 0,
-              activeTrainers: response.data.counts.activeTrainers || 0,
-              inactiveTrainers: response.data.counts.inactiveTrainers || 0
-            }))
-          }
+              totalTrainers: counts.totalTrainers || 0,
+              activeTrainers: counts.activeTrainers || 0,
+              inactiveTrainers: counts.inactiveTrainers || 0,
+              totalBookings,
+              revenue: `${totalBookings} (${formatCurrency(totalRevenue)})`,
+              cancelledBookings: `${cancelledBookings} (${formatCurrency(0)})`
+            }
+          })
         }
       } catch (error) {
         console.error('Error fetching trainers:', error)
@@ -341,9 +358,7 @@ export default function PersonalTrainerMaster () {
       const va = getSortValue(a, sortKey)
       const vb = getSortValue(b, sortKey)
       if (typeof va === 'string' && typeof vb === 'string') {
-        return sortOrder === 'asc'
-          ? va.localeCompare(vb)
-          : vb.localeCompare(va)
+        return sortOrder === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va)
       }
       return sortOrder === 'asc' ? va - vb : vb - va
     })
@@ -645,7 +660,9 @@ export default function PersonalTrainerMaster () {
                           className='flex w-full items-center justify-start gap-2 rounded-lg px-3 py-2 text-sm text-[#475569] hover:bg-[#F8F9FC] hover:text-[#1E293B] text-left whitespace-normal leading-snug'
                         >
                           <span className='font-semibold text-[#0066FF] underline cursor-pointer hover:text-[#0052CC]'>
-                            {trainer.totalBookings ?? trainer.bookingsCount ?? 0}
+                            {trainer.totalBookings ??
+                              trainer.bookingsCount ??
+                              0}
                           </span>
                           <span className='font-medium text-[#0066FF] cursor-pointer hover:text-[#0052CC]'>
                             (View List)

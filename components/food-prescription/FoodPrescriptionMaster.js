@@ -62,6 +62,14 @@ const toUploadUrl = (value, folder) => {
   return `${getUploadOrigin()}/upload/${safeFolder}/${encodeURIComponent(s)}`
 }
 
+const formatCurrency = amount => {
+  return new Intl.NumberFormat('en-NG', {
+    style: 'currency',
+    currency: 'NGN',
+    minimumFractionDigits: 0
+  }).format(Number(amount) || 0)
+}
+
 const INITIAL_METRICS = [
   {
     id: 'total',
@@ -102,7 +110,7 @@ const INITIAL_METRICS = [
   {
     id: 'revenue',
     title: 'Revenue',
-    value: '₦0',
+    value: '0 (₦0)',
     icon: Wallet,
     bg: 'bg-[#E0F2F1]',
     textColor: 'text-teal-700',
@@ -111,7 +119,7 @@ const INITIAL_METRICS = [
   {
     id: 'cancelled',
     title: 'Cancelled Bookings',
-    value: '0',
+    value: '0 (₦0)',
     icon: XCircle,
     bg: 'bg-[#FCE4EC]',
     textColor: 'text-pink-600',
@@ -215,13 +223,21 @@ export default function FoodPrescriptionMaster () {
           totalPages: res.pagination.totalPages ?? 1
         }))
       }
+      const newMetrics = [...INITIAL_METRICS]
       if (res?.counts) {
-        const newMetrics = [...INITIAL_METRICS]
         newMetrics[0].value = String(res.counts.total ?? 0)
         newMetrics[1].value = String(res.counts.active ?? 0)
         newMetrics[2].value = String(res.counts.inactive ?? 0)
-        setMetrics(newMetrics)
       }
+
+      const totalBookings = Number(res?.totalBookingCounts) || 0
+      const totalRevenue = Number(res?.totalRevenue) || 0
+      const cancelledBookings = Number(res?.cancelledBookingCounts) || 0
+
+      newMetrics[3].value = String(totalBookings)
+      newMetrics[4].value = `${totalBookings} (${formatCurrency(totalRevenue)})`
+      newMetrics[5].value = `${cancelledBookings} (${formatCurrency(0)})`
+      setMetrics(newMetrics)
     } catch (err) {
       showToast('Error', 'Failed to load food prescriptions', 'destructive')
       setList([])

@@ -71,11 +71,15 @@ const TableHeaderCell = ({
   <button
     type='button'
     onClick={onClick}
-    className={`flex items-center gap-1 text-xs font-medium uppercase tracking-wide whitespace-nowrap w-full justify-start ${active ? 'text-[#2D3658]' : 'text-[#8A92AC]'} hover:text-[#2D3658]`}
+    className={`flex items-center gap-1 text-xs font-medium uppercase tracking-wide whitespace-nowrap w-full justify-start ${
+      active ? 'text-[#2D3658]' : 'text-[#8A92AC]'
+    } hover:text-[#2D3658]`}
   >
     {children}
     {active ? (
-      <span className='text-[#2D3658]'>{direction === 'asc' ? ' ↑' : ' ↓'}</span>
+      <span className='text-[#2D3658]'>
+        {direction === 'asc' ? ' ↑' : ' ↓'}
+      </span>
     ) : (
       <TbCaretUpDownFilled className='h-3 w-3 text-[#CBCFE2]' />
     )}
@@ -125,6 +129,11 @@ export default function PodcastList () {
     total: 0,
     active: 0,
     inactive: 0
+  })
+  const [bookingStats, setBookingStats] = useState({
+    totalBookingCounts: 0,
+    totalRevenue: 0,
+    cancelledBookingCounts: 0
   })
 
   // Toast State
@@ -179,6 +188,11 @@ export default function PodcastList () {
         if (apiData.counts) {
           setCounts(apiData.counts)
         }
+        setBookingStats({
+          totalBookingCounts: Number(apiData.totalBookingCounts) || 0,
+          totalRevenue: Number(apiData.totalRevenue) || 0,
+          cancelledBookingCounts: Number(apiData.cancelledBookingCounts) || 0
+        })
 
         // Map API data to component structure
         const formattedPodcasts = podcastsList.map(podcast => ({
@@ -306,8 +320,11 @@ export default function PodcastList () {
     totalPodcasts: counts.total || 0,
     activePodcasts: counts.active || 0,
     inactivePodcasts: counts.inactive || 0,
-    totalSubscribers: 0, // Not in API yet
-    revenue: { count: 0, amount: '₦0' }, // Not in API yet
+    totalSubscribers: bookingStats.totalBookingCounts || 0,
+    revenue: {
+      count: bookingStats.totalBookingCounts || 0,
+      amount: `₦${Number(bookingStats.totalRevenue || 0).toLocaleString()}`
+    },
     expiring: { count: 0, amount: '₦0' } // Not in API yet
   }
 
@@ -391,9 +408,7 @@ export default function PodcastList () {
     const va = getSortValue(a, sortKey)
     const vb = getSortValue(b, sortKey)
     if (typeof va === 'string' && typeof vb === 'string') {
-      return sortOrder === 'asc'
-        ? va.localeCompare(vb)
-        : vb.localeCompare(va)
+      return sortOrder === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va)
     }
     return sortOrder === 'asc' ? va - vb : vb - va
   })

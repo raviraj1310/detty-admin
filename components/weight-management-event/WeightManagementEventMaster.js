@@ -117,7 +117,7 @@ const INITIAL_METRICS = [
   {
     id: 'revenue',
     title: 'Revenue',
-    value: '₦0',
+    value: '0 (₦0)',
     icon: Wallet,
     bg: 'bg-[#E0F2F1]',
     textColor: 'text-teal-700',
@@ -126,13 +126,21 @@ const INITIAL_METRICS = [
   {
     id: 'cancelled-bookings',
     title: 'Cancelled Bookings',
-    value: '0',
+    value: '0 (₦0)',
     icon: XCircle,
     bg: 'bg-[#FCE4EC]',
     textColor: 'text-pink-600',
     iconBg: 'bg-white'
   }
 ]
+
+const formatCurrency = amount => {
+  return new Intl.NumberFormat('en-NG', {
+    style: 'currency',
+    currency: 'NGN',
+    minimumFractionDigits: 0
+  }).format(Number(amount) || 0)
+}
 
 const formatRevenueCardValue = value =>
   typeof value === 'number'
@@ -158,7 +166,10 @@ const mapEventFromApi = api => ({
   hostedBy:
     typeof api.hostedBy === 'string'
       ? api.hostedBy
-      : api.hostedBy?.name || api.hostedBy?.fullName || api.hostedBy?.email || '',
+      : api.hostedBy?.name ||
+        api.hostedBy?.fullName ||
+        api.hostedBy?.email ||
+        '',
   location: api.location,
   totalBookings: api.totalBookings ?? 0,
   // eventState drives table label + filter (Done/Ongoing/Upcoming)
@@ -269,9 +280,15 @@ export default function WeightManagementEventMaster () {
         newMetrics[1].value = String(stats.doneEvents ?? 0)
         newMetrics[2].value = String(stats.ongoingEvents ?? 0)
         newMetrics[3].value = String(stats.upcomingEvents ?? 0)
-        newMetrics[4].value = String(stats.totalBookings ?? 0)
-        newMetrics[5].value = formatRevenueCardValue(stats.totalRevenue ?? 0)
-        newMetrics[6].value = String(stats.canceledBookings ?? 0)
+        const totalBookings = Number(stats.totalBookings) || 0
+        const totalRevenue = Number(stats.totalRevenue) || 0
+        const cancelledBookings = Number(stats.canceledBookings) || 0
+
+        newMetrics[4].value = String(totalBookings)
+        newMetrics[5].value = `${totalBookings} (${formatCurrency(
+          totalRevenue
+        )})`
+        newMetrics[6].value = `${cancelledBookings} (${formatCurrency(0)})`
         setMetrics(newMetrics)
       } catch (err) {
         showToast(

@@ -28,6 +28,14 @@ import {
   activeInactiveFitnessEvent
 } from '@/services/fitness-event/fitness-event.service'
 
+const formatCurrency = amount => {
+  return new Intl.NumberFormat('en-NG', {
+    style: 'currency',
+    currency: 'NGN',
+    minimumFractionDigits: 0
+  }).format(Number(amount) || 0)
+}
+
 // Mock Data for Metrics
 const INITIAL_METRICS = {
   totalEvents: 0,
@@ -35,8 +43,8 @@ const INITIAL_METRICS = {
   ongoingEvents: 0,
   upcomingEvents: 0,
   totalBookings: 0,
-  revenue: '0',
-  cancelledBookings: '0'
+  revenue: '0 (₦0)',
+  cancelledBookings: '0 (₦0)'
 }
 
 const TableHeaderCell = ({
@@ -187,6 +195,9 @@ export default function FitnessEventsMaster () {
           const data = response?.data?.data || response?.data || {}
           const eventList = data.events || []
           const stats = data.stats || {}
+          const totalBookings = Number(data.totalBookingCounts) || 0
+          const totalRevenue = Number(data.totalRevenue) || 0
+          const cancelledBookings = Number(data.cancelledBookingCounts) || 0
 
           const formattedEvents = eventList.map(event => {
             // Calculate status based on dates
@@ -213,9 +224,9 @@ export default function FitnessEventsMaster () {
             doneEvents: stats.completedEvents || 0,
             ongoingEvents: stats.ongoingEvents || 0,
             upcomingEvents: stats.upcomingEvents || 0,
-            totalBookings: 0,
-            revenue: '0',
-            cancelledBookings: '0'
+            totalBookings,
+            revenue: `${totalBookings} (${formatCurrency(totalRevenue)})`,
+            cancelledBookings: `${cancelledBookings} (${formatCurrency(0)})`
           })
         }
       } catch (error) {
@@ -289,9 +300,7 @@ export default function FitnessEventsMaster () {
       const va = getSortValue(a, sortKey)
       const vb = getSortValue(b, sortKey)
       if (typeof va === 'string' && typeof vb === 'string') {
-        return sortOrder === 'asc'
-          ? va.localeCompare(vb)
-          : vb.localeCompare(va)
+        return sortOrder === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va)
       }
       return sortOrder === 'asc' ? va - vb : vb - va
     })
