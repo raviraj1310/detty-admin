@@ -22,12 +22,14 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu'
+import { downloadSpaBookings } from '@/services/excel/excel.service'
 
 const SpaBookingList = ({ spaId }) => {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [bookings, setBookings] = useState([])
   const [spaName, setSpaName] = useState('')
+  const [downloadingExcel, setDownloadingExcel] = useState(false)
   const [stats, setStats] = useState({
     total: 0,
     revenue: 0,
@@ -159,6 +161,31 @@ const SpaBookingList = ({ spaId }) => {
     }).format(amount)
   }
 
+  const handleDownloadSpaBookings = async () => {
+    if (downloadingExcel) return
+    setDownloadingExcel(true)
+    try {
+      const params = {}
+      if (spaId) params.spaId = spaId
+      if (searchTerm) params.search = searchTerm
+      const blob = await downloadSpaBookings(params)
+      if (!blob) return
+
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `spa-bookings-${new Date().toISOString().slice(0, 10)}.xlsx`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      window.URL.revokeObjectURL(url)
+    } catch (error) {
+      console.error('Error downloading spa bookings Excel:', error)
+    } finally {
+      setDownloadingExcel(false)
+    }
+  }
+
   return (
     <div className='space-y-6'>
       {/* Stats Cards */}
@@ -244,8 +271,17 @@ const SpaBookingList = ({ spaId }) => {
               <Filter className='h-4 w-4' />
               Filters
             </button>
-            <button className='flex h-10 w-10 items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50'>
-              <Download className='h-4 w-4' />
+            <button
+              type='button'
+              onClick={handleDownloadSpaBookings}
+              disabled={downloadingExcel}
+              className='flex h-10 w-10 items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-50'
+            >
+              {downloadingExcel ? (
+                <Loader2 className='h-4 w-4 animate-spin' />
+              ) : (
+                <Download className='h-4 w-4' />
+              )}
             </button>
           </div>
         </div>

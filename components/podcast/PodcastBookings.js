@@ -7,6 +7,7 @@ import {
   getPodcastBookings,
   getPodcastSubscription
 } from '@/services/podcast/podcast.service'
+import { downloadPodcastBookings } from '@/services/excel/excel.service'
 import PodcastBookingMetrics from './PodcastBookingMetrics'
 import PodcastBookingList from './PodcastBookingList'
 import Toast from '@/components/ui/Toast'
@@ -30,6 +31,7 @@ export default function PodcastBookings () {
     description: '',
     variant: 'default'
   })
+  const [downloadingExcel, setDownloadingExcel] = useState(false)
 
   useEffect(() => {
     fetchData()
@@ -127,6 +129,51 @@ export default function PodcastBookings () {
     }
   }
 
+  const handleDownloadPodcastBookings = async () => {
+    if (downloadingExcel) return
+    setDownloadingExcel(true)
+    try {
+      const params = {}
+      if (podcastId) {
+        params.podcastId = podcastId
+        params.id = podcastId
+      }
+      const blob = await downloadPodcastBookings(params)
+      if (!blob) {
+        setToast({
+          open: true,
+          title: 'Error',
+          description: 'Failed to download Excel',
+          variant: 'error'
+        })
+        return
+      }
+
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `podcast-bookings-${new Date()
+        .toISOString()
+        .slice(0, 10)}.xlsx`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      window.URL.revokeObjectURL(url)
+    } catch (error) {
+      setToast({
+        open: true,
+        title: 'Error',
+        description:
+          error?.response?.data?.message ||
+          error?.message ||
+          'Failed to download Excel',
+        variant: 'error'
+      })
+    } finally {
+      setDownloadingExcel(false)
+    }
+  }
+
   const calculateMetrics = (data, apiStats) => {
     const totalSubscribers = data.length
 
@@ -217,7 +264,11 @@ export default function PodcastBookings () {
 
       <PodcastBookingMetrics metrics={metrics} />
 
-      <PodcastBookingList bookings={bookings} />
+      <PodcastBookingList
+        bookings={bookings}
+        onDownload={handleDownloadPodcastBookings}
+        downloadingExcel={downloadingExcel}
+      />
     </div>
   )
 }

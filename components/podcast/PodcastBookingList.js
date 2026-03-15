@@ -1,7 +1,11 @@
-import { Search, Filter, Download, MoreVertical } from 'lucide-react'
+import { Search, Filter, Download, MoreVertical, Loader2 } from 'lucide-react'
 import { useState } from 'react'
 
-export default function PodcastBookingList ({ bookings }) {
+export default function PodcastBookingList ({
+  bookings,
+  onDownload,
+  downloadingExcel
+}) {
   const [searchTerm, setSearchTerm] = useState('')
 
   const filteredBookings = bookings.filter(
@@ -31,8 +35,17 @@ export default function PodcastBookingList ({ bookings }) {
             <Filter className='h-4 w-4' />
             Filters
           </button>
-          <button className='flex h-10 w-10 items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50'>
-            <Download className='h-4 w-4' />
+          <button
+            type='button'
+            onClick={onDownload}
+            disabled={!onDownload || downloadingExcel}
+            className='flex h-10 w-10 items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-50'
+          >
+            {downloadingExcel ? (
+              <Loader2 className='h-4 w-4 animate-spin' />
+            ) : (
+              <Download className='h-4 w-4' />
+            )}
           </button>
         </div>
       </div>

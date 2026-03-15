@@ -11,10 +11,12 @@ import {
   Wallet,
   XCircle,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Loader2
 } from 'lucide-react'
 import { TbCaretUpDownFilled } from 'react-icons/tb'
 import { getAllGymBookings } from '@/services/v2/gym/gym.service'
+import { downloadGymBookings } from '@/services/excel/excel.service'
 import Toast from '@/components/ui/Toast'
 
 // Mock Data for Metric Cards
@@ -66,6 +68,7 @@ export default function GymBookingsId () {
   const [menuOpenId, setMenuOpenId] = useState(null)
   const [bookings, setBookings] = useState([])
   const [loading, setLoading] = useState(false)
+  const [downloadingExcel, setDownloadingExcel] = useState(false)
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 10,
@@ -172,6 +175,46 @@ export default function GymBookingsId () {
     })
   }
 
+  const handleDownloadGymBookings = async () => {
+    if (downloadingExcel) return
+    setDownloadingExcel(true)
+    try {
+      const params = {}
+      if (debouncedSearch) params.search = debouncedSearch
+      const blob = await downloadGymBookings(params)
+      if (!blob) {
+        setToast({
+          open: true,
+          title: 'Error',
+          description: 'Failed to download Excel',
+          variant: 'error'
+        })
+        return
+      }
+
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `gym-bookings-${new Date().toISOString().slice(0, 10)}.xlsx`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      window.URL.revokeObjectURL(url)
+    } catch (error) {
+      setToast({
+        open: true,
+        title: 'Error',
+        description:
+          error?.response?.data?.message ||
+          error?.message ||
+          'Failed to download Excel',
+        variant: 'error'
+      })
+    } finally {
+      setDownloadingExcel(false)
+    }
+  }
+
   const handlePageChange = newPage => {
     if (newPage >= 1 && newPage <= pagination.totalPages) {
       setPagination(prev => ({ ...prev, page: newPage }))
@@ -248,8 +291,17 @@ export default function GymBookingsId () {
             <button className='flex h-9 items-center gap-2 rounded-lg border border-[#E5E6EF] bg-white px-3 text-xs font-medium text-slate-600 hover:bg-gray-50'>
               Filters <Filter className='h-3.5 w-3.5' />
             </button>
-            <button className='flex h-9 w-9 items-center justify-center rounded-lg border border-[#E5E6EF] bg-white text-slate-600 hover:bg-gray-50'>
-              <Download className='h-4 w-4' />
+            <button
+              type='button'
+              onClick={handleDownloadGymBookings}
+              disabled={downloadingExcel}
+              className='flex h-9 w-9 items-center justify-center rounded-lg border border-[#E5E6EF] bg-white text-slate-600 hover:bg-gray-50 disabled:opacity-50'
+            >
+              {downloadingExcel ? (
+                <Loader2 className='h-4 w-4 animate-spin' />
+              ) : (
+                <Download className='h-4 w-4' />
+              )}
             </button>
           </div>
         </div>

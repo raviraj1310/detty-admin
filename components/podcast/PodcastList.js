@@ -31,6 +31,7 @@ import {
   deletePodcast,
   updateStatus
 } from '@/services/podcast/podcast.service'
+import { downloadPodcastList } from '@/services/excel/excel.service'
 import Toast from '@/components/ui/Toast'
 
 const MetricCard = ({
@@ -149,6 +150,7 @@ export default function PodcastList () {
   const [deleteId, setDeleteId] = useState(null)
   const [deleting, setDeleting] = useState(false)
   const [updatingId, setUpdatingId] = useState(null)
+  const [downloadingExcel, setDownloadingExcel] = useState(false)
 
   // Helper function for image URL
   const toImageSrc = u => {
@@ -232,6 +234,39 @@ export default function PodcastList () {
       description: message,
       variant: type
     })
+  }
+
+  const handleDownloadPodcastList = async () => {
+    if (downloadingExcel) return
+    setDownloadingExcel(true)
+    try {
+      const params = {}
+      if (searchTerm) params.search = searchTerm
+
+      const blob = await downloadPodcastList(params)
+      if (!blob) {
+        showToast('Failed to download Excel', 'error')
+        return
+      }
+
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `podcast-list-${new Date().toISOString().slice(0, 10)}.xlsx`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      window.URL.revokeObjectURL(url)
+    } catch (error) {
+      showToast(
+        error?.response?.data?.message ||
+          error?.message ||
+          'Failed to download Excel',
+        'error'
+      )
+    } finally {
+      setDownloadingExcel(false)
+    }
   }
 
   // Handle Status Update
@@ -523,8 +558,17 @@ export default function PodcastList () {
               Filters
               <IoFilterSharp className='h-4 w-4' />
             </button>
-            <button className='flex h-10 w-10 items-center justify-center rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50'>
-              <Download className='h-4 w-4' />
+            <button
+              type='button'
+              onClick={handleDownloadPodcastList}
+              disabled={downloadingExcel}
+              className='flex h-10 w-10 items-center justify-center rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 disabled:opacity-50'
+            >
+              {downloadingExcel ? (
+                <Loader2 className='h-4 w-4 animate-spin' />
+              ) : (
+                <Download className='h-4 w-4' />
+              )}
             </button>
           </div>
         </div>

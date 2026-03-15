@@ -10,10 +10,12 @@ import {
   User,
   Wallet,
   XCircle,
-  ChevronLeft
+  ChevronLeft,
+  Loader2
 } from 'lucide-react'
 import { TbCaretUpDownFilled } from 'react-icons/tb'
 import { getBookingsByGymId } from '@/services/v2/gym/gym.service'
+import { downloadGymBookings } from '@/services/excel/excel.service'
 
 const formatDate = dateString => {
   if (!dateString) return '-'
@@ -52,10 +54,35 @@ export default function GymBookings ({ id }) {
   const [menuOpenId, setMenuOpenId] = useState(null)
   const [bookings, setBookings] = useState([])
   const [loading, setLoading] = useState(true)
+  const [downloadingExcel, setDownloadingExcel] = useState(false)
   const [metrics, setMetrics] = useState({
     totalBookings: 0,
     totalRevenue: 0
   })
+
+  const handleDownloadGymBookings = async () => {
+    if (downloadingExcel) return
+    setDownloadingExcel(true)
+    try {
+      const params = {}
+      if (id) params.gymId = id
+      if (searchTerm) params.search = searchTerm
+      const blob = await downloadGymBookings(params)
+      if (!blob) return
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `gym-bookings-${new Date().toISOString().slice(0, 10)}.xlsx`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      window.URL.revokeObjectURL(url)
+    } catch (error) {
+      console.error('Error downloading bookings Excel:', error)
+    } finally {
+      setDownloadingExcel(false)
+    }
+  }
 
   useEffect(() => {
     const fetchBookings = async () => {
@@ -175,8 +202,17 @@ export default function GymBookings ({ id }) {
             <button className='flex h-9 items-center gap-2 rounded-lg border border-[#E5E6EF] bg-white px-3 text-xs font-medium text-slate-600 hover:bg-gray-50'>
               Filters <Filter className='h-3.5 w-3.5' />
             </button>
-            <button className='flex h-9 w-9 items-center justify-center rounded-lg border border-[#E5E6EF] bg-white text-slate-600 hover:bg-gray-50'>
-              <Download className='h-4 w-4' />
+            <button
+              type='button'
+              onClick={handleDownloadGymBookings}
+              disabled={downloadingExcel}
+              className='flex h-9 w-9 items-center justify-center rounded-lg border border-[#E5E6EF] bg-white text-slate-600 hover:bg-gray-50 disabled:opacity-50'
+            >
+              {downloadingExcel ? (
+                <Loader2 className='h-4 w-4 animate-spin' />
+              ) : (
+                <Download className='h-4 w-4' />
+              )}
             </button>
           </div>
         </div>

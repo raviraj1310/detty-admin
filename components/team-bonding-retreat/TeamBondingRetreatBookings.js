@@ -22,6 +22,7 @@ import {
   getAllBookingByRetreatId,
   getTeamBondingRetreatById
 } from '@/services/v2/team/team-bonding-retreat.service'
+import { downloadTeamBondingBookings } from '@/services/excel/excel.service'
 
 const formatDate = dateString => {
   if (!dateString) return '-'
@@ -90,6 +91,7 @@ export default function TeamBondingRetreatBookings () {
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [activeDropdown, setActiveDropdown] = useState(null)
+  const [downloadingExcel, setDownloadingExcel] = useState(false)
   const dropdownRef = useRef(null)
 
   // Toast State
@@ -154,6 +156,43 @@ export default function TeamBondingRetreatBookings () {
       showToast('Error', 'Failed to fetch bookings', 'destructive')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleDownloadBookings = async () => {
+    if (downloadingExcel) return
+    setDownloadingExcel(true)
+    try {
+      const params = {}
+      if (id) params.retreatId = id
+      if (searchTerm) params.search = searchTerm
+
+      const blob = await downloadTeamBondingBookings(params)
+      if (!blob) {
+        showToast('Error', 'Failed to download Excel', 'error')
+        return
+      }
+
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `team-bonding-bookings-${new Date()
+        .toISOString()
+        .slice(0, 10)}.xlsx`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      window.URL.revokeObjectURL(url)
+    } catch (error) {
+      showToast(
+        'Error',
+        error?.response?.data?.message ||
+          error?.message ||
+          'Failed to download Excel',
+        'error'
+      )
+    } finally {
+      setDownloadingExcel(false)
     }
   }
 
@@ -291,8 +330,17 @@ export default function TeamBondingRetreatBookings () {
               <IoFilterSharp className='h-4 w-4' />
               Filters
             </button>
-            <button className='flex h-10 w-10 items-center justify-center rounded-lg border border-[#E2E8F0] text-[#64748B] hover:bg-gray-50'>
-              <Download className='h-4 w-4' />
+            <button
+              type='button'
+              onClick={handleDownloadBookings}
+              disabled={downloadingExcel}
+              className='flex h-10 w-10 items-center justify-center rounded-lg border border-[#E2E8F0] text-[#64748B] hover:bg-gray-50 disabled:opacity-50'
+            >
+              {downloadingExcel ? (
+                <Loader2 className='h-4 w-4 animate-spin' />
+              ) : (
+                <Download className='h-4 w-4' />
+              )}
             </button>
           </div>
         </div>

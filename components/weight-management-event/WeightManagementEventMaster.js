@@ -29,6 +29,7 @@ import {
   deleteWeightManagementEvent,
   updateWeightManagementEventStatus
 } from '@/services/weight-management-event/weight-management-event.service'
+import { downloadWeightManagementList } from '@/services/excel/excel.service'
 
 const formatDate = dateString => {
   if (!dateString) return '—'
@@ -226,6 +227,7 @@ export default function WeightManagementEventMaster () {
   const [deleting, setDeleting] = useState(false)
   const [deleteId, setDeleteId] = useState(null)
   const [statusTogglingId, setStatusTogglingId] = useState(null)
+  const [downloadingExcel, setDownloadingExcel] = useState(false)
 
   const [pagination, setPagination] = useState({
     total: 0,
@@ -244,6 +246,43 @@ export default function WeightManagementEventMaster () {
   const showToast = (title, description, variant = 'success') => {
     setToastProps({ title, description, variant })
     setToastOpen(true)
+  }
+
+  const handleDownloadWeightManagementList = async () => {
+    if (downloadingExcel) return
+    setDownloadingExcel(true)
+    try {
+      const params = {}
+      if (searchTerm.trim()) params.search = searchTerm.trim()
+      if (statusFilter) params.status = statusFilter
+
+      const blob = await downloadWeightManagementList(params)
+      if (!blob) {
+        showToast('Error', 'Failed to download Excel', 'destructive')
+        return
+      }
+
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `weight-management-events-${new Date()
+        .toISOString()
+        .slice(0, 10)}.xlsx`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      window.URL.revokeObjectURL(url)
+    } catch (err) {
+      showToast(
+        'Error',
+        err?.response?.data?.message ||
+          err?.message ||
+          'Failed to download Excel',
+        'destructive'
+      )
+    } finally {
+      setDownloadingExcel(false)
+    }
   }
 
   useEffect(() => {
@@ -665,9 +704,15 @@ export default function WeightManagementEventMaster () {
             </div>
             <button
               type='button'
-              className='flex h-9 w-9 items-center justify-center rounded-lg border border-[#E5E6EF] bg-white text-slate-700 hover:bg-gray-50'
+              onClick={handleDownloadWeightManagementList}
+              disabled={downloadingExcel}
+              className='flex h-9 w-9 items-center justify-center rounded-lg border border-[#E5E6EF] bg-white text-slate-700 hover:bg-gray-50 disabled:opacity-50'
             >
-              <Download className='h-4 w-4' />
+              {downloadingExcel ? (
+                <Loader2 className='h-4 w-4 animate-spin' />
+              ) : (
+                <Download className='h-4 w-4' />
+              )}
             </button>
           </div>
         </div>

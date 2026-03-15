@@ -10,7 +10,8 @@ import {
   User,
   Wallet,
   XCircle,
-  ChevronLeft
+  ChevronLeft,
+  Loader2
 } from 'lucide-react'
 import { IoFilterSharp } from 'react-icons/io5'
 import { TbCaretUpDownFilled } from 'react-icons/tb'
@@ -19,6 +20,7 @@ import {
   getAllOtherRecoveryServiceBookings,
   getOtherRecoveryServiceBookings
 } from '@/services/v2/other-recovery-services/otherRecoveryServices.service'
+import { downloadOtherRecoveryBookings } from '@/services/excel/excel.service'
 
 const TableHeaderCell = ({ children }) => (
   <div className='flex items-center gap-1 text-xs font-medium capitalize tracking-wider text-gray-500'>
@@ -119,6 +121,7 @@ export default function RecoveryServiceBookingsList ({
     message: '',
     type: 'success'
   })
+  const [downloadingExcel, setDownloadingExcel] = useState(false)
   const router = useRouter()
 
   const showToast = (message, type = 'success') => {
@@ -230,45 +233,41 @@ export default function RecoveryServiceBookingsList ({
     }
   }
 
-  const handleExport = () => {
-    if (filteredBookings.length === 0) {
-      showToast('No data to export', 'error')
-      return
-    }
-    const headers = [
-      'Booked On',
-      'User Name',
-      'Email Id',
-      'Phone Number',
-      'Access Booked',
-      'Amount',
-      'Payment Status'
-    ]
-    const rows = filteredBookings.map(b => {
-      const d = getBookingDisplay(b)
-      return [
-        formatDate(d.bookedOn),
-        d.userName,
-        d.email,
-        d.phone,
-        d.accessBooked,
-        formatAmount(d.amount),
-        d.paymentLabel
-      ]
-    })
-    const csv = [
-      headers.join(','),
-      ...rows.map(r =>
-        r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')
+  const handleDownloadBookings = async () => {
+    if (downloadingExcel) return
+    setDownloadingExcel(true)
+    try {
+      const params = {}
+      if (serviceId) params.serviceId = serviceId
+      if (searchTerm) params.search = searchTerm
+
+      const blob = await downloadOtherRecoveryBookings(params)
+      if (!blob) {
+        showToast('Failed to download Excel', 'error')
+        return
+      }
+
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `recovery-bookings-${serviceId || 'all'}-${new Date()
+        .toISOString()
+        .slice(0, 10)}.xlsx`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      window.URL.revokeObjectURL(url)
+      showToast('Download started', 'success')
+    } catch (err) {
+      showToast(
+        err?.response?.data?.message ||
+          err?.message ||
+          'Failed to download Excel',
+        'error'
       )
-    ].join('\n')
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
-    const link = document.createElement('a')
-    link.href = URL.createObjectURL(blob)
-    link.download = `recovery-bookings-${serviceId || 'all'}-${Date.now()}.csv`
-    link.click()
-    URL.revokeObjectURL(link.href)
-    showToast('Export started', 'success')
+    } finally {
+      setDownloadingExcel(false)
+    }
   }
 
   const subtitle =
@@ -384,10 +383,15 @@ export default function RecoveryServiceBookingsList ({
             </button>
             <button
               type='button'
-              onClick={handleExport}
-              className='flex h-10 w-10 items-center justify-center rounded-lg border border-[#E2E8F0] text-[#64748B] hover:bg-gray-50'
+              onClick={handleDownloadBookings}
+              disabled={downloadingExcel}
+              className='flex h-10 w-10 items-center justify-center rounded-lg border border-[#E2E8F0] text-[#64748B] hover:bg-gray-50 disabled:opacity-50'
             >
-              <Download className='h-4 w-4' />
+              {downloadingExcel ? (
+                <Loader2 className='h-4 w-4 animate-spin' />
+              ) : (
+                <Download className='h-4 w-4' />
+              )}
             </button>
           </div>
         </div>

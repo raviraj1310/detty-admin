@@ -27,6 +27,7 @@ import {
   deleteFitnessEvent,
   activeInactiveFitnessEvent
 } from '@/services/fitness-event/fitness-event.service'
+import { downloadFitnessEventList } from '@/services/excel/excel.service'
 
 const formatCurrency = amount => {
   return new Intl.NumberFormat('en-NG', {
@@ -138,6 +139,7 @@ export default function FitnessEventsMaster () {
   // Delete Confirmation State
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [deleteId, setDeleteId] = useState(null)
+  const [downloadingExcel, setDownloadingExcel] = useState(false)
 
   const handleDelete = id => {
     setDeleteId(id)
@@ -183,6 +185,41 @@ export default function FitnessEventsMaster () {
     } catch (error) {
       console.error('Status update error:', error)
       showToast('An error occurred while updating status', 'error')
+    }
+  }
+
+  const handleDownloadFitnessEventList = async () => {
+    if (downloadingExcel) return
+    setDownloadingExcel(true)
+    try {
+      const params = {}
+      if (searchTerm) params.search = searchTerm
+
+      const blob = await downloadFitnessEventList(params)
+      if (!blob) {
+        showToast('Failed to download Excel', 'error')
+        return
+      }
+
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `fitness-events-${new Date()
+        .toISOString()
+        .slice(0, 10)}.xlsx`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      window.URL.revokeObjectURL(url)
+    } catch (error) {
+      showToast(
+        error?.response?.data?.message ||
+          error?.message ||
+          'Failed to download Excel',
+        'error'
+      )
+    } finally {
+      setDownloadingExcel(false)
     }
   }
 
@@ -452,8 +489,17 @@ export default function FitnessEventsMaster () {
               <IoFilterSharp className='h-4 w-4' />
               Filters
             </button>
-            <button className='flex h-10 w-10 items-center justify-center rounded-lg border border-[#E2E8F0] text-[#64748B] hover:bg-gray-50'>
-              <Download className='h-4 w-4' />
+            <button
+              type='button'
+              onClick={handleDownloadFitnessEventList}
+              disabled={downloadingExcel}
+              className='flex h-10 w-10 items-center justify-center rounded-lg border border-[#E2E8F0] text-[#64748B] hover:bg-gray-50 disabled:opacity-50'
+            >
+              {downloadingExcel ? (
+                <Loader2 className='h-4 w-4 animate-spin' />
+              ) : (
+                <Download className='h-4 w-4' />
+              )}
             </button>
           </div>
         </div>

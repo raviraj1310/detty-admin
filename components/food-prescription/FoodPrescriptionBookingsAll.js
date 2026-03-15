@@ -12,12 +12,14 @@ import {
   CheckCircle,
   MinusCircle,
   UtensilsCrossed,
-  ChevronLeft
+  ChevronLeft,
+  Loader2
 } from 'lucide-react'
 import { IoFilterSharp } from 'react-icons/io5'
 import { TbCaretUpDownFilled } from 'react-icons/tb'
 import Toast from '@/components/ui/Toast'
 import { getAllFoodPrescriptionBookings } from '@/services/nutrition/nutrition.service'
+import { downloadFoodBookings } from '@/services/excel/excel.service'
 
 const formatDate = dateString => {
   if (!dateString) return '—'
@@ -125,6 +127,47 @@ export default function FoodPrescriptionBookingsAll () {
   })
   const [sortKey, setSortKey] = useState('bookedOn')
   const [sortOrder, setSortOrder] = useState('desc')
+  const [downloadingExcel, setDownloadingExcel] = useState(false)
+
+  const handleDownloadFoodBookings = async () => {
+    if (downloadingExcel) return
+    setDownloadingExcel(true)
+    try {
+      const params = {}
+      if (searchTerm?.trim()) params.search = searchTerm.trim()
+      const blob = await downloadFoodBookings(params)
+      if (!blob) {
+        setToastProps({
+          title: 'Error',
+          description: 'Failed to download Excel',
+          variant: 'error'
+        })
+        setToastOpen(true)
+        return
+      }
+
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `food-bookings-${new Date().toISOString().slice(0, 10)}.xlsx`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      window.URL.revokeObjectURL(url)
+    } catch (err) {
+      setToastProps({
+        title: 'Error',
+        description:
+          err?.response?.data?.message ||
+          err?.message ||
+          'Failed to download Excel',
+        variant: 'error'
+      })
+      setToastOpen(true)
+    } finally {
+      setDownloadingExcel(false)
+    }
+  }
 
   useEffect(() => {
     const fetchBookings = async () => {
@@ -372,9 +415,15 @@ export default function FoodPrescriptionBookingsAll () {
             </button>
             <button
               type='button'
-              className='flex h-10 w-10 items-center justify-center rounded-lg border border-[#E2E8F0] text-[#64748B] hover:bg-gray-50'
+              onClick={handleDownloadFoodBookings}
+              disabled={downloadingExcel}
+              className='flex h-10 w-10 items-center justify-center rounded-lg border border-[#E2E8F0] text-[#64748B] hover:bg-gray-50 disabled:opacity-50'
             >
-              <Download className='h-4 w-4' />
+              {downloadingExcel ? (
+                <Loader2 className='h-4 w-4 animate-spin' />
+              ) : (
+                <Download className='h-4 w-4' />
+              )}
             </button>
           </div>
         </div>

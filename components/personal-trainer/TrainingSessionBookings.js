@@ -20,6 +20,7 @@ import {
   getAllPersonalTrainerBooking,
   getBookingsByTrainerId
 } from '@/services/v2/personal-trainer/personal-trainer.service'
+import { downloadPersonalTrainerBookings } from '@/services/excel/excel.service'
 
 const formatDate = dateString => {
   if (!dateString) return '-'
@@ -82,6 +83,7 @@ export default function TrainingSessionBookings () {
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [activeDropdown, setActiveDropdown] = useState(null)
+  const [downloadingExcel, setDownloadingExcel] = useState(false)
   const [metrics, setMetrics] = useState({
     totalBookings: 0,
     revenue: 0,
@@ -146,6 +148,48 @@ export default function TrainingSessionBookings () {
       })
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleDownloadBookings = async () => {
+    if (downloadingExcel) return
+    setDownloadingExcel(true)
+    try {
+      const params = {}
+      if (id) params.trainerId = id
+      if (searchTerm) params.search = searchTerm
+
+      const blob = await downloadPersonalTrainerBookings(params)
+      if (!blob) {
+        setToast({
+          show: true,
+          message: 'Failed to download Excel',
+          type: 'error'
+        })
+        return
+      }
+
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `personal-trainer-bookings-${new Date()
+        .toISOString()
+        .slice(0, 10)}.xlsx`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      window.URL.revokeObjectURL(url)
+    } catch (error) {
+      setToast({
+        show: true,
+        message:
+          error?.response?.data?.message ||
+          error?.message ||
+          'Failed to download Excel',
+        type: 'error'
+      })
+    } finally {
+      setDownloadingExcel(false)
     }
   }
 
@@ -258,8 +302,17 @@ export default function TrainingSessionBookings () {
               <IoFilterSharp className='h-4 w-4' />
               Filters
             </button>
-            <button className='flex h-10 w-10 items-center justify-center rounded-lg border border-[#E2E8F0] text-[#64748B] hover:bg-gray-50'>
-              <Download className='h-4 w-4' />
+            <button
+              type='button'
+              onClick={handleDownloadBookings}
+              disabled={downloadingExcel}
+              className='flex h-10 w-10 items-center justify-center rounded-lg border border-[#E2E8F0] text-[#64748B] hover:bg-gray-50 disabled:opacity-50'
+            >
+              {downloadingExcel ? (
+                <Loader2 className='h-4 w-4 animate-spin' />
+              ) : (
+                <Download className='h-4 w-4' />
+              )}
             </button>
           </div>
         </div>

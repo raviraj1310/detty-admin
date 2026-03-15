@@ -23,6 +23,7 @@ import {
   getBookingsByFitnessId,
   getFitnessEventById
 } from '@/services/fitness-event/fitness-event.service'
+import { downloadFitnessEventBookings } from '@/services/excel/excel.service'
 
 const formatDate = dateString => {
   if (!dateString) return '-'
@@ -87,6 +88,7 @@ export default function FitnessEventBookings ({ eventId }) {
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [activeDropdown, setActiveDropdown] = useState(null)
+  const [downloadingExcel, setDownloadingExcel] = useState(false)
 
   // Toast State
   const [toastOpen, setToastOpen] = useState(false)
@@ -99,6 +101,46 @@ export default function FitnessEventBookings ({ eventId }) {
   const showToast = (title, description, variant = 'success') => {
     setToastProps({ title, description, variant })
     setToastOpen(true)
+  }
+
+  const handleDownloadBookings = async () => {
+    if (downloadingExcel) return
+    setDownloadingExcel(true)
+    try {
+      const params = {}
+      if (id) {
+        params.fitnessEventId = id
+        params.eventId = id
+      }
+      if (searchTerm) params.search = searchTerm
+
+      const blob = await downloadFitnessEventBookings(params)
+      if (!blob) {
+        showToast('Error', 'Failed to download Excel', 'destructive')
+        return
+      }
+
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `fitness-event-bookings-${new Date()
+        .toISOString()
+        .slice(0, 10)}.xlsx`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      window.URL.revokeObjectURL(url)
+    } catch (error) {
+      showToast(
+        'Error',
+        error?.response?.data?.message ||
+          error?.message ||
+          'Failed to download Excel',
+        'destructive'
+      )
+    } finally {
+      setDownloadingExcel(false)
+    }
   }
 
   const fetchBookings = async () => {
@@ -263,8 +305,17 @@ export default function FitnessEventBookings ({ eventId }) {
               Filters
               <IoFilterSharp className='h-4 w-4' />
             </button>
-            <button className='flex h-10 w-10 items-center justify-center rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50'>
-              <Download className='h-4 w-4' />
+            <button
+              type='button'
+              onClick={handleDownloadBookings}
+              disabled={downloadingExcel}
+              className='flex h-10 w-10 items-center justify-center rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 disabled:opacity-50'
+            >
+              {downloadingExcel ? (
+                <Loader2 className='h-4 w-4 animate-spin' />
+              ) : (
+                <Download className='h-4 w-4' />
+              )}
             </button>
           </div>
         </div>

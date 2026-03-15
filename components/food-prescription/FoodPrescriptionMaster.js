@@ -27,6 +27,7 @@ import {
   deleteFood,
   updateFoodStatus
 } from '@/services/nutrition/nutrition.service'
+import { downloadFoodList } from '@/services/excel/excel.service'
 
 const formatDate = dateString => {
   if (!dateString) return '—'
@@ -192,10 +193,48 @@ export default function FoodPrescriptionMaster () {
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [deleteId, setDeleteId] = useState(null)
+  const [downloadingExcel, setDownloadingExcel] = useState(false)
 
   const showToast = (title, description, variant = 'success') => {
     setToastProps({ title, description, variant })
     setToastOpen(true)
+  }
+
+  const handleDownloadFoodList = async () => {
+    if (downloadingExcel) return
+    setDownloadingExcel(true)
+    try {
+      const params = {}
+      if (debouncedSearch) params.search = debouncedSearch
+      if (statusFilter) params.status = statusFilter
+
+      const blob = await downloadFoodList(params)
+      if (!blob) {
+        showToast('Error', 'Failed to download Excel', 'destructive')
+        return
+      }
+
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `food-prescriptions-${new Date()
+        .toISOString()
+        .slice(0, 10)}.xlsx`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      window.URL.revokeObjectURL(url)
+    } catch (err) {
+      showToast(
+        'Error',
+        err?.response?.data?.message ||
+          err?.message ||
+          'Failed to download Excel',
+        'destructive'
+      )
+    } finally {
+      setDownloadingExcel(false)
+    }
   }
 
   useEffect(() => {
@@ -517,8 +556,17 @@ export default function FoodPrescriptionMaster () {
                 </div>
               )}
             </div>
-            <button className='flex h-9 w-9 items-center justify-center rounded-lg border border-[#E5E6EF] bg-white text-slate-700 hover:bg-gray-50'>
-              <Download className='h-4 w-4' />
+            <button
+              type='button'
+              onClick={handleDownloadFoodList}
+              disabled={downloadingExcel}
+              className='flex h-9 w-9 items-center justify-center rounded-lg border border-[#E5E6EF] bg-white text-slate-700 hover:bg-gray-50 disabled:opacity-50'
+            >
+              {downloadingExcel ? (
+                <Loader2 className='h-4 w-4 animate-spin' />
+              ) : (
+                <Download className='h-4 w-4' />
+              )}
             </button>
           </div>
         </div>

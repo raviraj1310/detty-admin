@@ -27,6 +27,7 @@ import {
   deleteOtherRecoveryService,
   activeInactiveOtherRecoveryService
 } from '@/services/v2/other-recovery-services/otherRecoveryServices.service'
+import { downloadOtherRecoveryList } from '@/services/excel/excel.service'
 import { formatDate } from '@/utils/helper'
 import Toast from '@/components/ui/Toast'
 
@@ -174,10 +175,48 @@ export default function OtherRecoveryServicesMaster () {
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [deleteId, setDeleteId] = useState(null)
+  const [downloadingExcel, setDownloadingExcel] = useState(false)
 
   const showToast = (title, description, variant = 'success') => {
     setToastProps({ title, description, variant })
     setToastOpen(true)
+  }
+
+  const handleDownloadRecoveryList = async () => {
+    if (downloadingExcel) return
+    setDownloadingExcel(true)
+    try {
+      const params = {}
+      if (debouncedSearch) params.search = debouncedSearch
+      if (statusFilter) params.status = statusFilter
+
+      const blob = await downloadOtherRecoveryList(params)
+      if (!blob) {
+        showToast('Error', 'Failed to download Excel', 'destructive')
+        return
+      }
+
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `recovery-services-${new Date()
+        .toISOString()
+        .slice(0, 10)}.xlsx`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      window.URL.revokeObjectURL(url)
+    } catch (error) {
+      showToast(
+        'Error',
+        error?.response?.data?.message ||
+          error?.message ||
+          'Failed to download Excel',
+        'destructive'
+      )
+    } finally {
+      setDownloadingExcel(false)
+    }
   }
 
   // Debounce search term
@@ -577,8 +616,17 @@ export default function OtherRecoveryServicesMaster () {
                 </div>
               )}
             </div>
-            <button className='flex h-9 w-9 items-center justify-center rounded-lg border border-[#E5E6EF] bg-white text-slate-700 hover:bg-gray-50'>
-              <Download className='h-4 w-4' />
+            <button
+              type='button'
+              onClick={handleDownloadRecoveryList}
+              disabled={downloadingExcel}
+              className='flex h-9 w-9 items-center justify-center rounded-lg border border-[#E5E6EF] bg-white text-slate-700 hover:bg-gray-50 disabled:opacity-50'
+            >
+              {downloadingExcel ? (
+                <Loader2 className='h-4 w-4 animate-spin' />
+              ) : (
+                <Download className='h-4 w-4' />
+              )}
             </button>
           </div>
         </div>

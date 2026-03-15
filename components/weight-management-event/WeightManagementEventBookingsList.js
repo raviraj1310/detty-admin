@@ -9,7 +9,8 @@ import {
   User,
   XCircle,
   ChevronLeft,
-  FileText
+  FileText,
+  Loader2
 } from 'lucide-react'
 import { IoFilterSharp } from 'react-icons/io5'
 import { TbCaretUpDownFilled } from 'react-icons/tb'
@@ -18,6 +19,7 @@ import {
   getAllBookingWeightManagementEvent,
   getBookingWeightManagementEventById
 } from '@/services/nutrition/nutrition.service'
+import { downloadWeightManagementBookings } from '@/services/excel/excel.service'
 
 const formatDate = dateString => {
   if (!dateString) return '—'
@@ -122,6 +124,7 @@ export default function WeightManagementEventBookingsList () {
   const [sortKey, setSortKey] = useState('bookedOn')
   const [sortOrder, setSortOrder] = useState('desc')
   const [loading, setLoading] = useState(true)
+  const [downloadingExcel, setDownloadingExcel] = useState(false)
 
   const [toastOpen, setToastOpen] = useState(false)
   const [toastProps, setToastProps] = useState({
@@ -133,6 +136,43 @@ export default function WeightManagementEventBookingsList () {
   const showToast = (title, description, variant = 'success') => {
     setToastProps({ title, description, variant })
     setToastOpen(true)
+  }
+
+  const handleDownloadBookings = async () => {
+    if (downloadingExcel) return
+    setDownloadingExcel(true)
+    try {
+      const params = {}
+      if (eventId) params.eventId = eventId
+      if (searchTerm?.trim()) params.search = searchTerm.trim()
+
+      const blob = await downloadWeightManagementBookings(params)
+      if (!blob) {
+        showToast('Error', 'Failed to download Excel', 'error')
+        return
+      }
+
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `weight-management-bookings-${eventId || 'all'}-${new Date()
+        .toISOString()
+        .slice(0, 10)}.xlsx`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      window.URL.revokeObjectURL(url)
+    } catch (err) {
+      showToast(
+        'Error',
+        err?.response?.data?.message ||
+          err?.message ||
+          'Failed to download Excel',
+        'error'
+      )
+    } finally {
+      setDownloadingExcel(false)
+    }
   }
 
   const serverSearchEnabled = !eventId
@@ -365,9 +405,15 @@ export default function WeightManagementEventBookingsList () {
             </button>
             <button
               type='button'
-              className='flex h-10 w-10 items-center justify-center rounded-lg border border-[#E2E8F0] text-[#64748B] hover:bg-gray-50'
+              onClick={handleDownloadBookings}
+              disabled={downloadingExcel}
+              className='flex h-10 w-10 items-center justify-center rounded-lg border border-[#E2E8F0] text-[#64748B] hover:bg-gray-50 disabled:opacity-50'
             >
-              <Download className='h-4 w-4' />
+              {downloadingExcel ? (
+                <Loader2 className='h-4 w-4 animate-spin' />
+              ) : (
+                <Download className='h-4 w-4' />
+              )}
             </button>
           </div>
         </div>
