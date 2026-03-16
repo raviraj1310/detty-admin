@@ -483,7 +483,7 @@ export default function UserAnalysis () {
         </div>
       </div>
 
-      <div className='grid grid-cols-1 md:grid-cols-3 gap-4 mb-4'>
+      <div className='grid grid-cols-1 md:grid-cols-2 gap-4 mb-4'>
         <button
           type='button'
           onClick={() => {
@@ -520,7 +520,7 @@ export default function UserAnalysis () {
             Users who completed manual registration.
           </p>
         </button> */}
-        <button
+        {/* <button
           type='button'
           onClick={() => {
             setViewMode('dumpedProvided')
@@ -537,7 +537,7 @@ export default function UserAnalysis () {
           <p className='text-[11px] text-gray-500'>
             Users provided to be dumped in the database.
           </p>
-        </button>
+        </button> */}
 
         <button
           type='button'
@@ -548,7 +548,7 @@ export default function UserAnalysis () {
           className='bg-gradient-to-r from-[#E8FFF4] to-[#C5F5DD] rounded-xl border border-gray-200 p-4 flex flex-col gap-3 text-left hover:shadow-md transition-shadow'
         >
           <span className='text-xs font-medium text-gray-500 uppercase tracking-wide'>
-            Total Effective Users
+            Total Transacting Users
           </span>
           <div className='text-2xl font-semibold text-emerald-600'>
             {(stats.manuallyRegistered || 0) +
@@ -562,7 +562,7 @@ export default function UserAnalysis () {
       </div>
 
       <div className='grid grid-cols-1 md:grid-cols-3 xl:grid-cols-2 gap-4 mb-6'>
-        <button
+        {/* <button
           type='button'
           onClick={() => {
             setViewMode('successfulDumped')
@@ -580,7 +580,7 @@ export default function UserAnalysis () {
             Total successfully dumped users who had no duplication nor
             incomplete data in the selected period.
           </p>
-        </button>
+        </button> */}
         {/* <button
           type='button'
           onClick={() => {
@@ -599,7 +599,7 @@ export default function UserAnalysis () {
             Dumbed users that do not have an email address or have invalid
             email.
           </p>
-        </button>
+        </button>*/}
         <button
           type='button'
           onClick={() => {
@@ -617,7 +617,7 @@ export default function UserAnalysis () {
           <p className='text-[11px] text-gray-500'>
             Total dumped users who reset their password in the selected period.
           </p>
-        </button> */}
+        </button>
         <button
           type='button'
           onClick={() => {
@@ -670,7 +670,7 @@ export default function UserAnalysis () {
                   : viewMode === 'dumpedProvided'
                   ? 'Dumped Users Provided'
                   : viewMode === 'effective'
-                  ? 'Effective Users'
+                  ? 'Transacting Users'
                   : viewMode === 'successfulDumped'
                   ? 'Successfully Dumped Users'
                   : viewMode === 'incompleteDumped'
@@ -691,7 +691,7 @@ export default function UserAnalysis () {
                   : viewMode === 'dumpedProvided'
                   ? `Showing ${filteredUsers.length} dumped users provided on page ${page} of ${pageCount}. Total ${registeredTotal} dumped users provided in range.`
                   : viewMode === 'effective'
-                  ? `Showing ${filteredUsers.length} effective users on page ${page} of ${pageCount}. Total ${registeredTotal} effective users in range.`
+                  ? `Showing ${filteredUsers.length} transacting users on page ${page} of ${pageCount}. Total ${registeredTotal} transacting users in range.`
                   : viewMode === 'successfulDumped'
                   ? `Showing ${filteredUsers.length} successfully dumped users on page ${page} of ${pageCount}. Total ${registeredTotal} successfully dumped users in range.`
                   : viewMode === 'incompleteDumped'
