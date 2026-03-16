@@ -22,7 +22,10 @@ import {
   getAllBookingByRetreatId,
   getTeamBondingRetreatById
 } from '@/services/v2/team/team-bonding-retreat.service'
-import { downloadTeamBondingBookings } from '@/services/excel/excel.service'
+import {
+  downloadTeamBondingBookings,
+  downloadTeamBondingBookingsById
+} from '@/services/excel/excel.service'
 
 const formatDate = dateString => {
   if (!dateString) return '-'
@@ -163,11 +166,11 @@ export default function TeamBondingRetreatBookings () {
     if (downloadingExcel) return
     setDownloadingExcel(true)
     try {
-      const params = {}
-      if (id) params.retreatId = id
-      if (searchTerm) params.search = searchTerm
-
-      const blob = await downloadTeamBondingBookings(params)
+      const blob = id
+        ? await downloadTeamBondingBookingsById(id)
+        : await downloadTeamBondingBookings({
+            search: searchTerm?.trim() || undefined
+          })
       if (!blob) {
         showToast('Error', 'Failed to download Excel', 'error')
         return

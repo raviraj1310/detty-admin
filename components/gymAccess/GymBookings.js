@@ -15,7 +15,7 @@ import {
 } from 'lucide-react'
 import { TbCaretUpDownFilled } from 'react-icons/tb'
 import { getBookingsByGymId } from '@/services/v2/gym/gym.service'
-import { downloadGymBookings } from '@/services/excel/excel.service'
+import { downloadGymBookingsById } from '@/services/excel/excel.service'
 
 const formatDate = dateString => {
   if (!dateString) return '-'
@@ -64,10 +64,8 @@ export default function GymBookings ({ id }) {
     if (downloadingExcel) return
     setDownloadingExcel(true)
     try {
-      const params = {}
-      if (id) params.gymId = id
-      if (searchTerm) params.search = searchTerm
-      const blob = await downloadGymBookings(params)
+      if (!id) return
+      const blob = await downloadGymBookingsById(id)
       if (!blob) return
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a')

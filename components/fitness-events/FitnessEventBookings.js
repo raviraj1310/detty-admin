@@ -23,7 +23,10 @@ import {
   getBookingsByFitnessId,
   getFitnessEventById
 } from '@/services/fitness-event/fitness-event.service'
-import { downloadFitnessEventBookings } from '@/services/excel/excel.service'
+import {
+  downloadFitnessEventBookings,
+  downloadFitnessEventBookingsById
+} from '@/services/excel/excel.service'
 
 const formatDate = dateString => {
   if (!dateString) return '-'
@@ -107,14 +110,14 @@ export default function FitnessEventBookings ({ eventId }) {
     if (downloadingExcel) return
     setDownloadingExcel(true)
     try {
-      const params = {}
-      if (id) {
-        params.fitnessEventId = id
-        params.eventId = id
-      }
-      if (searchTerm) params.search = searchTerm
-
-      const blob = await downloadFitnessEventBookings(params)
+      const blob = id
+        ? await downloadFitnessEventBookingsById({
+            eventId: id,
+            search: searchTerm?.trim() || undefined
+          })
+        : await downloadFitnessEventBookings({
+            search: searchTerm?.trim() || undefined
+          })
       if (!blob) {
         showToast('Error', 'Failed to download Excel', 'destructive')
         return

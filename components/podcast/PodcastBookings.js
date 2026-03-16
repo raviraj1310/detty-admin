@@ -7,7 +7,10 @@ import {
   getPodcastBookings,
   getPodcastSubscription
 } from '@/services/podcast/podcast.service'
-import { downloadPodcastBookings } from '@/services/excel/excel.service'
+import {
+  downloadPodcastBookings,
+  downloadPodcastBookingsById
+} from '@/services/excel/excel.service'
 import PodcastBookingMetrics from './PodcastBookingMetrics'
 import PodcastBookingList from './PodcastBookingList'
 import Toast from '@/components/ui/Toast'
@@ -133,12 +136,9 @@ export default function PodcastBookings () {
     if (downloadingExcel) return
     setDownloadingExcel(true)
     try {
-      const params = {}
-      if (podcastId) {
-        params.podcastId = podcastId
-        params.id = podcastId
-      }
-      const blob = await downloadPodcastBookings(params)
+      const blob = podcastId
+        ? await downloadPodcastBookingsById({ podcastId })
+        : await downloadPodcastBookings({})
       if (!blob) {
         setToast({
           open: true,

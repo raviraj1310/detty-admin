@@ -20,7 +20,10 @@ import {
   getAllPersonalTrainerBooking,
   getBookingsByTrainerId
 } from '@/services/v2/personal-trainer/personal-trainer.service'
-import { downloadPersonalTrainerBookings } from '@/services/excel/excel.service'
+import {
+  downloadPersonalTrainerBookings,
+  downloadPersonalTrainerBookingsById
+} from '@/services/excel/excel.service'
 
 const formatDate = dateString => {
   if (!dateString) return '-'
@@ -155,11 +158,11 @@ export default function TrainingSessionBookings () {
     if (downloadingExcel) return
     setDownloadingExcel(true)
     try {
-      const params = {}
-      if (id) params.trainerId = id
-      if (searchTerm) params.search = searchTerm
-
-      const blob = await downloadPersonalTrainerBookings(params)
+      const blob = id
+        ? await downloadPersonalTrainerBookingsById(id)
+        : await downloadPersonalTrainerBookings({
+            search: searchTerm?.trim() || undefined
+          })
       if (!blob) {
         setToast({
           show: true,

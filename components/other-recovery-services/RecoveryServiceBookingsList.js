@@ -20,7 +20,10 @@ import {
   getAllOtherRecoveryServiceBookings,
   getOtherRecoveryServiceBookings
 } from '@/services/v2/other-recovery-services/otherRecoveryServices.service'
-import { downloadOtherRecoveryBookings } from '@/services/excel/excel.service'
+import {
+  downloadOtherRecoveryBookings,
+  downloadOtherRecoveryBookingsById
+} from '@/services/excel/excel.service'
 
 const TableHeaderCell = ({ children }) => (
   <div className='flex items-center gap-1 text-xs font-medium capitalize tracking-wider text-gray-500'>
@@ -237,11 +240,13 @@ export default function RecoveryServiceBookingsList ({
     if (downloadingExcel) return
     setDownloadingExcel(true)
     try {
-      const params = {}
-      if (serviceId) params.serviceId = serviceId
-      if (searchTerm) params.search = searchTerm
-
-      const blob = await downloadOtherRecoveryBookings(params)
+      const blob = serviceId
+        ? await downloadOtherRecoveryBookingsById(serviceId, {
+            search: searchTerm?.trim() || undefined
+          })
+        : await downloadOtherRecoveryBookings({
+            search: searchTerm?.trim() || undefined
+          })
       if (!blob) {
         showToast('Failed to download Excel', 'error')
         return

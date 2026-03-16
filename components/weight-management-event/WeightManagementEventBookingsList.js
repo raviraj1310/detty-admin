@@ -19,7 +19,10 @@ import {
   getAllBookingWeightManagementEvent,
   getBookingWeightManagementEventById
 } from '@/services/nutrition/nutrition.service'
-import { downloadWeightManagementBookings } from '@/services/excel/excel.service'
+import {
+  downloadWeightManagementBookings,
+  downloadWeightManagementBookingsById
+} from '@/services/excel/excel.service'
 
 const formatDate = dateString => {
   if (!dateString) return '—'
@@ -142,11 +145,13 @@ export default function WeightManagementEventBookingsList () {
     if (downloadingExcel) return
     setDownloadingExcel(true)
     try {
-      const params = {}
-      if (eventId) params.eventId = eventId
-      if (searchTerm?.trim()) params.search = searchTerm.trim()
-
-      const blob = await downloadWeightManagementBookings(params)
+      const blob = eventId
+        ? await downloadWeightManagementBookingsById(eventId, {
+            search: searchTerm?.trim() || undefined
+          })
+        : await downloadWeightManagementBookings({
+            search: searchTerm?.trim() || undefined
+          })
       if (!blob) {
         showToast('Error', 'Failed to download Excel', 'error')
         return

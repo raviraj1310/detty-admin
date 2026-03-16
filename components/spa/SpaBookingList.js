@@ -22,7 +22,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu'
-import { downloadSpaBookings } from '@/services/excel/excel.service'
+import { downloadSpaBookings, downloadSpaBookingsById } from '@/services/excel/excel.service'
 
 const SpaBookingList = ({ spaId }) => {
   const router = useRouter()
@@ -165,10 +165,13 @@ const SpaBookingList = ({ spaId }) => {
     if (downloadingExcel) return
     setDownloadingExcel(true)
     try {
-      const params = {}
-      if (spaId) params.spaId = spaId
-      if (searchTerm) params.search = searchTerm
-      const blob = await downloadSpaBookings(params)
+      const blob = spaId
+        ? await downloadSpaBookingsById(spaId, {
+            search: searchTerm?.trim() || undefined
+          })
+        : await downloadSpaBookings({
+            search: searchTerm?.trim() || undefined
+          })
       if (!blob) return
 
       const url = window.URL.createObjectURL(blob)

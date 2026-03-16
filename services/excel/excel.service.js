@@ -22,6 +22,16 @@ export const downloadGymBookings = async params => {
     console.log(error)
   }
 }
+export const downloadGymBookingsById = async gymId => {
+  try {
+    const response = await apiv2.get(`/excel/download-gym-bookings/${gymId}`, {
+      responseType: 'blob'
+    })
+    return response.data
+  } catch (error) {
+    console.log(error)
+  }
+}
 
 export const downloadPersonalTrainerList = async params => {
   try {
@@ -41,6 +51,19 @@ export const downloadPersonalTrainerBookings = async params => {
       '/excel/download-personal-trainer-bookings',
       {
         params,
+        responseType: 'blob'
+      }
+    )
+    return response.data
+  } catch (error) {
+    console.log(error)
+  }
+}
+export const downloadPersonalTrainerBookingsById = async trainerId => {
+  try {
+    const response = await apiv2.get(
+      `/excel/download-personal-trainer-bookings/${trainerId}`,
+      {
         responseType: 'blob'
       }
     )
@@ -74,6 +97,19 @@ export const downloadTeamBondingBookings = async params => {
     console.log(error)
   }
 }
+export const downloadTeamBondingBookingsById = async teamBondingId => {
+  try {
+    const response = await apiv2.get(
+      `/excel/download-team-bonding-bookings/${teamBondingId}`,
+      {
+        responseType: 'blob'
+      }
+    )
+    return response.data
+  } catch (error) {
+    console.log(error)
+  }
+}
 
 // fitness event
 export const downloadFitnessEventList = async params => {
@@ -94,6 +130,20 @@ export const downloadFitnessEventBookings = async params => {
       params,
       responseType: 'blob'
     })
+    return response.data
+  } catch (error) {
+    console.log(error)
+  }
+}
+export const downloadFitnessEventBookingsById = async params => {
+  try {
+    const response = await apiv2.get(
+      `/excel/download-fitness-event-bookings/${params.eventId}`,
+      {
+        params,
+        responseType: 'blob'
+      }
+    )
     return response.data
   } catch (error) {
     console.log(error)
@@ -124,6 +174,20 @@ export const downloadPodcastBookings = async params => {
     console.log(error)
   }
 }
+export const downloadPodcastBookingsById = async params => {
+  try {
+    const response = await apiv2.get(
+      `/excel/download-podcast-bookings/${params.podcastId}`,
+      {
+        params,
+        responseType: 'blob'
+      }
+    )
+    return response.data
+  } catch (error) {
+    console.log(error)
+  }
+}
 
 // spa
 export const downloadSpaList = async params => {
@@ -142,6 +206,16 @@ export const downloadSpaBookings = async params => {
   try {
     const response = await apiv2.get('/excel/download-spa-bookings', {
       params,
+      responseType: 'blob'
+    })
+    return response.data
+  } catch (error) {
+    console.log(error)
+  }
+}
+export const downloadSpaBookingsById = async spaId => {
+  try {
+    const response = await apiv2.get(`/excel/download-spa-bookings/${spaId}`, {
       responseType: 'blob'
     })
     return response.data
@@ -174,6 +248,20 @@ export const downloadOtherRecoveryBookings = async params => {
     console.log(error)
   }
 }
+export const downloadOtherRecoveryBookingsById = async (recoveryId, params) => {
+  try {
+    const response = await apiv2.get(
+      `/excel/download-recovery-bookings/${recoveryId}`,
+      {
+        params,
+        responseType: 'blob'
+      }
+    )
+    return response.data
+  } catch (error) {
+    console.log(error)
+  }
+}
 
 // food
 export const downloadFoodList = async params => {
@@ -199,6 +287,20 @@ export const downloadFoodBookings = async params => {
     console.log(error)
   }
 }
+export const downloadFoodBookingsById = async (foodId, params) => {
+  try {
+    const response = await apiv2.get(
+      `/excel/download-food-bookings/${foodId}`,
+      {
+        params,
+        responseType: 'blob'
+      }
+    )
+    return response.data
+  } catch (error) {
+    console.log(error)
+  }
+}
 
 // weight management
 export const downloadWeightManagementList = async params => {
@@ -217,6 +319,23 @@ export const downloadWeightManagementBookings = async params => {
   try {
     const response = await apiv2.get(
       '/excel/download-weight-management-bookings',
+      {
+        params,
+        responseType: 'blob'
+      }
+    )
+    return response.data
+  } catch (error) {
+    console.log(error)
+  }
+}
+export const downloadWeightManagementBookingsById = async (
+  weightManagementId,
+  params
+) => {
+  try {
+    const response = await apiv2.get(
+      `/excel/download-weight-management-bookings/${weightManagementId}`,
       {
         params,
         responseType: 'blob'
