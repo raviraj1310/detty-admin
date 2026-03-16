@@ -679,6 +679,7 @@ export default function UsersForm ({
     end: new Date().toISOString().split('T')[0]
   })
   const [exporting, setExporting] = useState(false)
+  const [activeUsersDays, setActiveUsersDays] = useState(10)
 
   const fetchStats = async () => {
     try {
@@ -687,6 +688,7 @@ export default function UsersForm ({
       const params = { limit: 1 }
       if (dateRange.start) params.startDate = dateRange.start
       if (dateRange.end) params.endDate = dateRange.end
+      params.dayCount = activeUsersDays
 
       const [res, dashboardRes] = await Promise.all([
         getUsers(params),
@@ -733,7 +735,7 @@ export default function UsersForm ({
 
   useEffect(() => {
     fetchStats()
-  }, [dateRange.start, dateRange.end])
+  }, [dateRange.start, dateRange.end, activeUsersDays])
 
   useEffect(() => {
     const h = setTimeout(() => {
@@ -768,6 +770,7 @@ export default function UsersForm ({
         if (statusFilter) params.status = statusFilter
         if (dateRange.start) params.startDate = dateRange.start
         if (dateRange.end) params.endDate = dateRange.end
+        params.dayCount = activeUsersDays
 
         const res = await getUsers(params, signal)
         const payload = res?.data || res || {}
@@ -1008,6 +1011,7 @@ export default function UsersForm ({
       const baseParams = { page: 1, limit: 5000 }
       if (debouncedSearch) baseParams.search = debouncedSearch
       if (statusFilter) baseParams.status = statusFilter
+      baseParams.dayCount = activeUsersDays
       const firstRes = await getUsers(baseParams)
       const firstPayload = firstRes?.data || firstRes || {}
       const firstList = Array.isArray(firstPayload?.users)
@@ -1216,9 +1220,11 @@ export default function UsersForm ({
         {(!visibleStats || visibleStats.includes('active')) && (
           <div
             className='bg-gradient-to-r from-[#E8F8F0] to-[#B8EDD0] p-4 rounded-lg shadow-md cursor-pointer hover:opacity-90 transition-opacity'
-            onClick={() => router.push('/users/active')}
+            onClick={() =>
+              router.push(`/users/active?dayCount=${activeUsersDays}`)
+            }
           >
-            <div className='flex items-center'>
+            <div className='flex items-center gap-3'>
               <div className='bg-white bg-opacity-20 p-2 rounded-lg mr-3'>
                 <Image
                   src='/images/backend/icons/icons (5).svg'
@@ -1228,13 +1234,30 @@ export default function UsersForm ({
                   className='w-6 h-6'
                 />
               </div>
-              <div>
+              <div className='min-w-0'>
                 <p className='text-xs text-black opacity-90'>
-                  Active Users (Logged in the last 10 days)
+                  Active Users (Logged in the last {activeUsersDays} days)
                 </p>
                 <p className='text-2xl text-black font-bold'>
                   {globalStats.active}
                 </p>
+              </div>
+              <div className='ml-auto'>
+                <select
+                  value={activeUsersDays}
+                  onChange={e =>
+                    setActiveUsersDays(Number(e.target.value) || 10)
+                  }
+                  onClick={e => e.stopPropagation()}
+                  onMouseDown={e => e.stopPropagation()}
+                  className='h-8 rounded-md border border-black/10 bg-white/70 px-2 text-xs text-black focus:outline-none'
+                >
+                  {Array.from({ length: 5 }, (_, i) => (i + 2) * 5).map(d => (
+                    <option key={d} value={d}>
+                      {d} days
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
           </div>
