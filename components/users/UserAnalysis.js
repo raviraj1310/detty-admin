@@ -494,7 +494,7 @@ export default function UserAnalysis () {
         </div>
       </div>
 
-      <div className='grid grid-cols-1 md:grid-cols-2 gap-4 mb-4'>
+      <div className='grid grid-cols-1 md:grid-cols-3 gap-4 mb-4'>
         <button
           type='button'
           onClick={() => {
@@ -550,7 +550,7 @@ export default function UserAnalysis () {
           </p>
         </button> */}
 
-        {/* <button
+        <button
           type='button'
           onClick={() => {
             setViewMode('effective')
@@ -569,7 +569,7 @@ export default function UserAnalysis () {
             Manually registered and dumped users who reset their password in the
             selected period.
           </p>
-        </button> */}
+        </button>
 
         <button
           type='button'
