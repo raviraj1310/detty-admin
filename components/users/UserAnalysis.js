@@ -21,7 +21,9 @@ import {
   getIncompletePasswordReset,
   downloadIncompletePasswordReset,
   getDuplicateUsers,
-  downloadDuplicateUsers
+  downloadDuplicateUsers,
+  getTransactingUsers,
+  downloadTransactingUsers
 } from '@/services/users/user.service'
 
 export default function UserAnalysis () {
@@ -58,6 +60,7 @@ export default function UserAnalysis () {
   const [error, setError] = useState('')
   const [viewMode, setViewMode] = useState('analysis')
   const [registeredTotal, setRegisteredTotal] = useState(0)
+  const [transactingTotal, setTransactingTotal] = useState(0)
   const [downloading, setDownloading] = useState(false)
 
   useEffect(() => {
@@ -87,28 +90,31 @@ export default function UserAnalysis () {
           })
         ])
         const payload = res?.data || res || {}
+        const data = payload?.data || payload
         const payloadIncomplete = resIncomplete?.data || resIncomplete || {}
-        const list = Array.isArray(payload.users) ? payload.users : []
+        const dataIncomplete = payloadIncomplete?.data || payloadIncomplete
+        const list = Array.isArray(data.users) ? data.users : []
 
         setMeta({
-          totalRegisteredUsers: Number(payload.totalRegisteredUsers || 0),
-          totalDumpedUsers: Number(payload.totalDumpedUsers || 0),
+          totalRegisteredUsers: Number(data.totalRegisteredUsers || 0),
+          totalDumpedUsers: Number(data.totalDumpedUsers || 0),
           totalManuallyRegisteredUsers: Number(
-            payload.totalManuallyRegisteredUsers || 0
+            data.totalManuallyRegisteredUsers || 0
           ),
-          resetPasswordTokenCount: Number(payload.resetPasswordTokenCount || 0),
+          resetPasswordTokenCount: Number(data.resetPasswordTokenCount || 0),
           successfullyRegisteredUserWithResetPasswordToken: Number(
-            payload.successfullyRegisteredUserWithResetPasswordToken || 0
+            data.successfullyRegisteredUserWithResetPasswordToken || 0
           ),
-          tempDumpedUsersCount: Number(payload.tempDumpedUsersCount || 0),
-          tempNotDumpedUsers: Number(payload.tempNotDumpedUsers || 0),
-          duplicateUsersCount: Number(payload.duplicateUsersCount || 0),
-          incompletePasswordResetCount: Number(payloadIncomplete.total || 0)
+          tempDumpedUsersCount: Number(data.tempDumpedUsersCount || 0),
+          tempNotDumpedUsers: Number(data.tempNotDumpedUsers || 0),
+          duplicateUsersCount: Number(data.duplicateUsersCount || 0),
+          incompletePasswordResetCount: Number(dataIncomplete.total || 0)
         })
+        setTransactingTotal(Number(data.totalTransactingUsers || 0))
 
-        const srvPage = Number(payload.currentPage ?? page)
-        const srvSize = Number(payload.pageSize ?? limit)
-        const total = Number(payload.totalRegisteredUsers || 0)
+        const srvPage = Number(data.currentPage ?? page)
+        const srvSize = Number(data.pageSize ?? limit)
+        const total = Number(data.totalRegisteredUsers || 0)
         const totalPages =
           srvSize && Number.isFinite(srvSize)
             ? Math.max(1, Math.ceil(total / srvSize) || 1)
@@ -163,6 +169,7 @@ export default function UserAnalysis () {
         'manual',
         'dumpedProvided',
         'effective',
+        'transacting',
         'successfulDumped',
         'incompleteDumped',
         'successPasswordReset',
@@ -203,6 +210,10 @@ export default function UserAnalysis () {
             res = await getEffectiveUsers(params)
             statusLabel = 'Effective User'
             break
+          case 'transacting':
+            res = await getTransactingUsers(params)
+            statusLabel = 'Transacting User'
+            break
           case 'successfulDumped':
             res = await getSuccessfulDumped(params)
             statusLabel = 'Successfully Dumped'
@@ -233,16 +244,30 @@ export default function UserAnalysis () {
         if (!isActive) return
 
         const payload = res?.data || res || {}
-        const list = Array.isArray(payload.users) ? payload.users : []
+        const data = payload?.data || payload
+        const list = Array.isArray(data.users) ? data.users : []
 
-        setRegisteredTotal(Number(payload.total || 0))
+        const totalValue = Number(
+          data.total ??
+            data.totalUsers ??
+            data.totalCount ??
+            data.totalTransactingUsers ??
+            list.length ??
+            0
+        )
+        setRegisteredTotal(Number.isFinite(totalValue) ? totalValue : 0)
 
-        const srvPage = Number(payload.currentPage ?? page)
-        const srvSize = Number(payload.pageSize ?? limit)
+        const srvPage = Number(data.currentPage ?? page)
+        const srvSize = Number(data.pageSize ?? limit)
         const totalPages =
-          Number(payload.totalPages) ||
+          Number(data.totalPages) ||
           (srvSize && Number.isFinite(srvSize)
-            ? Math.max(1, Math.ceil(Number(payload.total || 0) / srvSize) || 1)
+            ? Math.max(
+                1,
+                Math.ceil(
+                  (Number.isFinite(totalValue) ? totalValue : 0) / srvSize
+                ) || 1
+              )
             : 1)
 
         if (Number.isFinite(srvPage) && srvPage > 0 && srvPage !== page) {
@@ -328,6 +353,7 @@ export default function UserAnalysis () {
       viewMode !== 'manual' &&
       viewMode !== 'dumpedProvided' &&
       viewMode !== 'effective' &&
+      viewMode !== 'transacting' &&
       viewMode !== 'successfulDumped' &&
       viewMode !== 'incompleteDumped' &&
       viewMode !== 'successPasswordReset' &&
@@ -349,6 +375,7 @@ export default function UserAnalysis () {
       const isManual = viewMode === 'manual'
       const isDumpedProvided = viewMode === 'dumpedProvided'
       const isEffective = viewMode === 'effective'
+      const isTransacting = viewMode === 'transacting'
       const isSuccessfulDumped = viewMode === 'successfulDumped'
       const isIncompleteDumped = viewMode === 'incompleteDumped'
       const isSuccessPasswordReset = viewMode === 'successPasswordReset'
@@ -360,6 +387,8 @@ export default function UserAnalysis () {
         ? downloadDumpedUserProvided(params)
         : isEffective
         ? downloadEffectiveUsers(params)
+        : isTransacting
+        ? downloadTransactingUsers(params)
         : isSuccessfulDumped
         ? downloadSuccessfulDumped(params)
         : isIncompleteDumped
@@ -380,6 +409,8 @@ export default function UserAnalysis () {
         ? `dumped-users-provided-${start}-to-${end}.xlsx`
         : isEffective
         ? `effective-users-${start}-to-${end}.xlsx`
+        : isTransacting
+        ? `transacting-users-${start}-to-${end}.xlsx`
         : isSuccessfulDumped
         ? `successful-dumped-users-${start}-to-${end}.xlsx`
         : isIncompleteDumped
@@ -519,7 +550,7 @@ export default function UserAnalysis () {
           </p>
         </button> */}
 
-        <button
+        {/* <button
           type='button'
           onClick={() => {
             setViewMode('effective')
@@ -528,7 +559,7 @@ export default function UserAnalysis () {
           className='bg-gradient-to-r from-[#E8FFF4] to-[#C5F5DD] rounded-xl border border-gray-200 p-4 flex flex-col gap-3 text-left hover:shadow-md transition-shadow'
         >
           <span className='text-xs font-medium text-gray-500 uppercase tracking-wide'>
-            Total Transacting Users
+            Total Effective Users
           </span>
           <div className='text-2xl font-semibold text-emerald-600'>
             {(stats.manuallyRegistered || 0) +
@@ -537,6 +568,25 @@ export default function UserAnalysis () {
           <p className='text-[11px] text-gray-500'>
             Manually registered and dumped users who reset their password in the
             selected period.
+          </p>
+        </button> */}
+
+        <button
+          type='button'
+          onClick={() => {
+            setViewMode('transacting')
+            setPage(1)
+          }}
+          className='bg-gradient-to-r from-[#E8EEFF] to-[#C5D5FF] rounded-xl border border-gray-200 p-4 flex flex-col gap-3 text-left hover:shadow-md transition-shadow'
+        >
+          <span className='text-xs font-medium text-gray-500 uppercase tracking-wide'>
+            Total Transacting Users
+          </span>
+          <div className='text-2xl font-semibold text-indigo-600'>
+            {Number(transactingTotal || 0)}
+          </div>
+          <p className='text-[11px] text-gray-500'>
+            Users returned from transacting users in selected period.
           </p>
         </button>
       </div>
@@ -650,6 +700,8 @@ export default function UserAnalysis () {
                   : viewMode === 'dumpedProvided'
                   ? 'Dumped Users Provided'
                   : viewMode === 'effective'
+                  ? 'Effective Users'
+                  : viewMode === 'transacting'
                   ? 'Transacting Users'
                   : viewMode === 'successfulDumped'
                   ? 'Successfully Dumped Users'
@@ -671,6 +723,8 @@ export default function UserAnalysis () {
                   : viewMode === 'dumpedProvided'
                   ? `Showing ${filteredUsers.length} dumped users provided on page ${page} of ${pageCount}. Total ${registeredTotal} dumped users provided in range.`
                   : viewMode === 'effective'
+                  ? `Showing ${filteredUsers.length} effective users on page ${page} of ${pageCount}. Total ${registeredTotal} effective users in range.`
+                  : viewMode === 'transacting'
                   ? `Showing ${filteredUsers.length} transacting users on page ${page} of ${pageCount}. Total ${registeredTotal} transacting users in range.`
                   : viewMode === 'successfulDumped'
                   ? `Showing ${filteredUsers.length} successfully dumped users on page ${page} of ${pageCount}. Total ${registeredTotal} successfully dumped users in range.`
@@ -690,6 +744,7 @@ export default function UserAnalysis () {
                 viewMode === 'manual' ||
                 viewMode === 'dumpedProvided' ||
                 viewMode === 'effective' ||
+                viewMode === 'transacting' ||
                 viewMode === 'successfulDumped' ||
                 viewMode === 'incompleteDumped' ||
                 viewMode === 'successPasswordReset' ||

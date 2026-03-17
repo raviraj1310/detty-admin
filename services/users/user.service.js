@@ -496,3 +496,27 @@ export const downloadDuplicateUsers = async (params = {}) => {
     throw error
   }
 }
+
+export const getTransactingUsers = async (params = {}) => {
+  try {
+    const response = await api.get('/user/get-transecting-users', {
+      params
+    })
+    return response.data
+  } catch (error) {
+    console.error('Error fetching transacting user:', error)
+    throw error
+  }
+}
+export const downloadTransactingUsers = async (params = {}) => {
+  try {
+    const response = await api.get(`/user/download-transecting-users`, {
+      params,
+      responseType: 'blob'
+    })
+    return response.data
+  } catch (error) {
+    console.error('Error downloading transacting users Excel:', error)
+    throw error
+  }
+}
