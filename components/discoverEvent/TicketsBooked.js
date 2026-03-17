@@ -93,6 +93,12 @@ export default function TicketsBooked () {
   const router = useRouter()
   const params = useParams()
   const eventId = params?.id
+  const toNumber = v => {
+    if (v == null || v === '') return null
+    if (typeof v === 'number') return Number.isFinite(v) ? v : null
+    const n = parseFloat(String(v).replace(/[^0-9.-]/g, ''))
+    return Number.isFinite(n) ? n : null
+  }
   const [searchTerm, setSearchTerm] = useState('')
   const [summary, setSummary] = useState({
     total: 0,
@@ -162,10 +168,14 @@ export default function TicketsBooked () {
             userName: b.buyer && b.buyer.fullName ? b.buyer.fullName : '-',
             email: b.buyer && b.buyer.email ? b.buyer.email : '-',
             phoneNumber: b.buyer && b.buyer.phone ? b.buyer.phone : '-',
-            ticketsBooked: `${
-              typeof b.quantity === 'number' ? b.quantity : '-'
-            } x ${b.ticketName || '-'}`,
-            amount: typeof b.totalPrice === 'number' ? b.totalPrice : '-',
+            ticketsBooked: `${toNumber(b.quantity) ?? '-'} x ${
+              b.ticketName || '-'
+            }`,
+            quantity: toNumber(b.quantity),
+            amount: toNumber(b.totalPrice ?? b.amount ?? b.finalPayableAmount),
+            totalPrice: toNumber(
+              b.totalPrice ?? b.amount ?? b.finalPayableAmount
+            ),
             paymentStatus: String(b.paymentStatus || 'Pending'),
             status: String(b.status || 'Pending'),
             attendees: Array.isArray(b.attendees) ? b.attendees : [],
@@ -224,17 +234,20 @@ export default function TicketsBooked () {
             userName: b.buyer && b.buyer.fullName ? b.buyer.fullName : '-',
             email: b.buyer && b.buyer.email ? b.buyer.email : '-',
             phoneNumber: b.buyer && b.buyer.phone ? b.buyer.phone : '-',
-            ticketsBooked: `${
-              typeof b.quantity === 'number' ? b.quantity : '-'
-            } x ${b.ticketName || '-'}`,
-            amount: typeof b.totalPrice === 'number' ? b.totalPrice : '-',
+            ticketsBooked: `${toNumber(b.quantity) ?? '-'} x ${
+              b.ticketName || '-'
+            }`,
+            quantity: toNumber(b.quantity),
+            amount: toNumber(b.totalPrice ?? b.amount ?? b.finalPayableAmount),
+            totalPrice: toNumber(
+              b.totalPrice ?? b.amount ?? b.finalPayableAmount
+            ),
             paymentStatus: String(b.paymentStatus || 'Pending'),
             status: String(b.status || 'Pending'),
             attendees: Array.isArray(b.attendees) ? b.attendees : [],
             buyer: b.buyer || null,
             event: b.event || null,
             arrivalDate: b.arrivalDate || null,
-            quantity: b.quantity,
             ticketId: b.ticketId,
             discountApplied: b.discountApplied
           }))
@@ -517,16 +530,13 @@ export default function TicketsBooked () {
       'User Email': (b.user && b.user.email) || '-',
       'Ticket Name': b.ticketName || '-',
       'Ticket Type': b.ticketType || '-',
-      Quantity: typeof b.quantity === 'number' ? b.quantity : 0,
+      Quantity: toNumber(b.quantity) ?? 0,
       'Price Per Ticket':
-        (b.ticketId && b.ticketId.perTicketPrice) ||
-        (typeof b.perTicketPrice === 'number' ? b.perTicketPrice : 0),
+        toNumber(
+          (b.ticketId && b.ticketId.perTicketPrice) || b.perTicketPrice
+        ) ?? 0,
       'Total Price':
-        typeof b.totalPrice === 'number'
-          ? b.totalPrice
-          : typeof b.amount === 'number'
-          ? b.amount
-          : 0,
+        toNumber(b.totalPrice ?? b.amount ?? b.finalPayableAmount) ?? 0,
       'Arrival Date': toLocal(b.arrivalDate)
       // Attendees: Array.isArray(b.attendees)
       //   ? b.attendees.map(a => a.fullName).join(', ')
