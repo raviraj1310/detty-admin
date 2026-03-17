@@ -229,7 +229,7 @@ export default function EditTickets () {
         originalPrice: t.originalPrice
           ? formatPriceInput(String(t.originalPrice))
           : '',
-        ticketCount: t.ticketCount ? String(t.ticketCount) : '',
+        ticketCount: t.ticketLeft ? String(t.ticketLeft) : '',
         ticketDetails: t.ticketDetail || '',
         slotId: t.slotId?._id || t.slotId || ''
       })

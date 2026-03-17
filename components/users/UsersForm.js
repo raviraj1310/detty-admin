@@ -10,7 +10,7 @@ import {
 } from '@/services/users/user.service'
 import { dashboardUserActiveInactiveCounts } from '@/services/auth/login.service'
 import Toast from '@/components/ui/Toast'
-import { ChevronUp, ChevronDown, X } from 'lucide-react'
+import { ChevronUp, ChevronDown, X, Loader2 } from 'lucide-react'
 import {
   TbCaretUpDownFilled,
   TbTrendingUp,
@@ -959,6 +959,10 @@ export default function UsersForm ({
           return String(u.phone || '').toLowerCase()
         case 'walletPointsNum':
           return Number(u.walletPointsNum || 0)
+        case 'bookingCounts':
+          return Number(u.bookingCounts || 0)
+        case 'bookingTotalAmount':
+          return Number(u.bookingTotalAmount || 0)
         case 'status':
           return u.status === 'Active' ? 'Active' : 'Inactive'
         default:
@@ -1007,6 +1011,14 @@ export default function UsersForm ({
 
   const handleDownloadExcel = async () => {
     try {
+      // add toaster
+      setToast({
+        open: true,
+        title: 'Exporting users',
+        description: 'This may take a moment',
+        variant: 'info'
+      })
+
       setExporting(true)
       const baseParams = { page: 1, limit: 5000 }
       if (debouncedSearch) baseParams.search = debouncedSearch
@@ -1056,6 +1068,10 @@ export default function UsersForm ({
             return String(u.derived.phone || '').toLowerCase()
           case 'walletPointsNum':
             return Number(u.derived.walletPointsNum || 0)
+          case 'bookingCounts':
+            return Number(u.derived.bookingCounts || 0)
+          case 'bookingTotalAmount':
+            return Number(u.derived.bookingTotalAmount || 0)
           case 'status':
             return u.derived.status === 'Active' ? 'Active' : 'Inactive'
           default:
@@ -1464,19 +1480,23 @@ export default function UsersForm ({
                   disabled={exporting}
                   className='h-9 flex items-center px-3 border border-gray-300 rounded-lg hover:bg-gray-50 bg-white disabled:opacity-50'
                 >
-                  <svg
-                    className='w-4 h-4 text-gray-600'
-                    fill='none'
-                    stroke='currentColor'
-                    viewBox='0 0 24 24'
-                    strokeWidth={2}
-                  >
-                    <path
-                      strokeLinecap='round'
-                      strokeLinejoin='round'
-                      d='M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3'
-                    />
-                  </svg>
+                  {exporting ? (
+                    <Loader2 className='w-4 h-4 text-gray-600 animate-spin' />
+                  ) : (
+                    <svg
+                      className='w-4 h-4 text-gray-600'
+                      fill='none'
+                      stroke='currentColor'
+                      viewBox='0 0 24 24'
+                      strokeWidth={2}
+                    >
+                      <path
+                        strokeLinecap='round'
+                        strokeLinejoin='round'
+                        d='M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3'
+                      />
+                    </svg>
+                  )}
                 </button>
                 <div className='flex items-center gap-2'>
                   <label className='text-xs text-gray-700'>
@@ -1567,7 +1587,13 @@ export default function UsersForm ({
                     </TableHeaderCell>
                   </th>
                   <th className='w-[12%] px-3 py-2 text-left text-xs font-medium text-gray-500 tracking-[0.04em]'>
-                    Actions
+                    <TableHeaderCell
+                      onClick={() => toggleSort('bookingCounts')}
+                      active={sort.key === 'bookingCounts'}
+                      direction={sort.dir}
+                    >
+                      Actions
+                    </TableHeaderCell>
                   </th>
                   <th className='w-[10%] px-3 py-2 text-left text-xs font-medium tracking-[0.04em]'>
                     <TableHeaderCell

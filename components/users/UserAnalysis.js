@@ -25,10 +25,8 @@ import {
 } from '@/services/users/user.service'
 
 export default function UserAnalysis () {
-  const [search, setSearch] = useState('')
-  const [dateRange, setDateRange] = useState(() => {
+  const getDefaultDateRange = () => {
     const today = new Date()
-
     const yyyy = today.getUTCFullYear()
     const mm = String(today.getUTCMonth() + 1).padStart(2, '0')
     const dd = String(today.getUTCDate()).padStart(2, '0')
@@ -37,7 +35,10 @@ export default function UserAnalysis () {
       start: '2025-11-01',
       end: `${yyyy}-${mm}-${dd}`
     }
-  })
+  }
+
+  const [search, setSearch] = useState('')
+  const [dateRange, setDateRange] = useState(() => getDefaultDateRange())
   const [page, setPage] = useState(1)
   const [limit, setLimit] = useState(50)
   const [pageCount, setPageCount] = useState(1)
@@ -61,33 +62,16 @@ export default function UserAnalysis () {
 
   useEffect(() => {
     const fetchAnalysis = async () => {
-      if (!dateRange.start || !dateRange.end) {
-        if (viewMode === 'analysis') {
-          setUsers([])
-        }
-        setMeta(prev => ({
-          ...prev,
-          totalRegisteredUsers: 0,
-          totalDumpedUsers: 0,
-          totalManuallyRegisteredUsers: 0,
-          resetPasswordTokenCount: 0,
-          successfullyRegisteredUserWithResetPasswordToken: 0,
-          tempDumpedUsersCount: 0,
-          tempNotDumpedUsers: 0,
-          duplicateUsersCount: 0,
-          incompletePasswordResetCount: 0
-        }))
-        setPageCount(1)
-        setPage(1)
-        return
-      }
+      const def = getDefaultDateRange()
+      const startDate = dateRange.start || def.start
+      const endDate = dateRange.end || def.end
 
       setLoading(true)
       setError('')
       try {
         const params = {
-          startDate: dateRange.start,
-          endDate: dateRange.end,
+          startDate,
+          endDate,
           page,
           pageSize: limit,
           search: search ? search.trim() : undefined
@@ -96,8 +80,8 @@ export default function UserAnalysis () {
         const [res, resIncomplete] = await Promise.all([
           getUserAnalysis(params),
           getIncompletePasswordReset({
-            startDate: dateRange.start,
-            endDate: dateRange.end,
+            startDate,
+            endDate,
             page: 1,
             pageSize: 1
           })
@@ -188,20 +172,16 @@ export default function UserAnalysis () {
 
       if (!validModes.includes(viewMode)) return
 
-      if (!dateRange.start || !dateRange.end) {
-        setUsers([])
-        setRegisteredTotal(0)
-        setPageCount(1)
-        setPage(1)
-        return
-      }
+      const def = getDefaultDateRange()
+      const startDate = dateRange.start || def.start
+      const endDate = dateRange.end || def.end
 
       setLoading(true)
       setError('')
       try {
         const params = {
-          startDate: dateRange.start,
-          endDate: dateRange.end,
+          startDate,
+          endDate,
           page,
           pageSize: limit,
           search: search ? search.trim() : undefined
@@ -356,15 +336,14 @@ export default function UserAnalysis () {
     )
       return
 
-    if (!dateRange.start || !dateRange.end) {
-      setError('Please select start and end date before downloading')
-      return
-    }
+    const def = getDefaultDateRange()
+    const start = dateRange.start || def.start
+    const end = dateRange.end || def.end
     try {
       setDownloading(true)
       const params = {
-        startDate: dateRange.start,
-        endDate: dateRange.end,
+        startDate: start,
+        endDate: end,
         search: search ? search.trim() : undefined
       }
       const isManual = viewMode === 'manual'
@@ -394,8 +373,6 @@ export default function UserAnalysis () {
         : downloadRegisteredExcel(params))
       const url = window.URL.createObjectURL(blob)
       const a = document.createElement('a')
-      const start = dateRange.start
-      const end = dateRange.end
       a.href = url
       a.download = isManual
         ? `manually-registered-users-${start}-to-${end}.xlsx`
@@ -473,7 +450,10 @@ export default function UserAnalysis () {
           </div>
           {(dateRange.start || dateRange.end) && (
             <button
-              onClick={() => setDateRange({ start: '', end: '' })}
+              onClick={() => {
+                setPage(1)
+                setDateRange({ start: '', end: '' })
+              }}
               className='mt-4 p-2 text-gray-500 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors'
               title='Clear Date Filter'
             >
