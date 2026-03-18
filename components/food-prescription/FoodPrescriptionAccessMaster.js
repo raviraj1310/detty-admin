@@ -443,12 +443,12 @@ export default function FoodPrescriptionAccessMaster () {
               />
             </div>
 
-            <div>
+            <div className='ml-8'>
               <label className='mb-2 block text-sm font-medium text-gray-700'>
-                Access Duration*
+                Access Duration
               </label>
               <div
-                className={`flex rounded-lg border bg-white ${
+                className={`flex w-fit rounded-lg border bg-white ${
                   durationError
                     ? 'border-red-400 focus-within:ring-2 focus-within:ring-red-200'
                     : 'border-gray-200 focus-within:border-[#FF4400] focus-within:ring-1 focus-within:ring-[#FF4400]'
@@ -462,7 +462,7 @@ export default function FoodPrescriptionAccessMaster () {
                     handleInputChange('durationValue', e.target.value)
                   }
                   placeholder='1'
-                  className='w-20 rounded-l-lg border-0 bg-transparent px-4 py-2.5 text-sm text-slate-700 focus:outline-none'
+                  className='w-20 rounded-l-lg border-0 bg-transparent px-3 py-2.5 text-sm text-slate-700 text-center focus:outline-none'
                 />
                 <div className='h-8 w-px bg-gray-200' />
                 <select
@@ -470,7 +470,7 @@ export default function FoodPrescriptionAccessMaster () {
                   onChange={e =>
                     handleInputChange('durationUnit', e.target.value)
                   }
-                  className='flex-1 rounded-r-lg border-0 bg-transparent py-2.5 pr-4 pl-2 text-sm text-slate-700 focus:outline-none'
+                  className='w-40 rounded-r-lg border-0 bg-transparent py-2.5 pr-4 pl-2 text-sm text-slate-700 text-center focus:outline-none'
                 >
                   {DURATION_UNITS.map(u => (
                     <option key={u.value} value={u.value}>
