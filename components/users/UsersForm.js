@@ -1024,7 +1024,10 @@ export default function UsersForm ({
       if (debouncedSearch) baseParams.search = debouncedSearch
       if (statusFilter) baseParams.status = statusFilter
       baseParams.dayCount = activeUsersDays
-      const firstRes = await getUsers(baseParams)
+      const controller = new AbortController()
+      const TIMEOUT_MS = 120000
+      const startTime = Date.now()
+      const firstRes = await getUsers(baseParams, controller.signal)
       const firstPayload = firstRes?.data || firstRes || {}
       const firstList = Array.isArray(firstPayload?.users)
         ? firstPayload.users
@@ -1034,22 +1037,37 @@ export default function UsersForm ({
         ? firstRes
         : []
       const pages = Number(firstPayload?.pages ?? 1)
-      const requests = []
-      for (let p = 2; p <= pages; p++) {
-        requests.push(getUsers({ ...baseParams, page: p }))
+      const rest = []
+      const CONCURRENCY = 3
+      for (let p = 2; p <= pages; p += CONCURRENCY) {
+        if (Date.now() - startTime > TIMEOUT_MS) {
+          setToast({
+            open: true,
+            title: 'Partial export',
+            description: 'Export timed out. Exporting available data.',
+            variant: 'warning'
+          })
+          break
+        }
+        const chunk = []
+        for (let i = 0; i < CONCURRENCY && p + i <= pages; i++) {
+          chunk.push(
+            getUsers({ ...baseParams, page: p + i }, controller.signal)
+          )
+        }
+        const results = chunk.length ? await Promise.all(chunk) : []
+        results.forEach(r => {
+          const pl = r?.data || r || {}
+          const arr = Array.isArray(pl?.users)
+            ? pl.users
+            : Array.isArray(r?.data)
+            ? r.data
+            : Array.isArray(r)
+            ? r
+            : []
+          rest.push(...arr)
+        })
       }
-      const results = requests.length ? await Promise.all(requests) : []
-      const rest = results.flatMap(r => {
-        const pl = r?.data || r || {}
-        const arr = Array.isArray(pl?.users)
-          ? pl.users
-          : Array.isArray(r?.data)
-          ? r.data
-          : Array.isArray(r)
-          ? r
-          : []
-        return arr
-      })
       const rawAll = [...firstList, ...rest]
       const pairs = rawAll.map(d => ({ raw: d, derived: mapUser(d) }))
       const uniqueMap = new Map()
