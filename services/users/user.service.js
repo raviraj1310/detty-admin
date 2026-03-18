@@ -215,10 +215,10 @@ export const getMyLeadPlans = async id => {
   }
 }
 
-export const getActiveUsers = async (page = 1, limit = 50) => {
+export const getActiveUsers = async (page = 1, limit = 50, dayCount) => {
   try {
     const response = await api.get(`/user/get-active-users`, {
-      params: { page, limit }
+      params: { page, limit, dayCount }
     })
     return response.data
   } catch (error) {
@@ -238,9 +238,10 @@ export const getInactiveUsers = async (page = 1, limit = 20) => {
   }
 }
 
-export const downloadActiveExcel = async () => {
+export const downloadActiveExcel = async dayCount => {
   try {
     const response = await api.get(`/user/get-active-users-download`, {
+      params: { dayCount },
       responseType: 'blob'
     })
     return response.data
