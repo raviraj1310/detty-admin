@@ -697,37 +697,46 @@ export default function UsersForm ({
 
       const payload = res?.data || res || {}
 
-      // Check if API provides the stats directly
-      if (
-        typeof payload?.activeUsers !== 'undefined' &&
-        typeof payload?.newRegistrationYesterday !== 'undefined'
-      ) {
-        const apiAvgCount = Number(payload.avgDailyGrowthCount || 0)
-        const apiAvgPctStr = String(payload.avgDailyGrowthPercent || '0')
-        const apiAvgPct = parseFloat(apiAvgPctStr.replace('%', ''))
+      const dash = dashboardRes?.data?.data || dashboardRes?.data || {}
+      const apiAvgCount = Number(payload?.avgDailyGrowthCount || 0)
+      const apiAvgPctStr = String(payload?.avgDailyGrowthPercent || '0')
+      const apiAvgPct = parseFloat(apiAvgPctStr.replace('%', ''))
 
-        const now = new Date()
-        const yesterday = new Date(now)
-        yesterday.setDate(yesterday.getDate() - 1)
-        const yesterdayDateStr = yesterday.toLocaleDateString('en-US', {
-          month: 'short',
-          day: 'numeric'
-        })
+      const now = new Date()
+      const yesterday = new Date(now)
+      yesterday.setDate(yesterday.getDate() - 1)
+      const yesterdayDateStr = yesterday.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric'
+      })
 
-        setGlobalStats({
-          total: Number(payload.total || 0),
-          active: Number(payload.activeUsers || 0),
-          inactive: Number(payload.inactiveUsers || 0),
-          yesterdayCount: Number(payload.newRegistrationYesterday || 0),
-          yesterdayDateStr,
-          avgGrowthCount: apiAvgCount,
-          isCountIncreasing: apiAvgCount >= 0,
-          avgGrowthPercent: apiAvgPctStr,
-          isPctIncreasing: apiAvgPct >= 0,
-          registered: Number(dashboardRes?.data?.registeredUser || 0),
-          unregistered: Number(dashboardRes?.data?.unregisteredUsers || 0)
-        })
-      }
+      setGlobalStats({
+        total: Number(
+          dash.totalUserCount ?? payload?.total ?? globalStats.total ?? 0
+        ),
+        active: Number(
+          dash.activeUserCount ??
+            // payload?.activeUsers ??
+            // globalStats.active ??
+            0
+        ),
+        inactive: Number(
+          dash.inactiveUserCount ??
+            // payload?.inactiveUsers ??
+            // globalStats.inactive ??
+            0
+        ),
+        yesterdayCount: Number(payload?.newRegistrationYesterday || 0),
+        yesterdayDateStr,
+        avgGrowthCount: apiAvgCount,
+        isCountIncreasing: apiAvgCount >= 0,
+        avgGrowthPercent: apiAvgPctStr,
+        isPctIncreasing: apiAvgPct >= 0,
+        registered: Number(dash.registeredUser ?? globalStats.registered ?? 0),
+        unregistered: Number(
+          dash.unregisteredUsers ?? globalStats.unregistered ?? 0
+        )
+      })
     } catch (e) {
       console.error('Failed to fetch stats', e)
     }
@@ -794,8 +803,8 @@ export default function UsersForm ({
 
           setGlobalStats({
             total: Number(payload.total || 0),
-            active: Number(payload.activeUsers || 0),
-            inactive: Number(payload.inactiveUsers || 0),
+            // active: Number(payload.activeUsers || 0),
+            // inactive: Number(payload.inactiveUsers || 0),
             yesterdayCount: Number(payload.newRegistrationYesterday || 0),
             yesterdayDateStr,
             avgGrowthCount: apiAvgCount,
