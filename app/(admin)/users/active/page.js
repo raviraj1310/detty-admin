@@ -153,14 +153,8 @@ export default function ActiveUsersPage () {
             : latest?.createdAt
             ? new Date(latest.createdAt).toLocaleString()
             : '-'
-          const status =
-            typeof u?.status === 'string'
-              ? /^active$/i.test(String(u.status).trim())
-                ? 'Active'
-                : 'Inactive'
-              : u?.status
-              ? 'Active'
-              : 'Inactive'
+          const status = 'Active'
+
           return {
             id: u?._id || it?._id || Math.random().toString(36).slice(2),
             name: u?.name || '-',
