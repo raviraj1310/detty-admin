@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { Search, X } from 'lucide-react'
+import Toast from '@/components/ui/Toast'
 import {
   getUserAnalysis,
   getRegisteredUser,
@@ -62,6 +63,12 @@ export default function UserAnalysis () {
   const [registeredTotal, setRegisteredTotal] = useState(0)
   const [transactingTotal, setTransactingTotal] = useState(0)
   const [downloading, setDownloading] = useState(false)
+  const [toast, setToast] = useState({
+    open: false,
+    title: '',
+    description: '',
+    variant: 'success'
+  })
 
   useEffect(() => {
     const fetchAnalysis = async () => {
@@ -348,6 +355,7 @@ export default function UserAnalysis () {
   }, [filteredUsers, meta])
 
   const handleDownloadRegisteredExcel = async () => {
+    if (downloading) return
     if (
       viewMode !== 'registered' &&
       viewMode !== 'manual' &&
@@ -365,8 +373,15 @@ export default function UserAnalysis () {
     const def = getDefaultDateRange()
     const start = dateRange.start || def.start
     const end = dateRange.end || def.end
+
     try {
       setDownloading(true)
+      setToast({
+        open: true,
+        title: 'Exporting users',
+        description: 'This may take a moment',
+        variant: 'info'
+      })
       const params = {
         startDate: start,
         endDate: end,
@@ -381,57 +396,126 @@ export default function UserAnalysis () {
       const isSuccessPasswordReset = viewMode === 'successPasswordReset'
       const isIncompletePasswordReset = viewMode === 'incompletePasswordReset'
       const isDuplicateUsers = viewMode === 'duplicateUsers'
-      const blob = await (isManual
-        ? downloadManuallyRegisteredExcel(params)
-        : isDumpedProvided
-        ? downloadDumpedUserProvided(params)
-        : isEffective
-        ? downloadEffectiveUsers(params)
-        : isTransacting
-        ? downloadTransactingUsers(params)
-        : isSuccessfulDumped
-        ? downloadSuccessfulDumped(params)
-        : isIncompleteDumped
-        ? downloadIncompleteDumped(params)
-        : isSuccessPasswordReset
-        ? downloadSuccessPasswordReset(params)
-        : isIncompletePasswordReset
-        ? downloadIncompletePasswordReset(params)
-        : isDuplicateUsers
-        ? downloadDuplicateUsers(params)
-        : downloadRegisteredExcel(params))
-      const url = window.URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = isManual
-        ? `manually-registered-users-${start}-to-${end}.xlsx`
-        : isDumpedProvided
-        ? `dumped-users-provided-${start}-to-${end}.xlsx`
-        : isEffective
-        ? `effective-users-${start}-to-${end}.xlsx`
-        : isTransacting
-        ? `transacting-users-${start}-to-${end}.xlsx`
-        : isSuccessfulDumped
-        ? `successful-dumped-users-${start}-to-${end}.xlsx`
-        : isIncompleteDumped
-        ? `incomplete-dumped-users-${start}-to-${end}.xlsx`
-        : isSuccessPasswordReset
-        ? `success-password-reset-${start}-to-${end}.xlsx`
-        : isIncompletePasswordReset
-        ? `incomplete-password-reset-${start}-to-${end}.xlsx`
-        : isDuplicateUsers
-        ? `duplicate-users-${start}-to-${end}.xlsx`
-        : `registered-users-${start}-to-${end}.xlsx`
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-      window.URL.revokeObjectURL(url)
+
+      const CHUNK_SIZE = 50000
+      const total = Number(registeredTotal || 0)
+      const totalChunks =
+        Number.isFinite(total) && total > 0
+          ? Math.max(1, Math.ceil(total / CHUNK_SIZE) || 1)
+          : 1
+
+      for (let chunk = 1; chunk <= totalChunks; chunk++) {
+        setToast({
+          open: true,
+          title: 'Exporting users',
+          description: `Downloading file ${chunk} of ${totalChunks}`,
+          variant: 'info'
+        })
+        const blob = await (isManual
+          ? downloadManuallyRegisteredExcel({
+              ...params,
+              chunk,
+              chunkSize: CHUNK_SIZE
+            })
+          : isDumpedProvided
+          ? downloadDumpedUserProvided({
+              ...params,
+              chunk,
+              chunkSize: CHUNK_SIZE
+            })
+          : isEffective
+          ? downloadEffectiveUsers({ ...params, chunk, chunkSize: CHUNK_SIZE })
+          : isTransacting
+          ? downloadTransactingUsers({
+              ...params,
+              chunk,
+              chunkSize: CHUNK_SIZE
+            })
+          : isSuccessfulDumped
+          ? downloadSuccessfulDumped({
+              ...params,
+              chunk,
+              chunkSize: CHUNK_SIZE
+            })
+          : isIncompleteDumped
+          ? downloadIncompleteDumped({
+              ...params,
+              chunk,
+              chunkSize: CHUNK_SIZE
+            })
+          : isSuccessPasswordReset
+          ? downloadSuccessPasswordReset({
+              ...params,
+              chunk,
+              chunkSize: CHUNK_SIZE
+            })
+          : isIncompletePasswordReset
+          ? downloadIncompletePasswordReset({
+              ...params,
+              chunk,
+              chunkSize: CHUNK_SIZE
+            })
+          : isDuplicateUsers
+          ? downloadDuplicateUsers({ ...params, chunk, chunkSize: CHUNK_SIZE })
+          : downloadRegisteredExcel({
+              ...params,
+              chunk,
+              chunkSize: CHUNK_SIZE
+            }))
+
+        const url = window.URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        const baseName = isManual
+          ? `manually-registered-users-${start}-to-${end}`
+          : isDumpedProvided
+          ? `dumped-users-provided-${start}-to-${end}`
+          : isEffective
+          ? `effective-users-${start}-to-${end}`
+          : isTransacting
+          ? `transacting-users-${start}-to-${end}`
+          : isSuccessfulDumped
+          ? `successful-dumped-users-${start}-to-${end}`
+          : isIncompleteDumped
+          ? `incomplete-dumped-users-${start}-to-${end}`
+          : isSuccessPasswordReset
+          ? `success-password-reset-${start}-to-${end}`
+          : isIncompletePasswordReset
+          ? `incomplete-password-reset-${start}-to-${end}`
+          : isDuplicateUsers
+          ? `duplicate-users-${start}-to-${end}`
+          : `registered-users-${start}-to-${end}`
+
+        a.download =
+          totalChunks > 1
+            ? `${baseName}_file${chunk}_of_${totalChunks}.xlsx`
+            : `${baseName}.xlsx`
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        window.URL.revokeObjectURL(url)
+      }
+      setToast({
+        open: true,
+        title: 'Export complete',
+        description: 'Excel downloaded successfully',
+        variant: 'success'
+      })
     } catch (err) {
       setError(
         err?.response?.data?.message ||
           err?.message ||
           'Failed to download registered users Excel'
       )
+      setToast({
+        open: true,
+        title: 'Export failed',
+        description:
+          err?.response?.data?.message ||
+          err?.message ||
+          'Failed to download Excel',
+        variant: 'error'
+      })
     } finally {
       setDownloading(false)
     }
@@ -439,6 +523,15 @@ export default function UserAnalysis () {
 
   return (
     <div className='p-4 h-full flex flex-col bg-white'>
+      <Toast
+        open={toast.open}
+        onOpenChange={v => setToast(prev => ({ ...prev, open: v }))}
+        title={toast.title}
+        description={toast.description}
+        variant={toast.variant}
+        duration={toast.variant === 'info' ? 0 : 2500}
+        position='top-right'
+      />
       <div className='flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6'>
         <div>
           <h1 className='text-xl font-bold text-gray-900 mb-1'>
