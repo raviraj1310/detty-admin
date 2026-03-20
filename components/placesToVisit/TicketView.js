@@ -133,7 +133,7 @@ export default function TicketView () {
             <img
               src='/images/logo/logo.png'
               alt='logo'
-              className='h-8 w-auto'
+              className='h-20 w-auto'
             />
           </div>
           <div className='text-right text-sm'>
