@@ -231,7 +231,12 @@ export const downloadUserdata = async (params = {}, signal) => {
     const response = await api.get(`/user/download-user-data`, {
       params,
       responseType: 'blob',
-      signal
+      signal,
+      timeout: 0, // 🔥 disable axios timeout completely
+      headers: {
+        Accept:
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      }
     })
     return response.data
   } catch (error) {
@@ -239,6 +244,7 @@ export const downloadUserdata = async (params = {}, signal) => {
     throw error
   }
 }
+
 export const getInactiveUsers = async (page = 1, limit = 20) => {
   try {
     const response = await api.get(

@@ -1051,7 +1051,7 @@ export default function UsersForm ({
       }
 
       const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 120000)
+      const timeoutId = setTimeout(() => controller.abort(), 10 * 60 * 1000) // 10 min
       const blob = await downloadUserdata(params, controller.signal)
       clearTimeout(timeoutId)
 
