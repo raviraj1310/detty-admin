@@ -683,24 +683,13 @@ export default function UsersForm ({
 
   const fetchStats = async () => {
     try {
-      // Just fetch one user to check for metadata stats
-      // We avoid fetching all users (limit=5000) to prevent timeouts and network congestion
-      const params = { limit: 1 }
+      const params = {}
       if (dateRange.start) params.startDate = dateRange.start
       if (dateRange.end) params.endDate = dateRange.end
       params.dayCount = activeUsersDays
 
-      const [res, dashboardRes] = await Promise.all([
-        getUsers(params),
-        dashboardUserActiveInactiveCounts(params)
-      ])
-
-      const payload = res?.data || res || {}
-
+      const dashboardRes = await dashboardUserActiveInactiveCounts(params)
       const dash = dashboardRes?.data?.data || dashboardRes?.data || {}
-      const apiAvgCount = Number(payload?.avgDailyGrowthCount || 0)
-      const apiAvgPctStr = String(payload?.avgDailyGrowthPercent || '0')
-      const apiAvgPct = parseFloat(apiAvgPctStr.replace('%', ''))
 
       const now = new Date()
       const yesterday = new Date(now)
@@ -710,31 +699,24 @@ export default function UsersForm ({
         day: 'numeric'
       })
 
+      const apiAvgCount = Number(dash.avgDailyGrowthCount || 0)
+      const rawPct = String(dash.avgDailyGrowthPercent ?? '0')
+      const pctStr = rawPct.includes('%') ? rawPct : `${rawPct}%`
+      const pctNum = parseFloat(String(rawPct).replace('%', ''))
+
       setGlobalStats({
-        total: Number(
-          dash.totalUserCount ?? payload?.total ?? globalStats.total ?? 0
-        ),
-        active: Number(
-          dash.activeUserCount ??
-            // payload?.activeUsers ??
-            // globalStats.active ??
-            0
-        ),
-        inactive: Number(
-          dash.inactiveUserCount ??
-            // payload?.inactiveUsers ??
-            // globalStats.inactive ??
-            0
-        ),
-        yesterdayCount: Number(payload?.newRegistrationYesterday || 0),
+        total: Number(dash.totalUserCount || 0),
+        active: Number(dash.activeUsers || dash.activeUserCount || 0),
+        inactive: Number(dash.inactiveUsers || dash.inactiveUserCount || 0),
+        yesterdayCount: Number(dash.newRegistrationYesterday || 0),
         yesterdayDateStr,
         avgGrowthCount: apiAvgCount,
         isCountIncreasing: apiAvgCount >= 0,
-        avgGrowthPercent: apiAvgPctStr,
-        isPctIncreasing: apiAvgPct >= 0,
-        registered: Number(dash.registeredUser ?? globalStats.registered ?? 0),
+        avgGrowthPercent: pctStr,
+        isPctIncreasing: !Number.isNaN(pctNum) ? pctNum >= 0 : false,
+        registered: Number(dash.registeredUser || 0),
         unregistered: Number(
-          dash.unregisteredUsers ?? globalStats.unregistered ?? 0
+          dash.unregisteredUsers || dash.unregisteredUser || 0
         )
       })
     } catch (e) {
@@ -783,36 +765,6 @@ export default function UsersForm ({
 
         const res = await getUsers(params, signal)
         const payload = res?.data || res || {}
-
-        // Update stats from API response if available
-        if (
-          typeof payload?.activeUsers !== 'undefined' &&
-          typeof payload?.newRegistrationYesterday !== 'undefined'
-        ) {
-          const apiAvgCount = Number(payload.avgDailyGrowthCount || 0)
-          const apiAvgPctStr = String(payload.avgDailyGrowthPercent || '0')
-          const apiAvgPct = parseFloat(apiAvgPctStr.replace('%', ''))
-
-          const now = new Date()
-          const yesterday = new Date(now)
-          yesterday.setDate(yesterday.getDate() - 1)
-          const yesterdayDateStr = yesterday.toLocaleDateString('en-US', {
-            month: 'short',
-            day: 'numeric'
-          })
-
-          setGlobalStats({
-            total: Number(payload.total || 0),
-            // active: Number(payload.activeUsers || 0),
-            // inactive: Number(payload.inactiveUsers || 0),
-            yesterdayCount: Number(payload.newRegistrationYesterday || 0),
-            yesterdayDateStr,
-            avgGrowthCount: apiAvgCount,
-            isCountIncreasing: apiAvgCount >= 0,
-            avgGrowthPercent: apiAvgPctStr,
-            isPctIncreasing: apiAvgPct >= 0
-          })
-        }
 
         const list = Array.isArray(payload?.users)
           ? payload.users
@@ -1280,7 +1232,7 @@ export default function UsersForm ({
               </div>
               <div>
                 <p className='text-xs text-black opacity-90'>
-                  Inactive Users (Not logged in since 10 days)
+                  Inactive Users (Not logged in since {activeUsersDays} days)
                 </p>
                 <p className='text-2xl text-black font-bold'>
                   {globalStats.inactive}
