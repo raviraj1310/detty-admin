@@ -1029,6 +1029,7 @@ export default function UsersForm ({
       })
 
       setExporting(true)
+      const CHUNK_SIZE = 50000
       const sortByMap = {
         createdTs: 'createdAt',
         name: 'name',
@@ -1050,20 +1051,39 @@ export default function UsersForm ({
         params.sortOrder = sort.dir
       }
 
-      const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 10 * 60 * 1000) // 10 min
-      const blob = await downloadUserdata(params, controller.signal)
-      clearTimeout(timeoutId)
+      const total = Number(totalCount || 0)
+      const totalChunks = Math.max(1, Math.ceil(total / CHUNK_SIZE) || 1)
 
-      const safeBlob = blob instanceof Blob ? blob : new Blob([blob])
-      const url = window.URL.createObjectURL(safeBlob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `Users_${new Date().toISOString().slice(0, 10)}.xlsx`
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-      window.URL.revokeObjectURL(url)
+      for (let chunk = 1; chunk <= totalChunks; chunk++) {
+        setToast({
+          open: true,
+          title: 'Exporting users',
+          description: `Downloading file ${chunk} of ${totalChunks}`,
+          variant: 'info'
+        })
+
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), 10 * 60 * 1000) // 10 min
+        const blob = await downloadUserdata(
+          { ...params, chunk, chunkSize: CHUNK_SIZE },
+          controller.signal
+        )
+        clearTimeout(timeoutId)
+
+        const safeBlob = blob instanceof Blob ? blob : new Blob([blob])
+        const url = window.URL.createObjectURL(safeBlob)
+        const a = document.createElement('a')
+        a.href = url
+        const dateStr = new Date().toISOString().slice(0, 10)
+        a.download =
+          totalChunks > 1
+            ? `Users_${dateStr}_file${chunk}_of_${totalChunks}.xlsx`
+            : `Users_${dateStr}.xlsx`
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        window.URL.revokeObjectURL(url)
+      }
 
       setToast({
         open: true,
@@ -1095,7 +1115,7 @@ export default function UsersForm ({
         title={toast.title}
         description={toast.description}
         variant={toast.variant}
-        duration={2500}
+        duration={toast.variant === 'info' ? 0 : 2500}
         position='top-right'
       />
       <UserDetailModal
