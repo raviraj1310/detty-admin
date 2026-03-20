@@ -226,6 +226,19 @@ export const getActiveUsers = async (page = 1, limit = 50, dayCount) => {
     throw error
   }
 }
+export const downloadUserdata = async (params = {}, signal) => {
+  try {
+    const response = await api.get(`/user/download-user-data`, {
+      params,
+      responseType: 'blob',
+      signal
+    })
+    return response.data
+  } catch (error) {
+    console.error('Error downloading user data:', error)
+    throw error
+  }
+}
 export const getInactiveUsers = async (page = 1, limit = 20) => {
   try {
     const response = await api.get(

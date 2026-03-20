@@ -6,7 +6,8 @@ import Image from 'next/image'
 import {
   getUsers,
   changeUserStatus,
-  getUserWithProfile
+  getUserWithProfile,
+  downloadUserdata
 } from '@/services/users/user.service'
 import { dashboardUserActiveInactiveCounts } from '@/services/auth/login.service'
 import Toast from '@/components/ui/Toast'
@@ -17,7 +18,6 @@ import {
   TbTrendingDown
 } from 'react-icons/tb'
 import { FaUserPlus, FaChartColumn } from 'react-icons/fa6'
-import { downloadExcel } from '@/utils/excelExport'
 
 const mapUser = d => {
   const created = d?.createdAt || d?.created_on || d?.created || ''
@@ -1019,8 +1019,8 @@ export default function UsersForm ({
   }
 
   const handleDownloadExcel = async () => {
+    if (exporting) return
     try {
-      // add toaster
       setToast({
         open: true,
         title: 'Exporting users',
@@ -1029,122 +1029,59 @@ export default function UsersForm ({
       })
 
       setExporting(true)
-      const baseParams = { page: 1, limit: 5000 }
-      if (debouncedSearch) baseParams.search = debouncedSearch
-      if (statusFilter) baseParams.status = statusFilter
-      baseParams.dayCount = activeUsersDays
+      const sortByMap = {
+        createdTs: 'createdAt',
+        name: 'name',
+        email: 'email',
+        phone: 'phoneNumber',
+        walletPointsNum: 'walletPoints',
+        bookingCounts: 'bookingValues.totalBookings',
+        bookingTotalAmount: 'bookingValues.totalAmount',
+        status: 'status'
+      }
+      const params = {}
+      if (debouncedSearch) params.search = debouncedSearch
+      if (statusFilter) params.status = statusFilter
+      if (dateRange.start) params.startDate = dateRange.start
+      if (dateRange.end) params.endDate = dateRange.end
+      params.dayCount = activeUsersDays
+      if (sort.key) {
+        params.sortBy = sortByMap[sort.key] || sort.key
+        params.sortOrder = sort.dir
+      }
+
       const controller = new AbortController()
-      const TIMEOUT_MS = 120000
-      const startTime = Date.now()
-      const firstRes = await getUsers(baseParams, controller.signal)
-      const firstPayload = firstRes?.data || firstRes || {}
-      const firstList = Array.isArray(firstPayload?.users)
-        ? firstPayload.users
-        : Array.isArray(firstRes?.data)
-        ? firstRes.data
-        : Array.isArray(firstRes)
-        ? firstRes
-        : []
-      const pages = Number(firstPayload?.pages ?? 1)
-      const rest = []
-      const CONCURRENCY = 3
-      for (let p = 2; p <= pages; p += CONCURRENCY) {
-        if (Date.now() - startTime > TIMEOUT_MS) {
-          setToast({
-            open: true,
-            title: 'Partial export',
-            description: 'Export timed out. Exporting available data.',
-            variant: 'warning'
-          })
-          break
-        }
-        const chunk = []
-        for (let i = 0; i < CONCURRENCY && p + i <= pages; i++) {
-          chunk.push(
-            getUsers({ ...baseParams, page: p + i }, controller.signal)
-          )
-        }
-        const results = chunk.length ? await Promise.all(chunk) : []
-        results.forEach(r => {
-          const pl = r?.data || r || {}
-          const arr = Array.isArray(pl?.users)
-            ? pl.users
-            : Array.isArray(r?.data)
-            ? r.data
-            : Array.isArray(r)
-            ? r
-            : []
-          rest.push(...arr)
-        })
-      }
-      const rawAll = [...firstList, ...rest]
-      const pairs = rawAll.map(d => ({ raw: d, derived: mapUser(d) }))
-      const uniqueMap = new Map()
-      pairs.forEach(p => uniqueMap.set(p.derived.id, p))
-      const deduped = Array.from(uniqueMap.values())
-      const dir = sort.dir === 'asc' ? 1 : -1
-      const getVal = u => {
-        switch (sort.key) {
-          case 'createdTs':
-            return u.derived.createdTs || 0
-          case 'name':
-            return String(u.derived.name || '').toLowerCase()
-          case 'email':
-            return String(u.derived.email || '').toLowerCase()
-          case 'phone':
-            return String(u.derived.phone || '').toLowerCase()
-          case 'walletPointsNum':
-            return Number(u.derived.walletPointsNum || 0)
-          case 'bookingCounts':
-            return Number(u.derived.bookingCounts || 0)
-          case 'bookingTotalAmount':
-            return Number(u.derived.bookingTotalAmount || 0)
-          case 'status':
-            return u.derived.status === 'Active' ? 'Active' : 'Inactive'
-          default:
-            return ''
-        }
-      }
-      const sortedAll = sort.key
-        ? [...deduped].sort((a, b) => {
-            const va = getVal(a)
-            const vb = getVal(b)
-            if (va < vb) return -1 * dir
-            if (va > vb) return 1 * dir
-            return 0
-          })
-        : deduped
-      const dataToExport = sortedAll.map(p => {
-        const u = p.derived
-        const r = p.raw || {}
-        const profile = r.profile || {}
-        return {
-          'Created On': u.createdOn,
-          'User Name': u.name,
-          Email: u.email,
-          'Phone Number': u.phone,
-          'Wallet Points': u.walletPoints,
-          Status: u.status,
-          'User ID': u.rawId || u.id,
-          Role: r.role,
-          'Profile Image': r.profileImage,
-          'Wallet Funds':
-            typeof r.walletFunds !== 'undefined'
-              ? r.walletFunds
-              : r.walletPoints,
-          'profile._id': profile._id,
-          'profile.homeAddress': profile.homeAddress,
-          'profile.postalCode': profile.postalCode,
-          'profile.countryOfCitizenship': profile.countryOfCitizenship,
-          'profile.countryOfResidence': profile.countryOfResidence,
-          'profile.state': profile.state,
-          'profile.createdAt': profile.createdAt,
-          'profile.updatedAt': profile.updatedAt
-        }
+      const timeoutId = setTimeout(() => controller.abort(), 120000)
+      const blob = await downloadUserdata(params, controller.signal)
+      clearTimeout(timeoutId)
+
+      const safeBlob = blob instanceof Blob ? blob : new Blob([blob])
+      const url = window.URL.createObjectURL(safeBlob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `Users_${new Date().toISOString().slice(0, 10)}.xlsx`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      window.URL.revokeObjectURL(url)
+
+      setToast({
+        open: true,
+        title: 'Export complete',
+        description: 'Excel downloaded successfully',
+        variant: 'success'
       })
-      if (dataToExport.length) {
-        downloadExcel(dataToExport, 'Users.xlsx')
-      }
+    } catch (e) {
+      const msg =
+        e?.name === 'CanceledError' || e?.code === 'ERR_CANCELED'
+          ? 'Export timed out, please try with narrower filters'
+          : e?.response?.data?.message || e?.message || 'Export failed'
+      setToast({
+        open: true,
+        title: 'Export failed',
+        description: msg,
+        variant: 'error'
+      })
     } finally {
       setExporting(false)
     }
