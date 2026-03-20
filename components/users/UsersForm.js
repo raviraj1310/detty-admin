@@ -1375,7 +1375,7 @@ export default function UsersForm ({
                 </div>
 
                 {/* Filters */}
-                {filtersOpen && (
+                {/* {filtersOpen && (
                   <div className='relative'>
                     <select
                       value={statusFilter}
@@ -1387,7 +1387,7 @@ export default function UsersForm ({
                       <option value='Inactive'>Inactive</option>
                     </select>
                   </div>
-                )}
+                )} */}
                 <button
                   onClick={handleToggleFilters}
                   className='h-9 flex items-center px-4 border border-gray-300 rounded-lg hover:bg-gray-50 bg-white'
