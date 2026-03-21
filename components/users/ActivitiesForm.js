@@ -664,6 +664,8 @@ export default function Activities () {
       return {
         'Booking ID': b._id || b.id,
         'Order ID': b.orderId,
+        'Transaction Ref':
+          b.transactionRef || (b.booking && b.booking.transactionRef) || '-',
         'Created At': b.createdAt,
         'Arrival Date': b.arrivalDate,
         Status: r.activityStatus,
