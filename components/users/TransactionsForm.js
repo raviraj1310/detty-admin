@@ -902,6 +902,7 @@ export default function TransactionsForm () {
 
       return {
         'Booking ID': b.bookingId || b._id,
+        'Transaction Ref': b.transactionRef || b.booking?.transactionRef,
         'Created At': b.createdAt,
         Status: b.status,
         'Payment Status': b.paymentStatus,

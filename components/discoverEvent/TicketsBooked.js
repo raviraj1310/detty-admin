@@ -535,6 +535,8 @@ export default function TicketsBooked () {
 
     const dataToExport = bookings.map(b => ({
       'Booking ID': b.bookingId || b.id || '',
+      'Transaction Ref':
+        b.transactionRef || (b.booking && b.booking.transactionRef) || '-',
       'Booked On': toLocal(b.bookedOn || b.createdAt || b.updatedAt),
       'Payment Status': b.paymentStatus || '-',
       Status: b.status || '-',
