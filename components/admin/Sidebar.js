@@ -475,7 +475,7 @@ export default function AdminSidebar () {
         <div className='flex-shrink-0 bg-black h-19  pt-6 flex items-center px-4'>
           <div className='w-30 h-25 relative'>
             <Image
-              src='/images/logo/fotter_logo.webp'
+              src='/images/logo/logo.png'
               alt='DettyFusion Logo'
               width={200}
               height={200}

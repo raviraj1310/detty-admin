@@ -215,10 +215,10 @@ export const getMyLeadPlans = async id => {
   }
 }
 
-export const getActiveUsers = async (page = 1, limit = 50) => {
+export const getActiveUsers = async (page = 1, limit = 50, dayCount) => {
   try {
     const response = await api.get(`/user/get-active-users`, {
-      params: { page, limit }
+      params: { page, limit, dayCount }
     })
     return response.data
   } catch (error) {
@@ -226,6 +226,25 @@ export const getActiveUsers = async (page = 1, limit = 50) => {
     throw error
   }
 }
+export const downloadUserdata = async (params = {}, signal) => {
+  try {
+    const response = await api.get(`/user/download-user-data`, {
+      params,
+      responseType: 'blob',
+      signal,
+      timeout: 0, // 🔥 disable axios timeout completely
+      headers: {
+        Accept:
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      }
+    })
+    return response.data
+  } catch (error) {
+    console.error('Error downloading user data:', error)
+    throw error
+  }
+}
+
 export const getInactiveUsers = async (page = 1, limit = 20) => {
   try {
     const response = await api.get(
@@ -238,9 +257,10 @@ export const getInactiveUsers = async (page = 1, limit = 20) => {
   }
 }
 
-export const downloadActiveExcel = async () => {
+export const downloadActiveExcel = async dayCount => {
   try {
     const response = await api.get(`/user/get-active-users-download`, {
+      params: { dayCount },
       responseType: 'blob'
     })
     return response.data
@@ -493,6 +513,30 @@ export const downloadDuplicateUsers = async (params = {}) => {
     return response.data
   } catch (error) {
     console.error('Error downloading incomplete dumped users Excel:', error)
+    throw error
+  }
+}
+
+export const getTransactingUsers = async (params = {}) => {
+  try {
+    const response = await api.get('/user/get-transecting-users', {
+      params
+    })
+    return response.data
+  } catch (error) {
+    console.error('Error fetching transacting user:', error)
+    throw error
+  }
+}
+export const downloadTransactingUsers = async (params = {}) => {
+  try {
+    const response = await api.get(`/user/download-transecting-users`, {
+      params,
+      responseType: 'blob'
+    })
+    return response.data
+  } catch (error) {
+    console.error('Error downloading transacting users Excel:', error)
     throw error
   }
 }

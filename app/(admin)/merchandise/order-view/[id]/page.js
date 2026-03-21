@@ -256,9 +256,9 @@ export default function OrderViewPage () {
           {/* Header */}
           <div className='bg-black px-6 py-4 flex justify-between items-center'>
             <div className='flex items-center gap-3'>
-              <div className='relative w-32 h-10'>
+              <div className='relative w-32 h-20'>
                 <Image
-                  src='/images/logo/fotter_logo.webp'
+                  src='/images/logo/logo.png'
                   alt='Access Bank Detty Fusion'
                   fill
                   className='object-contain'

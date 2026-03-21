@@ -77,7 +77,10 @@ export default function AdminDashboard ({ stats, year, startDate, endDate }) {
     totalActiveUsers: 0,
     totalInactiveUsers: 0,
     registeredUser: 0,
-    unregisteredUsers: 0
+    unregisteredUsers: 0,
+    newRegistrationYesterday: 0,
+    avgDailyGrowthCount: 0,
+    avgDailyGrowthPercent: '0.00%'
   })
   const [txnCounts, setTxnCounts] = useState({
     event: 0,
@@ -100,14 +103,25 @@ export default function AdminDashboard ({ stats, year, startDate, endDate }) {
         if (year) params.year = year
         if (startDate) params.startDate = startDate
         if (endDate) params.endDate = endDate
+        if (typeof params.dayCount === 'undefined') params.dayCount = 10
 
         const res = await dashboardUserActiveInactiveCounts(params)
+        const data = res?.data || {}
+        const pctRaw = String(data.avgDailyGrowthPercent ?? '0.00%')
+        const pctStr = pctRaw.includes('%') ? pctRaw : `${pctRaw}%`
         setUserCounts({
-          totalUsers: Number(res?.data?.totalUserCount || 0),
-          totalActiveUsers: Number(res?.data?.activeUserCount || 0),
-          totalInactiveUsers: Number(res?.data?.inactiveUserCount || 0),
-          registeredUser: Number(res?.data?.registeredUser || 0),
-          unregisteredUsers: Number(res?.data?.unregisteredUsers || 0)
+          totalUsers: Number(data.totalUserCount || 0),
+          totalActiveUsers: Number(
+            data.activeUsers || data.activeUserCount || 0
+          ),
+          totalInactiveUsers: Number(
+            data.inactiveUsers || data.inactiveUserCount || 0
+          ),
+          registeredUser: Number(data.registeredUser || 0),
+          unregisteredUsers: Number(data.unregisteredUsers || 0),
+          newRegistrationYesterday: Number(data.newRegistrationYesterday || 0),
+          avgDailyGrowthCount: Number(data.avgDailyGrowthCount || 0),
+          avgDailyGrowthPercent: pctStr
         })
       } catch (_) {
         setUserCounts({
@@ -115,7 +129,16 @@ export default function AdminDashboard ({ stats, year, startDate, endDate }) {
           totalActiveUsers: Number(stats?.totalActiveUsers || 0),
           totalInactiveUsers: Number(stats?.totalInactiveUsers || 0),
           registeredUser: Number(stats?.registeredUser || 0),
-          unregisteredUsers: Number(stats?.unregisteredUsers || 0)
+          unregisteredUsers: Number(stats?.unregisteredUsers || 0),
+          newRegistrationYesterday: Number(
+            stats?.growth?.users?.newYesterday || 0
+          ),
+          avgDailyGrowthCount: Number(
+            stats?.growth?.users?.avgDailyGrowthCount || 0
+          ),
+          avgDailyGrowthPercent: String(
+            stats?.growth?.users?.avgDailyGrowthPercent || '0.00%'
+          )
         })
       }
 
@@ -318,7 +341,44 @@ export default function AdminDashboard ({ stats, year, startDate, endDate }) {
           bg: 'bg-[#FFF4E8]',
           iconBg: 'bg-gradient-to-r from-[#FFD8A8] to-[#F76707]'
         },
-        ...getGrowthCards('users', 'New Registrations Yesterday')
+        {
+          id: 'users-new',
+          title: 'New Registrations Yesterday',
+          value: userCounts.newRegistrationYesterday || 0,
+          subText: `(${new Date(Date.now() - 86400000).toLocaleDateString(
+            'en-US',
+            { month: 'short', day: 'numeric' }
+          )})`,
+          iconSrc: '/images/dashboard/trending_up.svg',
+          bg: 'bg-[#E8EEFF]',
+          iconBg: 'bg-gradient-to-r from-[#AECBFF] to-[#5A7CC1]'
+        },
+        {
+          id: 'users-avg-count',
+          title: 'Avg Daily Growth (Count)',
+          value: userCounts.avgDailyGrowthCount || 0,
+          subText:
+            Number(userCounts.avgDailyGrowthCount || 0) >= 0
+              ? 'Increasing'
+              : 'Decreasing',
+          iconSrc: '/images/dashboard/trending_up.svg',
+          bg: 'bg-[#F0E8FF]',
+          iconBg: 'bg-gradient-to-r from-[#C4B5FD] to-[#7C3AED]'
+        },
+        {
+          id: 'users-avg-pct',
+          title: 'Avg Daily Growth (%)',
+          value: userCounts.avgDailyGrowthPercent || '0.00%',
+          subText:
+            parseFloat(
+              String(userCounts.avgDailyGrowthPercent || '0').replace('%', '')
+            ) >= 0
+              ? 'Increasing'
+              : 'Decreasing',
+          iconSrc: '/images/dashboard/trending_up.svg',
+          bg: 'bg-[#E8F8F0]',
+          iconBg: 'bg-gradient-to-r from-[#8EEDC7] to-[#3FA574]'
+        }
       ]
     },
     {

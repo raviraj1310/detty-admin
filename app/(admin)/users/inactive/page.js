@@ -80,14 +80,7 @@ export default function InactiveUsersPage () {
       setTotalPages(pages)
 
       const mapped = list.map(u => {
-        const status =
-          typeof u?.status === 'string'
-            ? /^active$/i.test(String(u.status).trim())
-              ? 'Active'
-              : 'Inactive'
-            : u?.status
-            ? 'Active'
-            : 'Inactive'
+        const status = 'Inactive'
 
         return {
           id: u?._id || Math.random().toString(36).slice(2),

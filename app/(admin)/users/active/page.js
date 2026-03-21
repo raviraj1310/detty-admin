@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState, useMemo } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import {
   getActiveUsers,
   downloadActiveExcel
@@ -76,6 +76,12 @@ function PaginationControls ({
 
 export default function ActiveUsersPage () {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const dayCountFromUrl = useMemo(() => {
+    const raw = searchParams?.get('dayCount') || searchParams?.get('days')
+    const parsed = Number(raw)
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : 10
+  }, [searchParams])
   const [loading, setLoading] = useState(false)
   const [exporting, setExporting] = useState(false)
   const [error, setError] = useState('')
@@ -86,6 +92,7 @@ export default function ActiveUsersPage () {
   })
   const [search, setSearch] = useState('')
   const [sort, setSort] = useState({ key: 'name', dir: 'asc' })
+  const [dayCount, setDayCount] = useState(dayCountFromUrl)
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 20,
@@ -93,11 +100,23 @@ export default function ActiveUsersPage () {
   })
 
   useEffect(() => {
+    setDayCount(dayCountFromUrl)
+  }, [dayCountFromUrl])
+
+  useEffect(() => {
+    setPagination(prev => ({ ...prev, page: 1 }))
+  }, [dayCount])
+
+  useEffect(() => {
     const load = async () => {
       setLoading(true)
       setError('')
       try {
-        const res = await getActiveUsers(pagination.page, pagination.limit)
+        const res = await getActiveUsers(
+          pagination.page,
+          pagination.limit,
+          dayCount
+        )
         // res is the response body containing counts and data array
         const list = Array.isArray(res?.data)
           ? res.data
@@ -134,14 +153,8 @@ export default function ActiveUsersPage () {
             : latest?.createdAt
             ? new Date(latest.createdAt).toLocaleString()
             : '-'
-          const status =
-            typeof u?.status === 'string'
-              ? /^active$/i.test(String(u.status).trim())
-                ? 'Active'
-                : 'Inactive'
-              : u?.status
-              ? 'Active'
-              : 'Inactive'
+          const status = 'Active'
+
           return {
             id: u?._id || it?._id || Math.random().toString(36).slice(2),
             name: u?.name || '-',
@@ -168,7 +181,7 @@ export default function ActiveUsersPage () {
       }
     }
     load()
-  }, [pagination.page, pagination.limit])
+  }, [pagination.page, pagination.limit, dayCount])
 
   const filtered = useMemo(() => {
     const t = String(search || '')
@@ -206,13 +219,15 @@ export default function ActiveUsersPage () {
   const handleExport = async () => {
     try {
       setExporting(true)
-      const blob = await downloadActiveExcel()
+      const blob = await downloadActiveExcel(dayCount)
       const url = window.URL.createObjectURL(new Blob([blob]))
       const link = document.createElement('a')
       link.href = url
       link.setAttribute(
         'download',
-        `active_users_${new Date().toISOString().split('T')[0]}.xlsx`
+        `active_users_${dayCount}days_${
+          new Date().toISOString().split('T')[0]
+        }.xlsx`
       )
       document.body.appendChild(link)
       link.click()
@@ -237,6 +252,23 @@ export default function ActiveUsersPage () {
           </nav>
         </div>
         <div className='flex items-center gap-3'>
+          <select
+            value={dayCount}
+            onChange={e => {
+              const next = Number(e.target.value) || 10
+              setDayCount(next)
+              const qs = new URLSearchParams(searchParams?.toString() || '')
+              qs.set('dayCount', String(next))
+              router.replace(`/users/active?${qs.toString()}`)
+            }}
+            className='h-9 px-3 border border-gray-300 rounded-lg text-xs text-gray-700 bg-white focus:outline-none focus:border-indigo-500'
+          >
+            {Array.from({ length: 9 }, (_, i) => (i + 2) * 5).map(d => (
+              <option key={d} value={d}>
+                Last {d} days
+              </option>
+            ))}
+          </select>
           <button
             onClick={() => router.push('/users')}
             className='h-9 px-3 border border-gray-300 rounded-lg text-xs text-gray-700 flex items-center gap-1 hover:bg-gray-100'

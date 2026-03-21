@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { Search, X } from 'lucide-react'
+import Toast from '@/components/ui/Toast'
 import {
   getUserAnalysis,
   getRegisteredUser,
@@ -21,14 +22,14 @@ import {
   getIncompletePasswordReset,
   downloadIncompletePasswordReset,
   getDuplicateUsers,
-  downloadDuplicateUsers
+  downloadDuplicateUsers,
+  getTransactingUsers,
+  downloadTransactingUsers
 } from '@/services/users/user.service'
 
 export default function UserAnalysis () {
-  const [search, setSearch] = useState('')
-  const [dateRange, setDateRange] = useState(() => {
+  const getDefaultDateRange = () => {
     const today = new Date()
-
     const yyyy = today.getUTCFullYear()
     const mm = String(today.getUTCMonth() + 1).padStart(2, '0')
     const dd = String(today.getUTCDate()).padStart(2, '0')
@@ -37,7 +38,10 @@ export default function UserAnalysis () {
       start: '2025-11-01',
       end: `${yyyy}-${mm}-${dd}`
     }
-  })
+  }
+
+  const [search, setSearch] = useState('')
+  const [dateRange, setDateRange] = useState(() => getDefaultDateRange())
   const [page, setPage] = useState(1)
   const [limit, setLimit] = useState(50)
   const [pageCount, setPageCount] = useState(1)
@@ -57,37 +61,27 @@ export default function UserAnalysis () {
   const [error, setError] = useState('')
   const [viewMode, setViewMode] = useState('analysis')
   const [registeredTotal, setRegisteredTotal] = useState(0)
+  const [transactingTotal, setTransactingTotal] = useState(0)
   const [downloading, setDownloading] = useState(false)
+  const [toast, setToast] = useState({
+    open: false,
+    title: '',
+    description: '',
+    variant: 'success'
+  })
 
   useEffect(() => {
     const fetchAnalysis = async () => {
-      if (!dateRange.start || !dateRange.end) {
-        if (viewMode === 'analysis') {
-          setUsers([])
-        }
-        setMeta(prev => ({
-          ...prev,
-          totalRegisteredUsers: 0,
-          totalDumpedUsers: 0,
-          totalManuallyRegisteredUsers: 0,
-          resetPasswordTokenCount: 0,
-          successfullyRegisteredUserWithResetPasswordToken: 0,
-          tempDumpedUsersCount: 0,
-          tempNotDumpedUsers: 0,
-          duplicateUsersCount: 0,
-          incompletePasswordResetCount: 0
-        }))
-        setPageCount(1)
-        setPage(1)
-        return
-      }
+      const def = getDefaultDateRange()
+      const startDate = dateRange.start || def.start
+      const endDate = dateRange.end || def.end
 
       setLoading(true)
       setError('')
       try {
         const params = {
-          startDate: dateRange.start,
-          endDate: dateRange.end,
+          startDate,
+          endDate,
           page,
           pageSize: limit,
           search: search ? search.trim() : undefined
@@ -96,35 +90,38 @@ export default function UserAnalysis () {
         const [res, resIncomplete] = await Promise.all([
           getUserAnalysis(params),
           getIncompletePasswordReset({
-            startDate: dateRange.start,
-            endDate: dateRange.end,
+            startDate,
+            endDate,
             page: 1,
             pageSize: 1
           })
         ])
         const payload = res?.data || res || {}
+        const data = payload?.data || payload
         const payloadIncomplete = resIncomplete?.data || resIncomplete || {}
-        const list = Array.isArray(payload.users) ? payload.users : []
+        const dataIncomplete = payloadIncomplete?.data || payloadIncomplete
+        const list = Array.isArray(data.users) ? data.users : []
 
         setMeta({
-          totalRegisteredUsers: Number(payload.totalRegisteredUsers || 0),
-          totalDumpedUsers: Number(payload.totalDumpedUsers || 0),
+          totalRegisteredUsers: Number(data.totalRegisteredUsers || 0),
+          totalDumpedUsers: Number(data.totalDumpedUsers || 0),
           totalManuallyRegisteredUsers: Number(
-            payload.totalManuallyRegisteredUsers || 0
+            data.totalManuallyRegisteredUsers || 0
           ),
-          resetPasswordTokenCount: Number(payload.resetPasswordTokenCount || 0),
+          resetPasswordTokenCount: Number(data.resetPasswordTokenCount || 0),
           successfullyRegisteredUserWithResetPasswordToken: Number(
-            payload.successfullyRegisteredUserWithResetPasswordToken || 0
+            data.successfullyRegisteredUserWithResetPasswordToken || 0
           ),
-          tempDumpedUsersCount: Number(payload.tempDumpedUsersCount || 0),
-          tempNotDumpedUsers: Number(payload.tempNotDumpedUsers || 0),
-          duplicateUsersCount: Number(payload.duplicateUsersCount || 0),
-          incompletePasswordResetCount: Number(payloadIncomplete.total || 0)
+          tempDumpedUsersCount: Number(data.tempDumpedUsersCount || 0),
+          tempNotDumpedUsers: Number(data.tempNotDumpedUsers || 0),
+          duplicateUsersCount: Number(data.duplicateUsersCount || 0),
+          incompletePasswordResetCount: Number(dataIncomplete.total || 0)
         })
+        setTransactingTotal(Number(data.totalTransactingUsers || 0))
 
-        const srvPage = Number(payload.currentPage ?? page)
-        const srvSize = Number(payload.pageSize ?? limit)
-        const total = Number(payload.totalRegisteredUsers || 0)
+        const srvPage = Number(data.currentPage ?? page)
+        const srvSize = Number(data.pageSize ?? limit)
+        const total = Number(data.totalRegisteredUsers || 0)
         const totalPages =
           srvSize && Number.isFinite(srvSize)
             ? Math.max(1, Math.ceil(total / srvSize) || 1)
@@ -179,6 +176,7 @@ export default function UserAnalysis () {
         'manual',
         'dumpedProvided',
         'effective',
+        'transacting',
         'successfulDumped',
         'incompleteDumped',
         'successPasswordReset',
@@ -188,20 +186,16 @@ export default function UserAnalysis () {
 
       if (!validModes.includes(viewMode)) return
 
-      if (!dateRange.start || !dateRange.end) {
-        setUsers([])
-        setRegisteredTotal(0)
-        setPageCount(1)
-        setPage(1)
-        return
-      }
+      const def = getDefaultDateRange()
+      const startDate = dateRange.start || def.start
+      const endDate = dateRange.end || def.end
 
       setLoading(true)
       setError('')
       try {
         const params = {
-          startDate: dateRange.start,
-          endDate: dateRange.end,
+          startDate,
+          endDate,
           page,
           pageSize: limit,
           search: search ? search.trim() : undefined
@@ -222,6 +216,10 @@ export default function UserAnalysis () {
           case 'effective':
             res = await getEffectiveUsers(params)
             statusLabel = 'Effective User'
+            break
+          case 'transacting':
+            res = await getTransactingUsers(params)
+            statusLabel = 'Transacting User'
             break
           case 'successfulDumped':
             res = await getSuccessfulDumped(params)
@@ -253,16 +251,30 @@ export default function UserAnalysis () {
         if (!isActive) return
 
         const payload = res?.data || res || {}
-        const list = Array.isArray(payload.users) ? payload.users : []
+        const data = payload?.data || payload
+        const list = Array.isArray(data.users) ? data.users : []
 
-        setRegisteredTotal(Number(payload.total || 0))
+        const totalValue = Number(
+          data.total ??
+            data.totalUsers ??
+            data.totalCount ??
+            data.totalTransactingUsers ??
+            list.length ??
+            0
+        )
+        setRegisteredTotal(Number.isFinite(totalValue) ? totalValue : 0)
 
-        const srvPage = Number(payload.currentPage ?? page)
-        const srvSize = Number(payload.pageSize ?? limit)
+        const srvPage = Number(data.currentPage ?? page)
+        const srvSize = Number(data.pageSize ?? limit)
         const totalPages =
-          Number(payload.totalPages) ||
+          Number(data.totalPages) ||
           (srvSize && Number.isFinite(srvSize)
-            ? Math.max(1, Math.ceil(Number(payload.total || 0) / srvSize) || 1)
+            ? Math.max(
+                1,
+                Math.ceil(
+                  (Number.isFinite(totalValue) ? totalValue : 0) / srvSize
+                ) || 1
+              )
             : 1)
 
         if (Number.isFinite(srvPage) && srvPage > 0 && srvPage !== page) {
@@ -343,11 +355,13 @@ export default function UserAnalysis () {
   }, [filteredUsers, meta])
 
   const handleDownloadRegisteredExcel = async () => {
+    if (downloading) return
     if (
       viewMode !== 'registered' &&
       viewMode !== 'manual' &&
       viewMode !== 'dumpedProvided' &&
       viewMode !== 'effective' &&
+      viewMode !== 'transacting' &&
       viewMode !== 'successfulDumped' &&
       viewMode !== 'incompleteDumped' &&
       viewMode !== 'successPasswordReset' &&
@@ -356,74 +370,152 @@ export default function UserAnalysis () {
     )
       return
 
-    if (!dateRange.start || !dateRange.end) {
-      setError('Please select start and end date before downloading')
-      return
-    }
+    const def = getDefaultDateRange()
+    const start = dateRange.start || def.start
+    const end = dateRange.end || def.end
+
     try {
       setDownloading(true)
+      setToast({
+        open: true,
+        title: 'Exporting users',
+        description: 'This may take a moment',
+        variant: 'info'
+      })
       const params = {
-        startDate: dateRange.start,
-        endDate: dateRange.end,
+        startDate: start,
+        endDate: end,
         search: search ? search.trim() : undefined
       }
       const isManual = viewMode === 'manual'
       const isDumpedProvided = viewMode === 'dumpedProvided'
       const isEffective = viewMode === 'effective'
+      const isTransacting = viewMode === 'transacting'
       const isSuccessfulDumped = viewMode === 'successfulDumped'
       const isIncompleteDumped = viewMode === 'incompleteDumped'
       const isSuccessPasswordReset = viewMode === 'successPasswordReset'
       const isIncompletePasswordReset = viewMode === 'incompletePasswordReset'
       const isDuplicateUsers = viewMode === 'duplicateUsers'
-      const blob = await (isManual
-        ? downloadManuallyRegisteredExcel(params)
-        : isDumpedProvided
-        ? downloadDumpedUserProvided(params)
-        : isEffective
-        ? downloadEffectiveUsers(params)
-        : isSuccessfulDumped
-        ? downloadSuccessfulDumped(params)
-        : isIncompleteDumped
-        ? downloadIncompleteDumped(params)
-        : isSuccessPasswordReset
-        ? downloadSuccessPasswordReset(params)
-        : isIncompletePasswordReset
-        ? downloadIncompletePasswordReset(params)
-        : isDuplicateUsers
-        ? downloadDuplicateUsers(params)
-        : downloadRegisteredExcel(params))
-      const url = window.URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      const start = dateRange.start
-      const end = dateRange.end
-      a.href = url
-      a.download = isManual
-        ? `manually-registered-users-${start}-to-${end}.xlsx`
-        : isDumpedProvided
-        ? `dumped-users-provided-${start}-to-${end}.xlsx`
-        : isEffective
-        ? `effective-users-${start}-to-${end}.xlsx`
-        : isSuccessfulDumped
-        ? `successful-dumped-users-${start}-to-${end}.xlsx`
-        : isIncompleteDumped
-        ? `incomplete-dumped-users-${start}-to-${end}.xlsx`
-        : isSuccessPasswordReset
-        ? `success-password-reset-${start}-to-${end}.xlsx`
-        : isIncompletePasswordReset
-        ? `incomplete-password-reset-${start}-to-${end}.xlsx`
-        : isDuplicateUsers
-        ? `duplicate-users-${start}-to-${end}.xlsx`
-        : `registered-users-${start}-to-${end}.xlsx`
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-      window.URL.revokeObjectURL(url)
+
+      const CHUNK_SIZE = 50000
+      const total = Number(registeredTotal || 0)
+      const totalChunks =
+        Number.isFinite(total) && total > 0
+          ? Math.max(1, Math.ceil(total / CHUNK_SIZE) || 1)
+          : 1
+
+      for (let chunk = 1; chunk <= totalChunks; chunk++) {
+        setToast({
+          open: true,
+          title: 'Exporting users',
+          description: `Downloading file ${chunk} of ${totalChunks}`,
+          variant: 'info'
+        })
+        const blob = await (isManual
+          ? downloadManuallyRegisteredExcel({
+              ...params,
+              chunk,
+              chunkSize: CHUNK_SIZE
+            })
+          : isDumpedProvided
+          ? downloadDumpedUserProvided({
+              ...params,
+              chunk,
+              chunkSize: CHUNK_SIZE
+            })
+          : isEffective
+          ? downloadEffectiveUsers({ ...params, chunk, chunkSize: CHUNK_SIZE })
+          : isTransacting
+          ? downloadTransactingUsers({
+              ...params,
+              chunk,
+              chunkSize: CHUNK_SIZE
+            })
+          : isSuccessfulDumped
+          ? downloadSuccessfulDumped({
+              ...params,
+              chunk,
+              chunkSize: CHUNK_SIZE
+            })
+          : isIncompleteDumped
+          ? downloadIncompleteDumped({
+              ...params,
+              chunk,
+              chunkSize: CHUNK_SIZE
+            })
+          : isSuccessPasswordReset
+          ? downloadSuccessPasswordReset({
+              ...params,
+              chunk,
+              chunkSize: CHUNK_SIZE
+            })
+          : isIncompletePasswordReset
+          ? downloadIncompletePasswordReset({
+              ...params,
+              chunk,
+              chunkSize: CHUNK_SIZE
+            })
+          : isDuplicateUsers
+          ? downloadDuplicateUsers({ ...params, chunk, chunkSize: CHUNK_SIZE })
+          : downloadRegisteredExcel({
+              ...params,
+              chunk,
+              chunkSize: CHUNK_SIZE
+            }))
+
+        const url = window.URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        const baseName = isManual
+          ? `manually-registered-users-${start}-to-${end}`
+          : isDumpedProvided
+          ? `dumped-users-provided-${start}-to-${end}`
+          : isEffective
+          ? `effective-users-${start}-to-${end}`
+          : isTransacting
+          ? `transacting-users-${start}-to-${end}`
+          : isSuccessfulDumped
+          ? `successful-dumped-users-${start}-to-${end}`
+          : isIncompleteDumped
+          ? `incomplete-dumped-users-${start}-to-${end}`
+          : isSuccessPasswordReset
+          ? `success-password-reset-${start}-to-${end}`
+          : isIncompletePasswordReset
+          ? `incomplete-password-reset-${start}-to-${end}`
+          : isDuplicateUsers
+          ? `duplicate-users-${start}-to-${end}`
+          : `registered-users-${start}-to-${end}`
+
+        a.download =
+          totalChunks > 1
+            ? `${baseName}_file${chunk}_of_${totalChunks}.xlsx`
+            : `${baseName}.xlsx`
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        window.URL.revokeObjectURL(url)
+      }
+      setToast({
+        open: true,
+        title: 'Export complete',
+        description: 'Excel downloaded successfully',
+        variant: 'success'
+      })
     } catch (err) {
       setError(
         err?.response?.data?.message ||
           err?.message ||
           'Failed to download registered users Excel'
       )
+      setToast({
+        open: true,
+        title: 'Export failed',
+        description:
+          err?.response?.data?.message ||
+          err?.message ||
+          'Failed to download Excel',
+        variant: 'error'
+      })
     } finally {
       setDownloading(false)
     }
@@ -431,6 +523,15 @@ export default function UserAnalysis () {
 
   return (
     <div className='p-4 h-full flex flex-col bg-white'>
+      <Toast
+        open={toast.open}
+        onOpenChange={v => setToast(prev => ({ ...prev, open: v }))}
+        title={toast.title}
+        description={toast.description}
+        variant={toast.variant}
+        duration={toast.variant === 'info' ? 0 : 2500}
+        position='top-right'
+      />
       <div className='flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6'>
         <div>
           <h1 className='text-xl font-bold text-gray-900 mb-1'>
@@ -473,7 +574,10 @@ export default function UserAnalysis () {
           </div>
           {(dateRange.start || dateRange.end) && (
             <button
-              onClick={() => setDateRange({ start: '', end: '' })}
+              onClick={() => {
+                setPage(1)
+                setDateRange({ start: '', end: '' })
+              }}
               className='mt-4 p-2 text-gray-500 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors'
               title='Clear Date Filter'
             >
@@ -483,7 +587,7 @@ export default function UserAnalysis () {
         </div>
       </div>
 
-      <div className='grid grid-cols-1 md:grid-cols-2 gap-4 mb-4'>
+      <div className='grid grid-cols-1 md:grid-cols-3 gap-4 mb-4'>
         <button
           type='button'
           onClick={() => {
@@ -548,7 +652,7 @@ export default function UserAnalysis () {
           className='bg-gradient-to-r from-[#E8FFF4] to-[#C5F5DD] rounded-xl border border-gray-200 p-4 flex flex-col gap-3 text-left hover:shadow-md transition-shadow'
         >
           <span className='text-xs font-medium text-gray-500 uppercase tracking-wide'>
-            Total Transacting Users
+            Total Effective Users
           </span>
           <div className='text-2xl font-semibold text-emerald-600'>
             {(stats.manuallyRegistered || 0) +
@@ -557,6 +661,25 @@ export default function UserAnalysis () {
           <p className='text-[11px] text-gray-500'>
             Manually registered and dumped users who reset their password in the
             selected period.
+          </p>
+        </button>
+
+        <button
+          type='button'
+          onClick={() => {
+            setViewMode('transacting')
+            setPage(1)
+          }}
+          className='bg-gradient-to-r from-[#E8EEFF] to-[#C5D5FF] rounded-xl border border-gray-200 p-4 flex flex-col gap-3 text-left hover:shadow-md transition-shadow'
+        >
+          <span className='text-xs font-medium text-gray-500 uppercase tracking-wide'>
+            Total Transacting Users
+          </span>
+          <div className='text-2xl font-semibold text-indigo-600'>
+            {Number(transactingTotal || 0)}
+          </div>
+          <p className='text-[11px] text-gray-500'>
+            Users returned from transacting users in selected period.
           </p>
         </button>
       </div>
@@ -670,6 +793,8 @@ export default function UserAnalysis () {
                   : viewMode === 'dumpedProvided'
                   ? 'Dumped Users Provided'
                   : viewMode === 'effective'
+                  ? 'Effective Users'
+                  : viewMode === 'transacting'
                   ? 'Transacting Users'
                   : viewMode === 'successfulDumped'
                   ? 'Successfully Dumped Users'
@@ -691,6 +816,8 @@ export default function UserAnalysis () {
                   : viewMode === 'dumpedProvided'
                   ? `Showing ${filteredUsers.length} dumped users provided on page ${page} of ${pageCount}. Total ${registeredTotal} dumped users provided in range.`
                   : viewMode === 'effective'
+                  ? `Showing ${filteredUsers.length} effective users on page ${page} of ${pageCount}. Total ${registeredTotal} effective users in range.`
+                  : viewMode === 'transacting'
                   ? `Showing ${filteredUsers.length} transacting users on page ${page} of ${pageCount}. Total ${registeredTotal} transacting users in range.`
                   : viewMode === 'successfulDumped'
                   ? `Showing ${filteredUsers.length} successfully dumped users on page ${page} of ${pageCount}. Total ${registeredTotal} successfully dumped users in range.`
@@ -710,6 +837,7 @@ export default function UserAnalysis () {
                 viewMode === 'manual' ||
                 viewMode === 'dumpedProvided' ||
                 viewMode === 'effective' ||
+                viewMode === 'transacting' ||
                 viewMode === 'successfulDumped' ||
                 viewMode === 'incompleteDumped' ||
                 viewMode === 'successPasswordReset' ||

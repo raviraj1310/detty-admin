@@ -93,6 +93,20 @@ export default function TicketsBooked () {
   const router = useRouter()
   const params = useParams()
   const eventId = params?.id
+  const toNumber = v => {
+    if (v == null || v === '') return null
+    if (typeof v === 'number') return Number.isFinite(v) ? v : null
+    const n = parseFloat(String(v).replace(/[^0-9.-]/g, ''))
+    return Number.isFinite(n) ? n : null
+  }
+  const formatCurrency = amount => {
+    const n = toNumber(amount)
+    if (n == null) return '-'
+    return `₦${Number(n).toLocaleString('en-NG', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    })}`
+  }
   const [searchTerm, setSearchTerm] = useState('')
   const [summary, setSummary] = useState({
     total: 0,
@@ -162,10 +176,14 @@ export default function TicketsBooked () {
             userName: b.buyer && b.buyer.fullName ? b.buyer.fullName : '-',
             email: b.buyer && b.buyer.email ? b.buyer.email : '-',
             phoneNumber: b.buyer && b.buyer.phone ? b.buyer.phone : '-',
-            ticketsBooked: `${
-              typeof b.quantity === 'number' ? b.quantity : '-'
-            } x ${b.ticketName || '-'}`,
-            amount: typeof b.totalPrice === 'number' ? b.totalPrice : '-',
+            ticketsBooked: `${toNumber(b.quantity) ?? '-'} x ${
+              b.ticketName || '-'
+            }`,
+            quantity: toNumber(b.quantity),
+            amount: toNumber(b.totalPrice ?? b.amount ?? b.finalPayableAmount),
+            totalPrice: toNumber(
+              b.totalPrice ?? b.amount ?? b.finalPayableAmount
+            ),
             paymentStatus: String(b.paymentStatus || 'Pending'),
             status: String(b.status || 'Pending'),
             attendees: Array.isArray(b.attendees) ? b.attendees : [],
@@ -193,14 +211,14 @@ export default function TicketsBooked () {
             0
           )
 
-          const stats = bookingsRes?.data || {}
+          const stats = bookingsRes?.data?.data || bookingsRes?.data || {}
 
           setSummary({
             total: Number(stats.totalTicketCount) || 0,
             booked: Number(stats.totalBookedCount) || 0,
             unbooked: Number(stats.totalUnbookedCount) || 0,
-            totalAmount: '-',
-            bookedAmount: '-',
+            totalAmount: toNumber(stats.totalRevenue),
+            bookedAmount: toNumber(stats.totalRevenue),
             unbookedAmount: '-',
             eventName: s.eventName || 'Event'
           })
@@ -211,8 +229,9 @@ export default function TicketsBooked () {
           setBookings(sorted)
         } else {
           const res = await getEventBookedTicket()
-          const raw = Array.isArray(res?.data?.tickets)
-            ? res.data.tickets
+          const stats = res?.data?.data || res?.data || res || {}
+          const raw = Array.isArray(stats?.tickets)
+            ? stats.tickets
             : Array.isArray(res?.tickets)
             ? res.tickets
             : Array.isArray(res?.data)
@@ -224,50 +243,68 @@ export default function TicketsBooked () {
             userName: b.buyer && b.buyer.fullName ? b.buyer.fullName : '-',
             email: b.buyer && b.buyer.email ? b.buyer.email : '-',
             phoneNumber: b.buyer && b.buyer.phone ? b.buyer.phone : '-',
-            ticketsBooked: `${
-              typeof b.quantity === 'number' ? b.quantity : '-'
-            } x ${b.ticketName || '-'}`,
-            amount: typeof b.totalPrice === 'number' ? b.totalPrice : '-',
+            ticketsBooked: `${toNumber(b.quantity) ?? '-'} x ${
+              b.ticketName || '-'
+            }`,
+            quantity: toNumber(b.quantity),
+            amount: toNumber(b.totalPrice ?? b.amount ?? b.finalPayableAmount),
+            totalPrice: toNumber(
+              b.totalPrice ?? b.amount ?? b.finalPayableAmount
+            ),
             paymentStatus: String(b.paymentStatus || 'Pending'),
             status: String(b.status || 'Pending'),
             attendees: Array.isArray(b.attendees) ? b.attendees : [],
             buyer: b.buyer || null,
             event: b.event || null,
             arrivalDate: b.arrivalDate || null,
-            quantity: b.quantity,
             ticketId: b.ticketId,
             discountApplied: b.discountApplied
           }))
 
-          // Calculate stats from unique ticket types in the list
-          const uniqueTickets = new Map()
-          list.forEach(b => {
-            if (b.ticketId && b.ticketId._id) {
-              uniqueTickets.set(b.ticketId._id, b.ticketId)
-            }
-          })
+          const hasTotals =
+            typeof stats.totalTicketCount !== 'undefined' ||
+            typeof stats.totalBookedCount !== 'undefined' ||
+            typeof stats.totalUnbookedCount !== 'undefined'
 
-          let totalSold = 0
-          let totalLeft = 0
+          if (hasTotals) {
+            setSummary({
+              total: Number(stats.totalTicketCount) || 0,
+              booked: Number(stats.totalBookingCount) || 0,
+              unbooked: Number(stats.totalUnbookedCount) || 0,
+              totalAmount: toNumber(stats.totalRevenue),
+              bookedAmount: toNumber(stats.totalRevenue),
+              unbookedAmount: '-'
+            })
+          } else {
+            const uniqueTickets = new Map()
+            list.forEach(b => {
+              if (b.ticketId && b.ticketId._id) {
+                uniqueTickets.set(b.ticketId._id, b.ticketId)
+              }
+            })
 
-          uniqueTickets.forEach(t => {
-            totalSold += Number(t.ticketCount || 0)
-            totalLeft += Number(t.ticketLeft || 0)
-          })
+            let totalSold = 0
+            let totalLeft = 0
 
-          const calculatedBooked = list.reduce(
-            (acc, curr) => acc + (Number(curr.quantity) || 0),
-            0
-          )
+            uniqueTickets.forEach(t => {
+              totalSold += Number(t.ticketCount || 0)
+              totalLeft += Number(t.ticketLeft || 0)
+            })
 
-          setSummary({
-            total: totalSold > 0 ? totalSold + totalLeft : 0,
-            booked: totalSold > 0 ? totalSold : calculatedBooked,
-            unbooked: totalLeft > 0 ? totalLeft : 0,
-            totalAmount: '-',
-            bookedAmount: '-',
-            unbookedAmount: '-'
-          })
+            const calculatedBooked = list.reduce(
+              (acc, curr) => acc + (Number(curr.quantity) || 0),
+              0
+            )
+
+            setSummary({
+              total: totalSold > 0 ? totalSold + totalLeft : 0,
+              booked: totalSold > 0 ? totalSold : calculatedBooked,
+              unbooked: totalLeft > 0 ? totalLeft : 0,
+              totalAmount: '-',
+              bookedAmount: '-',
+              unbookedAmount: '-'
+            })
+          }
           const sorted = [...list].sort(
             (a, b) => toTime(b.bookedOn) - toTime(a.bookedOn)
           )
@@ -498,6 +535,8 @@ export default function TicketsBooked () {
 
     const dataToExport = bookings.map(b => ({
       'Booking ID': b.bookingId || b.id || '',
+      'Transaction Ref':
+        b.transactionRef || (b.booking && b.booking.transactionRef) || '-',
       'Booked On': toLocal(b.bookedOn || b.createdAt || b.updatedAt),
       'Payment Status': b.paymentStatus || '-',
       Status: b.status || '-',
@@ -517,16 +556,13 @@ export default function TicketsBooked () {
       'User Email': (b.user && b.user.email) || '-',
       'Ticket Name': b.ticketName || '-',
       'Ticket Type': b.ticketType || '-',
-      Quantity: typeof b.quantity === 'number' ? b.quantity : 0,
+      Quantity: toNumber(b.quantity) ?? 0,
       'Price Per Ticket':
-        (b.ticketId && b.ticketId.perTicketPrice) ||
-        (typeof b.perTicketPrice === 'number' ? b.perTicketPrice : 0),
+        toNumber(
+          (b.ticketId && b.ticketId.perTicketPrice) || b.perTicketPrice
+        ) ?? 0,
       'Total Price':
-        typeof b.totalPrice === 'number'
-          ? b.totalPrice
-          : typeof b.amount === 'number'
-          ? b.amount
-          : 0,
+        toNumber(b.totalPrice ?? b.amount ?? b.finalPayableAmount) ?? 0,
       'Arrival Date': toLocal(b.arrivalDate)
       // Attendees: Array.isArray(b.attendees)
       //   ? b.attendees.map(a => a.fullName).join(', ')
@@ -588,7 +624,11 @@ export default function TicketsBooked () {
             card.id === 'total'
               ? summary?.total || card.value
               : card.id === 'booked'
-              ? summary?.booked || card.value
+              ? typeof summary?.bookedAmount === 'number'
+                ? `${summary?.booked || 0} (${formatCurrency(
+                    summary.bookedAmount
+                  )})`
+                : summary?.booked || card.value
               : summary?.unbooked || card.value
 
           return (

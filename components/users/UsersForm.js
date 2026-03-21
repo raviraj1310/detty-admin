@@ -6,18 +6,18 @@ import Image from 'next/image'
 import {
   getUsers,
   changeUserStatus,
-  getUserWithProfile
+  getUserWithProfile,
+  downloadUserdata
 } from '@/services/users/user.service'
 import { dashboardUserActiveInactiveCounts } from '@/services/auth/login.service'
 import Toast from '@/components/ui/Toast'
-import { ChevronUp, ChevronDown, X } from 'lucide-react'
+import { ChevronUp, ChevronDown, Loader2 } from 'lucide-react'
 import {
   TbCaretUpDownFilled,
   TbTrendingUp,
   TbTrendingDown
 } from 'react-icons/tb'
 import { FaUserPlus, FaChartColumn } from 'react-icons/fa6'
-import { downloadExcel } from '@/utils/excelExport'
 
 const mapUser = d => {
   const created = d?.createdAt || d?.created_on || d?.created || ''
@@ -71,8 +71,18 @@ const mapUser = d => {
     createdTs,
     status,
     avatar: d?.avatar || '/images/backend/side_menu/side_menu (1).svg',
-    bookingCounts: Number(d?.bookingCounts || 0),
-    bookingTotalAmount: Number(d?.bookingValues?.totalAmount || 0)
+    bookingCounts: Number(
+      d?.totalBookingCount ??
+        d?.bookingCounts ??
+        d?.bookingValues?.totalBookings ??
+        0
+    ),
+    bookingTotalAmount: Number(
+      d?.totalSpent ??
+        d?.bookingTotalAmount ??
+        d?.bookingValues?.totalAmount ??
+        0
+    )
   }
 }
 
@@ -634,7 +644,6 @@ function UserDetailModal ({ open, userId, onClose }) {
 }
 
 export default function UsersForm ({
-  defaultStatus = '',
   visibleStats = null,
   fetchUsersFn = null
 }) {
@@ -643,7 +652,7 @@ export default function UsersForm ({
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [sort, setSort] = useState({ key: null, dir: 'asc' })
+  const [sort, setSort] = useState({ key: 'createdTs', dir: 'desc' })
   const [toast, setToast] = useState({
     open: false,
     title: '',
@@ -653,13 +662,10 @@ export default function UsersForm ({
   const [updatingId, setUpdatingId] = useState('')
   const [detailOpen, setDetailOpen] = useState(false)
   const [detailUserId, setDetailUserId] = useState('')
-  const [filtersOpen, setFiltersOpen] = useState(false)
-  const [statusFilter, setStatusFilter] = useState(defaultStatus)
   const [page, setPage] = useState(1)
   const [limit, setLimit] = useState(50)
   const [totalCount, setTotalCount] = useState(0)
   const [pageCount, setPageCount] = useState(1)
-  const [allCachedUsers, setAllCachedUsers] = useState(null)
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const [globalStats, setGlobalStats] = useState({
     total: 0,
@@ -683,51 +689,42 @@ export default function UsersForm ({
 
   const fetchStats = async () => {
     try {
-      // Just fetch one user to check for metadata stats
-      // We avoid fetching all users (limit=5000) to prevent timeouts and network congestion
-      const params = { limit: 1 }
+      const params = {}
       if (dateRange.start) params.startDate = dateRange.start
       if (dateRange.end) params.endDate = dateRange.end
       params.dayCount = activeUsersDays
 
-      const [res, dashboardRes] = await Promise.all([
-        getUsers(params),
-        dashboardUserActiveInactiveCounts(params)
-      ])
+      const dashboardRes = await dashboardUserActiveInactiveCounts(params)
+      const dash = dashboardRes?.data?.data || dashboardRes?.data || {}
 
-      const payload = res?.data || res || {}
+      const now = new Date()
+      const yesterday = new Date(now)
+      yesterday.setDate(yesterday.getDate() - 1)
+      const yesterdayDateStr = yesterday.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric'
+      })
 
-      // Check if API provides the stats directly
-      if (
-        typeof payload?.activeUsers !== 'undefined' &&
-        typeof payload?.newRegistrationYesterday !== 'undefined'
-      ) {
-        const apiAvgCount = Number(payload.avgDailyGrowthCount || 0)
-        const apiAvgPctStr = String(payload.avgDailyGrowthPercent || '0')
-        const apiAvgPct = parseFloat(apiAvgPctStr.replace('%', ''))
+      const apiAvgCount = Number(dash.avgDailyGrowthCount || 0)
+      const rawPct = String(dash.avgDailyGrowthPercent ?? '0')
+      const pctStr = rawPct.includes('%') ? rawPct : `${rawPct}%`
+      const pctNum = parseFloat(String(rawPct).replace('%', ''))
 
-        const now = new Date()
-        const yesterday = new Date(now)
-        yesterday.setDate(yesterday.getDate() - 1)
-        const yesterdayDateStr = yesterday.toLocaleDateString('en-US', {
-          month: 'short',
-          day: 'numeric'
-        })
-
-        setGlobalStats({
-          total: Number(payload.total || 0),
-          active: Number(payload.activeUsers || 0),
-          inactive: Number(payload.inactiveUsers || 0),
-          yesterdayCount: Number(payload.newRegistrationYesterday || 0),
-          yesterdayDateStr,
-          avgGrowthCount: apiAvgCount,
-          isCountIncreasing: apiAvgCount >= 0,
-          avgGrowthPercent: apiAvgPctStr,
-          isPctIncreasing: apiAvgPct >= 0,
-          registered: Number(dashboardRes?.data?.registeredUser || 0),
-          unregistered: Number(dashboardRes?.data?.unregisteredUsers || 0)
-        })
-      }
+      setGlobalStats({
+        total: Number(dash.totalUserCount || 0),
+        active: Number(dash.activeUsers || dash.activeUserCount || 0),
+        inactive: Number(dash.inactiveUsers || dash.inactiveUserCount || 0),
+        yesterdayCount: Number(dash.newRegistrationYesterday || 0),
+        yesterdayDateStr,
+        avgGrowthCount: apiAvgCount,
+        isCountIncreasing: apiAvgCount >= 0,
+        avgGrowthPercent: pctStr,
+        isPctIncreasing: !Number.isNaN(pctNum) ? pctNum >= 0 : false,
+        registered: Number(dash.registeredUser || 0),
+        unregistered: Number(
+          dash.unregisteredUsers || dash.unregisteredUser || 0
+        )
+      })
     } catch (e) {
       console.error('Failed to fetch stats', e)
     }
@@ -746,64 +743,52 @@ export default function UsersForm ({
 
   useEffect(() => {
     setPage(1)
-  }, [debouncedSearch, statusFilter])
+  }, [debouncedSearch, dateRange.start, dateRange.end])
+
+  useEffect(() => {
+    setPage(1)
+  }, [sort.key, sort.dir])
 
   useEffect(() => {
     const abortController = new AbortController()
     const signal = abortController.signal
 
     const load = async () => {
-      // If we have cached users, use them for instant client-side search/filtering
-      // This enables fuzzy search on formatted dates (which backend doesn't support)
-      // and fast filtering without API calls
-      if (allCachedUsers && allCachedUsers.length > 0) {
-        setUsers(allCachedUsers)
-        setLoading(false)
-        return
-      }
-
       setLoading(true)
       setError('')
       try {
+        const sortByMap = {
+          createdTs: 'createdAt',
+          name: 'name',
+          email: 'email',
+          phone: 'phoneNumber',
+          walletPointsNum: 'walletPoints',
+          bookingCounts: 'totalBookingCount',
+          bookingTotalAmount: 'totalSpent'
+        }
+        const allowedSortFields = new Set([
+          'name',
+          'email',
+          'phoneNumber',
+          'walletPoints',
+          'totalBookingCount',
+          'totalSpent',
+          'createdAt'
+        ])
+
         const params = { page, limit }
         if (debouncedSearch) params.search = debouncedSearch
-        if (statusFilter) params.status = statusFilter
         if (dateRange.start) params.startDate = dateRange.start
         if (dateRange.end) params.endDate = dateRange.end
         params.dayCount = activeUsersDays
+        const sortBy = sortByMap[sort.key]
+        if (sortBy && allowedSortFields.has(sortBy)) {
+          params.sortBy = sortBy
+          params.sortOrder = sort.dir === 'asc' ? 'asc' : 'desc'
+        }
 
         const res = await getUsers(params, signal)
         const payload = res?.data || res || {}
-
-        // Update stats from API response if available
-        if (
-          typeof payload?.activeUsers !== 'undefined' &&
-          typeof payload?.newRegistrationYesterday !== 'undefined'
-        ) {
-          const apiAvgCount = Number(payload.avgDailyGrowthCount || 0)
-          const apiAvgPctStr = String(payload.avgDailyGrowthPercent || '0')
-          const apiAvgPct = parseFloat(apiAvgPctStr.replace('%', ''))
-
-          const now = new Date()
-          const yesterday = new Date(now)
-          yesterday.setDate(yesterday.getDate() - 1)
-          const yesterdayDateStr = yesterday.toLocaleDateString('en-US', {
-            month: 'short',
-            day: 'numeric'
-          })
-
-          setGlobalStats({
-            total: Number(payload.total || 0),
-            active: Number(payload.activeUsers || 0),
-            inactive: Number(payload.inactiveUsers || 0),
-            yesterdayCount: Number(payload.newRegistrationYesterday || 0),
-            yesterdayDateStr,
-            avgGrowthCount: apiAvgCount,
-            isCountIncreasing: apiAvgCount >= 0,
-            avgGrowthPercent: apiAvgPctStr,
-            isPctIncreasing: apiAvgPct >= 0
-          })
-        }
 
         const list = Array.isArray(payload?.users)
           ? payload.users
@@ -847,10 +832,11 @@ export default function UsersForm ({
     page,
     limit,
     debouncedSearch,
-    statusFilter,
-    allCachedUsers,
     dateRange.start,
-    dateRange.end
+    dateRange.end,
+    sort.key,
+    sort.dir,
+    activeUsersDays
   ])
 
   const handleStatusChange = async (userId, newStatus) => {
@@ -926,10 +912,6 @@ export default function UsersForm ({
         return matchesText || matchesClean || matchesDigits
       })
     }
-    if (statusFilter) {
-      base = base.filter(u => u.status === statusFilter)
-    }
-
     // Date range filtering (client-side)
     if (dateRange.start) {
       const startTs = new Date(dateRange.start).setHours(0, 0, 0, 0)
@@ -941,56 +923,15 @@ export default function UsersForm ({
     }
 
     return base
-  }, [users, searchTerm, statusFilter, dateRange])
+  }, [users, searchTerm, dateRange])
 
   const sortedUsers = useMemo(() => {
-    const arr = [...filteredUsers]
-    if (!sort.key) return arr
-    const dir = sort.dir === 'asc' ? 1 : -1
-    const getVal = u => {
-      switch (sort.key) {
-        case 'createdTs':
-          return u.createdTs || 0
-        case 'name':
-          return String(u.name || '').toLowerCase()
-        case 'email':
-          return String(u.email || '').toLowerCase()
-        case 'phone':
-          return String(u.phone || '').toLowerCase()
-        case 'walletPointsNum':
-          return Number(u.walletPointsNum || 0)
-        case 'status':
-          return u.status === 'Active' ? 'Active' : 'Inactive'
-        default:
-          return ''
-      }
-    }
-    arr.sort((a, b) => {
-      const va = getVal(a)
-      const vb = getVal(b)
-      if (va < vb) return -1 * dir
-      if (va > vb) return 1 * dir
-      return 0
-    })
-    return arr
-  }, [filteredUsers, sort])
-
-  // Update pagination info when using client-side data
-  useEffect(() => {
-    if (allCachedUsers && users === allCachedUsers) {
-      const count = sortedUsers.length
-      setTotalCount(count)
-      setPageCount(Math.ceil(count / limit) || 1)
-    }
-  }, [allCachedUsers, users, sortedUsers.length, limit])
+    return filteredUsers
+  }, [filteredUsers])
 
   const paginatedUsers = useMemo(() => {
-    if (allCachedUsers && users === allCachedUsers) {
-      const start = (page - 1) * limit
-      return sortedUsers.slice(start, start + limit)
-    }
     return sortedUsers
-  }, [allCachedUsers, users, sortedUsers, page, limit])
+  }, [sortedUsers])
 
   const toggleSort = key => {
     setSort(prev => {
@@ -1001,107 +942,88 @@ export default function UsersForm ({
     })
   }
 
-  const handleToggleFilters = () => {
-    setFiltersOpen(v => !v)
-  }
-
   const handleDownloadExcel = async () => {
+    if (exporting) return
     try {
+      setToast({
+        open: true,
+        title: 'Exporting users',
+        description: 'This may take a moment',
+        variant: 'info'
+      })
+
       setExporting(true)
-      const baseParams = { page: 1, limit: 5000 }
-      if (debouncedSearch) baseParams.search = debouncedSearch
-      if (statusFilter) baseParams.status = statusFilter
-      baseParams.dayCount = activeUsersDays
-      const firstRes = await getUsers(baseParams)
-      const firstPayload = firstRes?.data || firstRes || {}
-      const firstList = Array.isArray(firstPayload?.users)
-        ? firstPayload.users
-        : Array.isArray(firstRes?.data)
-        ? firstRes.data
-        : Array.isArray(firstRes)
-        ? firstRes
-        : []
-      const pages = Number(firstPayload?.pages ?? 1)
-      const requests = []
-      for (let p = 2; p <= pages; p++) {
-        requests.push(getUsers({ ...baseParams, page: p }))
+      const CHUNK_SIZE = 50000
+      const sortByMap = {
+        createdTs: 'createdAt',
+        name: 'name',
+        email: 'email',
+        phone: 'phoneNumber',
+        walletPointsNum: 'walletPoints',
+        bookingCounts: 'totalBookingCount',
+        bookingTotalAmount: 'totalSpent'
       }
-      const results = requests.length ? await Promise.all(requests) : []
-      const rest = results.flatMap(r => {
-        const pl = r?.data || r || {}
-        const arr = Array.isArray(pl?.users)
-          ? pl.users
-          : Array.isArray(r?.data)
-          ? r.data
-          : Array.isArray(r)
-          ? r
-          : []
-        return arr
+      const params = {}
+      if (debouncedSearch) params.search = debouncedSearch
+      if (dateRange.start) params.startDate = dateRange.start
+      if (dateRange.end) params.endDate = dateRange.end
+      params.dayCount = activeUsersDays
+      if (sort.key && sortByMap[sort.key]) {
+        params.sortBy = sortByMap[sort.key]
+        params.sortOrder = sort.dir === 'asc' ? 'asc' : 'desc'
+      }
+
+      const total = Number(totalCount || 0)
+      const totalChunks = Math.max(1, Math.ceil(total / CHUNK_SIZE) || 1)
+
+      for (let chunk = 1; chunk <= totalChunks; chunk++) {
+        setToast({
+          open: true,
+          title: 'Exporting users',
+          description: `Downloading file ${chunk} of ${totalChunks}`,
+          variant: 'info'
+        })
+
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), 10 * 60 * 1000) // 10 min
+        const blob = await downloadUserdata(
+          { ...params, chunk, chunkSize: CHUNK_SIZE },
+          controller.signal
+        )
+        clearTimeout(timeoutId)
+
+        const safeBlob = blob instanceof Blob ? blob : new Blob([blob])
+        const url = window.URL.createObjectURL(safeBlob)
+        const a = document.createElement('a')
+        a.href = url
+        const dateStr = new Date().toISOString().slice(0, 10)
+        a.download =
+          totalChunks > 1
+            ? `Users_${dateStr}_file${chunk}_of_${totalChunks}.xlsx`
+            : `Users_${dateStr}.xlsx`
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        window.URL.revokeObjectURL(url)
+      }
+
+      setToast({
+        open: true,
+        title: 'Export complete',
+        description: 'Excel downloaded successfully',
+        variant: 'success'
       })
-      const rawAll = [...firstList, ...rest]
-      const pairs = rawAll.map(d => ({ raw: d, derived: mapUser(d) }))
-      const uniqueMap = new Map()
-      pairs.forEach(p => uniqueMap.set(p.derived.id, p))
-      const deduped = Array.from(uniqueMap.values())
-      const dir = sort.dir === 'asc' ? 1 : -1
-      const getVal = u => {
-        switch (sort.key) {
-          case 'createdTs':
-            return u.derived.createdTs || 0
-          case 'name':
-            return String(u.derived.name || '').toLowerCase()
-          case 'email':
-            return String(u.derived.email || '').toLowerCase()
-          case 'phone':
-            return String(u.derived.phone || '').toLowerCase()
-          case 'walletPointsNum':
-            return Number(u.derived.walletPointsNum || 0)
-          case 'status':
-            return u.derived.status === 'Active' ? 'Active' : 'Inactive'
-          default:
-            return ''
-        }
-      }
-      const sortedAll = sort.key
-        ? [...deduped].sort((a, b) => {
-            const va = getVal(a)
-            const vb = getVal(b)
-            if (va < vb) return -1 * dir
-            if (va > vb) return 1 * dir
-            return 0
-          })
-        : deduped
-      const dataToExport = sortedAll.map(p => {
-        const u = p.derived
-        const r = p.raw || {}
-        const profile = r.profile || {}
-        return {
-          'Created On': u.createdOn,
-          'User Name': u.name,
-          Email: u.email,
-          'Phone Number': u.phone,
-          'Wallet Points': u.walletPoints,
-          Status: u.status,
-          'User ID': u.rawId || u.id,
-          Role: r.role,
-          'Profile Image': r.profileImage,
-          'Wallet Funds':
-            typeof r.walletFunds !== 'undefined'
-              ? r.walletFunds
-              : r.walletPoints,
-          'profile._id': profile._id,
-          'profile.homeAddress': profile.homeAddress,
-          'profile.postalCode': profile.postalCode,
-          'profile.countryOfCitizenship': profile.countryOfCitizenship,
-          'profile.countryOfResidence': profile.countryOfResidence,
-          'profile.state': profile.state,
-          'profile.createdAt': profile.createdAt,
-          'profile.updatedAt': profile.updatedAt
-        }
+    } catch (e) {
+      const msg =
+        e?.name === 'CanceledError' || e?.code === 'ERR_CANCELED'
+          ? 'Export timed out, please try with narrower filters'
+          : e?.response?.data?.message || e?.message || 'Export failed'
+      setToast({
+        open: true,
+        title: 'Export failed',
+        description: msg,
+        variant: 'error'
       })
-      if (dataToExport.length) {
-        downloadExcel(dataToExport, 'Users.xlsx')
-      }
     } finally {
       setExporting(false)
     }
@@ -1115,7 +1037,7 @@ export default function UsersForm ({
         title={toast.title}
         description={toast.description}
         variant={toast.variant}
-        duration={2500}
+        duration={toast.variant === 'info' ? 0 : 2500}
         position='top-right'
       />
       <UserDetailModal
@@ -1171,11 +1093,12 @@ export default function UsersForm ({
           </div>
           {(dateRange.start || dateRange.end) && (
             <button
+              type='button'
               onClick={() => setDateRange({ start: '', end: '' })}
-              className='mt-4 p-2 text-gray-500 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors'
+              className='mt-4 h-9 px-3 border border-gray-300 rounded-lg bg-white text-xs text-gray-700 hover:bg-gray-50'
               title='Clear Date Filter'
             >
-              <X size={16} />
+              Clear
             </button>
           )}
         </div>
@@ -1280,7 +1203,7 @@ export default function UsersForm ({
               </div>
               <div>
                 <p className='text-xs text-black opacity-90'>
-                  Inactive Users (Not logged in since 10 days)
+                  Inactive Users (Not logged in since {activeUsersDays} days)
                 </p>
                 <p className='text-2xl text-black font-bold'>
                   {globalStats.inactive}
@@ -1422,61 +1345,29 @@ export default function UsersForm ({
                   </svg>
                 </div>
 
-                {/* Filters */}
-                {filtersOpen && (
-                  <div className='relative'>
-                    <select
-                      value={statusFilter}
-                      onChange={e => setStatusFilter(e.target.value)}
-                      className='h-9 px-3 border border-gray-300 rounded-lg bg-white text-xs text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent'
-                    >
-                      <option value=''>All Status</option>
-                      <option value='Active'>Active</option>
-                      <option value='Inactive'>Inactive</option>
-                    </select>
-                  </div>
-                )}
-                <button
-                  onClick={handleToggleFilters}
-                  className='h-9 flex items-center px-4 border border-gray-300 rounded-lg hover:bg-gray-50 bg-white'
-                >
-                  <svg
-                    className='w-4 h-4 mr-2 text-gray-600'
-                    fill='none'
-                    stroke='currentColor'
-                    viewBox='0 0 24 24'
-                    strokeWidth={2}
-                  >
-                    <path
-                      strokeLinecap='round'
-                      strokeLinejoin='round'
-                      d='M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 01-.659 1.591l-5.432 5.432a2.25 2.25 0 00-.659 1.591v2.927a2.25 2.25 0 01-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 00-.659-1.591L3.659 7.409A2.25 2.25 0 013 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0112 3z'
-                    />
-                  </svg>
-                  <span className='text-xs text-gray-700 font-medium'>
-                    {filtersOpen ? 'Hide Filters' : 'Filters'}
-                  </span>
-                </button>
-
                 {/* Download */}
                 <button
                   onClick={handleDownloadExcel}
                   disabled={exporting}
                   className='h-9 flex items-center px-3 border border-gray-300 rounded-lg hover:bg-gray-50 bg-white disabled:opacity-50'
                 >
-                  <svg
-                    className='w-4 h-4 text-gray-600'
-                    fill='none'
-                    stroke='currentColor'
-                    viewBox='0 0 24 24'
-                    strokeWidth={2}
-                  >
-                    <path
-                      strokeLinecap='round'
-                      strokeLinejoin='round'
-                      d='M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3'
-                    />
-                  </svg>
+                  {exporting ? (
+                    <Loader2 className='w-4 h-4 text-gray-600 animate-spin' />
+                  ) : (
+                    <svg
+                      className='w-4 h-4 text-gray-600'
+                      fill='none'
+                      stroke='currentColor'
+                      viewBox='0 0 24 24'
+                      strokeWidth={2}
+                    >
+                      <path
+                        strokeLinecap='round'
+                        strokeLinejoin='round'
+                        d='M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3'
+                      />
+                    </svg>
+                  )}
                 </button>
                 <div className='flex items-center gap-2'>
                   <label className='text-xs text-gray-700'>
@@ -1567,16 +1458,18 @@ export default function UsersForm ({
                     </TableHeaderCell>
                   </th>
                   <th className='w-[12%] px-3 py-2 text-left text-xs font-medium text-gray-500 tracking-[0.04em]'>
-                    Actions
-                  </th>
-                  <th className='w-[10%] px-3 py-2 text-left text-xs font-medium tracking-[0.04em]'>
                     <TableHeaderCell
-                      onClick={() => toggleSort('status')}
-                      active={sort.key === 'status'}
+                      onClick={() => toggleSort('bookingCounts')}
+                      active={sort.key === 'bookingCounts'}
                       direction={sort.dir}
                     >
-                      Status
+                      Actions
                     </TableHeaderCell>
+                  </th>
+                  <th className='w-[10%] px-3 py-2 text-left text-xs font-medium tracking-[0.04em]'>
+                    <div className='flex items-center gap-2 text-xs font-medium uppercase tracking-[0.12em] text-[#8A92AC] whitespace-nowrap overflow-hidden'>
+                      <span className='truncate max-w-full'>Status</span>
+                    </div>
                   </th>
                   <th className='w-[10%] px-3 py-2 text-right text-xs font-medium text-gray-500 tracking-[0.04em]'></th>
                 </tr>
