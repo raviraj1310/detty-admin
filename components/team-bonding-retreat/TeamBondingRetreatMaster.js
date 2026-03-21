@@ -584,7 +584,7 @@ export default function TeamBondingRetreatMaster () {
                               `/team-bonding-retreat/bookings/${retreat._id}`
                             )
                           }
-                          className='flex w-full items-center justify-start gap-2 rounded-lg px-3 py-2 text-sm text-[#475569] hover:bg-[#F8F9FC] hover:text-[#1E293B] text-left whitespace-normal leading-snug'
+                          className='flex items-center justify-start gap-1 rounded-lg px-3 py-2 text-sm text-[#475569] hover:bg-[#F8F9FC] hover:text-[#1E293B] text-left whitespace-nowrap'
                         >
                           <span className='font-semibold text-[#0066FF] underline cursor-pointer hover:text-[#0052CC]'>
                             {retreat.totalBookings ??
