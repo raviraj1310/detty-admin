@@ -26,18 +26,35 @@ import {
 
 const getGymImageUrl = imagePath => {
   if (!imagePath) return null
-  if (imagePath.startsWith('http')) return imagePath
+  const raw = String(imagePath || '')
+    .trim()
+    .replace(/^`+|`+$/g, '')
+    .trim()
+  if (!raw) return null
+  if (raw.startsWith('http')) return raw
+  const clean = raw.replace(/^\/+/, '')
 
   const baseUrl =
     process.env.NEXT_PUBLIC_API_BASE_URL2 ||
     process.env.NEXT_PUBLIC_API_BASE_URL
-  if (!baseUrl) return `/upload/image/${imagePath}`
+  if (!baseUrl) {
+    if (clean.startsWith('upload/')) return `/${clean}`
+    if (clean.startsWith('image/') || clean.startsWith('video/'))
+      return `/upload/${clean}`
+    return `/upload/image/${clean}`
+  }
 
   try {
     const { origin } = new URL(baseUrl)
-    return `${origin}/upload/image/${imagePath}`
+    if (clean.startsWith('upload/')) return `${origin}/${clean}`
+    if (clean.startsWith('image/') || clean.startsWith('video/'))
+      return `${origin}/upload/${clean}`
+    return `${origin}/upload/image/${clean}`
   } catch {
-    return `/upload/image/${imagePath}`
+    if (clean.startsWith('upload/')) return `/${clean}`
+    if (clean.startsWith('image/') || clean.startsWith('video/'))
+      return `/upload/${clean}`
+    return `/upload/image/${clean}`
   }
 }
 
@@ -150,12 +167,17 @@ export default function GymAccessEdit () {
 
           if (gym.imageGallery && Array.isArray(gym.imageGallery)) {
             setGalleryImages(
-              gym.imageGallery.map((item, index) => ({
-                id: item._id || 'existing-' + index,
-                url: getGymImageUrl(item.image),
-                isExisting: true,
-                mediaType: 'image'
-              }))
+              gym.imageGallery.map((item, index) => {
+                const obj = typeof item === 'string' ? { image: item } : item
+                const path =
+                  obj?.image || obj?.url || obj?.path || obj?.file || null
+                return {
+                  id: obj?._id || 'existing-' + index,
+                  url: getGymImageUrl(path),
+                  isExisting: true,
+                  mediaType: 'image'
+                }
+              })
             )
           }
 
