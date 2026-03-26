@@ -1,10 +1,11 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { ChevronLeft, Trash2 } from 'lucide-react'
 import TiptapEditor from '@/components/editor/TiptapEditor'
 import { createPodcast, addEpisode } from '@/services/podcast/podcast.service'
+import { getHostLists } from '@/services/v2/gym/gym.service'
 import Toast from '@/components/ui/Toast'
 import ImageCropper from '@/components/ui/ImageCropper'
 import { convertToWebp } from '@/src/utils/image'
@@ -34,7 +35,8 @@ export default function AddPodcast () {
     type: '',
     duration: '',
     episodeTime: '',
-    image: null
+    image: null,
+    hostedBy: ''
   })
 
   const [episodes, setEpisodes] = useState([
@@ -48,6 +50,26 @@ export default function AddPodcast () {
       scheduledDate: ''
     }
   ])
+
+  const [hosts, setHosts] = useState([])
+
+  useEffect(() => {
+    const fetchHosts = async () => {
+      try {
+        const res = await getHostLists('Podcast')
+        if (res?.success) {
+          setHosts(res.data || [])
+        } else if (Array.isArray(res)) {
+          setHosts(res)
+        } else if (Array.isArray(res?.data)) {
+          setHosts(res.data)
+        }
+      } catch (error) {
+        console.error('Error fetching hosts:', error)
+      }
+    }
+    fetchHosts()
+  }, [])
 
   const handleImageChange = async e => {
     const file = e.target.files[0]
@@ -118,7 +140,9 @@ export default function AddPodcast () {
     }
     const num = parseInt(raw, 10)
     if (Number.isNaN(num) || num < 1) {
-      setDurationError('Duration must be a positive whole number (e.g. 1, 45, 120)')
+      setDurationError(
+        'Duration must be a positive whole number (e.g. 1, 45, 120)'
+      )
       return false
     }
     if (num > 9999) {
@@ -134,13 +158,14 @@ export default function AddPodcast () {
       !formData.name ||
       !formData.category ||
       !formData.type ||
+      !formData.hostedBy ||
       !formData.image
     ) {
       setToast({
         open: true,
         title: 'Error',
         description:
-          'Please fill in all required podcast fields including image',
+          'Please fill in all required podcast fields including host and image',
         variant: 'error'
       })
       return
@@ -166,6 +191,9 @@ export default function AddPodcast () {
       podcastPayload.append('podcastType', formData.type.toLowerCase())
       podcastPayload.append('duration', formData.duration)
       podcastPayload.append('episodeTime', formData.episodeTime)
+      if (formData.hostedBy) {
+        podcastPayload.append('hostedBy', formData.hostedBy)
+      }
       if (formData.image) {
         podcastPayload.append('image', formData.image)
       }
@@ -304,7 +332,29 @@ export default function AddPodcast () {
             </div>
           </div>
 
-          <div className='grid grid-cols-1 gap-6 md:grid-cols-3'>
+          <div className='grid grid-cols-1 gap-6 md:grid-cols-4'>
+            <div>
+              <label className='mb-2 block text-sm font-medium text-gray-700'>
+                Hosted By*
+              </label>
+              <select
+                value={formData.hostedBy}
+                onChange={e =>
+                  setFormData({ ...formData, hostedBy: e.target.value })
+                }
+                className='w-full rounded-lg border border-gray-200 p-3 text-sm text-gray-900 focus:border-[#FF4400] focus:outline-none'
+              >
+                <option value='' disabled>
+                  Select Host
+                </option>
+                {hosts.map(host => (
+                  <option key={host._id} value={host._id}>
+                    {host.name || host.firstName + ' ' + host.lastName}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             <div>
               <label className='mb-2 block text-sm font-medium text-gray-700'>
                 Podcast Category*

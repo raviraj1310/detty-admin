@@ -7,6 +7,7 @@ import { Clock, Trash2, Plus, ChevronLeft } from 'lucide-react'
 import TiptapEditor from '@/components/editor/TiptapEditor'
 import ImageCropper from '@/components/ui/ImageCropper'
 import Toast from '@/components/ui/Toast'
+import { getHostLists } from '@/services/v2/gym/gym.service'
 import {
   getOtherRecoveryServiceById,
   updateOtherRecoveryService,
@@ -29,7 +30,8 @@ const getImageUrl = imagePath => {
   if (typeof imagePath !== 'string') return null
   if (imagePath.startsWith('http')) return imagePath
   const baseUrl =
-    process.env.NEXT_PUBLIC_API_BASE_URL2 || process.env.NEXT_PUBLIC_API_BASE_URL
+    process.env.NEXT_PUBLIC_API_BASE_URL2 ||
+    process.env.NEXT_PUBLIC_API_BASE_URL
   if (!baseUrl) return `/upload/image/${imagePath}`
   try {
     const { origin } = new URL(baseUrl)
@@ -62,11 +64,13 @@ export default function OtherRecoveryServicesEdit () {
     startTime: '',
     endTime: '',
     location: '',
-    coordinate: ''
+    coordinate: '',
+    hostedBy: ''
   })
 
   const [aboutRecoveryService, setAboutRecoveryService] = useState('')
   const [importantInformation, setImportantInformation] = useState('')
+  const [hosts, setHosts] = useState([])
   const [slots, setSlots] = useState([
     { id: 1, slotName: '', slotTime: '', inventory: '' }
   ])
@@ -82,6 +86,24 @@ export default function OtherRecoveryServicesEdit () {
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
+  useEffect(() => {
+    const fetchHosts = async () => {
+      try {
+        const res = await getHostLists('Recovery')
+        if (res?.success) {
+          setHosts(res.data || [])
+        } else if (Array.isArray(res)) {
+          setHosts(res)
+        } else if (Array.isArray(res?.data)) {
+          setHosts(res.data)
+        }
+      } catch (error) {
+        console.error('Error fetching hosts:', error)
+      }
+    }
+    fetchHosts()
+  }, [])
+
   // ── Fetch existing data ──────────────────────────────────────────────────
   useEffect(() => {
     if (!id) return
@@ -92,15 +114,17 @@ export default function OtherRecoveryServicesEdit () {
         const svc = res?.recovery || res?.data || res
 
         const durationRaw = String(svc.duration ?? '').replace(/\D/g, '')
-        setFormData({
+        setFormData(prev => ({
+          ...prev,
           recoveryServiceName: svc.recoveryServiceName || '',
           serviceCategory: svc.serviceCategory || '',
           duration: durationRaw,
           startTime: convertTo24Hour(svc.startTime) || '',
           endTime: convertTo24Hour(svc.endTime) || '',
           location: svc.location || '',
-          coordinate: svc.coordinate || ''
-        })
+          coordinate: svc.coordinate || '',
+          hostedBy: svc.hostedBy?._id || svc.hostedBy || ''
+        }))
 
         setAboutRecoveryService(svc.aboutRecoveryService || '')
         setImportantInformation(svc.importantInformation || '')
@@ -128,7 +152,12 @@ export default function OtherRecoveryServicesEdit () {
             gallerySource.map((item, i) => {
               let path = item
               if (typeof item === 'object' && item !== null) {
-                path = item.media || item.photo || item.image || item.url || item.file
+                path =
+                  item.media ||
+                  item.photo ||
+                  item.image ||
+                  item.url ||
+                  item.file
               }
               return {
                 id: item._id || `existing-${i}`,
@@ -167,7 +196,12 @@ export default function OtherRecoveryServicesEdit () {
   const addSlot = () =>
     setSlots([
       ...slots,
-      { id: Date.now(), slotName: `Slot ${slots.length + 1}`, slotTime: '', inventory: '' }
+      {
+        id: Date.now(),
+        slotName: `Slot ${slots.length + 1}`,
+        slotTime: '',
+        inventory: ''
+      }
     ])
 
   const removeSlot = async slotId => {
@@ -181,7 +215,11 @@ export default function OtherRecoveryServicesEdit () {
         showToast('Slot deleted successfully', 'success')
       } catch (err) {
         console.error('Error deleting slot:', err)
-        const errMsg = err?.response?.data?.error || err?.response?.data?.message || err?.message || 'Failed to delete slot'
+        const errMsg =
+          err?.response?.data?.error ||
+          err?.response?.data?.message ||
+          err?.message ||
+          'Failed to delete slot'
         showToast(errMsg, 'error')
       }
     } else {
@@ -191,7 +229,10 @@ export default function OtherRecoveryServicesEdit () {
 
   const handleMainImageChange = e => {
     const file = e.target.files[0]
-    if (file) { setRawImageFile(file); setCropOpen(true) }
+    if (file) {
+      setRawImageFile(file)
+      setCropOpen(true)
+    }
   }
 
   const handleCroppedImage = ({ file }) => {
@@ -220,7 +261,11 @@ export default function OtherRecoveryServicesEdit () {
         showToast('Gallery image deleted successfully', 'success')
       } catch (err) {
         console.error('Error deleting gallery image:', err)
-        const errMsg = err?.response?.data?.error || err?.response?.data?.message || err?.message || 'Failed to delete gallery image'
+        const errMsg =
+          err?.response?.data?.error ||
+          err?.response?.data?.message ||
+          err?.message ||
+          'Failed to delete gallery image'
         showToast(errMsg, 'error')
       }
     } else {
@@ -250,7 +295,9 @@ export default function OtherRecoveryServicesEdit () {
     }
     const num = parseInt(raw, 10)
     if (Number.isNaN(num) || num < 1) {
-      setDurationError('Duration must be a positive whole number (e.g. 1, 60, 120)')
+      setDurationError(
+        'Duration must be a positive whole number (e.g. 1, 60, 120)'
+      )
       return false
     }
     if (num > 9999) {
@@ -266,6 +313,7 @@ export default function OtherRecoveryServicesEdit () {
       return showToast('Recovery Service Name is required', 'error')
     if (!formData.serviceCategory)
       return showToast('Service Category is required', 'error')
+    if (!formData.hostedBy) return showToast('Hosted By is required', 'error')
     if (!aboutRecoveryService)
       return showToast('About the Recovery Service is required', 'error')
     if (!validateDuration()) {
@@ -294,6 +342,7 @@ export default function OtherRecoveryServicesEdit () {
       payload.append('endTime', formatTime(formData.endTime))
       payload.append('location', formData.location)
       payload.append('coordinate', formData.coordinate)
+      payload.append('hostedBy', formData.hostedBy)
       payload.append('aboutRecoveryService', aboutRecoveryService)
       payload.append('importantInformation', importantInformation)
 
@@ -389,7 +438,7 @@ export default function OtherRecoveryServicesEdit () {
 
         <div className='p-6 space-y-7'>
           {/* Name & Category */}
-          <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
+          <div className='grid grid-cols-1 gap-6 md:grid-cols-3'>
             <div>
               <label className='mb-1.5 block text-xs font-medium text-gray-700'>
                 Recovery Services Name*
@@ -417,6 +466,26 @@ export default function OtherRecoveryServicesEdit () {
                 {SERVICE_CATEGORIES.map(cat => (
                   <option key={cat.value} value={cat.value}>
                     {cat.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className='mb-1.5 block text-xs font-medium text-gray-700'>
+                Hosted By*
+              </label>
+              <select
+                name='hostedBy'
+                value={formData.hostedBy}
+                onChange={handleInputChange}
+                className='w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 focus:border-[#FF5B2C] focus:outline-none focus:ring-1 focus:ring-[#FF5B2C] appearance-none'
+              >
+                <option value='' disabled>
+                  Select Host
+                </option>
+                {hosts.map(host => (
+                  <option key={host._id} value={host._id}>
+                    {host.name || host.firstName + ' ' + host.lastName}
                   </option>
                 ))}
               </select>
@@ -509,7 +578,10 @@ export default function OtherRecoveryServicesEdit () {
                 <div className='col-span-1' />
               </div>
               {slots.map(slot => (
-                <div key={slot.id} className='grid grid-cols-12 gap-3 items-center'>
+                <div
+                  key={slot.id}
+                  className='grid grid-cols-12 gap-3 items-center'
+                >
                   <div className='col-span-3'>
                     <input
                       type='text'
@@ -657,7 +729,9 @@ export default function OtherRecoveryServicesEdit () {
               <div className='flex max-w-sm rounded-lg border border-gray-200 bg-white overflow-hidden'>
                 <div className='flex-1 truncate px-4 py-2.5 text-sm text-gray-400'>
                   {galleryImages.filter(g => !g.isExisting).length > 0
-                    ? `${galleryImages.filter(g => !g.isExisting).length} new file(s)`
+                    ? `${
+                        galleryImages.filter(g => !g.isExisting).length
+                      } new file(s)`
                     : 'Image.jpg'}
                 </div>
                 <button

@@ -189,3 +189,13 @@ export const getBookingsByGymId = async (page, limit, gymId, search) => {
     throw error
   }
 }
+
+export const getHostLists = async (roleName) => {
+  try {
+    const response = await apiv2.get(`/gym/get-host-list/${roleName}`)
+    return response.data
+  } catch (error) {
+    console.error('Error fetching host list:', error)
+    throw error
+  }
+}

@@ -8,6 +8,7 @@ import Toast from '@/components/ui/Toast'
 import ImageCropper from '@/components/ui/ImageCropper'
 import FoodPrescriptionFormFields from './FoodPrescriptionFormFields'
 import { getFoodById, updateFood } from '@/services/nutrition/nutrition.service'
+import { getHostLists } from '@/services/v2/gym/gym.service'
 
 const FORMAT_LABELS = {
   'digital-view': 'Digital content (view-based program)',
@@ -90,11 +91,13 @@ export default function FoodPrescriptionEdit () {
     name: '',
     duration: '',
     format: '',
-    image: null
+    image: null,
+    hostedBy: ''
   })
   const [description, setDescription] = useState('')
   const [disclaimer, setDisclaimer] = useState('')
   const [imagePreview, setImagePreview] = useState('')
+  const [hosts, setHosts] = useState([])
   const [documents, setDocuments] = useState([
     { id: 1, backendId: null, title: '', subText: '', file: null }
   ])
@@ -113,6 +116,24 @@ export default function FoodPrescriptionEdit () {
   }
 
   useEffect(() => {
+    const fetchHosts = async () => {
+      try {
+        const res = await getHostLists('Food-prescription')
+        if (res?.success) {
+          setHosts(res.data || [])
+        } else if (Array.isArray(res)) {
+          setHosts(res)
+        } else if (Array.isArray(res?.data)) {
+          setHosts(res.data)
+        }
+      } catch (error) {
+        console.error('Error fetching hosts:', error)
+      }
+    }
+    fetchHosts()
+  }, [])
+
+  useEffect(() => {
     if (!id) return
     let alive = true
     const run = async () => {
@@ -123,8 +144,8 @@ export default function FoodPrescriptionEdit () {
         const docsFromRes = Array.isArray(res?.documents)
           ? res.documents
           : Array.isArray(res?.data?.documents)
-            ? res.data.documents
-            : []
+          ? res.data.documents
+          : []
         if (!alive) return
 
         setFormData(prev => ({
@@ -132,7 +153,8 @@ export default function FoodPrescriptionEdit () {
           name: String(food?.name || ''),
           duration: String(food?.duration || ''),
           format: guessFormatValue(food?.format) || String(food?.format || ''),
-          image: null
+          image: null,
+          hostedBy: String(food?.hostedBy?._id || food?.hostedBy || '')
         }))
 
         setDescription(ensureHtml(food?.detail))
@@ -150,7 +172,9 @@ export default function FoodPrescriptionEdit () {
             }))
           )
         } else {
-          setDocuments([{ id: 1, backendId: null, title: '', subText: '', file: null }])
+          setDocuments([
+            { id: 1, backendId: null, title: '', subText: '', file: null }
+          ])
         }
 
         const img = toUploadUrl(food?.image, 'image')
@@ -224,6 +248,10 @@ export default function FoodPrescriptionEdit () {
       showToast('Food Prescriptions Name is required', 'error')
       return
     }
+    if (!formData.hostedBy) {
+      showToast('Hosted By is required', 'error')
+      return
+    }
     if (!String(description || '').trim()) {
       showToast('Food Prescriptions content is required', 'error')
       return
@@ -253,6 +281,7 @@ export default function FoodPrescriptionEdit () {
     try {
       const fd = new FormData()
       fd.append('name', formData.name.trim())
+      fd.append('hostedBy', formData.hostedBy)
       fd.append('detail', toPlainText(description))
       fd.append('duration', formData.duration.trim())
       fd.append('format', FORMAT_LABELS[formData.format] ?? formData.format)
@@ -271,9 +300,7 @@ export default function FoodPrescriptionEdit () {
         fd.append('documents', JSON.stringify(documentsPayload))
       }
 
-      documents
-        .filter(d => d.file)
-        .forEach(d => fd.append('documents', d.file))
+      documents.filter(d => d.file).forEach(d => fd.append('documents', d.file))
 
       await updateFood(id, fd)
       showToast('Food Prescription updated successfully', 'success')
@@ -281,7 +308,10 @@ export default function FoodPrescriptionEdit () {
     } catch (err) {
       const data = err?.response?.data
       const msg = String(
-        data?.message || (data ? JSON.stringify(data) : '') || err?.message || 'Failed to update'
+        data?.message ||
+          (data ? JSON.stringify(data) : '') ||
+          err?.message ||
+          'Failed to update'
       )
       showToast(msg, 'error')
     } finally {
@@ -335,7 +365,6 @@ export default function FoodPrescriptionEdit () {
             Food Prescriptions Details
           </h2>
           <div className='flex gap-3'>
-          
             <button
               type='button'
               onClick={handleSubmit}
@@ -357,6 +386,7 @@ export default function FoodPrescriptionEdit () {
         <FoodPrescriptionFormFields
           formData={formData}
           handleInputChange={handleInputChange}
+          hosts={hosts}
           description={description}
           setDescription={setDescription}
           disclaimer={disclaimer}

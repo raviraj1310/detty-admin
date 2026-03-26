@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
@@ -17,6 +17,7 @@ import ImageCropper from '@/components/ui/ImageCropper'
 import Toast from '@/components/ui/Toast'
 
 import { createSpa } from '@/services/v2/spa/spa.service'
+import { getHostLists } from '@/services/v2/gym/gym.service'
 
 export default function SpaAdd () {
   const router = useRouter()
@@ -31,7 +32,8 @@ export default function SpaAdd () {
     startTime: '',
     endTime: '',
     location: '',
-    locationCoordinates: ''
+    locationCoordinates: '',
+    hostedBy: ''
   })
 
   const [aboutSpa, setAboutSpa] = useState('')
@@ -50,6 +52,26 @@ export default function SpaAdd () {
   const [cropOpen, setCropOpen] = useState(false)
   const [rawImageFile, setRawImageFile] = useState(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const [hosts, setHosts] = useState([])
+
+  useEffect(() => {
+    const fetchHosts = async () => {
+      try {
+        const res = await getHostLists('Spa')
+        if (res?.success) {
+          setHosts(res.data || [])
+        } else if (Array.isArray(res)) {
+          setHosts(res)
+        } else if (Array.isArray(res?.data)) {
+          setHosts(res.data)
+        }
+      } catch (error) {
+        console.error('Error fetching hosts:', error)
+      }
+    }
+    fetchHosts()
+  }, [])
 
   // Handlers
   const handleInputChange = e => {
@@ -139,7 +161,9 @@ export default function SpaAdd () {
     }
     const num = parseInt(raw, 10)
     if (Number.isNaN(num) || num < 1) {
-      setDurationError('Duration must be a positive whole number (e.g. 1, 60, 120)')
+      setDurationError(
+        'Duration must be a positive whole number (e.g. 1, 60, 120)'
+      )
       return false
     }
     if (num > 9999) {
@@ -154,6 +178,7 @@ export default function SpaAdd () {
     // Validation
     if (!formData.spaName) return showToast('Spa Name is required', 'error')
     if (!formData.slug) return showToast('Slug is required', 'error')
+    if (!formData.hostedBy) return showToast('Hosted By is required', 'error')
     if (!aboutSpa) return showToast('About Spa is required', 'error')
     if (!validateDuration()) {
       showToast('Please fix the duration', 'error')
@@ -271,8 +296,8 @@ export default function SpaAdd () {
         </div>
 
         <div className='p-6 space-y-8'>
-          {/* Spa Name & Slug */}
-          <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
+          {/* Spa Name, Slug & Hosted By */}
+          <div className='grid grid-cols-1 gap-6 md:grid-cols-3'>
             <div>
               <label className='mb-2 block text-sm font-medium text-gray-700'>
                 Spa Name*
@@ -298,6 +323,26 @@ export default function SpaAdd () {
                 className='w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-500 focus:border-[#FF4400] focus:outline-none'
                 placeholder='tranquil-touch-spa'
               />
+            </div>
+            <div>
+              <label className='mb-2 block text-sm font-medium text-gray-700'>
+                Hosted By*
+              </label>
+              <select
+                name='hostedBy'
+                value={formData.hostedBy}
+                onChange={handleInputChange}
+                className='w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 focus:border-[#FF4400] focus:outline-none'
+              >
+                <option value='' disabled>
+                  Select Host
+                </option>
+                {hosts.map(host => (
+                  <option key={host._id} value={host._id}>
+                    {host.name || host.firstName + ' ' + host.lastName}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Clock, Trash2, Plus } from 'lucide-react'
@@ -8,6 +8,7 @@ import TiptapEditor from '@/components/editor/TiptapEditor'
 import ImageCropper from '@/components/ui/ImageCropper'
 import Toast from '@/components/ui/Toast'
 import { createOtherRecoveryService } from '@/services/v2/other-recovery-services/otherRecoveryServices.service'
+import { getHostLists } from '@/services/v2/gym/gym.service'
 
 const SERVICE_CATEGORIES = [
   { value: 'sauna', label: 'Sauna' },
@@ -31,11 +32,14 @@ export default function OtherRecoveryServicesAdd () {
     startTime: '',
     endTime: '',
     location: '',
-    coordinate: ''
+    coordinate: '',
+    hostedBy: ''
   })
 
   const [aboutRecoveryService, setAboutRecoveryService] = useState('')
   const [importantInformation, setImportantInformation] = useState('')
+
+  const [hosts, setHosts] = useState([])
 
   const [slots, setSlots] = useState([
     { id: 1, slotName: '', slotTime: '', inventory: '' }
@@ -51,6 +55,24 @@ export default function OtherRecoveryServicesAdd () {
   const [rawImageFile, setRawImageFile] = useState(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
+  useEffect(() => {
+    const fetchHosts = async () => {
+      try {
+        const res = await getHostLists('Recovery')
+        if (res?.success) {
+          setHosts(res.data || [])
+        } else if (Array.isArray(res)) {
+          setHosts(res)
+        } else if (Array.isArray(res?.data)) {
+          setHosts(res.data)
+        }
+      } catch (error) {
+        console.error('Error fetching hosts:', error)
+      }
+    }
+    fetchHosts()
+  }, [])
+
   const handleInputChange = e => {
     const { name, value } = e.target
     if (name === 'duration') {
@@ -63,13 +85,20 @@ export default function OtherRecoveryServicesAdd () {
   }
 
   const handleSlotChange = (id, field, value) => {
-    setSlots(slots.map(slot => (slot.id === id ? { ...slot, [field]: value } : slot)))
+    setSlots(
+      slots.map(slot => (slot.id === id ? { ...slot, [field]: value } : slot))
+    )
   }
 
   const addSlot = () => {
     setSlots([
       ...slots,
-      { id: Date.now(), slotName: `Slot ${slots.length + 1}`, slotTime: '', inventory: '' }
+      {
+        id: Date.now(),
+        slotName: `Slot ${slots.length + 1}`,
+        slotTime: '',
+        inventory: ''
+      }
     ])
   }
 
@@ -127,7 +156,9 @@ export default function OtherRecoveryServicesAdd () {
     }
     const num = parseInt(raw, 10)
     if (Number.isNaN(num) || num < 1) {
-      setDurationError('Duration must be a positive whole number (e.g. 1, 60, 120)')
+      setDurationError(
+        'Duration must be a positive whole number (e.g. 1, 60, 120)'
+      )
       return false
     }
     if (num > 9999) {
@@ -143,22 +174,19 @@ export default function OtherRecoveryServicesAdd () {
       return showToast('Recovery Service Name is required', 'error')
     if (!formData.serviceCategory)
       return showToast('Service Category is required', 'error')
+    if (!formData.hostedBy) return showToast('Hosted By is required', 'error')
     if (!aboutRecoveryService)
       return showToast('About the Recovery Service is required', 'error')
     if (!validateDuration()) {
       showToast('Please fix the duration', 'error')
       return
     }
-    if (!formData.startTime)
-      return showToast('Start Time is required', 'error')
-    if (!formData.endTime)
-      return showToast('End Time is required', 'error')
-    if (!formData.location)
-      return showToast('Location is required', 'error')
+    if (!formData.startTime) return showToast('Start Time is required', 'error')
+    if (!formData.endTime) return showToast('End Time is required', 'error')
+    if (!formData.location) return showToast('Location is required', 'error')
     if (!formData.coordinate)
       return showToast('Location Coordinates are required', 'error')
-    if (!mainImage)
-      return showToast('Main image is required', 'error')
+    if (!mainImage) return showToast('Main image is required', 'error')
     if (!importantInformation)
       return showToast('Important Information is required', 'error')
 
@@ -178,6 +206,7 @@ export default function OtherRecoveryServicesAdd () {
       payload.append('endTime', formatTime(formData.endTime))
       payload.append('location', formData.location)
       payload.append('coordinate', formData.coordinate)
+      payload.append('hostedBy', formData.hostedBy)
       payload.append('aboutRecoveryService', aboutRecoveryService)
       payload.append('importantInformation', importantInformation)
       payload.append('status', true)
@@ -251,7 +280,7 @@ export default function OtherRecoveryServicesAdd () {
 
         <div className='p-6 space-y-7'>
           {/* Recovery Service Name & Category */}
-          <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
+          <div className='grid grid-cols-1 gap-6 md:grid-cols-3'>
             <div>
               <label className='mb-1.5 block text-xs font-medium text-gray-700'>
                 Recovery Services Name*
@@ -279,6 +308,26 @@ export default function OtherRecoveryServicesAdd () {
                 {SERVICE_CATEGORIES.map(cat => (
                   <option key={cat.value} value={cat.value}>
                     {cat.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className='mb-1.5 block text-xs font-medium text-gray-700'>
+                Hosted By*
+              </label>
+              <select
+                name='hostedBy'
+                value={formData.hostedBy}
+                onChange={handleInputChange}
+                className='w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 focus:border-[#FF5B2C] focus:outline-none focus:ring-1 focus:ring-[#FF5B2C] appearance-none'
+              >
+                <option value='' disabled>
+                  Select Host
+                </option>
+                {hosts.map(host => (
+                  <option key={host._id} value={host._id}>
+                    {host.name || host.firstName + ' ' + host.lastName}
                   </option>
                 ))}
               </select>
@@ -373,12 +422,17 @@ export default function OtherRecoveryServicesAdd () {
               </div>
 
               {slots.map(slot => (
-                <div key={slot.id} className='grid grid-cols-12 gap-3 items-center'>
+                <div
+                  key={slot.id}
+                  className='grid grid-cols-12 gap-3 items-center'
+                >
                   <div className='col-span-3'>
                     <input
                       type='text'
                       value={slot.slotName}
-                      onChange={e => handleSlotChange(slot.id, 'slotName', e.target.value)}
+                      onChange={e =>
+                        handleSlotChange(slot.id, 'slotName', e.target.value)
+                      }
                       className='w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-[#FF5B2C] focus:outline-none'
                       placeholder='Morning Slot'
                     />
@@ -387,7 +441,9 @@ export default function OtherRecoveryServicesAdd () {
                     <input
                       type='text'
                       value={slot.slotTime}
-                      onChange={e => handleSlotChange(slot.id, 'slotTime', e.target.value)}
+                      onChange={e =>
+                        handleSlotChange(slot.id, 'slotTime', e.target.value)
+                      }
                       className='w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-[#FF5B2C] focus:outline-none'
                       placeholder='09:00 AM'
                     />
@@ -396,7 +452,9 @@ export default function OtherRecoveryServicesAdd () {
                     <input
                       type='number'
                       value={slot.inventory}
-                      onChange={e => handleSlotChange(slot.id, 'inventory', e.target.value)}
+                      onChange={e =>
+                        handleSlotChange(slot.id, 'inventory', e.target.value)
+                      }
                       className='w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-[#FF5B2C] focus:outline-none'
                       placeholder='5'
                       min='0'

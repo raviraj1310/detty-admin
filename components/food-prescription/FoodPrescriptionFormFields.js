@@ -6,6 +6,7 @@ import TiptapEditor from '@/components/editor/TiptapEditor'
 export default function FoodPrescriptionFormFields ({
   formData,
   handleInputChange,
+  hosts = [],
   description,
   setDescription,
   disclaimer,
@@ -50,7 +51,27 @@ export default function FoodPrescriptionFormFields ({
         </div>
       </div>
 
-      <div className='grid grid-cols-1 gap-6 md:grid-cols-3'>
+      <div className='grid grid-cols-1 gap-6 md:grid-cols-4'>
+        <div>
+          <label className='mb-2 block text-sm font-medium text-gray-700'>
+            Hosted By*
+          </label>
+          <select
+            name='hostedBy'
+            value={formData.hostedBy}
+            onChange={handleInputChange}
+            className='w-full rounded-lg border border-gray-200 px-4  text-gray-900 py-2.5 text-sm focus:border-[#FF4400] focus:outline-none'
+          >
+            <option value='' disabled>
+              Select Host
+            </option>
+            {hosts.map(host => (
+              <option key={host._id} value={host._id}>
+                {host.name || host.firstName + ' ' + host.lastName}
+              </option>
+            ))}
+          </select>
+        </div>
         <div>
           <label className='mb-2 block text-sm font-medium text-gray-700'>
             Duration*

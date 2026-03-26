@@ -20,6 +20,7 @@ import {
   addEpisode as addEpisodeApi,
   deleteEpisode
 } from '@/services/podcast/podcast.service'
+import { getHostLists } from '@/services/v2/gym/gym.service'
 import Toast from '@/components/ui/Toast'
 import { AlertCircle } from 'lucide-react'
 
@@ -66,7 +67,8 @@ export default function EditPodcast () {
     type: 'Video',
     duration: '',
     episodeTime: '',
-    image: null
+    image: null,
+    hostedBy: ''
   })
 
   const [durationError, setDurationError] = useState('')
@@ -88,6 +90,26 @@ export default function EditPodcast () {
   })
   const fileInputRef = useRef(null)
 
+  const [hosts, setHosts] = useState([])
+
+  useEffect(() => {
+    const fetchHosts = async () => {
+      try {
+        const res = await getHostLists('Podcast')
+        if (res?.success) {
+          setHosts(res.data || [])
+        } else if (Array.isArray(res)) {
+          setHosts(res)
+        } else if (Array.isArray(res?.data)) {
+          setHosts(res.data)
+        }
+      } catch (error) {
+        console.error('Error fetching hosts:', error)
+      }
+    }
+    fetchHosts()
+  }, [])
+
   useEffect(() => {
     const fetchPodcast = async () => {
       if (!id) return
@@ -105,7 +127,8 @@ export default function EditPodcast () {
             type: data.podcastType || data.type || 'Video',
             duration: durationRaw,
             episodeTime: data.episodeTime || '',
-            image: data.image || null
+            image: data.image || null,
+            hostedBy: data.hostedBy?._id || data.hostedBy || ''
           })
 
           const episodesData = data.episodes || data.podcast_media || []
@@ -147,7 +170,9 @@ export default function EditPodcast () {
     }
     const num = parseInt(raw, 10)
     if (Number.isNaN(num) || num < 1) {
-      setDurationError('Duration must be a positive whole number (e.g. 1, 45, 120)')
+      setDurationError(
+        'Duration must be a positive whole number (e.g. 1, 45, 120)'
+      )
       return false
     }
     if (num > 9999) {
@@ -160,6 +185,23 @@ export default function EditPodcast () {
 
   const handleUpdate = async () => {
     if (!id) return
+
+    if (
+      !formData.name ||
+      !formData.category ||
+      !formData.type ||
+      !formData.hostedBy
+    ) {
+      setToast({
+        open: true,
+        title: 'Error',
+        description:
+          'Please fill in all required podcast fields including host',
+        variant: 'error'
+      })
+      return
+    }
+
     if (!validateDuration()) {
       setToast({
         open: true,
@@ -179,6 +221,9 @@ export default function EditPodcast () {
       fd.append('podcastType', (formData.type || '').toLowerCase())
       fd.append('duration', formData.duration)
       fd.append('episodeTime', formData.episodeTime)
+      if (formData.hostedBy) {
+        fd.append('hostedBy', formData.hostedBy)
+      }
 
       if (imageFile) {
         fd.append('image', imageFile)
@@ -536,7 +581,29 @@ export default function EditPodcast () {
             </div>
           </div>
 
-          <div className='grid grid-cols-1 gap-6 md:grid-cols-3'>
+          <div className='grid grid-cols-1 gap-6 md:grid-cols-4'>
+            <div>
+              <label className='mb-2 block text-sm font-medium text-gray-700'>
+                Hosted By*
+              </label>
+              <select
+                value={formData.hostedBy}
+                onChange={e =>
+                  setFormData({ ...formData, hostedBy: e.target.value })
+                }
+                className='w-full rounded-lg border border-gray-200 p-3 text-sm text-gray-900 focus:border-[#FF4400] focus:outline-none'
+              >
+                <option value='' disabled>
+                  Select Host
+                </option>
+                {hosts.map(host => (
+                  <option key={host._id} value={host._id}>
+                    {host.name || host.firstName + ' ' + host.lastName}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             <div>
               <label className='mb-2 block text-sm font-medium text-gray-700'>
                 Podcast Category*

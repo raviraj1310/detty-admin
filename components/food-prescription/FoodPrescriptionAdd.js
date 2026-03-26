@@ -8,6 +8,7 @@ import Toast from '@/components/ui/Toast'
 import ImageCropper from '@/components/ui/ImageCropper'
 import FoodPrescriptionFormFields from './FoodPrescriptionFormFields'
 import { createFood } from '@/services/nutrition/nutrition.service'
+import { getHostLists } from '@/services/v2/gym/gym.service'
 
 const FORMAT_LABELS = {
   'digital-view': 'Digital content (view-based program)',
@@ -51,11 +52,13 @@ export default function FoodPrescriptionAdd () {
     name: '',
     duration: '',
     format: '',
-    image: null
+    image: null,
+    hostedBy: ''
   })
   const [description, setDescription] = useState('')
   const [disclaimer, setDisclaimer] = useState('')
   const [imagePreview, setImagePreview] = useState('')
+  const [hosts, setHosts] = useState([])
   const [documents, setDocuments] = useState([
     { id: 1, title: '', subText: '', file: null }
   ])
@@ -79,6 +82,24 @@ export default function FoodPrescriptionAdd () {
         } catch (_) {}
       }
     }
+  }, [])
+
+  useEffect(() => {
+    const fetchHosts = async () => {
+      try {
+        const res = await getHostLists('Food-prescription')
+        if (res?.success) {
+          setHosts(res.data || [])
+        } else if (Array.isArray(res)) {
+          setHosts(res)
+        } else if (Array.isArray(res?.data)) {
+          setHosts(res.data)
+        }
+      } catch (error) {
+        console.error('Error fetching hosts:', error)
+      }
+    }
+    fetchHosts()
   }, [])
 
   const showToast = (message, type = 'success') => {
@@ -160,6 +181,10 @@ export default function FoodPrescriptionAdd () {
       showToast('Food Prescriptions Name is required', 'error')
       return
     }
+    if (!formData.hostedBy) {
+      showToast('Hosted By is required', 'error')
+      return
+    }
     if (!description?.trim()) {
       showToast('Food Prescriptions content is required', 'error')
       return
@@ -198,6 +223,7 @@ export default function FoodPrescriptionAdd () {
 
       const fd = new FormData()
       fd.append('name', formData.name.trim())
+      fd.append('hostedBy', formData.hostedBy)
       fd.append('detail', detailText)
       fd.append('duration', formData.duration.trim())
       fd.append('format', FORMAT_LABELS[formData.format] ?? formData.format)
@@ -225,7 +251,13 @@ export default function FoodPrescriptionAdd () {
         console.table(
           Array.from(fd.entries()).map(([k, v]) =>
             v instanceof File
-              ? { key: k, type: 'file', name: v.name, mime: v.type, size: v.size }
+              ? {
+                  key: k,
+                  type: 'file',
+                  name: v.name,
+                  mime: v.type,
+                  size: v.size
+                }
               : { key: k, type: 'text', value: String(v) }
           )
         )
@@ -312,6 +344,7 @@ export default function FoodPrescriptionAdd () {
         <FoodPrescriptionFormFields
           formData={formData}
           handleInputChange={handleInputChange}
+          hosts={hosts}
           description={description}
           setDescription={setDescription}
           disclaimer={disclaimer}

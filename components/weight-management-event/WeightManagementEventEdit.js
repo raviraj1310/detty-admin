@@ -19,7 +19,7 @@ import {
   updateWeightManagementEvent,
   getAllCertificates
 } from '@/services/weight-management-event/weight-management-event.service'
-import { getGymHostList } from '@/services/v2/gym/gym.service'
+import { getHostLists } from '@/services/v2/gym/gym.service'
 
 const slugify = value =>
   String(value || '')
@@ -196,7 +196,7 @@ export default function WeightManagementEventEdit () {
     const fetchHosts = async () => {
       setHostsLoading(true)
       try {
-        const res = await getGymHostList()
+        const res = await getHostLists('Weight-management')
         if (!res?.success) {
           showToast(res?.message || 'Failed to fetch host list', 'error')
           setHosts([])
