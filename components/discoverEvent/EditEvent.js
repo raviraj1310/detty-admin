@@ -962,7 +962,10 @@ export default function EditEvent ({ eventId }) {
                   </div>
                   <button
                     type='button'
-                    onClick={() => fileInputRef.current?.click()}
+                    onClick={e => {
+                      e.stopPropagation()
+                      fileInputRef.current?.click()
+                    }}
                     className='px-6 text-sm font-medium text-[#2D3658] bg-white transition hover:bg-[#F6F7FD]'
                   >
                     Browse
@@ -977,6 +980,7 @@ export default function EditEvent ({ eventId }) {
                     const f = e.target.files?.[0] || null
                     if (f) {
                       setRawImageFile(f)
+                      setCropOpen(true)
                       try {
                         const u = URL.createObjectURL(f)
                         setImageUrl(u)
@@ -999,6 +1003,7 @@ export default function EditEvent ({ eventId }) {
                         format: ''
                       })
                     }
+                    e.target.value = ''
                   }}
                 />
                 {imageUrl && (
@@ -1067,7 +1072,6 @@ export default function EditEvent ({ eventId }) {
             setImageUrl(u)
           } catch {}
         }}
-        layoutMode='horizontal'
       />
       {confirmOpen && (
         <div className='fixed inset-0 z-40 flex items-center justify-center'>

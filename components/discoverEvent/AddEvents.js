@@ -774,7 +774,10 @@ export default function AddEvents () {
                 </div>
                 <button
                   type='button'
-                  onClick={() => fileInputRef.current?.click()}
+                  onClick={e => {
+                    e.stopPropagation()
+                    fileInputRef.current?.click()
+                  }}
                   className='px-6 text-sm font-medium text-[#2D3658] bg-white transition hover:bg-[#F6F7FD]'
                 >
                   Browse
@@ -799,6 +802,7 @@ export default function AddEvents () {
                       format: ''
                     })
                   }
+                  e.target.value = ''
                 }}
               />
               <span className='text-xs text-[#B0B7D0]'>
