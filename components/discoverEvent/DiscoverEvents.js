@@ -164,6 +164,8 @@ export default function DiscoverEvents () {
     const start = normalizeDate(e.eventStartDate)
     const end = normalizeDate(e.eventEndDate)
     const startMs = start ? start.getTime() : 0
+    const rawStatus = String(e?.status || '').trim()
+    const isDraft = rawStatus.toLowerCase().startsWith('draft')
     let statusText = '-'
     if (start && end) {
       if (now < start) statusText = 'Upcoming'
@@ -173,8 +175,17 @@ export default function DiscoverEvents () {
       if (now < start) statusText = 'Upcoming'
       else statusText = 'Ongoing'
     }
+    if (isDraft) {
+      const lower = rawStatus.toLowerCase()
+      statusText = lower
+        ? lower.charAt(0).toUpperCase() + lower.slice(1)
+        : 'Draft'
+    }
     const statusClass =
-      statusText.toLowerCase() === 'done'
+      statusText.toLowerCase() === 'draft' ||
+      statusText.toLowerCase() === 'drafted'
+        ? 'bg-amber-50 text-amber-700 border border-amber-200'
+        : statusText.toLowerCase() === 'done'
         ? 'bg-emerald-50 text-emerald-600 border border-emerald-200'
         : statusText.toLowerCase() === 'ongoing'
         ? 'bg-orange-50 text-orange-600 border border-orange-200'
@@ -249,6 +260,8 @@ export default function DiscoverEvents () {
         typeof e.totalBookedTickets === 'number' ? e.totalBookedTickets : 0,
       status: statusText,
       statusClass,
+      rawStatus,
+      isDraft,
       imageBg: gradients[idx % gradients.length],
       image: imageUrl || '/images/no-image.webp',
       startMs
@@ -728,7 +741,11 @@ export default function DiscoverEvents () {
               {paginatedBookings?.map(event => (
                 <div
                   key={event.rowKey}
-                  className='grid grid-cols-[13%_21%_11%_8%_17%_13%_9%_8%] px-2 py-3 hover:bg-[#F9FAFD]'
+                  className={`grid grid-cols-[13%_21%_11%_8%_17%_13%_9%_8%] px-2 py-3 ${
+                    event.isDraft
+                      ? 'bg-amber-50 hover:bg-amber-100'
+                      : 'hover:bg-[#F9FAFD]'
+                  }`}
                 >
                   <div className='self-center text-xs text-[#5E6582] line-clamp-2'>
                     {event.eventDate}

@@ -51,6 +51,7 @@ export default function EditEvent ({ eventId }) {
   const [selectedVendorId, setSelectedVendorId] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [eventStatus, setEventStatus] = useState('')
   const [toastOpen, setToastOpen] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [confirmOpen, setConfirmOpen] = useState(false)
@@ -200,7 +201,7 @@ export default function EditEvent ({ eventId }) {
     return { errs, tw, ws }
   }
 
-  const handleSubmit = async e => {
+  const submitEvent = async (e, statusOverride) => {
     e.preventDefault()
     const { errs, tw, ws } = validate()
     setErrors(errs)
@@ -235,6 +236,9 @@ export default function EditEvent ({ eventId }) {
       fd.append('imageFormat', imageMeta.format || 'webp')
     }
     fd.append('hostedBy', selectedVendorId)
+    if (statusOverride) {
+      fd.append('status', statusOverride)
+    }
     const formattedTickets = tickets.map(t => ({
       slotName: t.slotName || t.ticketName || '', // Fallback for existing data
       date: t.date,
@@ -262,6 +266,10 @@ export default function EditEvent ({ eventId }) {
     }
   }
 
+  const handleSubmit = async e => submitEvent(e)
+
+  const handlePublish = async e => submitEvent(e, 'true')
+
   useEffect(() => {
     const init = async () => {
       try {
@@ -276,6 +284,7 @@ export default function EditEvent ({ eventId }) {
         const eventRes = await getEventById(eventId)
         console.log('eventRes', eventRes)
         const d = eventRes?.data || {}
+        setEventStatus(String(d.status || ''))
         const toDateInput = v => {
           if (!v) return ''
           const dt =
@@ -497,6 +506,25 @@ export default function EditEvent ({ eventId }) {
               'Delete'
             )}
           </button>
+          {String(eventStatus || '')
+            .trim()
+            .toLowerCase()
+            .startsWith('draft') && (
+            <button
+              onClick={handlePublish}
+              disabled={submitting || loading}
+              className='rounded-xl border border-[#E5E6EF] bg-white px-5 py-2.5 text-sm font-semibold text-[#1A1F3F] shadow-sm transition hover:bg-[#F9FAFD] disabled:opacity-60 disabled:cursor-not-allowed'
+            >
+              {submitting ? (
+                <span className='flex items-center gap-2'>
+                  <Loader2 className='h-4 w-4 animate-spin' />
+                  Publishing...
+                </span>
+              ) : (
+                'Publish'
+              )}
+            </button>
+          )}
           <button
             onClick={handleSubmit}
             disabled={submitting || loading}

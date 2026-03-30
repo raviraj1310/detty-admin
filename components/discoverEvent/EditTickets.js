@@ -165,7 +165,7 @@ export default function EditTickets () {
     const payload = {
       eventId,
       ticketName: formData.ticketName.trim(),
-      ticketType: isGroup ? 'group' : 'regular',
+      ticketType: isGroup ? 'group' : 'individual',
       groupSize: isGroup ? parseInt(formData.groupSize, 10) : undefined,
       subText: formData.subText?.trim() || '',
       perTicketPrice: priceNum,
@@ -220,7 +220,7 @@ export default function EditTickets () {
         ticketType:
           String(t.ticketType).toLowerCase() === 'group'
             ? 'Group Ticket'
-            : 'Regular Ticket',
+            : 'Individual Ticket',
         subText: t.subText || '',
         groupSize: t.groupSize ? String(t.groupSize) : '',
         perTicketPrice: t.perTicketPrice
@@ -498,18 +498,18 @@ export default function EditTickets () {
                     <input
                       type='radio'
                       name='ticketType'
-                      value='Regular Ticket'
-                      checked={formData.ticketType === 'Regular Ticket'}
+                      value='Individual Ticket'
+                      checked={formData.ticketType === 'Individual Ticket'}
                       onChange={e => {
                         const v = e.target.value
                         handleInputChange('ticketType', v)
-                        if (v === 'Regular Ticket')
+                        if (v === 'Individual Ticket')
                           handleInputChange('groupSize', '')
                       }}
                       className='w-4 h-4 text-[#FF5735] border-gray-300 focus:ring-[#FF5735]'
                     />
                     <span className='text-sm text-slate-700'>
-                      Regular Ticket
+                      Individual Ticket
                     </span>
                   </label>
                 </div>
@@ -781,7 +781,7 @@ export default function EditTickets () {
                   const ticketTypeLabel =
                     String(t.ticketType).toLowerCase() === 'group'
                       ? 'Group Ticket'
-                      : 'Regular Ticket'
+                      : 'Individual Ticket'
                   const statusText = t.status ? 'Active' : 'Inactive'
                   const statusClass = t.status
                     ? 'bg-emerald-50 text-emerald-600 border border-emerald-200'
