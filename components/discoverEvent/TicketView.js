@@ -103,7 +103,18 @@ export default function TicketView () {
     eventDetails?.hostedBy?._id ||
     booking?.event?.vendorProfile?.userId ||
     booking?.event?.vendorProfile?._id
-  const qrData = `https://dettyfusion.accessbankplc.com/vendor/scanned-ticket?vendorId=${vendorId}&bookingId=${bookingId}`
+  const scanBaseUrl =
+    process.env.NEXT_PUBLIC_VENDOR_SCAN_BASE_URL || 'https://myonefusion.com'
+  const buildQrData = ({ bookingId: b, uniqueId } = {}) => {
+    const qs = new URLSearchParams()
+    qs.set('vendorId', String(vendorId || ''))
+    if (b) qs.set('bookingId', String(b))
+    if (uniqueId) qs.set('uniqueId', String(uniqueId))
+    return `${String(scanBaseUrl).replace(
+      /\/+$/,
+      ''
+    )}/vendor/scanned-ticket?${qs.toString()}`
+  }
 
   const orderId =
     toDisplayString(booking?.event?.orderId) ||
@@ -182,6 +193,45 @@ export default function TicketView () {
     toDisplayString(firstAttendee?.email ?? buyer?.email) || '—'
   const ticket1Phone =
     toDisplayString(firstAttendee?.phone ?? buyer?.phone) || '—'
+
+  const ticketCards = (tickets.length ? tickets : attendees)
+    .map((src, idx) => {
+      const holder = src?.holder || {}
+      const uniqueId =
+        src?.uniqueId ||
+        holder?.uniqueId ||
+        holder?.uniqueID ||
+        src?.ticketUniqueId ||
+        src?.qrUniqueId ||
+        src?.qrCodeUniqueId ||
+        ''
+      const ticketName =
+        toDisplayString(src?.ticketName ?? src?.ticketType ?? src?.ticket) ||
+        '—'
+      const name =
+        toDisplayString(holder?.fullName ?? holder?.name ?? src?.name) || '—'
+      const email = toDisplayString(holder?.email ?? src?.email) || '—'
+      const phone = toDisplayString(holder?.phone ?? src?.phone) || '—'
+      const purchasedOn = issuedDate
+        ? issuedDate.toLocaleDateString('en-GB', {
+            weekday: 'short',
+            day: 'numeric',
+            month: 'short',
+            year: 'numeric'
+          })
+        : '—'
+      return {
+        key: String(uniqueId || idx),
+        index: idx,
+        uniqueId: String(uniqueId || ''),
+        ticketName,
+        name,
+        email,
+        phone,
+        purchasedOn
+      }
+    })
+    .filter(Boolean)
 
   const cardClass = 'bg-white rounded-xl border border-[#E5E8F6] shadow-sm p-5'
 
@@ -291,14 +341,6 @@ export default function TicketView () {
                     {arrivalDate ? formatEventDate(arrivalDate) : '—'}
                   </p>
                 </div>
-
-                <div className='mt-5 flex flex-col items-center'>
-                  <QRCodeGenerator value={qrData} size={150} />
-                  <span className='mt-3 inline-flex items-center gap-2 rounded-full border border-[#FDE68A] bg-[#FFFBEB] px-4 py-1.5 text-xs font-medium text-[#854D0E]'>
-                    <span className='h-1.5 w-1.5 rounded-full bg-[#EAB308]' />{' '}
-                    Pending
-                  </span>
-                </div>
               </div>
             </div>
           </div>
@@ -336,40 +378,73 @@ export default function TicketView () {
 
           <div className='border-t border-[#EEF1FA]' />
 
-          {/* Ticket 1 section inside main card */}
+          {/* Ticket-wise QR section */}
           <div className='p-5 md:p-7'>
-            <div className='rounded-xl bg-[#F8FAFC] border border-[#EEF1FA] p-5'>
-              <h2 className='text-base font-bold text-slate-900'>Ticket 1</h2>
-              <div className='mt-4 grid grid-cols-1 gap-y-3 text-sm sm:grid-cols-2 sm:gap-x-12'>
-                <div className='text-[#9CA3AF]'>Name</div>
-                <div className='sm:text-right font-medium text-slate-900'>
-                  {ticket1FullName}
-                </div>
-                <div className='text-[#9CA3AF]'>Email Address</div>
-                <div className='sm:text-right font-medium text-slate-900'>
-                  {ticket1Email}
-                </div>
-                <div className='text-[#9CA3AF]'>Phone Number</div>
-                <div className='sm:text-right font-medium text-slate-900'>
-                  {ticket1Phone}
-                </div>
-                <div className='text-[#9CA3AF]'>Purchased on</div>
-                <div className='sm:text-right font-medium text-slate-900'>
-                  {issuedDate
-                    ? issuedDate.toLocaleDateString('en-GB', {
-                        weekday: 'short',
-                        day: 'numeric',
-                        month: 'short',
-                        year: 'numeric'
-                      })
-                    : '—'}
-                </div>
-                <div className='text-[#9CA3AF]'>Ticket Name</div>
-                <div className='sm:text-right font-medium text-slate-900'>
-                  {ticket1Name}
-                </div>
+            <h2 className='text-base font-bold text-slate-900'>Tickets</h2>
+            {ticketCards.length ? (
+              <div className='mt-4 space-y-4'>
+                {ticketCards.map((t, i) => (
+                  <div
+                    key={t.key}
+                    className='rounded-xl bg-[#F8FAFC] border border-[#EEF1FA] p-5'
+                  >
+                    <div className='flex flex-col gap-4 md:flex-row md:items-start md:justify-between'>
+                      <div className='flex-1 min-w-0'>
+                        <div className='flex items-start justify-between gap-3'>
+                          <h3 className='text-sm font-bold text-slate-900'>
+                            Ticket {i + 1}
+                          </h3>
+                        </div>
+                        <div className='mt-4 grid grid-cols-1 gap-y-3 text-sm sm:grid-cols-2 sm:gap-x-12'>
+                          <div className='text-[#9CA3AF]'>Name</div>
+                          <div className='sm:text-right font-medium text-slate-900'>
+                            {t.name}
+                          </div>
+                          <div className='text-[#9CA3AF]'>Email Address</div>
+                          <div className='sm:text-right font-medium text-slate-900'>
+                            {t.email}
+                          </div>
+                          <div className='text-[#9CA3AF]'>Phone Number</div>
+                          <div className='sm:text-right font-medium text-slate-900'>
+                            {t.phone}
+                          </div>
+                          <div className='text-[#9CA3AF]'>Purchased on</div>
+                          <div className='sm:text-right font-medium text-slate-900'>
+                            {t.purchasedOn}
+                          </div>
+                          <div className='text-[#9CA3AF]'>Ticket Name</div>
+                          <div className='sm:text-right font-medium text-slate-900'>
+                            {t.ticketName}
+                          </div>
+                          {t.uniqueId ? (
+                            <>
+                              <div className='text-[#9CA3AF]'>Unique ID</div>
+                              <div className='sm:text-right font-medium text-slate-900 break-all'>
+                                {t.uniqueId}
+                              </div>
+                            </>
+                          ) : null}
+                        </div>
+                      </div>
+
+                      <div className='shrink-0 flex mt-7 flex-col items-center justify-center md:pt-8'>
+                        <QRCodeGenerator
+                          value={buildQrData({
+                            bookingId,
+                            uniqueId: t.uniqueId
+                          })}
+                          size={140}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
-            </div>
+            ) : (
+              <div className='mt-4 text-sm text-[#5E6582]'>
+                No ticket details found.
+              </div>
+            )}
           </div>
         </div>
 
