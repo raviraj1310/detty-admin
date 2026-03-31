@@ -144,9 +144,22 @@ export default function TicketView () {
     bookingId ||
     '-'
   const paymentStatus = toDisplayString(booking?.paymentStatus) || ''
-  const bookingStatus = toDisplayString(booking?.bookingStatus) || ''
+  const bookingStatusRaw =
+    toDisplayString(
+      booking?.tickets?.[0]?.status ??
+        booking?.event?.tickets?.[0]?.status ??
+        booking?.bookingStatus
+    ) || ''
+  const bookingStatusNormalized = String(bookingStatusRaw).toLowerCase()
+  const bookingStatus = bookingStatusNormalized
+    ? bookingStatusNormalized
+        .replace(/_/g, ' ')
+        .replace(/\b\w/g, c => c.toUpperCase())
+    : ''
   const isPaymentSuccess = /success|paid|completed/i.test(paymentStatus)
-  const isBookingSuccess = /success|confirmed|completed/i.test(bookingStatus)
+  const isBookingSuccess = /success|confirmed|completed|scanned/i.test(
+    bookingStatusNormalized
+  )
 
   const eventStartDate = eventDetails?.eventStartDate
   const eventEndDate = eventDetails?.eventEndDate
@@ -627,7 +640,7 @@ export default function TicketView () {
                 <span className='font-semibold text-[#2563EB]'>{orderId}</span>
               </div>
               <div className='flex justify-between'>
-                <span className='text-[#5E6582]'>Booking Status</span>
+                <span className='text-[#5E6582]'>Ticket Scan Status</span>
                 <span
                   className={`font-semibold ${
                     isBookingSuccess ? 'text-[#16A34A]' : 'text-[#EAB308]'
