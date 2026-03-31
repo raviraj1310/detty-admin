@@ -129,6 +129,11 @@ export default function DiscountMaster () {
   })
 
   const handleInputChange = (field, value) => {
+    if (field === 'couponCode') {
+      const normalized = String(value || '').toUpperCase()
+      setFormData(prev => ({ ...prev, [field]: normalized }))
+      return
+    }
     setFormData(prev => ({ ...prev, [field]: value }))
   }
 
@@ -457,7 +462,7 @@ export default function DiscountMaster () {
       if (activeTab === 'event') {
         const isEditing = !!editingId
         const base = {
-          couponCode: String(formData.couponCode).trim(),
+          couponCode: String(formData.couponCode).trim().toUpperCase(),
           discountType: String(formData.discountType).trim(),
           discountValue: Number(formData.discountValue),
           validUpTo: String(formData.validUpTo).trim(),
@@ -510,7 +515,7 @@ export default function DiscountMaster () {
         const discountType = dtVal === 'fixed' ? 'fixed' : 'percentage'
         const activityPayload = {
           activityId: String(formData.activityId).trim(),
-          couponCode: String(formData.couponCode).trim(),
+          couponCode: String(formData.couponCode).trim().toUpperCase(),
           discountType,
           discountValue: Number(formData.discountValue),
           validUpTo: String(formData.validUpTo).trim()
@@ -523,7 +528,7 @@ export default function DiscountMaster () {
           const optimistic = {
             _id: (created && (created._id || created.id)) || undefined,
             activityId: String(formData.activityId).trim(),
-            couponCode: String(formData.couponCode).trim(),
+            couponCode: String(formData.couponCode).trim().toUpperCase(),
             discountType,
             discountValue: Number(formData.discountValue),
             validUpTo: String(formData.validUpTo).trim(),
@@ -567,7 +572,7 @@ export default function DiscountMaster () {
         if (isEditing) {
           const merchandisePayload = {
             productId: String(formData.productId).trim(),
-            couponCode: String(formData.couponCode).trim(),
+            couponCode: String(formData.couponCode).trim().toUpperCase(),
             discountType,
             discountValue: Number(formData.discountValue),
             validUpTo: String(formData.validUpTo).trim()
@@ -604,7 +609,7 @@ export default function DiscountMaster () {
           for (const id of ids) {
             const merchandisePayload = {
               productId: String(id).trim(),
-              couponCode: String(formData.couponCode).trim(),
+              couponCode: String(formData.couponCode).trim().toUpperCase(),
               discountType,
               discountValue: Number(formData.discountValue),
               validUpTo: String(formData.validUpTo).trim()
@@ -749,7 +754,7 @@ export default function DiscountMaster () {
               d.productName ||
               ''
           ),
-          couponCode: String(d.couponCode || ''),
+          couponCode: String(d.couponCode || '').toUpperCase(),
           discountType: normalizedType,
           discountValue: String(d.discountValue ?? ''),
           validUpTo: formatDateForInput(d.validUpTo || d.validUpToDate)
@@ -792,7 +797,7 @@ export default function DiscountMaster () {
       setEditModalError('')
       if (activeTab === 'event') {
         const base = {
-          couponCode: String(d.couponCode).trim(),
+          couponCode: String(d.couponCode).trim().toUpperCase(),
           discountType: String(d.discountType).trim(),
           discountValue: Number(d.discountValue),
           validUpTo: String(d.validUpTo).trim(),
@@ -814,7 +819,7 @@ export default function DiscountMaster () {
         const discountType = dtVal === 'fixed' ? 'fixed' : 'percentage'
         const activityPayload = {
           activityId: String(d.activityId).trim(),
-          couponCode: String(d.couponCode).trim(),
+          couponCode: String(d.couponCode).trim().toUpperCase(),
           discountType,
           discountValue: Number(d.discountValue),
           validUpTo: String(d.validUpTo).trim()
@@ -838,7 +843,7 @@ export default function DiscountMaster () {
         })()
         const merchandisePayload = {
           productId: safeProductId,
-          couponCode: String(d.couponCode).trim(),
+          couponCode: String(d.couponCode).trim().toUpperCase(),
           discountType,
           discountValue: Number(d.discountValue),
           validUpTo: String(d.validUpTo).trim()
@@ -1580,7 +1585,7 @@ export default function DiscountMaster () {
                   onChange={e =>
                     handleInputChange('couponCode', e.target.value)
                   }
-                  className='w-full h-9 rounded-lg border text-transform: uppercase border-[#E5E6EF] bg-[#F8F9FC] px-4 text-sm text-slate-700 placeholder:text-[#B0B7D0] focus:border-[#C5CAE3] focus:outline-none focus:ring-2 focus:ring-[#C2C8E4]'
+                  className='w-full h-9 rounded-lg border border-[#E5E6EF] bg-[#F8F9FC] px-4 text-sm text-slate-700 placeholder:text-[#B0B7D0] focus:border-[#C5CAE3] focus:outline-none focus:ring-2 focus:ring-[#C2C8E4] uppercase'
                   placeholder='Enter coupon code'
                 />
                 {errors.couponCode && (
@@ -2163,11 +2168,11 @@ export default function DiscountMaster () {
                     onChange={e =>
                       setEditModalData(prev => ({
                         ...prev,
-                        couponCode: e.target.value
+                        couponCode: String(e.target.value || '').toUpperCase()
                       }))
                     }
                     disabled={editModalFetching}
-                    className='w-full h-9 rounded-lg border border-[#E5E6EF] bg-[#F8F9FC] px-4 text-sm text-slate-700'
+                    className='w-full h-9 rounded-lg border border-[#E5E6EF] bg-[#F8F9FC] px-4 text-sm text-slate-700 uppercase'
                   />
                 </div>
                 <div className='space-y-1'>
