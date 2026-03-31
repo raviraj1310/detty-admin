@@ -65,6 +65,16 @@ export default function TicketView () {
   }, [bookingId])
 
   const parseAmount = v => {
+    if (v == null) return 0
+    if (typeof v === 'number') return v
+    if (typeof v === 'object') {
+      const decimal =
+        v?.$numberDecimal ?? v?.numberDecimal ?? v?.decimal ?? v?.value ?? null
+      if (decimal != null) {
+        const n = parseFloat(String(decimal))
+        return isNaN(n) ? 0 : n
+      }
+    }
     const s = String(v ?? '').replace(/[^0-9.]/g, '')
     const n = parseFloat(s)
     return isNaN(n) ? 0 : n
@@ -425,13 +435,27 @@ export default function TicketView () {
               ))}
             </div>
 
-            <div className='mt-4 border-t border-[#EEF1FA] pt-4 flex items-center justify-between'>
-              <span className='flex items-center gap-2 font-bold text-slate-900'>
-                <Ticket className='h-4 w-4 text-[#EF4444]' /> Total
-              </span>
-              <span className='font-bold text-[#EF4444]'>
-                {formatNaira(finalPayable)}
-              </span>
+            <div className='mt-4 border-t border-[#EEF1FA] pt-4 space-y-2'>
+              {discountApplied > 0 && (
+                <div className='flex items-center justify-between text-sm text-red-600'>
+                  <span>Discount</span>
+                  <span>- {formatNaira(discountApplied)}</span>
+                </div>
+              )}
+              {serviceFee > 0 && (
+                <div className='flex items-center justify-between text-sm text-slate-900'>
+                  <span>Service Fee</span>
+                  <span>{formatNaira(serviceFee)}</span>
+                </div>
+              )}
+              <div className='pt-2 border-t border-[#EEF1FA] flex items-center justify-between'>
+                <span className='flex items-center gap-2 font-bold text-slate-900'>
+                  <Ticket className='h-4 w-4 text-[#EF4444]' /> Total
+                </span>
+                <span className='font-bold text-[#EF4444]'>
+                  {formatNaira(finalPayable)}
+                </span>
+              </div>
             </div>
           </div>
 
@@ -579,9 +603,9 @@ export default function TicketView () {
                 </span>
               </div>
               <div className='flex justify-between'>
-                <span className='text-[#5E6582]'>Final Payable Amount</span>
+                <span className='text-[#5E6582]'>Total Amount</span>
                 <span className='font-semibold text-slate-900'>
-                  {formatNaira(finalPayable)}
+                  {formatNaira(totalAmount)}
                 </span>
               </div>
               <div className='flex justify-between'>
