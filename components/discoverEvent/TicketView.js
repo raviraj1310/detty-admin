@@ -64,13 +64,24 @@ export default function TicketView () {
     if (bookingId) fetchData()
   }, [bookingId])
 
+  const parseAmount = v => {
+    const s = String(v ?? '').replace(/[^0-9.]/g, '')
+    const n = parseFloat(s)
+    return isNaN(n) ? 0 : n
+  }
   const formatNaira = v => {
-    if (typeof v === 'number') return `₦${v.toLocaleString()}`
-    const n = Number(v)
-    return isNaN(n) ? String(v || '-') : `₦${n.toLocaleString()}`
+    const n = typeof v === 'number' ? v : parseAmount(v)
+    return `₦${n.toLocaleString('en-NG', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    })}`
   }
   const arrivalDate = booking?.event?.arrivalDate || ''
-  const buyer = booking?.buyer || {}
+  const buyer =
+    booking?.buyer ||
+    booking?.event?.buyer ||
+    booking?.event?.eventId?.buyer ||
+    {}
   const issuedOn = booking?.createdAt || booking?.bookedOn || booking?.updatedAt
   const issuedDate = issuedOn
     ? new Date(
@@ -171,12 +182,15 @@ export default function TicketView () {
     'Landmark Event Centre, Lagos'
 
   const totalQty = items.reduce((s, it) => s + (Number(it.quantity) || 0), 0)
-  const serviceFee = Number(booking?.pricing?.serviceFee) || 0
-  const discountApplied = Number(booking?.pricing?.discountApplied) || 0
-  const totalAmount = Number(booking?.totalAmount) || total
+  const serviceFee = parseAmount(booking?.pricing?.serviceFee)
+  const discountApplied = parseAmount(booking?.pricing?.discountApplied)
+  const totalAmount = parseAmount(booking?.totalAmount) || total
+  const finalPayableRaw =
+    booking?.finalPayableAmount ??
+    booking?.event?.finalPayableAmount ??
+    booking?.pricing?.finalPayableAmount
   const finalPayable =
-    Number(booking?.finalPayableAmount) ||
-    totalAmount + serviceFee - discountApplied
+    parseAmount(finalPayableRaw) || totalAmount + serviceFee - discountApplied
   const transactionRef =
     toDisplayString(
       booking?.transactionRef ??
@@ -194,44 +208,89 @@ export default function TicketView () {
   const ticket1Phone =
     toDisplayString(firstAttendee?.phone ?? buyer?.phone) || '—'
 
-  const ticketCards = (tickets.length ? tickets : attendees)
-    .map((src, idx) => {
-      const holder = src?.holder || {}
-      const uniqueId =
-        src?.uniqueId ||
-        holder?.uniqueId ||
-        holder?.uniqueID ||
-        src?.ticketUniqueId ||
-        src?.qrUniqueId ||
-        src?.qrCodeUniqueId ||
-        ''
-      const ticketName =
-        toDisplayString(src?.ticketName ?? src?.ticketType ?? src?.ticket) ||
-        '—'
-      const name =
-        toDisplayString(holder?.fullName ?? holder?.name ?? src?.name) || '—'
-      const email = toDisplayString(holder?.email ?? src?.email) || '—'
-      const phone = toDisplayString(holder?.phone ?? src?.phone) || '—'
-      const purchasedOn = issuedDate
-        ? issuedDate.toLocaleDateString('en-GB', {
-            weekday: 'short',
-            day: 'numeric',
-            month: 'short',
-            year: 'numeric'
+  const ticketCards = (() => {
+    const purchasedOn = issuedDate
+      ? issuedDate.toLocaleDateString('en-GB', {
+          weekday: 'short',
+          day: 'numeric',
+          month: 'short',
+          year: 'numeric'
+        })
+      : '—'
+
+    const out = []
+
+    if (tickets.length) {
+      tickets.forEach((t, ticketIndex) => {
+        const ticketName =
+          toDisplayString(t?.ticketName ?? t?.ticketType ?? t?.ticket) || '—'
+        const baseUniqueId = String(t?.uniqueId || t?._id || '')
+        const tAttendees = Array.isArray(t?.attendees) ? t.attendees : []
+
+        if (tAttendees.length) {
+          tAttendees.forEach((a, attendeeIndex) => {
+            const uniqueId = String(
+              a?.uniqueId ||
+                a?.uniqueID ||
+                a?.ticketUniqueId ||
+                a?.qrUniqueId ||
+                a?.qrCodeUniqueId ||
+                baseUniqueId ||
+                ''
+            )
+            out.push({
+              key: uniqueId || `${ticketIndex}_${attendeeIndex}`,
+              index: out.length,
+              uniqueId,
+              ticketName,
+              name:
+                toDisplayString(a?.fullName ?? a?.name ?? buyer?.fullName) ||
+                '—',
+              email: toDisplayString(a?.email ?? buyer?.email) || '—',
+              phone: toDisplayString(a?.phone ?? buyer?.phone) || '—',
+              purchasedOn
+            })
           })
-        : '—'
-      return {
-        key: String(uniqueId || idx),
-        index: idx,
-        uniqueId: String(uniqueId || ''),
-        ticketName,
-        name,
-        email,
-        phone,
+          return
+        }
+
+        out.push({
+          key: baseUniqueId || String(ticketIndex),
+          index: out.length,
+          uniqueId: baseUniqueId,
+          ticketName,
+          name: toDisplayString(buyer?.fullName ?? buyer?.name) || '—',
+          email: toDisplayString(buyer?.email) || '—',
+          phone: toDisplayString(buyer?.phone) || '—',
+          purchasedOn
+        })
+      })
+      return out
+    }
+
+    attendees.forEach((a, idx) => {
+      const uniqueId = String(
+        a?.uniqueId ||
+          a?.uniqueID ||
+          a?.ticketUniqueId ||
+          a?.qrUniqueId ||
+          a?.qrCodeUniqueId ||
+          ''
+      )
+      out.push({
+        key: uniqueId || String(idx),
+        index: out.length,
+        uniqueId,
+        ticketName: toDisplayString(a?.ticketName) || '—',
+        name: toDisplayString(a?.fullName ?? a?.name ?? buyer?.fullName) || '—',
+        email: toDisplayString(a?.email ?? buyer?.email) || '—',
+        phone: toDisplayString(a?.phone ?? buyer?.phone) || '—',
         purchasedOn
-      }
+      })
     })
-    .filter(Boolean)
+
+    return out
+  })()
 
   const cardClass = 'bg-white rounded-xl border border-[#E5E8F6] shadow-sm p-5'
 
@@ -371,7 +430,7 @@ export default function TicketView () {
                 <Ticket className='h-4 w-4 text-[#EF4444]' /> Total
               </span>
               <span className='font-bold text-[#EF4444]'>
-                {formatNaira(totalAmount)}
+                {formatNaira(finalPayable)}
               </span>
             </div>
           </div>
@@ -520,9 +579,9 @@ export default function TicketView () {
                 </span>
               </div>
               <div className='flex justify-between'>
-                <span className='text-[#5E6582]'>Total Amount</span>
+                <span className='text-[#5E6582]'>Final Payable Amount</span>
                 <span className='font-semibold text-slate-900'>
-                  {formatNaira(total)}
+                  {formatNaira(finalPayable)}
                 </span>
               </div>
               <div className='flex justify-between'>
