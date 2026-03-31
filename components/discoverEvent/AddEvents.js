@@ -480,7 +480,6 @@ export default function AddEvents () {
                     }
                     className='w-full h-12 rounded-xl border border-[#E5E6EF] bg-[#F8F9FC] px-4 text-sm text-slate-700 focus:border-[#C5CAE3] focus:outline-none focus:ring-2 focus:ring-[#C2C8E4]'
                   />
-                  <Calendar className='absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#A6AEC7] pointer-events-none' />
                 </div>
                 {errors.eventStartDate && (
                   <p className='text-xs text-red-600'>
@@ -503,7 +502,6 @@ export default function AddEvents () {
                     }
                     className='w-full h-12 rounded-xl border border-[#E5E6EF] bg-[#F8F9FC] px-4 text-sm text-slate-700 focus:border-[#C5CAE3] focus:outline-none focus:ring-2 focus:ring-[#C2C8E4]'
                   />
-                  <Calendar className='absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#A6AEC7] pointer-events-none' />
                 </div>
                 {errors.eventEndDate && (
                   <p className='text-xs text-red-600'>{errors.eventEndDate}</p>
