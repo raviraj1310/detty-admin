@@ -262,7 +262,13 @@ export default function EditTickets () {
   }
 
   const handleBack = () => {
-    router.push('/discover-events/add')
+    try {
+      if (typeof window !== 'undefined' && window.history.length > 1) {
+        router.back()
+        return
+      }
+    } catch {}
+    router.push('/discover-events')
   }
 
   const apiFilters = useMemo(() => {
