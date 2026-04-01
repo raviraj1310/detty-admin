@@ -17,6 +17,8 @@ import {
 import { downloadExcel } from '@/utils/excelExport'
 import Modal from '@/components/ui/Modal'
 import TransactionStatsCards from './TransactionStatsCards'
+import { getCountryById } from '@/services/country/country.service'
+import { getCityById } from '@/services/city/city.service'
 function ActionDropdown ({ transactionId }) {
   const [isOpen, setIsOpen] = useState(false)
   const [buttonPosition, setButtonPosition] = useState({ top: 0, right: 0 })
@@ -887,60 +889,121 @@ export default function TransactionsForm () {
     })()
   }
 
-  const handleDownloadExcel = () => {
+  const handleDownloadExcel = async () => {
     if (!filteredBookings || filteredBookings.length === 0) {
       return
     }
+    const isMongoId = v => /^[a-f\d]{24}$/i.test(String(v || '').trim())
+    const pickNameOrId = v => {
+      if (!v) return ''
+      if (typeof v === 'string' || typeof v === 'number') return String(v)
+      if (typeof v === 'object' && v !== null) {
+        return (
+          String(v.name || v.label || v.title || '') ||
+          String(v._id || v.id || '')
+        )
+      }
+      return String(v)
+    }
+
+    const countryIds = new Set()
+    const cityIds = new Set()
+
+    filteredBookings.forEach(booking => {
+      const b = booking.raw || {}
+      const buyer = b.buyer || {}
+      const c = buyer.country
+      const city = buyer.city
+
+      if (c && typeof c === 'object') {
+        const id = c._id || c.id
+        if (id && isMongoId(id)) countryIds.add(String(id))
+      } else if (isMongoId(c)) {
+        countryIds.add(String(c))
+      }
+
+      if (city && typeof city === 'object') {
+        const id = city._id || city.id
+        if (id && isMongoId(id)) cityIds.add(String(id))
+      } else if (isMongoId(city)) {
+        cityIds.add(String(city))
+      }
+    })
+
+    const countryNameById = new Map()
+    const cityNameById = new Map()
+
+    try {
+      await Promise.all(
+        Array.from(countryIds).map(async id => {
+          try {
+            const res = await getCountryById(id)
+            const d = res?.data || res || {}
+            const name = String(d?.name || d?.data?.name || '').trim()
+            if (name) countryNameById.set(String(id), name)
+          } catch {}
+        })
+      )
+
+      await Promise.all(
+        Array.from(cityIds).map(async id => {
+          try {
+            const res = await getCityById(id)
+            const d = res?.data || res || {}
+            const name = String(d?.name || d?.data?.name || '').trim()
+            if (name) cityNameById.set(String(id), name)
+          } catch {}
+        })
+      )
+    } catch {}
+
+    const toCountryLabel = v => {
+      if (!v) return ''
+      if (typeof v === 'object' && v !== null) return pickNameOrId(v)
+      const s = String(v).trim()
+      if (isMongoId(s)) return countryNameById.get(s) || s
+      return s
+    }
+
+    const toCityLabel = v => {
+      if (!v) return ''
+      if (typeof v === 'object' && v !== null) return pickNameOrId(v)
+      const s = String(v).trim()
+      if (isMongoId(s)) return cityNameById.get(s) || s
+      return s
+    }
+
     const dataToExport = filteredBookings.map(booking => {
       const b = booking.raw || {}
       const event = b.event || {}
       const buyer = b.buyer || {}
       const user = b.user || {}
-      // const attendees = Array.isArray(b.attendees)
-      //   ? b.attendees.map((a) => `${a.fullName} (${a.email})`).join(", ")
-      //   : "";
 
       return {
-        'Booking ID': b.bookingId || b._id,
         'Transaction Ref': b.transactionRef || b.booking?.transactionRef,
-        'Created At': b.createdAt,
         Status: b.status,
         'Payment Status': b.paymentStatus,
-
-        // Event Details
-        'Event ID': event._id,
         'Event Name': event.eventName,
         'Event Slug': event.slug,
         'Event Location': event.location,
         'Event Start Date': event.eventStartDate,
         'Event End Date': event.eventEndDate,
-        'Event Image': event.image,
-
-        // Buyer Details
         'Buyer Name': buyer.fullName,
         'Buyer Email': buyer.email,
-        'Buyer Country': buyer.country,
-        'Buyer City': buyer.city,
+        'Buyer Country': toCountryLabel(buyer.country),
+        'Buyer City': toCityLabel(buyer.city),
         'Buyer Phone': buyer.phone,
-
-        // User Details
-        'User ID': user._id,
         'User Name': user.name,
         'User Email': user.email,
         'User Phone': user.phoneNumber,
-
-        // Ticket Details
-        'Ticket ID': b.ticketId,
         'Ticket Name': b.ticketName,
         'Ticket Type': b.ticketType,
         Quantity: b.quantity,
         'Per Ticket Price': b.perTicketPrice,
         'Total Price': b.totalPrice
-
-        // // Attendees
-        // Attendees: attendees,
       }
     })
+
     downloadExcel(dataToExport, 'Event_Bookings.xlsx')
   }
 
