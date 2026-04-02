@@ -622,6 +622,9 @@ export default function TransactionsForm () {
             (typeof b.totalPrice === 'string' && parseFloat(b.totalPrice) === 0)
               ? 'Completed'
               : String(b.paymentStatus || 'Pending'),
+          giveaway: TextCapitalize(
+            b?.isGiveaway || b?.booking?.isGiveaway || 'No'
+          ),
           buyer: b.buyer || null,
           buyerName: b.buyer?.fullName || '-',
           buyerEmail: b.buyer?.email || '-',
@@ -772,6 +775,12 @@ export default function TransactionsForm () {
           case 'paymentStatus':
             return String(a.paymentStatus || '').localeCompare(
               String(b.paymentStatus || ''),
+              undefined,
+              { sensitivity: 'base' }
+            )
+          case 'giveaway':
+            return String(a.giveaway || '').localeCompare(
+              String(b.giveaway || ''),
               undefined,
               { sensitivity: 'base' }
             )
@@ -1510,6 +1519,16 @@ export default function TransactionsForm () {
                   <th className='px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
                     <button
                       type='button'
+                      onClick={() => toggleSort('giveaway')}
+                      className='flex items-center'
+                    >
+                      <span>Giveaway</span>
+                      <TbCaretUpDownFilled className='w-3 h-3 text-gray-400 ml-1' />
+                    </button>
+                  </th>
+                  <th className='px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
+                    <button
+                      type='button'
                       onClick={() => toggleSort('amount')}
                       className='flex items-center'
                     >
@@ -1622,6 +1641,12 @@ export default function TransactionsForm () {
                           {booking.discount > 0
                             ? `₦${booking.discount.toLocaleString()}`
                             : '-'}
+                        </span>
+                      </td>
+
+                      <td className='px-4 py-4 whitespace-nowrap'>
+                        <span className='text-xs font-semibold text-gray-900'>
+                          {booking.giveaway || '-'}
                         </span>
                       </td>
 

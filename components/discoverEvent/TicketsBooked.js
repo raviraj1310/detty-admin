@@ -107,6 +107,11 @@ export default function TicketsBooked () {
       maximumFractionDigits: 2
     })}`
   }
+  const cap = v => {
+    const s = String(v || '').trim()
+    if (!s) return '-'
+    return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase()
+  }
   const [searchTerm, setSearchTerm] = useState('')
   const [summary, setSummary] = useState({
     total: 0,
@@ -186,6 +191,7 @@ export default function TicketsBooked () {
             ),
             paymentStatus: String(b.paymentStatus || 'Pending'),
             status: String(b.status || 'Pending'),
+            giveaway: cap(b?.isGiveaway || b?.booking?.isGiveaway || 'no'),
             attendees: Array.isArray(b.attendees) ? b.attendees : [],
             ticketId: b.ticketId
           }))
@@ -253,6 +259,7 @@ export default function TicketsBooked () {
             ),
             paymentStatus: String(b.paymentStatus || 'Pending'),
             status: String(b.status || 'Pending'),
+            giveaway: cap(b?.isGiveaway || b?.booking?.isGiveaway || 'no'),
             attendees: Array.isArray(b.attendees) ? b.attendees : [],
             buyer: b.buyer || null,
             event: b.event || null,
@@ -540,6 +547,8 @@ export default function TicketsBooked () {
       'Booked On': toLocal(b.bookedOn || b.createdAt || b.updatedAt),
       'Payment Status': b.paymentStatus || '-',
       Status: b.status || '-',
+      Giveaway:
+        b.giveaway || cap(b?.isGiveaway || b?.booking?.isGiveaway || ''),
       'Event ID': (b.event && (b.event._id || b.event.id)) || '',
       'Event Name': (b.event && b.event.eventName) || summary?.eventName || '-',
       'Event Slug': (b.event && b.event.slug) || '-',
@@ -732,8 +741,8 @@ export default function TicketsBooked () {
           className='overflow-x-auto overflow-y-hidden rounded-2xl border border-[#E5E8F5]'
           onScroll={() => setMenuOpenId(null)}
         >
-          <div className='min-w-[1300px]'>
-            <div className='grid grid-cols-[12%_12%_14%_10%_12%_8%_8%_8%_8%_8%] gap-2 bg-[#F7F9FD] px-6 py-4'>
+          <div className='min-w-[1600px]'>
+            <div className='grid grid-cols-[minmax(150px,12%)_minmax(150px,12%)_minmax(220px,14%)_minmax(160px,10%)_minmax(190px,12%)_minmax(130px,8%)_minmax(130px,8%)_minmax(160px,10%)_minmax(140px,9%)_minmax(120px,8%)_minmax(240px,12%)] gap-2 bg-[#F7F9FD] px-6 py-4'>
               <div>
                 <TableHeaderCell>Booked On</TableHeaderCell>
               </div>
@@ -760,6 +769,9 @@ export default function TicketsBooked () {
               </div>
               <div>
                 <TableHeaderCell>Discount Applied</TableHeaderCell>
+              </div>
+              <div className='flex justify-center'>
+                <TableHeaderCell>Giveaway</TableHeaderCell>
               </div>
               <div className='flex justify-end'>
                 <TableHeaderCell align='right'>Ticket Status</TableHeaderCell>
@@ -789,7 +801,7 @@ export default function TicketsBooked () {
                         booking.bookingId ||
                         'booking'
                       }-${idx}`}
-                      className='grid grid-cols-[12%_12%_14%_10%_12%_8%_8%_8%_8%_8%] gap-2 px-6 py-5 hover:bg-[#F9FAFD]'
+                      className='grid grid-cols-[minmax(150px,12%)_minmax(150px,12%)_minmax(220px,14%)_minmax(160px,10%)_minmax(190px,12%)_minmax(130px,8%)_minmax(130px,8%)_minmax(160px,10%)_minmax(140px,9%)_minmax(120px,8%)_minmax(240px,12%)] gap-2 px-6 py-5 hover:bg-[#F9FAFD]'
                     >
                       <div className='text-sm text-[#5E6582] truncate'>
                         {(() => {
@@ -909,6 +921,23 @@ export default function TicketsBooked () {
                         {typeof booking.discountApplied === 'number'
                           ? `₦${booking.discountApplied.toLocaleString()}`
                           : '-'}
+                      </div>
+                      <div className='flex items-center justify-center'>
+                        {(() => {
+                          const v = String(booking.giveaway || '').toLowerCase()
+                          const yes = v === 'yes' || v === 'true'
+                          const cls = yes
+                            ? 'bg-emerald-50 text-emerald-600 border border-emerald-200'
+                            : 'bg-gray-100 text-gray-600 border border-gray-200'
+                          const label = booking.giveaway || '-'
+                          return (
+                            <span
+                              className={`rounded-full px-3 py-1 text-xs font-semibold ${cls} whitespace-nowrap`}
+                            >
+                              {label}
+                            </span>
+                          )
+                        })()}
                       </div>
                       <div className='flex items-center justify-end gap-3'>
                         {(() => {
