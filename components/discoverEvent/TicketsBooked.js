@@ -20,7 +20,8 @@ import {
   getEventTicketSummary,
   getEventBookedTickets,
   getEventBookedTicket,
-  downloadBookedTickets
+  downloadBookedTickets,
+  downloadEventBooking
 } from '@/services/discover-events/event.service'
 import Modal from '@/components/ui/Modal'
 
@@ -554,6 +555,41 @@ export default function TicketsBooked () {
     try {
       if (downloading) return
       setDownloading(true)
+
+      if (eventId) {
+        const blob = await downloadEventBooking(eventId)
+        const type = String(blob?.type || '').toLowerCase()
+        if (type.includes('json')) {
+          const txt = await blob.text()
+          try {
+            const j = JSON.parse(txt)
+            const msg = j?.message || 'Failed to download bookings'
+            throw new Error(msg)
+          } catch {
+            throw new Error('Failed to download bookings')
+          }
+        }
+
+        const inferExt = mime => {
+          const t = String(mime || '').toLowerCase()
+          if (t.includes('sheet') || t.includes('excel')) return 'xlsx'
+          if (t.includes('csv')) return 'csv'
+          if (t.includes('zip')) return 'zip'
+          if (t.includes('pdf')) return 'pdf'
+          if (t.includes('json')) return 'json'
+          return 'bin'
+        }
+
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `event-bookings-${String(eventId)}.${inferExt(type)}`
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        URL.revokeObjectURL(url)
+        return
+      }
 
       const toAmountNumber = v => {
         if (typeof v === 'number') return v
