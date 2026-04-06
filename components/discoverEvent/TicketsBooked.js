@@ -20,9 +20,9 @@ import {
   getEventTicketSummary,
   getEventBookedTickets,
   getEventBookedTicket,
-  downloadBookedTickets
+  downloadBookedTickets,
+  downloadEventBooking
 } from '@/services/discover-events/event.service'
-import * as XLSX from 'xlsx'
 import Modal from '@/components/ui/Modal'
 
 const metricCards = [
@@ -96,6 +96,13 @@ export default function TicketsBooked () {
   const toNumber = v => {
     if (v == null || v === '') return null
     if (typeof v === 'number') return Number.isFinite(v) ? v : null
+    if (typeof v === 'object') {
+      const dec = v?.$numberDecimal ?? v?.numberDecimal ?? null
+      if (dec != null) {
+        const n = parseFloat(String(dec))
+        return Number.isFinite(n) ? n : null
+      }
+    }
     const n = parseFloat(String(v).replace(/[^0-9.-]/g, ''))
     return Number.isFinite(n) ? n : null
   }
@@ -106,6 +113,11 @@ export default function TicketsBooked () {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
     })}`
+  }
+  const cap = v => {
+    const s = String(v || '').trim()
+    if (!s) return '-'
+    return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase()
   }
   const [searchTerm, setSearchTerm] = useState('')
   const [summary, setSummary] = useState({
@@ -124,6 +136,7 @@ export default function TicketsBooked () {
   const [ticketOpen, setTicketOpen] = useState(false)
   const [customerOpen, setCustomerOpen] = useState(false)
   const [downloadingId, setDownloadingId] = useState(null)
+  const [downloading, setDownloading] = useState(false)
   const [menuPos, setMenuPos] = useState({ top: 0, left: 0 })
   const [limit, setLimit] = useState(50)
   const [pageCount, setPageCount] = useState(1)
@@ -180,12 +193,21 @@ export default function TicketsBooked () {
               b.ticketName || '-'
             }`,
             quantity: toNumber(b.quantity),
-            amount: toNumber(b.totalPrice ?? b.amount ?? b.finalPayableAmount),
-            totalPrice: toNumber(
-              b.totalPrice ?? b.amount ?? b.finalPayableAmount
-            ),
+            amount:
+              toNumber(
+                b.finalPayableAmount ?? b?.booking?.finalPayableAmount
+              ) ??
+              toNumber(
+                b.totalPrice ??
+                  b.totalAmount ??
+                  b.amount ??
+                  b?.booking?.totalPrice ??
+                  b?.booking?.totalAmount ??
+                  b?.booking?.amount
+              ),
             paymentStatus: String(b.paymentStatus || 'Pending'),
             status: String(b.status || 'Pending'),
+            giveaway: cap(b?.isGiveaway || b?.booking?.isGiveaway || 'no'),
             attendees: Array.isArray(b.attendees) ? b.attendees : [],
             ticketId: b.ticketId
           }))
@@ -247,12 +269,21 @@ export default function TicketsBooked () {
               b.ticketName || '-'
             }`,
             quantity: toNumber(b.quantity),
-            amount: toNumber(b.totalPrice ?? b.amount ?? b.finalPayableAmount),
-            totalPrice: toNumber(
-              b.totalPrice ?? b.amount ?? b.finalPayableAmount
-            ),
+            amount:
+              toNumber(
+                b.finalPayableAmount ?? b?.booking?.finalPayableAmount
+              ) ??
+              toNumber(
+                b.totalPrice ??
+                  b.totalAmount ??
+                  b.amount ??
+                  b?.booking?.totalPrice ??
+                  b?.booking?.totalAmount ??
+                  b?.booking?.amount
+              ),
             paymentStatus: String(b.paymentStatus || 'Pending'),
             status: String(b.status || 'Pending'),
+            giveaway: cap(b?.isGiveaway || b?.booking?.isGiveaway || 'no'),
             attendees: Array.isArray(b.attendees) ? b.attendees : [],
             buyer: b.buyer || null,
             event: b.event || null,
@@ -520,66 +551,258 @@ export default function TicketsBooked () {
     })()
   }
 
-  const handleDownloadExcel = () => {
-    if (!bookings || bookings.length === 0) {
-      alert('No data to download')
-      return
+  const handleDownloadExcel = async () => {
+    try {
+      if (downloading) return
+      setDownloading(true)
+
+      if (eventId) {
+        const blob = await downloadEventBooking(eventId)
+        const type = String(blob?.type || '').toLowerCase()
+        if (type.includes('json')) {
+          const txt = await blob.text()
+          try {
+            const j = JSON.parse(txt)
+            const msg = j?.message || 'Failed to download bookings'
+            throw new Error(msg)
+          } catch {
+            throw new Error('Failed to download bookings')
+          }
+        }
+
+        const inferExt = mime => {
+          const t = String(mime || '').toLowerCase()
+          if (t.includes('sheet') || t.includes('excel')) return 'xlsx'
+          if (t.includes('csv')) return 'csv'
+          if (t.includes('zip')) return 'zip'
+          if (t.includes('pdf')) return 'pdf'
+          if (t.includes('json')) return 'json'
+          return 'bin'
+        }
+
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `event-bookings-${String(eventId)}.${inferExt(type)}`
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        URL.revokeObjectURL(url)
+        return
+      }
+
+      const toAmountNumber = v => {
+        if (typeof v === 'number') return v
+        if (!v) return 0
+        if (typeof v === 'string') {
+          const cleaned = v.replace(/,/g, '').trim()
+          const m = cleaned.match(/-?\d+(\.\d+)?/)
+          return m ? Number(m[0]) : 0
+        }
+        if (typeof v === 'object') {
+          const dec = v?.$numberDecimal
+          if (typeof dec === 'string') return toAmountNumber(dec)
+          const asValue = v?.value
+          if (typeof asValue === 'string' || typeof asValue === 'number') {
+            return toAmountNumber(asValue)
+          }
+        }
+        return Number(v || 0) || 0
+      }
+
+      const normalizeFinalPayableAmount = (finalPayableAmount, totalAmount) => {
+        const finalNum = toAmountNumber(finalPayableAmount)
+        const totalNum = toAmountNumber(totalAmount)
+        if (
+          finalNum > 0 &&
+          totalNum > 0 &&
+          Number.isInteger(finalNum) &&
+          finalNum > totalNum * 10 &&
+          finalNum <= totalNum * 200
+        ) {
+          return finalNum / 100
+        }
+        return finalNum
+      }
+
+      const resolveGiveaway = order =>
+        (
+          order?.isGiveaway ??
+          order?.booking?.isGiveaway ??
+          order?.booking?.isGiveAway ??
+          ''
+        )
+          .toString()
+          .toLowerCase() || 'no'
+
+      const baseSearch = String(searchTerm || '')
+        .trim()
+        .toLowerCase()
+      const basePaymentStatus = String(paymentStatusFilter || '')
+        .trim()
+        .toLowerCase()
+
+      const rawResponse = eventId
+        ? await getEventBookedTickets(eventId)
+        : await getEventBookedTicket()
+      const payload = rawResponse?.data || rawResponse
+      const rawList = Array.isArray(payload?.tickets)
+        ? payload.tickets
+        : Array.isArray(payload?.data?.tickets)
+        ? payload.data.tickets
+        : Array.isArray(payload?.data)
+        ? payload.data
+        : Array.isArray(payload)
+        ? payload
+        : []
+
+      let allOrders = rawList
+
+      if (baseSearch) {
+        allOrders = allOrders.filter(o => {
+          const orderId = String(o?.orderId || o?.booking?.orderId || '')
+          const buyerName = String(
+            o?.buyer?.fullName || o?.booking?.buyer?.fullName || ''
+          )
+          const buyerEmail = String(
+            o?.buyer?.email || o?.booking?.buyer?.email || ''
+          )
+          return (
+            orderId.toLowerCase().includes(baseSearch) ||
+            buyerName.toLowerCase().includes(baseSearch) ||
+            buyerEmail.toLowerCase().includes(baseSearch)
+          )
+        })
+      }
+
+      if (basePaymentStatus) {
+        allOrders = allOrders.filter(o =>
+          String(o?.paymentStatus || o?.booking?.paymentStatus || '')
+            .toLowerCase()
+            .includes(basePaymentStatus)
+        )
+      }
+
+      if (!allOrders.length) return
+
+      const headers = [
+        'Order ID',
+        'Band Number',
+        'Event',
+        'Customer Name',
+        'Customer Email',
+        'Event Type',
+        'Booking Date',
+        'Quantity',
+        'Amount',
+        'Final Payable Amount',
+        'Giveaway',
+        'Payment Status',
+        'Ticket Status'
+      ]
+
+      const rows = allOrders.map(order => {
+        const orderId = order?.orderId || order?.booking?.orderId || ''
+        const band =
+          order?.bandCode ||
+          order?.booking?.bandCode ||
+          order?.booking?.tickets?.[0]?.bandCode ||
+          ''
+        const eventName =
+          order?.event?.eventName ||
+          order?.booking?.eventId?.eventName ||
+          summary?.eventName ||
+          ''
+        const buyerName =
+          order?.buyer?.fullName ||
+          order?.booking?.buyer?.fullName ||
+          order?.buyer?.name ||
+          order?.userName ||
+          ''
+        const buyerEmail =
+          order?.buyer?.email ||
+          order?.booking?.buyer?.email ||
+          order?.email ||
+          ''
+        const eventType =
+          order?.event?.eventTypeId?.eventType ||
+          order?.booking?.eventId?.eventTypeId?.eventType ||
+          order?.event?.eventTypeId ||
+          order?.booking?.eventId?.eventTypeId ||
+          ''
+        const bookingDate = order?.createdAt
+          ? new Date(order.createdAt).toISOString()
+          : order?.booking?.createdAt
+          ? new Date(order.booking.createdAt).toISOString()
+          : ''
+        const quantity =
+          typeof order?.quantity === 'number'
+            ? order.quantity
+            : Number(order?.quantity ?? order?.booking?.quantity) || 0
+
+        const rawAmount =
+          order?.totalAmount ??
+          order?.totalPrice ??
+          order?.amount ??
+          order?.booking?.totalAmount ??
+          order?.booking?.totalPrice ??
+          order?.booking?.amount
+        const amount = toAmountNumber(rawAmount)
+
+        const finalPayableAmount = normalizeFinalPayableAmount(
+          order?.finalPayableAmount ?? order?.booking?.finalPayableAmount,
+          rawAmount
+        )
+
+        const giveaway = resolveGiveaway(order)
+        const paymentStatus =
+          order?.paymentStatus || order?.booking?.paymentStatus || ''
+        const ticketStatus = order?.status || order?.booking?.status || ''
+
+        return [
+          orderId,
+          band,
+          eventName,
+          buyerName,
+          buyerEmail,
+          eventType,
+          bookingDate,
+          quantity,
+          amount,
+          finalPayableAmount,
+          giveaway,
+          paymentStatus,
+          ticketStatus
+        ]
+      })
+
+      const csvLines = [headers, ...rows].map(row =>
+        row
+          .map(value => {
+            if (value === null || value === undefined) return ''
+            const str = String(value)
+            if (/[",\n]/.test(str)) return `"${str.replace(/"/g, '""')}"`
+            return str
+          })
+          .join(',')
+      )
+
+      const csvContent = csvLines.join('\n')
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+      const url = URL.createObjectURL(blob)
+
+      const link = document.createElement('a')
+      link.href = url
+      link.download = 'tickets-booked.csv'
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      URL.revokeObjectURL(url)
+    } catch (error) {
+      console.error('Download orders excel error:', error)
+    } finally {
+      setDownloading(false)
     }
-
-    const toLocal = v => {
-      if (!v) return '-'
-      const x = typeof v === 'object' && v.$date ? v.$date : v
-      const t = Date.parse(x)
-      return Number.isFinite(t) ? new Date(x).toLocaleDateString() : String(v)
-    }
-
-    const dataToExport = bookings.map(b => ({
-      'Booking ID': b.bookingId || b.id || '',
-      'Transaction Ref':
-        b.transactionRef || (b.booking && b.booking.transactionRef) || '-',
-      'Booked On': toLocal(b.bookedOn || b.createdAt || b.updatedAt),
-      'Payment Status': b.paymentStatus || '-',
-      Status: b.status || '-',
-      'Event ID': (b.event && (b.event._id || b.event.id)) || '',
-      'Event Name': (b.event && b.event.eventName) || summary?.eventName || '-',
-      'Event Slug': (b.event && b.event.slug) || '-',
-      Location: (b.event && b.event.location) || '-',
-      'Event Start Date': toLocal(b.event && b.event.eventStartDate),
-      'Event End Date': toLocal(b.event && b.event.eventEndDate),
-      Image: (b.event && b.event.image) || '-',
-      'Buyer Name': (b.buyer && b.buyer.fullName) || b.userName || '-',
-      'Buyer Email': (b.buyer && b.buyer.email) || b.email || '-',
-      'Buyer Country': (b.buyer && b.buyer.country) || '-',
-      'Buyer City': (b.buyer && b.buyer.city) || '-',
-      'Buyer Phone': (b.buyer && b.buyer.phone) || b.phoneNumber || '-',
-      'User Name': (b.user && (b.user.name || b.user.fullName)) || '-',
-      'User Email': (b.user && b.user.email) || '-',
-      'Ticket Name': b.ticketName || '-',
-      'Ticket Type': b.ticketType || '-',
-      Quantity: toNumber(b.quantity) ?? 0,
-      'Price Per Ticket':
-        toNumber(
-          (b.ticketId && b.ticketId.perTicketPrice) || b.perTicketPrice
-        ) ?? 0,
-      'Total Price':
-        toNumber(b.totalPrice ?? b.amount ?? b.finalPayableAmount) ?? 0,
-      'Arrival Date': toLocal(b.arrivalDate)
-      // Attendees: Array.isArray(b.attendees)
-      //   ? b.attendees.map(a => a.fullName).join(', ')
-      //   : '-'
-    }))
-
-    const ws = XLSX.utils.json_to_sheet(dataToExport)
-    const wb = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(wb, ws, 'Bookings')
-
-    const nameForFile = (
-      'all events bookings' ||
-      summary?.eventName ||
-      'Event Bookings'
-    ).replace(/[\\/:*?"<>|]+/g, '-')
-    const filename = `${nameForFile}.xlsx`
-    XLSX.writeFile(wb, filename)
   }
 
   const formatEventDateWthOutTime = isoDate => {
@@ -686,6 +909,7 @@ export default function TicketsBooked () {
             </button>
             <button
               onClick={handleDownloadExcel}
+              disabled={downloading}
               className='flex h-8 items-center gap-1.5 rounded-lg border border-[#E5E6EF] bg-white px-3 text-xs font-medium text-[#2D3658] transition hover:bg-[#F6F7FD]'
             >
               <Download className='h-3.5 w-3.5 text-[#8B93AF]' />
@@ -732,8 +956,8 @@ export default function TicketsBooked () {
           className='overflow-x-auto overflow-y-hidden rounded-2xl border border-[#E5E8F5]'
           onScroll={() => setMenuOpenId(null)}
         >
-          <div className='min-w-[1300px]'>
-            <div className='grid grid-cols-[12%_12%_14%_10%_12%_8%_8%_8%_8%_8%] gap-2 bg-[#F7F9FD] px-6 py-4'>
+          <div className='min-w-[1600px]'>
+            <div className='grid grid-cols-[minmax(150px,12%)_minmax(150px,12%)_minmax(220px,14%)_minmax(160px,10%)_minmax(190px,12%)_minmax(130px,8%)_minmax(130px,8%)_minmax(160px,10%)_minmax(140px,9%)_minmax(120px,8%)_minmax(240px,12%)] gap-2 bg-[#F7F9FD] px-6 py-4'>
               <div>
                 <TableHeaderCell>Booked On</TableHeaderCell>
               </div>
@@ -760,6 +984,9 @@ export default function TicketsBooked () {
               </div>
               <div>
                 <TableHeaderCell>Discount Applied</TableHeaderCell>
+              </div>
+              <div className='flex justify-center'>
+                <TableHeaderCell>Giveaway</TableHeaderCell>
               </div>
               <div className='flex justify-end'>
                 <TableHeaderCell align='right'>Ticket Status</TableHeaderCell>
@@ -789,7 +1016,7 @@ export default function TicketsBooked () {
                         booking.bookingId ||
                         'booking'
                       }-${idx}`}
-                      className='grid grid-cols-[12%_12%_14%_10%_12%_8%_8%_8%_8%_8%] gap-2 px-6 py-5 hover:bg-[#F9FAFD]'
+                      className='grid grid-cols-[minmax(150px,12%)_minmax(150px,12%)_minmax(220px,14%)_minmax(160px,10%)_minmax(190px,12%)_minmax(130px,8%)_minmax(130px,8%)_minmax(160px,10%)_minmax(140px,9%)_minmax(120px,8%)_minmax(240px,12%)] gap-2 px-6 py-5 hover:bg-[#F9FAFD]'
                     >
                       <div className='text-sm text-[#5E6582] truncate'>
                         {(() => {
@@ -856,9 +1083,7 @@ export default function TicketsBooked () {
                               : typeof booking.totalPrice === 'number'
                               ? booking.totalPrice
                               : null
-                          return amt != null
-                            ? `₦${amt.toLocaleString()}`
-                            : booking.amount || booking.totalPrice || '-'
+                          return amt != null ? formatCurrency(amt) : '-'
                         })()}
                       </div>
 
@@ -909,6 +1134,23 @@ export default function TicketsBooked () {
                         {typeof booking.discountApplied === 'number'
                           ? `₦${booking.discountApplied.toLocaleString()}`
                           : '-'}
+                      </div>
+                      <div className='flex items-center justify-center'>
+                        {(() => {
+                          const v = String(booking.giveaway || '').toLowerCase()
+                          const yes = v === 'yes' || v === 'true'
+                          const cls = yes
+                            ? 'bg-emerald-50 text-emerald-600 border border-emerald-200'
+                            : 'bg-gray-100 text-gray-600 border border-gray-200'
+                          const label = booking.giveaway || '-'
+                          return (
+                            <span
+                              className={`rounded-full px-3 py-1 text-xs font-semibold ${cls} whitespace-nowrap`}
+                            >
+                              {label}
+                            </span>
+                          )
+                        })()}
                       </div>
                       <div className='flex items-center justify-end gap-3'>
                         {(() => {

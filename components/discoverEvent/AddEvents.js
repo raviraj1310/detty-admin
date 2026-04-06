@@ -265,6 +265,61 @@ export default function AddEvents () {
     }
   }, [imageUrl])
 
+  const handleSaveDraft = async e => {
+    e.preventDefault?.()
+    const { errs, tw, ws } = validate()
+    setErrors(errs)
+    if (Object.keys(errs).length > 0) return
+    const fd = new FormData()
+    fd.append('eventName', formData.eventName.trim())
+    fd.append('slug', formData.slug.trim())
+    fd.append('twitterLink', tw)
+    fd.append('about', formData.aboutEvent.trim())
+    fd.append('eventTypeId', selectedEventTypeId)
+    const effectiveEndDate = formData.eventEndDate || formData.eventStartDate
+    fd.append('eventEndDate', effectiveEndDate)
+    fd.append('mapLocation', formData.mapLocation)
+    fd.append('websiteLink', ws)
+    fd.append('location', formData.location)
+    fd.append('eventStartDate', formData.eventStartDate)
+    fd.append('isVATIncluded', formData.isVATIncluded)
+    const openingHours =
+      `${formData.eventStartDate} ${formData.eventStartTime} - ${effectiveEndDate} ${formData.eventEndTime}`.trim()
+    fd.append('openingHours', openingHours)
+    fd.append('image', imageFile)
+    fd.append('imageWidth', String(imageMeta.width || 0))
+    fd.append('imageHeight', String(imageMeta.height || 0))
+    fd.append('imageSizeBytes', String(imageMeta.sizeBytes || 0))
+    fd.append(
+      'imageOriginalSizeBytes',
+      String(imageMeta.originalSizeBytes || 0)
+    )
+    fd.append('imageFormat', imageMeta.format || 'webp')
+    fd.append('hostedBy', selectedVendorId)
+    fd.append('status', 'draft')
+    const formattedTickets = tickets.map(t => ({
+      slotName: t.slotName,
+      date: t.date,
+      time: t.time,
+      inventory: Number(t.inventory) || 0,
+      price: Number(t.price) || 0
+    }))
+    fd.append('tickets', JSON.stringify(formattedTickets))
+    fd.append('slots', JSON.stringify(formattedTickets))
+    try {
+      setSubmitting(true)
+      const res = await addEvent(fd)
+      if (res && res.success) {
+        setToastOpen(true)
+        router.push('/discover-events')
+      }
+    } catch (err) {
+      setErrors({ submit: 'Failed to save draft' })
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
   return (
     <div className='space-y-7 py-12 px-12'>
       <Toast
@@ -299,6 +354,20 @@ export default function AddEvents () {
           >
             Edit Tickets
           </button> */}
+          <button
+            onClick={handleSaveDraft}
+            disabled={submitting}
+            className='rounded-xl border border-[#E5E6EF] bg-white px-5 py-2.5 text-sm font-semibold text-[#1A1F3F] shadow-sm transition hover:bg-[#F9FAFD] disabled:opacity-60 disabled:cursor-not-allowed'
+          >
+            {submitting ? (
+              <span className='flex items-center gap-2'>
+                <Loader2 className='h-4 w-4 animate-spin' />
+                Saving...
+              </span>
+            ) : (
+              'Save as Draft'
+            )}
+          </button>
           <button
             onClick={handleSubmit}
             disabled={submitting}
@@ -411,7 +480,6 @@ export default function AddEvents () {
                     }
                     className='w-full h-12 rounded-xl border border-[#E5E6EF] bg-[#F8F9FC] px-4 text-sm text-slate-700 focus:border-[#C5CAE3] focus:outline-none focus:ring-2 focus:ring-[#C2C8E4]'
                   />
-                  <Calendar className='absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#A6AEC7] pointer-events-none' />
                 </div>
                 {errors.eventStartDate && (
                   <p className='text-xs text-red-600'>
@@ -434,7 +502,6 @@ export default function AddEvents () {
                     }
                     className='w-full h-12 rounded-xl border border-[#E5E6EF] bg-[#F8F9FC] px-4 text-sm text-slate-700 focus:border-[#C5CAE3] focus:outline-none focus:ring-2 focus:ring-[#C2C8E4]'
                   />
-                  <Calendar className='absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#A6AEC7] pointer-events-none' />
                 </div>
                 {errors.eventEndDate && (
                   <p className='text-xs text-red-600'>{errors.eventEndDate}</p>
@@ -705,7 +772,10 @@ export default function AddEvents () {
                 </div>
                 <button
                   type='button'
-                  onClick={() => fileInputRef.current?.click()}
+                  onClick={e => {
+                    e.stopPropagation()
+                    fileInputRef.current?.click()
+                  }}
                   className='px-6 text-sm font-medium text-[#2D3658] bg-white transition hover:bg-[#F6F7FD]'
                 >
                   Browse
@@ -730,6 +800,7 @@ export default function AddEvents () {
                       format: ''
                     })
                   }
+                  e.target.value = ''
                 }}
               />
               <span className='text-xs text-[#B0B7D0]'>
@@ -893,7 +964,6 @@ export default function AddEvents () {
                       className='w-full h-12 rounded-xl border border-[#E5E6EF] bg-[#F8F9FC] px-4 pr-12 text-sm text-slate-700 placeholder:text-[#B0B7D0] focus:border-[#C5CAE3] focus:outline-none focus:ring-2 focus:ring-[#C2C8E4]'
                       placeholder='www.website.com'
                     />
-                    <Calendar className='absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#A6AEC7]' />
                   </div>
                   {errors.website && (
                     <p className='text-xs text-red-600'>{errors.website}</p>

@@ -259,7 +259,7 @@ export default function OrderViewPage () {
               <div className='relative w-32 h-20'>
                 <Image
                   src='/images/logo/logo.png'
-                  alt='Access Bank Detty Fusion'
+                  alt='Access Bank One Fusion'
                   fill
                   className='object-contain'
                   unoptimized

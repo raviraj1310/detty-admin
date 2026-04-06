@@ -64,13 +64,34 @@ export default function TicketView () {
     if (bookingId) fetchData()
   }, [bookingId])
 
+  const parseAmount = v => {
+    if (v == null) return 0
+    if (typeof v === 'number') return v
+    if (typeof v === 'object') {
+      const decimal =
+        v?.$numberDecimal ?? v?.numberDecimal ?? v?.decimal ?? v?.value ?? null
+      if (decimal != null) {
+        const n = parseFloat(String(decimal))
+        return isNaN(n) ? 0 : n
+      }
+    }
+    const s = String(v ?? '').replace(/[^0-9.]/g, '')
+    const n = parseFloat(s)
+    return isNaN(n) ? 0 : n
+  }
   const formatNaira = v => {
-    if (typeof v === 'number') return `₦${v.toLocaleString()}`
-    const n = Number(v)
-    return isNaN(n) ? String(v || '-') : `₦${n.toLocaleString()}`
+    const n = typeof v === 'number' ? v : parseAmount(v)
+    return `₦${n.toLocaleString('en-NG', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    })}`
   }
   const arrivalDate = booking?.event?.arrivalDate || ''
-  const buyer = booking?.buyer || {}
+  const buyer =
+    booking?.buyer ||
+    booking?.event?.buyer ||
+    booking?.event?.eventId?.buyer ||
+    {}
   const issuedOn = booking?.createdAt || booking?.bookedOn || booking?.updatedAt
   const issuedDate = issuedOn
     ? new Date(
@@ -103,7 +124,18 @@ export default function TicketView () {
     eventDetails?.hostedBy?._id ||
     booking?.event?.vendorProfile?.userId ||
     booking?.event?.vendorProfile?._id
-  const qrData = `https://dettyfusion.accessbankplc.com/vendor/scanned-ticket?vendorId=${vendorId}&bookingId=${bookingId}`
+  const scanBaseUrl =
+    process.env.NEXT_PUBLIC_VENDOR_SCAN_BASE_URL || 'https://myonefusion.com'
+  const buildQrData = ({ bookingId: b, uniqueId } = {}) => {
+    const qs = new URLSearchParams()
+    qs.set('vendorId', String(vendorId || ''))
+    if (b) qs.set('bookingId', String(b))
+    if (uniqueId) qs.set('uniqueId', String(uniqueId))
+    return `${String(scanBaseUrl).replace(
+      /\/+$/,
+      ''
+    )}/vendor/scanned-ticket?${qs.toString()}`
+  }
 
   const orderId =
     toDisplayString(booking?.event?.orderId) ||
@@ -112,9 +144,22 @@ export default function TicketView () {
     bookingId ||
     '-'
   const paymentStatus = toDisplayString(booking?.paymentStatus) || ''
-  const bookingStatus = toDisplayString(booking?.bookingStatus) || ''
+  const bookingStatusRaw =
+    toDisplayString(
+      booking?.tickets?.[0]?.status ??
+        booking?.event?.tickets?.[0]?.status ??
+        booking?.bookingStatus
+    ) || ''
+  const bookingStatusNormalized = String(bookingStatusRaw).toLowerCase()
+  const bookingStatus = bookingStatusNormalized
+    ? bookingStatusNormalized
+        .replace(/_/g, ' ')
+        .replace(/\b\w/g, c => c.toUpperCase())
+    : ''
   const isPaymentSuccess = /success|paid|completed/i.test(paymentStatus)
-  const isBookingSuccess = /success|confirmed|completed/i.test(bookingStatus)
+  const isBookingSuccess = /success|confirmed|completed|scanned/i.test(
+    bookingStatusNormalized
+  )
 
   const eventStartDate = eventDetails?.eventStartDate
   const eventEndDate = eventDetails?.eventEndDate
@@ -160,12 +205,15 @@ export default function TicketView () {
     'Landmark Event Centre, Lagos'
 
   const totalQty = items.reduce((s, it) => s + (Number(it.quantity) || 0), 0)
-  const serviceFee = Number(booking?.pricing?.serviceFee) || 0
-  const discountApplied = Number(booking?.pricing?.discountApplied) || 0
-  const totalAmount = Number(booking?.totalAmount) || total
+  const serviceFee = parseAmount(booking?.pricing?.serviceFee)
+  const discountApplied = parseAmount(booking?.pricing?.discountApplied)
+  const totalAmount = parseAmount(booking?.totalAmount) || total
+  const finalPayableRaw =
+    booking?.finalPayableAmount ??
+    booking?.event?.finalPayableAmount ??
+    booking?.pricing?.finalPayableAmount
   const finalPayable =
-    Number(booking?.finalPayableAmount) ||
-    totalAmount + serviceFee - discountApplied
+    parseAmount(finalPayableRaw) || totalAmount + serviceFee - discountApplied
   const transactionRef =
     toDisplayString(
       booking?.transactionRef ??
@@ -182,6 +230,90 @@ export default function TicketView () {
     toDisplayString(firstAttendee?.email ?? buyer?.email) || '—'
   const ticket1Phone =
     toDisplayString(firstAttendee?.phone ?? buyer?.phone) || '—'
+
+  const ticketCards = (() => {
+    const purchasedOn = issuedDate
+      ? issuedDate.toLocaleDateString('en-GB', {
+          weekday: 'short',
+          day: 'numeric',
+          month: 'short',
+          year: 'numeric'
+        })
+      : '—'
+
+    const out = []
+
+    if (tickets.length) {
+      tickets.forEach((t, ticketIndex) => {
+        const ticketName =
+          toDisplayString(t?.ticketName ?? t?.ticketType ?? t?.ticket) || '—'
+        const baseUniqueId = String(t?.uniqueId || t?._id || '')
+        const tAttendees = Array.isArray(t?.attendees) ? t.attendees : []
+
+        if (tAttendees.length) {
+          tAttendees.forEach((a, attendeeIndex) => {
+            const uniqueId = String(
+              a?.uniqueId ||
+                a?.uniqueID ||
+                a?.ticketUniqueId ||
+                a?.qrUniqueId ||
+                a?.qrCodeUniqueId ||
+                baseUniqueId ||
+                ''
+            )
+            out.push({
+              key: uniqueId || `${ticketIndex}_${attendeeIndex}`,
+              index: out.length,
+              uniqueId,
+              ticketName,
+              name:
+                toDisplayString(a?.fullName ?? a?.name ?? buyer?.fullName) ||
+                '—',
+              email: toDisplayString(a?.email ?? buyer?.email) || '—',
+              phone: toDisplayString(a?.phone ?? buyer?.phone) || '—',
+              purchasedOn
+            })
+          })
+          return
+        }
+
+        out.push({
+          key: baseUniqueId || String(ticketIndex),
+          index: out.length,
+          uniqueId: baseUniqueId,
+          ticketName,
+          name: toDisplayString(buyer?.fullName ?? buyer?.name) || '—',
+          email: toDisplayString(buyer?.email) || '—',
+          phone: toDisplayString(buyer?.phone) || '—',
+          purchasedOn
+        })
+      })
+      return out
+    }
+
+    attendees.forEach((a, idx) => {
+      const uniqueId = String(
+        a?.uniqueId ||
+          a?.uniqueID ||
+          a?.ticketUniqueId ||
+          a?.qrUniqueId ||
+          a?.qrCodeUniqueId ||
+          ''
+      )
+      out.push({
+        key: uniqueId || String(idx),
+        index: out.length,
+        uniqueId,
+        ticketName: toDisplayString(a?.ticketName) || '—',
+        name: toDisplayString(a?.fullName ?? a?.name ?? buyer?.fullName) || '—',
+        email: toDisplayString(a?.email ?? buyer?.email) || '—',
+        phone: toDisplayString(a?.phone ?? buyer?.phone) || '—',
+        purchasedOn
+      })
+    })
+
+    return out
+  })()
 
   const cardClass = 'bg-white rounded-xl border border-[#E5E8F6] shadow-sm p-5'
 
@@ -291,14 +423,6 @@ export default function TicketView () {
                     {arrivalDate ? formatEventDate(arrivalDate) : '—'}
                   </p>
                 </div>
-
-                <div className='mt-5 flex flex-col items-center'>
-                  <QRCodeGenerator value={qrData} size={150} />
-                  <span className='mt-3 inline-flex items-center gap-2 rounded-full border border-[#FDE68A] bg-[#FFFBEB] px-4 py-1.5 text-xs font-medium text-[#854D0E]'>
-                    <span className='h-1.5 w-1.5 rounded-full bg-[#EAB308]' />{' '}
-                    Pending
-                  </span>
-                </div>
               </div>
             </div>
           </div>
@@ -324,52 +448,99 @@ export default function TicketView () {
               ))}
             </div>
 
-            <div className='mt-4 border-t border-[#EEF1FA] pt-4 flex items-center justify-between'>
-              <span className='flex items-center gap-2 font-bold text-slate-900'>
-                <Ticket className='h-4 w-4 text-[#EF4444]' /> Total
-              </span>
-              <span className='font-bold text-[#EF4444]'>
-                {formatNaira(totalAmount)}
-              </span>
+            <div className='mt-4 border-t border-[#EEF1FA] pt-4 space-y-2'>
+              {discountApplied > 0 && (
+                <div className='flex items-center justify-between text-sm text-red-600'>
+                  <span>Discount</span>
+                  <span>- {formatNaira(discountApplied)}</span>
+                </div>
+              )}
+              {serviceFee > 0 && (
+                <div className='flex items-center justify-between text-sm text-slate-900'>
+                  <span>Service Fee</span>
+                  <span>{formatNaira(serviceFee)}</span>
+                </div>
+              )}
+              <div className='pt-2 border-t border-[#EEF1FA] flex items-center justify-between'>
+                <span className='flex items-center gap-2 font-bold text-slate-900'>
+                  <Ticket className='h-4 w-4 text-[#EF4444]' /> Total
+                </span>
+                <span className='font-bold text-[#EF4444]'>
+                  {formatNaira(finalPayable)}
+                </span>
+              </div>
             </div>
           </div>
 
           <div className='border-t border-[#EEF1FA]' />
 
-          {/* Ticket 1 section inside main card */}
+          {/* Ticket-wise QR section */}
           <div className='p-5 md:p-7'>
-            <div className='rounded-xl bg-[#F8FAFC] border border-[#EEF1FA] p-5'>
-              <h2 className='text-base font-bold text-slate-900'>Ticket 1</h2>
-              <div className='mt-4 grid grid-cols-1 gap-y-3 text-sm sm:grid-cols-2 sm:gap-x-12'>
-                <div className='text-[#9CA3AF]'>Name</div>
-                <div className='sm:text-right font-medium text-slate-900'>
-                  {ticket1FullName}
-                </div>
-                <div className='text-[#9CA3AF]'>Email Address</div>
-                <div className='sm:text-right font-medium text-slate-900'>
-                  {ticket1Email}
-                </div>
-                <div className='text-[#9CA3AF]'>Phone Number</div>
-                <div className='sm:text-right font-medium text-slate-900'>
-                  {ticket1Phone}
-                </div>
-                <div className='text-[#9CA3AF]'>Purchased on</div>
-                <div className='sm:text-right font-medium text-slate-900'>
-                  {issuedDate
-                    ? issuedDate.toLocaleDateString('en-GB', {
-                        weekday: 'short',
-                        day: 'numeric',
-                        month: 'short',
-                        year: 'numeric'
-                      })
-                    : '—'}
-                </div>
-                <div className='text-[#9CA3AF]'>Ticket Name</div>
-                <div className='sm:text-right font-medium text-slate-900'>
-                  {ticket1Name}
-                </div>
+            <h2 className='text-base font-bold text-slate-900'>Tickets</h2>
+            {ticketCards.length ? (
+              <div className='mt-4 space-y-4'>
+                {ticketCards.map((t, i) => (
+                  <div
+                    key={t.key}
+                    className='rounded-xl bg-[#F8FAFC] border border-[#EEF1FA] p-5'
+                  >
+                    <div className='flex flex-col gap-4 md:flex-row md:items-start md:justify-between'>
+                      <div className='flex-1 min-w-0'>
+                        <div className='flex items-start justify-between gap-3'>
+                          <h3 className='text-sm font-bold text-slate-900'>
+                            Ticket {i + 1}
+                          </h3>
+                        </div>
+                        <div className='mt-4 grid grid-cols-1 gap-y-3 text-sm sm:grid-cols-2 sm:gap-x-12'>
+                          <div className='text-[#9CA3AF]'>Name</div>
+                          <div className='sm:text-right font-medium text-slate-900'>
+                            {t.name}
+                          </div>
+                          <div className='text-[#9CA3AF]'>Email Address</div>
+                          <div className='sm:text-right font-medium text-slate-900'>
+                            {t.email}
+                          </div>
+                          <div className='text-[#9CA3AF]'>Phone Number</div>
+                          <div className='sm:text-right font-medium text-slate-900'>
+                            {t.phone}
+                          </div>
+                          <div className='text-[#9CA3AF]'>Purchased on</div>
+                          <div className='sm:text-right font-medium text-slate-900'>
+                            {t.purchasedOn}
+                          </div>
+                          <div className='text-[#9CA3AF]'>Ticket Name</div>
+                          <div className='sm:text-right font-medium text-slate-900'>
+                            {t.ticketName}
+                          </div>
+                          {t.uniqueId ? (
+                            <>
+                              <div className='text-[#9CA3AF]'>Unique ID</div>
+                              <div className='sm:text-right font-medium text-slate-900 break-all'>
+                                {t.uniqueId}
+                              </div>
+                            </>
+                          ) : null}
+                        </div>
+                      </div>
+
+                      <div className='shrink-0 flex mt-7 flex-col items-center justify-center md:pt-8'>
+                        <QRCodeGenerator
+                          value={buildQrData({
+                            bookingId,
+                            uniqueId: t.uniqueId
+                          })}
+                          size={140}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
-            </div>
+            ) : (
+              <div className='mt-4 text-sm text-[#5E6582]'>
+                No ticket details found.
+              </div>
+            )}
           </div>
         </div>
 
@@ -447,7 +618,7 @@ export default function TicketView () {
               <div className='flex justify-between'>
                 <span className='text-[#5E6582]'>Total Amount</span>
                 <span className='font-semibold text-slate-900'>
-                  {formatNaira(total)}
+                  {formatNaira(totalAmount)}
                 </span>
               </div>
               <div className='flex justify-between'>
@@ -469,7 +640,7 @@ export default function TicketView () {
                 <span className='font-semibold text-[#2563EB]'>{orderId}</span>
               </div>
               <div className='flex justify-between'>
-                <span className='text-[#5E6582]'>Booking Status</span>
+                <span className='text-[#5E6582]'>Ticket Scan Status</span>
                 <span
                   className={`font-semibold ${
                     isBookingSuccess ? 'text-[#16A34A]' : 'text-[#EAB308]'

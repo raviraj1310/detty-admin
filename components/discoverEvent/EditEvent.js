@@ -51,6 +51,7 @@ export default function EditEvent ({ eventId }) {
   const [selectedVendorId, setSelectedVendorId] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [eventStatus, setEventStatus] = useState('')
   const [toastOpen, setToastOpen] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [confirmOpen, setConfirmOpen] = useState(false)
@@ -243,7 +244,7 @@ export default function EditEvent ({ eventId }) {
     return { errs, tw, ws }
   }
 
-  const handleSubmit = async e => {
+  const submitEvent = async (e, statusOverride) => {
     e.preventDefault()
     const { errs, tw, ws } = validate()
     setErrors(errs)
@@ -278,6 +279,9 @@ export default function EditEvent ({ eventId }) {
       fd.append('imageFormat', imageMeta.format || 'webp')
     }
     fd.append('hostedBy', selectedVendorId)
+    if (statusOverride) {
+      fd.append('status', statusOverride)
+    }
     const formattedTickets = tickets.map(t => ({
       slotName: t.slotName || t.ticketName || '', // Fallback for existing data
       date: t.date,
@@ -305,6 +309,10 @@ export default function EditEvent ({ eventId }) {
     }
   }
 
+  const handleSubmit = async e => submitEvent(e)
+
+  const handlePublish = async e => submitEvent(e, 'true')
+
   useEffect(() => {
     const init = async () => {
       try {
@@ -319,6 +327,7 @@ export default function EditEvent ({ eventId }) {
         const eventRes = await getEventById(eventId)
         console.log('eventRes', eventRes)
         const d = eventRes?.data || {}
+        setEventStatus(String(d.status || ''))
         const toDateInput = v => {
           if (!v) return ''
           const dt =
@@ -526,38 +535,53 @@ export default function EditEvent ({ eventId }) {
           </div>
         </div>
         <div className='flex flex-wrap items-center gap-3 md:justify-end'>
-          {!isPartner && checkPermission('event-delete') && (
+          <button
+            onClick={() => setConfirmOpen(true)}
+            disabled={deleting || loading}
+            className='rounded-xl border border-[#E5E6EF] px-5 py-2.5 text-sm font-semibold text-[#FF5B2C] shadow-[0_14px_30px_-20px_rgba(248,113,72,0.65)] transition hover:bg-[#F0481A] disabled:opacity-60 disabled:cursor-not-allowed'
+          >
+            {deleting ? (
+              <span className='flex items-center gap-2'>
+                <Loader2 className='h-4 w-4 animate-spin' />
+                Deleting...
+              </span>
+            ) : (
+              'Delete'
+            )}
+          </button>
+          {String(eventStatus || '')
+            .trim()
+            .toLowerCase()
+            .startsWith('draft') && (
             <button
-              onClick={() => setConfirmOpen(true)}
-              disabled={deleting || loading}
-              className='rounded-xl border border-[#E5E6EF] px-5 py-2.5 text-sm font-semibold text-[#FF5B2C] shadow-[0_14px_30px_-20px_rgba(248,113,72,0.65)] transition hover:bg-[#F0481A] disabled:opacity-60 disabled:cursor-not-allowed'
-            >
-              {deleting ? (
-                <span className='flex items-center gap-2'>
-                  <Loader2 className='h-4 w-4 animate-spin' />
-                  Deleting...
-                </span>
-              ) : (
-                'Delete'
-              )}
-            </button>
-          )}
-          {!isPartner && checkPermission('event-edit') && (
-            <button
-              onClick={handleSubmit}
+              onClick={handlePublish}
               disabled={submitting || loading}
-              className='rounded-xl bg-[#FF5B2C] px-5 py-2.5 text-sm font-semibold text-white shadow-[0_14px_30px_-20px_rgba(248,113,72,0.65)] transition hover:bg-[#F0481A] disabled:opacity-60 disabled:cursor-not-allowed'
+              className='rounded-xl border border-[#E5E6EF] bg-white px-5 py-2.5 text-sm font-semibold text-[#1A1F3F] shadow-sm transition hover:bg-[#F9FAFD] disabled:opacity-60 disabled:cursor-not-allowed'
             >
               {submitting ? (
                 <span className='flex items-center gap-2'>
                   <Loader2 className='h-4 w-4 animate-spin' />
-                  Updating...
+                  Publishing...
                 </span>
               ) : (
-                'Update'
+                'Publish'
               )}
             </button>
           )}
+          <button
+            onClick={handleSubmit}
+            disabled={submitting || loading}
+            className='rounded-xl bg-[#FF5B2C] px-5 py-2.5 text-sm font-semibold text-white shadow-[0_14px_30px_-20px_rgba(248,113,72,0.65)] transition hover:bg-[#F0481A] disabled:opacity-60 disabled:cursor-not-allowed'
+          >
+            {submitting ? (
+              <span className='flex items-center gap-2'>
+                <Loader2 className='h-4 w-4 animate-spin' />
+                Updating...
+              </span>
+            ) : (
+              'Update'
+            )}
+          </button>
         </div>
       </div>
 
@@ -981,7 +1005,10 @@ export default function EditEvent ({ eventId }) {
                   </div>
                   <button
                     type='button'
-                    onClick={() => fileInputRef.current?.click()}
+                    onClick={e => {
+                      e.stopPropagation()
+                      fileInputRef.current?.click()
+                    }}
                     className='px-6 text-sm font-medium text-[#2D3658] bg-white transition hover:bg-[#F6F7FD]'
                   >
                     Browse
@@ -996,6 +1023,7 @@ export default function EditEvent ({ eventId }) {
                     const f = e.target.files?.[0] || null
                     if (f) {
                       setRawImageFile(f)
+                      setCropOpen(true)
                       try {
                         const u = URL.createObjectURL(f)
                         setImageUrl(u)
@@ -1018,6 +1046,7 @@ export default function EditEvent ({ eventId }) {
                         format: ''
                       })
                     }
+                    e.target.value = ''
                   }}
                 />
                 {imageUrl && (
@@ -1086,7 +1115,6 @@ export default function EditEvent ({ eventId }) {
             setImageUrl(u)
           } catch {}
         }}
-        layoutMode='horizontal'
       />
       {confirmOpen && (
         <div className='fixed inset-0 z-40 flex items-center justify-center'>

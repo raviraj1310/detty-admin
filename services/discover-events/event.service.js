@@ -145,3 +145,15 @@ export const deleteSlot = async slotId => {
   const res = await api.delete(`/event/delete-slot/${slotId}`)
   return res.data
 }
+
+export const downloadEventBooking = async eventId => {
+  try {
+    const response = await api.get(`/user-event/download-bookings/${eventId}`, {
+      responseType: 'blob'
+    })
+    return response.data
+  } catch (error) {
+    console.error('Error downloading event booking:', error)
+    throw error
+  }
+}
