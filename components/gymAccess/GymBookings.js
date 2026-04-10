@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import {
   Search,
   Download,
@@ -50,6 +50,8 @@ const TableHeaderCell = ({ children, align = 'left' }) => (
 
 export default function GymBookings ({ id }) {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const gymName = searchParams?.get('gymName')
   const [searchTerm, setSearchTerm] = useState('')
   const [menuOpenId, setMenuOpenId] = useState(null)
   const [bookings, setBookings] = useState([])
@@ -130,7 +132,9 @@ export default function GymBookings ({ id }) {
         </button>
         <h1 className='text-xl font-semibold text-slate-900'>
           Gym Access Bookings{' '}
-          <span className='text-[#FF5B2C]'>(Elevate Fitness Club)</span>
+          {gymName ? (
+            <span className='text-[#FF5B2C]'>({gymName})</span>
+          ) : null}
         </h1>
         <p className='text-xs text-[#99A1BC]'>Dashboard / Bookings</p>
       </div>

@@ -11,15 +11,14 @@ const getGymImageUrl = imagePath => {
   if (imagePath.startsWith('http')) return imagePath
 
   const baseUrl =
-    process.env.NEXT_PUBLIC_API_BASE_URL2 ||
-    process.env.NEXT_PUBLIC_API_BASE_URL
-  if (!baseUrl) return `/upload/image/${imagePath}`
+  process.env.NEXT_PUBLIC_SIM_IMAGE_BASE_ORIGIN;
+  if (!baseUrl) return `/upload/${imagePath}`
 
   try {
     const { origin } = new URL(baseUrl)
-    return `${origin}/upload/image/${imagePath}`
+    return `${origin}/upload/${imagePath}`
   } catch {
-    return `/upload/image/${imagePath}`
+    return `/upload/${imagePath}`
   }
 }
 

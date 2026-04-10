@@ -42,13 +42,12 @@ const getGymImageUrl = imagePath => {
   const clean = raw.replace(/^\/+/, '')
 
   const baseUrl =
-    process.env.NEXT_PUBLIC_API_BASE_URL2 ||
-    process.env.NEXT_PUBLIC_API_BASE_URL
+  process.env.NEXT_PUBLIC_SIM_IMAGE_BASE_ORIGIN
   if (!baseUrl) {
     if (clean.startsWith('upload/')) return `/${clean}`
     if (clean.startsWith('image/') || clean.startsWith('video/'))
       return `/upload/${clean}`
-    return `/upload/image/${clean}`
+    return `/upload/${clean}`
   }
 
   try {
@@ -56,12 +55,12 @@ const getGymImageUrl = imagePath => {
     if (clean.startsWith('upload/')) return `${origin}/${clean}`
     if (clean.startsWith('image/') || clean.startsWith('video/'))
       return `${origin}/upload/${clean}`
-    return `${origin}/upload/image/${clean}`
+    return `${origin}/upload/${clean}`
   } catch {
     if (clean.startsWith('upload/')) return `/${clean}`
     if (clean.startsWith('image/') || clean.startsWith('video/'))
       return `/upload/${clean}`
-    return `/upload/image/${clean}`
+    return `/upload/${clean}`
   }
 }
 
@@ -701,7 +700,13 @@ export default function GymAccessMaster () {
                     <td className='py-3 px-4'>
                       <div
                         className='flex items-center gap-1 text-xs cursor-pointer'
-                        onClick={() => router.push(`/gym/bookings/${gym._id}`)}
+                        onClick={() => {
+                          const gymName = gym?.gymName
+                          const q = gymName
+                            ? `?gymName=${encodeURIComponent(gymName)}`
+                            : ''
+                          router.push(`/gym/bookings/${gym._id}${q}`)
+                        }}
                       >
                         <span className='font-semibold text-indigo-600 underline'>
                           {gym.totalBookings ?? 0}
