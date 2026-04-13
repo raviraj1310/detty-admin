@@ -105,7 +105,7 @@ const toImageSrc = u => {
   if (!origin) origin = originEnv
   const base = origin.replace(/\/+$/, '')
   const path = s.replace(/^\/+/, '')
-  return base ? `${base}/upload/image/${path}` : `/upload/image/${path}`
+  return base ? `${base}/upload/${path}` : `/upload/${path}`
 }
 
 const formatCurrency = amount => {
