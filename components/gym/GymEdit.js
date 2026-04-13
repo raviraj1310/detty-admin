@@ -107,6 +107,7 @@ export default function GymAccessEdit () {
   const [galleryCropOpen, setGalleryCropOpen] = useState(false)
   const [galleryRawImageFile, setGalleryRawImageFile] = useState(null)
   const [galleryCropQueue, setGalleryCropQueue] = useState([])
+  const galleryCropHandledRef = useRef(false)
 
   useEffect(() => {
     const fetchData = async () => {
@@ -305,12 +306,17 @@ export default function GymAccessEdit () {
   }
 
   const closeGalleryCropper = () => {
+    if (galleryCropHandledRef.current) {
+      galleryCropHandledRef.current = false
+      return
+    }
     setGalleryCropOpen(false)
     setGalleryRawImageFile(null)
     setGalleryCropQueue([])
   }
 
   const handleGalleryCropped = ({ file }) => {
+    galleryCropHandledRef.current = true
     setGalleryImages(prev => [
       ...prev,
       {

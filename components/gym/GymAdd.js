@@ -77,6 +77,7 @@ export default function GymAccessAdd () {
   const [galleryCropOpen, setGalleryCropOpen] = useState(false)
   const [galleryRawImageFile, setGalleryRawImageFile] = useState(null)
   const [galleryCropQueue, setGalleryCropQueue] = useState([])
+  const galleryCropHandledRef = useRef(false)
 
   // Handlers
   const handleInputChange = e => {
@@ -159,12 +160,17 @@ export default function GymAccessAdd () {
   }
 
   const closeGalleryCropper = () => {
+    if (galleryCropHandledRef.current) {
+      galleryCropHandledRef.current = false
+      return
+    }
     setGalleryCropOpen(false)
     setGalleryRawImageFile(null)
     setGalleryCropQueue([])
   }
 
   const handleGalleryCropped = ({ file }) => {
+    galleryCropHandledRef.current = true
     setGalleryImages(prev => [
       ...prev,
       {
