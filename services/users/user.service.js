@@ -1,4 +1,4 @@
-import api from '@/src/axois/axois'
+import api, { apiv2 } from '@/src/axois/axois'
 
 const getUserIdFromStorage = () => {
   if (typeof window === 'undefined') return null
@@ -198,6 +198,16 @@ export const getMyRideBookings = async id => {
     return response.data
   } catch (error) {
     console.error('Get My Ride Bookings API Error:', error)
+    throw error
+  }
+}
+
+export const getAllTripBookings = async () => {
+  try {
+    const response = await apiv2.get('/trips/bookings')
+    return response.data
+  } catch (error) {
+    console.error('Error fetching all trip bookings:', error)
     throw error
   }
 }

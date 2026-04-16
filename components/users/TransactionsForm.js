@@ -19,6 +19,7 @@ import Modal from '@/components/ui/Modal'
 import TransactionStatsCards from './TransactionStatsCards'
 import { getCountryById } from '@/services/country/country.service'
 import { getCityById } from '@/services/city/city.service'
+import { getAllTripBookings } from '@/services/users/user.service'
 function ActionDropdown ({ transactionId }) {
   const [isOpen, setIsOpen] = useState(false)
   const [buttonPosition, setButtonPosition] = useState({ top: 0, right: 0 })
@@ -161,6 +162,7 @@ const filterTabs = [
   { id: 'event', label: 'Event', active: true },
   { id: 'activities', label: 'Places to Visit', active: false },
   { id: 'merchandise', label: 'Merchandise', active: false },
+  { id: 'trip', label: 'Trips', active: false },
   { id: 'e-sim', label: 'Internet Connectivity', active: false },
   { id: 'accommodation', label: 'Accommodation', active: false },
   { id: 'med-plus', label: 'Med Plus', active: false },
@@ -442,12 +444,28 @@ export default function TransactionsForm () {
 
   const formatEventDateWthOutTime = isoDate => {
     const date = new Date(isoDate)
+    if (isNaN(date.getTime())) return '-'
     const options = {
       weekday: 'long',
       month: 'short',
       day: 'numeric'
     }
     return date.toLocaleString('en-US', options)
+  }
+
+  const toNumber = value => {
+    if (value && typeof value === 'object') {
+      if (typeof value.$numberDecimal !== 'undefined') {
+        return Number(value.$numberDecimal) || 0
+      }
+      if (typeof value.$numberInt !== 'undefined') {
+        return Number(value.$numberInt) || 0
+      }
+      if (typeof value.$numberLong !== 'undefined') {
+        return Number(value.$numberLong) || 0
+      }
+    }
+    return Number(value) || 0
   }
 
   useEffect(() => {
@@ -460,188 +478,303 @@ export default function TransactionsForm () {
         if (dateRange.end) params.endDate = dateRange.end
         if (searchTerm && String(searchTerm).trim())
           params.search = String(searchTerm).trim()
-        const res = await getBookingList(undefined, params)
         let raw = []
 
-        // API response: { success, message, data: { totalBookingCount, totalRevenue, tickets, ... } }
-        if (
-          res?.data &&
-          typeof res.data === 'object' &&
-          !Array.isArray(res.data) &&
-          (typeof res.data.totalBookingCount !== 'undefined' ||
-            res.data.totalRevenue !== 'undefined' ||
-            res.data.bookings ||
-            res.data.tickets)
-        ) {
-          const d = res.data
-          if (Array.isArray(d.bookings)) raw = d.bookings
-          else if (Array.isArray(d.tickets)) raw = d.tickets
-          else if (Array.isArray(d.data)) raw = d.data
-          else raw = []
-
-          setEventBookingStats({
-            totalBookingCount: Number(d.totalBookingCount ?? 0),
-            totalRevenue: Number(d.totalRevenue ?? 0)
-          })
-
-          if (
-            typeof d.totalBookingsYesterday !== 'undefined' ||
-            d.avgDailyGrowthCount !== undefined
-          ) {
-            const yesterdayCount = Number(d.totalBookingsYesterday || 0)
-            let yesterdayDateStr = d.yesterdayDate || ''
-            const yDate = new Date(yesterdayDateStr)
-            if (!isNaN(yDate.getTime())) {
-              yesterdayDateStr = yDate.toLocaleDateString('en-US', {
-                month: 'short',
-                day: 'numeric'
-              })
-            }
-            const avgGrowthCount = Number(d.avgDailyGrowthCount || 0)
-            let avgGrowthPercentVal = parseFloat(
-              String(d.avgDailyGrowthPercent || '0%').replace('%', '')
-            )
-            if (isNaN(avgGrowthPercentVal)) avgGrowthPercentVal = 0
-            const finalGrowthPercentVal = Math.min(avgGrowthPercentVal, 100)
-            const avgGrowthPercentStr = `${finalGrowthPercentVal.toFixed(2)}%`
-            setStats({
-              yesterdayCount,
-              yesterdayDateStr,
-              avgGrowthCount,
-              isCountIncreasing: avgGrowthCount >= 0,
-              avgGrowthPercent: avgGrowthPercentStr,
-              isPctIncreasing: avgGrowthPercentVal >= 0
-            })
-            setStatsLoadedFromApi(true)
-          } else {
-            setStatsLoadedFromApi(false)
-          }
-        } else {
+        if (activeTab === 'trip') {
+          const res = await getAllTripBookings()
           raw = Array.isArray(res?.data)
             ? res.data
             : Array.isArray(res)
             ? res
+            : Array.isArray(res?.bookings)
+            ? res.bookings
             : []
+
           setStatsLoadedFromApi(false)
-          setEventBookingStats({ totalBookingCount: 0, totalRevenue: 0 })
+          setEventBookingStats({
+            totalBookingCount: raw.length,
+            totalRevenue: raw.reduce((sum, booking) => {
+              return (
+                sum +
+                toNumber(
+                  booking?.finalPayableAmount ||
+                    booking?.totalAmount ||
+                    booking?.provider?.totalFare
+                )
+              )
+            }, 0)
+          })
+        } else {
+          const res = await getBookingList(undefined, params)
+
+          // API response: { success, message, data: { totalBookingCount, totalRevenue, tickets, ... } }
+          if (
+            res?.data &&
+            typeof res.data === 'object' &&
+            !Array.isArray(res.data) &&
+            (typeof res.data.totalBookingCount !== 'undefined' ||
+              res.data.totalRevenue !== 'undefined' ||
+              res.data.bookings ||
+              res.data.tickets)
+          ) {
+            const d = res.data
+            if (Array.isArray(d.bookings)) raw = d.bookings
+            else if (Array.isArray(d.tickets)) raw = d.tickets
+            else if (Array.isArray(d.data)) raw = d.data
+            else raw = []
+
+            setEventBookingStats({
+              totalBookingCount: Number(d.totalBookingCount ?? 0),
+              totalRevenue: Number(d.totalRevenue ?? 0)
+            })
+
+            if (
+              typeof d.totalBookingsYesterday !== 'undefined' ||
+              d.avgDailyGrowthCount !== undefined
+            ) {
+              const yesterdayCount = Number(d.totalBookingsYesterday || 0)
+              let yesterdayDateStr = d.yesterdayDate || ''
+              const yDate = new Date(yesterdayDateStr)
+              if (!isNaN(yDate.getTime())) {
+                yesterdayDateStr = yDate.toLocaleDateString('en-US', {
+                  month: 'short',
+                  day: 'numeric'
+                })
+              }
+              const avgGrowthCount = Number(d.avgDailyGrowthCount || 0)
+              let avgGrowthPercentVal = parseFloat(
+                String(d.avgDailyGrowthPercent || '0%').replace('%', '')
+              )
+              if (isNaN(avgGrowthPercentVal)) avgGrowthPercentVal = 0
+              const finalGrowthPercentVal = Math.min(avgGrowthPercentVal, 100)
+              const avgGrowthPercentStr = `${finalGrowthPercentVal.toFixed(2)}%`
+              setStats({
+                yesterdayCount,
+                yesterdayDateStr,
+                avgGrowthCount,
+                isCountIncreasing: avgGrowthCount >= 0,
+                avgGrowthPercent: avgGrowthPercentStr,
+                isPctIncreasing: avgGrowthPercentVal >= 0
+              })
+              setStatsLoadedFromApi(true)
+            } else {
+              setStatsLoadedFromApi(false)
+            }
+          } else {
+            raw = Array.isArray(res?.data)
+              ? res.data
+              : Array.isArray(res)
+              ? res
+              : []
+            setStatsLoadedFromApi(false)
+            setEventBookingStats({ totalBookingCount: 0, totalRevenue: 0 })
+          }
         }
 
-        // console.log("rawdata from the api", raw);
+        const list = raw.map((b, idx) => {
+          if (activeTab === 'trip') {
+            const provider = b?.provider || {}
+            const payload = provider?.payload || {}
+            const travel = Array.isArray(payload?.TravelInformations)
+              ? payload.TravelInformations[0] || {}
+              : {}
+            const billing = payload?.PassengerDetails?.BillingAddress || {}
+            const passengerCount =
+              toNumber(b?.search?.adults) +
+                toNumber(b?.search?.children) +
+                toNumber(b?.search?.infants) ||
+              toNumber(travel?.NumberOfPassengers) ||
+              (Array.isArray(payload?.PassengerDetails?.AirTravellers)
+                ? payload.PassengerDetails.AirTravellers.length
+                : 0) ||
+              1
+            const amountNum = toNumber(
+              b?.finalPayableAmount || b?.totalAmount || provider?.totalFare
+            )
+            const fromCode =
+              travel?.DepartureTerminalCode || b?.search?.from || '-'
+            const toCode = travel?.ArrivalTerminalCode || b?.search?.to || '-'
+            const routeName = `${fromCode} to ${toCode}`
 
-        const list = raw.map((b, idx) => ({
-          id: b.bookingId || b._id || `booking-${idx}`,
-          rowKey: `${String(b.bookingId || b._id || 'noid')}-${String(
-            b.createdAt || b.updatedAt || idx
-          )}`,
-          bookedOnRaw: b.createdAt || b.updatedAt,
-          bookedOn: formatBookedOn(b.createdAt || b.updatedAt),
-          eventName:
-            b.event && (b.event.title || b.event.eventName)
-              ? b.event.title || b.event.eventName
-              : '-',
-          eventImage: toImageUrl(b?.event?.image),
-          referralCode: b?.referralCode || '-',
-          type:
-            b.event && (b.event.eventType || b.event.type)
+            return {
+              id: b?._id || `trip-booking-${idx}`,
+              rowKey: `${String(b?._id || 'trip-noid')}-${String(
+                b?.createdAt || b?.updatedAt || idx
+              )}`,
+              bookedOnRaw: b?.createdAt || b?.updatedAt,
+              bookedOn: formatBookedOn(b?.createdAt || b?.updatedAt),
+              eventName: routeName,
+              eventImage: null,
+              referralCode: provider?.bookingReference || '-',
+              type: 'trip',
+              itemType: travel?.OperatorName || 'Flight',
+              ticketsBooked: `${passengerCount} x ${
+                travel?.TicketClass || 'Flight'
+              }`,
+              ticketsQty: passengerCount,
+              additionalInfo: `${travel?.OperatorName || 'Flight'} • ${
+                provider?.tripType || b?.search?.tripType || 'One Way'
+              }`,
+              amount: amountNum > 0 ? `₦${amountNum.toLocaleString()}` : '-',
+              amountNum,
+              discount: 0,
+              activityStatus: TextCapitalize(
+                provider?.bookingStatus || b?.status || 'Pending'
+              ),
+              paymentStatus: String(b?.paymentStatus || 'Pending'),
+              giveaway: '-',
+              buyer: b?.buyer || billing || null,
+              buyerName:
+                b?.buyer?.fullName ||
+                b?.userId?.name ||
+                billing?.ContactName ||
+                '-',
+              buyerEmail:
+                b?.buyer?.email ||
+                b?.userId?.email ||
+                billing?.ContactEmail ||
+                '-',
+              buyerPhone: b?.buyer?.phone || billing?.ContactMobileNo || '-',
+              event: null,
+              eventDateText: formatEventDate(
+                travel?.DepartureDate || b?.search?.departDate
+              ),
+              sortTs: Math.max(
+                toTimestamp(travel?.DepartureDate),
+                toTimestamp(b?.createdAt),
+                toTimestamp(b?.updatedAt)
+              ),
+              arrivalDate:
+                formatEventDateWthOutTime(
+                  travel?.ArrivalDate || b?.search?.returnDate
+                ) || '-',
+              tripType: provider?.tripType || b?.search?.tripType || '-',
+              airlineName: travel?.OperatorName || 'Flight',
+              routeName,
+              bookingReference: provider?.bookingReference || '-',
+              pnr: provider?.pnr || '-',
+              raw: b
+            }
+          }
+
+          return {
+            id: b.bookingId || b._id || `booking-${idx}`,
+            rowKey: `${String(b.bookingId || b._id || 'noid')}-${String(
+              b.createdAt || b.updatedAt || idx
+            )}`,
+            bookedOnRaw: b.createdAt || b.updatedAt,
+            bookedOn: formatBookedOn(b.createdAt || b.updatedAt),
+            eventName:
+              b.event && (b.event.title || b.event.eventName)
+                ? b.event.title || b.event.eventName
+                : '-',
+            eventImage: toImageUrl(b?.event?.image),
+            referralCode: b?.referralCode || '-',
+            type: b.event && (b.event.eventType || b.event.type)
               ? b.event.eventType || b.event.type
               : '-',
-          ticketsBooked: `${
-            typeof b.quantity === 'number' ? b.quantity : '-'
-          } x ${b.ticketName || 'Regular'}`,
-          ticketsQty: typeof b.quantity === 'number' ? b.quantity : 0,
-          additionalInfo: '',
-          amount: (() => {
-            const qty =
-              typeof b.quantity === 'number'
-                ? b.quantity
-                : Number(b.quantity) || 0
-            const price =
-              typeof b.perTicketPrice === 'number'
-                ? b.perTicketPrice
-                : Number(b.perTicketPrice) || 0
-            const ticketsTotal = Array.isArray(b.tickets)
-              ? b.tickets.reduce((sum, t) => {
-                  const tq =
-                    typeof t.quantity === 'number'
-                      ? t.quantity
-                      : Number(t.quantity) || 0
-                  const tp =
-                    typeof t.perTicketPrice === 'number'
-                      ? t.perTicketPrice
-                      : Number(t.perTicketPrice) || 0
-                  const tt =
-                    typeof t.totalPrice === 'number'
-                      ? t.totalPrice
-                      : Number(t.totalPrice) || 0
-                  return sum + (tp * tq || tt)
-                }, 0)
-              : qty * price
-            const apiTotal =
-              typeof b.totalPrice === 'number'
-                ? b.totalPrice
-                : Number(b.totalPrice) || 0
-            const total = ticketsTotal > 0 ? ticketsTotal : apiTotal
-            return total > 0 ? `₦${total.toLocaleString()}` : '-'
-          })(),
-          amountNum: (() => {
-            const qty =
-              typeof b.quantity === 'number'
-                ? b.quantity
-                : Number(b.quantity) || 0
-            const price =
-              typeof b.perTicketPrice === 'number'
-                ? b.perTicketPrice
-                : Number(b.perTicketPrice) || 0
-            const ticketsTotal = Array.isArray(b.tickets)
-              ? b.tickets.reduce((sum, t) => {
-                  const tq =
-                    typeof t.quantity === 'number'
-                      ? t.quantity
-                      : Number(t.quantity) || 0
-                  const tp =
-                    typeof t.perTicketPrice === 'number'
-                      ? t.perTicketPrice
-                      : Number(t.perTicketPrice) || 0
-                  const tt =
-                    typeof t.totalPrice === 'number'
-                      ? t.totalPrice
-                      : Number(t.totalPrice) || 0
-                  return sum + (tp * tq || tt)
-                }, 0)
-              : qty * price
-            const apiTotal =
-              typeof b.totalPrice === 'number'
-                ? b.totalPrice
-                : Number(b.totalPrice) || 0
-            return ticketsTotal > 0 ? ticketsTotal : apiTotal
-          })(),
-          discount: b.discountApplied || 0,
-          activityStatus: TextCapitalize(b.status || 'Pending'),
-          paymentStatus:
-            (typeof b.totalPrice === 'number' && b.totalPrice === 0) ||
-            (typeof b.totalPrice === 'string' && parseFloat(b.totalPrice) === 0)
-              ? 'Completed'
-              : String(b.paymentStatus || 'Pending'),
-          giveaway: TextCapitalize(
-            b?.isGiveaway || b?.booking?.isGiveaway || 'No'
-          ),
-          buyer: b.buyer || null,
-          buyerName: b.buyer?.fullName || '-',
-          buyerEmail: b.buyer?.email || '-',
-          buyerPhone: b.buyer?.phone || '-',
-          event: b.event || null,
-          eventDateText: formatEventDate(
-            b?.event?.eventStartDate,
-            b?.event?.eventStartTime
-          ),
-          sortTs: Math.max(
-            toTimestamp(b?.event?.eventStartDate),
-            toTimestamp(b?.createdAt),
-            toTimestamp(b?.updatedAt)
-          ),
-          arrivalDate: formatEventDateWthOutTime(b?.arrivalDate) || '-',
-          raw: b
-        }))
+            itemType: b.event && (b.event.eventType || b.event.type)
+              ? b.event.eventType || b.event.type
+              : '-',
+            ticketsBooked: `${
+              typeof b.quantity === 'number' ? b.quantity : '-'
+            } x ${b.ticketName || 'Regular'}`,
+            ticketsQty: typeof b.quantity === 'number' ? b.quantity : 0,
+            additionalInfo: '',
+            amount: (() => {
+              const qty =
+                typeof b.quantity === 'number'
+                  ? b.quantity
+                  : Number(b.quantity) || 0
+              const price =
+                typeof b.perTicketPrice === 'number'
+                  ? b.perTicketPrice
+                  : Number(b.perTicketPrice) || 0
+              const ticketsTotal = Array.isArray(b.tickets)
+                ? b.tickets.reduce((sum, t) => {
+                    const tq =
+                      typeof t.quantity === 'number'
+                        ? t.quantity
+                        : Number(t.quantity) || 0
+                    const tp =
+                      typeof t.perTicketPrice === 'number'
+                        ? t.perTicketPrice
+                        : Number(t.perTicketPrice) || 0
+                    const tt =
+                      typeof t.totalPrice === 'number'
+                        ? t.totalPrice
+                        : Number(t.totalPrice) || 0
+                    return sum + (tp * tq || tt)
+                  }, 0)
+                : qty * price
+              const apiTotal =
+                typeof b.totalPrice === 'number'
+                  ? b.totalPrice
+                  : Number(b.totalPrice) || 0
+              const total = ticketsTotal > 0 ? ticketsTotal : apiTotal
+              return total > 0 ? `₦${total.toLocaleString()}` : '-'
+            })(),
+            amountNum: (() => {
+              const qty =
+                typeof b.quantity === 'number'
+                  ? b.quantity
+                  : Number(b.quantity) || 0
+              const price =
+                typeof b.perTicketPrice === 'number'
+                  ? b.perTicketPrice
+                  : Number(b.perTicketPrice) || 0
+              const ticketsTotal = Array.isArray(b.tickets)
+                ? b.tickets.reduce((sum, t) => {
+                    const tq =
+                      typeof t.quantity === 'number'
+                        ? t.quantity
+                        : Number(t.quantity) || 0
+                    const tp =
+                      typeof t.perTicketPrice === 'number'
+                        ? t.perTicketPrice
+                        : Number(t.perTicketPrice) || 0
+                    const tt =
+                      typeof t.totalPrice === 'number'
+                        ? t.totalPrice
+                        : Number(t.totalPrice) || 0
+                    return sum + (tp * tq || tt)
+                  }, 0)
+                : qty * price
+              const apiTotal =
+                typeof b.totalPrice === 'number'
+                  ? b.totalPrice
+                  : Number(b.totalPrice) || 0
+              return ticketsTotal > 0 ? ticketsTotal : apiTotal
+            })(),
+            discount: b.discountApplied || 0,
+            activityStatus: TextCapitalize(b.status || 'Pending'),
+            paymentStatus:
+              (typeof b.totalPrice === 'number' && b.totalPrice === 0) ||
+              (typeof b.totalPrice === 'string' &&
+                parseFloat(b.totalPrice) === 0)
+                ? 'Completed'
+                : String(b.paymentStatus || 'Pending'),
+            giveaway: TextCapitalize(
+              b?.isGiveaway || b?.booking?.isGiveaway || 'No'
+            ),
+            buyer: b.buyer || null,
+            buyerName: b.buyer?.fullName || '-',
+            buyerEmail: b.buyer?.email || '-',
+            buyerPhone: b.buyer?.phone || '-',
+            event: b.event || null,
+            eventDateText: formatEventDate(
+              b?.event?.eventStartDate,
+              b?.event?.eventStartTime
+            ),
+            sortTs: Math.max(
+              toTimestamp(b?.event?.eventStartDate),
+              toTimestamp(b?.createdAt),
+              toTimestamp(b?.updatedAt)
+            ),
+            arrivalDate: formatEventDateWthOutTime(b?.arrivalDate) || '-',
+            raw: b
+          }
+        })
         setBookings(list)
       } catch (e) {
         setError('Failed to load bookings')
@@ -651,7 +784,7 @@ export default function TransactionsForm () {
       }
     }
     fetchData()
-  }, [dateRange.start, dateRange.end, searchTerm])
+  }, [dateRange.start, dateRange.end, searchTerm, activeTab])
 
   const filteredBookings = bookings
     .filter(booking => {
@@ -689,6 +822,15 @@ export default function TransactionsForm () {
         booking.eventName || booking?.raw?.event?.eventName || ''
       ).toLowerCase()
       const type = String(booking.type || '').toLowerCase()
+      const itemType = String(booking.itemType || '').toLowerCase()
+      const additionalInfo = String(booking.additionalInfo || '').toLowerCase()
+      const referenceText = String(
+        booking.referralCode ||
+          booking.bookingReference ||
+          booking?.raw?.provider?.bookingReference ||
+          booking?.raw?.provider?.pnr ||
+          ''
+      ).toLowerCase()
 
       const buyerName = String(
         booking.buyerName ||
@@ -729,6 +871,9 @@ export default function TransactionsForm () {
       const matchesText =
         name.includes(term) ||
         type.includes(term) ||
+        itemType.includes(term) ||
+        additionalInfo.includes(term) ||
+        referenceText.includes(term) ||
         dateStr.includes(term) ||
         buyerName.includes(term) ||
         buyerEmail.includes(term) ||
@@ -821,6 +966,12 @@ export default function TransactionsForm () {
     }
   }
 
+  const isTripTab = activeTab === 'trip'
+  const activeCollectionLabel = isTripTab ? 'Trips' : 'Event'
+  const activeNameLabel = isTripTab ? 'Trip Route' : 'Event Name'
+  const activeTicketLabel = isTripTab ? 'Passengers Booked' : 'Tickets Booked'
+  const activeStatusLabel = isTripTab ? 'Booking Status' : 'Ticket Status'
+
   const openTicket = booking => {
     const raw = booking.raw || booking
     const id = toIdString(raw.bookingId || raw._id || booking.id)
@@ -840,9 +991,73 @@ export default function TransactionsForm () {
     setMenuOpenId(null)
   }
 
+  const openTrip = booking => {
+    const raw = booking.raw || booking
+    const provider = raw?.provider || {}
+    const payload = provider?.payload || {}
+    const travel = Array.isArray(payload?.TravelInformations)
+      ? payload.TravelInformations[0] || {}
+      : {}
+    const billing = payload?.PassengerDetails?.BillingAddress || {}
+    const bookingId = toIdString(raw?._id || booking?.id)
+
+    const passengers =
+      toNumber(raw?.search?.adults) +
+        toNumber(raw?.search?.children) +
+        toNumber(raw?.search?.infants) ||
+      toNumber(travel?.NumberOfPassengers) ||
+      (Array.isArray(payload?.PassengerDetails?.AirTravellers)
+        ? payload.PassengerDetails.AirTravellers.length
+        : 0) ||
+      1
+
+    const params = new URLSearchParams()
+    params.set('bookingReference', provider?.bookingReference || '')
+    params.set('pnr', provider?.pnr || '')
+    params.set('airline', travel?.OperatorName || 'Flight Booking')
+    params.set('from', travel?.DepartureTerminalCode || raw?.search?.from || '-')
+    params.set('to', travel?.ArrivalTerminalCode || raw?.search?.to || '-')
+    params.set('fromLabel', travel?.DepartureTerminal || '')
+    params.set('toLabel', travel?.ArrivalTerminal || '')
+    params.set('departDate', travel?.DepartureDate || raw?.search?.departDate || '')
+    params.set('arrivalDate', travel?.ArrivalDate || raw?.search?.returnDate || '')
+    params.set('ticketClass', travel?.TicketClass || '')
+    params.set('tripType', provider?.tripType || raw?.search?.tripType || '')
+    params.set(
+      'buyerName',
+      raw?.buyer?.fullName || raw?.userId?.name || billing?.ContactName || '-'
+    )
+    params.set(
+      'buyerEmail',
+      raw?.buyer?.email || raw?.userId?.email || billing?.ContactEmail || '-'
+    )
+    params.set(
+      'buyerPhone',
+      raw?.buyer?.phone || billing?.ContactMobileNo || '-'
+    )
+    params.set('paymentStatus', raw?.paymentStatus || '')
+    params.set('bookingStatus', provider?.bookingStatus || raw?.status || '')
+    params.set('transactionRef', raw?.transactionRef || '')
+    params.set('transactionId', raw?.transactionId || '')
+    params.set(
+      'total',
+      String(
+        toNumber(raw?.finalPayableAmount || raw?.totalAmount || provider?.totalFare)
+      )
+    )
+    params.set('passengers', String(passengers))
+    params.set('issuedOn', raw?.createdAt || raw?.updatedAt || '')
+
+    router.push(
+      `/trips/tickets-booked/view/${encodeURIComponent(String(bookingId))}?${params.toString()}`
+    )
+    setMenuOpenId(null)
+  }
+
   const openCustomer = booking => {
     setSelectedBooking(booking.raw || booking)
     setCustomerOpen(true)
+    setMenuOpenId(null)
   }
 
   const downloadReceipt = booking => {
@@ -902,6 +1117,40 @@ export default function TransactionsForm () {
     if (!filteredBookings || filteredBookings.length === 0) {
       return
     }
+
+    if (isTripTab) {
+      const dataToExport = filteredBookings.map(booking => {
+        const b = booking.raw || {}
+        const provider = b?.provider || {}
+        const payload = provider?.payload || {}
+        const travel = Array.isArray(payload?.TravelInformations)
+          ? payload.TravelInformations[0] || {}
+          : {}
+
+        return {
+          'Booking Reference': provider?.bookingReference || '',
+          PNR: provider?.pnr || '',
+          Airline: travel?.OperatorName || '',
+          'Trip Route': booking.routeName || booking.eventName || '',
+          'Trip Type': booking.tripType || '',
+          'Ticket Class': travel?.TicketClass || '',
+          'Passengers Booked': booking.ticketsQty || 0,
+          'Booked On': booking.bookedOnRaw || '',
+          'Departure Date': travel?.DepartureDate || '',
+          'Arrival Date': travel?.ArrivalDate || '',
+          'Buyer Name': booking.buyerName || '',
+          'Buyer Email': booking.buyerEmail || '',
+          'Buyer Phone': booking.buyerPhone || '',
+          'Payment Status': booking.paymentStatus || '',
+          'Booking Status': booking.activityStatus || '',
+          Amount: booking.amountNum || 0
+        }
+      })
+
+      downloadExcel(dataToExport, 'Trip_Bookings.xlsx')
+      return
+    }
+
     const isMongoId = v => /^[a-f\d]{24}$/i.test(String(v || '').trim())
     const pickNameOrId = v => {
       if (!v) return ''
@@ -1048,9 +1297,14 @@ export default function TransactionsForm () {
     switch (String(status).toUpperCase()) {
       case 'COMPLETED':
       case 'PAID':
+      case 'SUCCESS':
         return 'bg-green-100 text-green-800'
       case 'INCOMPLETE':
+      case 'PENDING':
         return 'bg-yellow-100 text-yellow-800'
+      case 'FAILED':
+      case 'ABANDONED':
+        return 'bg-red-100 text-red-800'
       default:
         return 'bg-gray-100 text-gray-800'
     }
@@ -1076,10 +1330,11 @@ export default function TransactionsForm () {
       <div className='flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6'>
         <div className='mb-4'>
           <h1 className='text-xl font-bold text-gray-900 mb-1'>
-            Gross Transaction Value
+            Gross Transaction Value of {activeCollectionLabel}
           </h1>
           <nav className='text-sm text-gray-500'>
-            <span>Dashboard</span> / <span>Gross Transaction Value</span>
+            <span>Dashboard</span> /{' '}
+            <span>Gross Transaction Value of {activeCollectionLabel}</span>
           </nav>
         </div>
         <TransactionStatsCards dateRange={dateRange} />
@@ -1220,7 +1475,7 @@ export default function TransactionsForm () {
             </div>
             <div>
               <p className='text-xs text-black opacity-90'>
-                Total Event Bookings
+                Total {activeCollectionLabel} Bookings
               </p>
               <p className='text-2xl text-black font-bold'>
                 {eventBookingStats.totalBookingCount}{' '}
@@ -1267,7 +1522,7 @@ export default function TransactionsForm () {
           <div className='p-4 border-b border-gray-200 flex-shrink-0'>
             <div className='flex justify-between items-center mb-4'>
               <h2 className='text-lg font-semibold text-gray-900'>
-                Gross Transaction Value of Event
+                Gross Transaction Value of {activeCollectionLabel}
               </h2>
               <div className='flex items-center space-x-3'>
                 {/* Search */}
@@ -1403,7 +1658,8 @@ export default function TransactionsForm () {
                         router.push('/users/bookings')
                         break
                       case 'event':
-                        router.push('/users/transactions')
+                        setActiveTab('event')
+                        setPage(1)
                         break
                       case 'activities':
                         router.push('/users/activities')
@@ -1416,6 +1672,10 @@ export default function TransactionsForm () {
                         break
                       case 'merchandise':
                         router.push('/users/merchandise')
+                        break
+                      case 'trip':
+                        setActiveTab('trip')
+                        setPage(1)
                         break
                       case 'e-sim':
                         router.push('/users/e-sim')
@@ -1464,7 +1724,7 @@ export default function TransactionsForm () {
                     </button>
                   </th>
                   <th className='px-4 py-3 text-left text-xs font-medium text-gray-500 tracking-wider'>
-                    <span>Event Name</span>
+                    <span>{activeNameLabel}</span>
                   </th>
                   <th className='px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
                     <button
@@ -1492,7 +1752,7 @@ export default function TransactionsForm () {
                       onClick={() => toggleSort('tickets')}
                       className='flex items-center'
                     >
-                      <span>Tickets Booked</span>
+                      <span>{activeTicketLabel}</span>
                       <TbCaretUpDownFilled className='w-3 h-3 text-gray-400 ml-1' />
                     </button>
                   </th>
@@ -1552,7 +1812,7 @@ export default function TransactionsForm () {
                       onClick={() => toggleSort('activityStatus')}
                       className='flex items-center'
                     >
-                      <span>Ticket Status</span>
+                      <span>{activeStatusLabel}</span>
                       <TbCaretUpDownFilled className='w-3 h-3 text-gray-400 ml-1' />
                     </button>
                   </th>
@@ -1708,29 +1968,55 @@ export default function TransactionsForm () {
                                 left: `${menuPos.left}px`
                               }}
                             >
-                              <button
-                                onClick={() => openTicket(booking)}
-                                className='flex items-center w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors'
-                              >
-                                <span className='mr-3 text-gray-500'>
-                                  <svg
-                                    className='h-4 w-4'
-                                    fill='none'
-                                    stroke='currentColor'
-                                    viewBox='0 0 24 24'
-                                  >
-                                    <path
-                                      strokeLinecap='round'
-                                      strokeLinejoin='round'
-                                      strokeWidth={2}
-                                      d='M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5'
-                                    />
-                                  </svg>
-                                </span>
-                                <span className='text-gray-800'>
-                                  View Ticket
-                                </span>
-                              </button>
+                              {booking.type === 'trip' ? (
+                                <button
+                                  onClick={() => openTrip(booking)}
+                                  className='flex items-center w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors'
+                                >
+                                  <span className='mr-3 text-gray-500'>
+                                    <svg
+                                      className='h-4 w-4'
+                                      fill='none'
+                                      stroke='currentColor'
+                                      viewBox='0 0 24 24'
+                                    >
+                                      <path
+                                        strokeLinecap='round'
+                                        strokeLinejoin='round'
+                                        strokeWidth={2}
+                                        d='M8 7h8m-8 5h8m-8 5h5M6 3h12a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V5a2 2 0 012-2z'
+                                      />
+                                    </svg>
+                                  </span>
+                                  <span className='text-gray-800'>
+                                    View Booking
+                                  </span>
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={() => openTicket(booking)}
+                                  className='flex items-center w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors'
+                                >
+                                  <span className='mr-3 text-gray-500'>
+                                    <svg
+                                      className='h-4 w-4'
+                                      fill='none'
+                                      stroke='currentColor'
+                                      viewBox='0 0 24 24'
+                                    >
+                                      <path
+                                        strokeLinecap='round'
+                                        strokeLinejoin='round'
+                                        strokeWidth={2}
+                                        d='M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5'
+                                      />
+                                    </svg>
+                                  </span>
+                                  <span className='text-gray-800'>
+                                    View Ticket
+                                  </span>
+                                </button>
+                              )}
 
                               <button
                                 onClick={() => openCustomer(booking)}
@@ -1756,46 +2042,48 @@ export default function TransactionsForm () {
                                 </span>
                               </button>
 
-                              <button
-                                onClick={() => downloadReceipt(booking)}
-                                className='flex items-center w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors'
-                              >
-                                <span className='mr-3 text-gray-500'>
-                                  {String(downloadingId || '') ===
-                                  String(booking.id) ? (
-                                    <svg
-                                      className='h-4 w-4 animate-spin'
-                                      viewBox='0 0 24 24'
-                                    >
-                                      <circle
-                                        cx='12'
-                                        cy='12'
-                                        r='10'
-                                        stroke='currentColor'
-                                        strokeWidth='4'
+                              {booking.type !== 'trip' && (
+                                <button
+                                  onClick={() => downloadReceipt(booking)}
+                                  className='flex items-center w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors'
+                                >
+                                  <span className='mr-3 text-gray-500'>
+                                    {String(downloadingId || '') ===
+                                    String(booking.id) ? (
+                                      <svg
+                                        className='h-4 w-4 animate-spin'
+                                        viewBox='0 0 24 24'
+                                      >
+                                        <circle
+                                          cx='12'
+                                          cy='12'
+                                          r='10'
+                                          stroke='currentColor'
+                                          strokeWidth='4'
+                                          fill='none'
+                                        />
+                                      </svg>
+                                    ) : (
+                                      <svg
+                                        className='w-4 h-4'
                                         fill='none'
-                                      />
-                                    </svg>
-                                  ) : (
-                                    <svg
-                                      className='w-4 h-4'
-                                      fill='none'
-                                      stroke='currentColor'
-                                      viewBox='0 0 24 24'
-                                    >
-                                      <path
-                                        strokeLinecap='round'
-                                        strokeLinejoin='round'
-                                        strokeWidth={2}
-                                        d='M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3'
-                                      />
-                                    </svg>
-                                  )}
-                                </span>
-                                <span className='text-gray-800'>
-                                  Download Ticket
-                                </span>
-                              </button>
+                                        stroke='currentColor'
+                                        viewBox='0 0 24 24'
+                                      >
+                                        <path
+                                          strokeLinecap='round'
+                                          strokeLinejoin='round'
+                                          strokeWidth={2}
+                                          d='M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3'
+                                        />
+                                      </svg>
+                                    )}
+                                  </span>
+                                  <span className='text-gray-800'>
+                                    Download Ticket
+                                  </span>
+                                </button>
+                              )}
                             </div>
                           )}
                         </div>
@@ -1805,7 +2093,7 @@ export default function TransactionsForm () {
                 ) : (
                   <tr key='no-booking'>
                     <td
-                      colSpan='8'
+                      colSpan='12'
                       className='px-4 py-4 text-center text-sm text-gray-500'
                     >
                       No bookings found.
@@ -1901,15 +2189,26 @@ export default function TransactionsForm () {
               <div className='grid grid-cols-2 gap-4 text-sm'>
                 <div className='text-[#5E6582]'>Full Name</div>
                 <div className='text-right font-semibold text-slate-900'>
-                  {selectedBooking?.buyer?.fullName || '-'}
+                  {selectedBooking?.buyer?.fullName ||
+                    selectedBooking?.userId?.name ||
+                    selectedBooking?.provider?.payload?.PassengerDetails
+                      ?.BillingAddress?.ContactName ||
+                    '-'}
                 </div>
                 <div className='text-[#5E6582]'>Email Address</div>
                 <div className='text-right font-semibold text-slate-900'>
-                  {selectedBooking?.buyer?.email || '-'}
+                  {selectedBooking?.buyer?.email ||
+                    selectedBooking?.userId?.email ||
+                    selectedBooking?.provider?.payload?.PassengerDetails
+                      ?.BillingAddress?.ContactEmail ||
+                    '-'}
                 </div>
                 <div className='text-[#5E6582]'>Phone</div>
                 <div className='text-right font-semibold text-slate-900'>
-                  {selectedBooking?.buyer?.phone || '-'}
+                  {selectedBooking?.buyer?.phone ||
+                    selectedBooking?.provider?.payload?.PassengerDetails
+                      ?.BillingAddress?.ContactMobileNo ||
+                    '-'}
                 </div>
               </div>
             </div>
