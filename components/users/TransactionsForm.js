@@ -162,7 +162,7 @@ const filterTabs = [
   { id: 'event', label: 'Event', active: true },
   { id: 'activities', label: 'Places to Visit', active: false },
   { id: 'merchandise', label: 'Merchandise', active: false },
-  { id: 'trip', label: 'Trips', active: false },
+  // { id: 'trip', label: 'Trips', active: false },
   { id: 'e-sim', label: 'Internet Connectivity', active: false },
   { id: 'accommodation', label: 'Accommodation', active: false },
   { id: 'med-plus', label: 'Med Plus', active: false },

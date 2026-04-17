@@ -275,12 +275,12 @@ const menuSections = [
         href: '/gym',
         permission: 'master'
       },
-      {
-        label: 'Trips',
-        icon: '/images/backend/side_menu/side_menu (12).svg',
-        href: '/trips',
-        permission: 'master'
-      },
+      // {
+      //   label: 'Trips',
+      //   icon: '/images/backend/side_menu/side_menu (12).svg',
+      //   href: '/trips',
+      //   permission: 'master'
+      // },
       {
         label: 'Personal Trainer',
         icon: '/images/backend/side_menu/side_menu (12).svg',
