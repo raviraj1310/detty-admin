@@ -619,7 +619,7 @@ export default function TransactionsForm () {
               amountNum,
               discount: 0,
               activityStatus: TextCapitalize(
-                provider?.bookingStatus || b?.status || 'Pending'
+                provider?.scanStatus || provider?.bookingStatus || b?.status || 'Pending'
               ),
               paymentStatus: String(b?.paymentStatus || 'Pending'),
               giveaway: '-',
@@ -1036,7 +1036,10 @@ export default function TransactionsForm () {
       raw?.buyer?.phone || billing?.ContactMobileNo || '-'
     )
     params.set('paymentStatus', raw?.paymentStatus || '')
-    params.set('bookingStatus', provider?.bookingStatus || raw?.status || '')
+    params.set(
+      'bookingStatus',
+      provider?.scanStatus || provider?.bookingStatus || raw?.status || ''
+    )
     params.set('transactionRef', raw?.transactionRef || '')
     params.set('transactionId', raw?.transactionId || '')
     params.set(
@@ -1271,9 +1274,12 @@ export default function TransactionsForm () {
       .toLowerCase()
     switch (s) {
       case 'scanned':
+      case 'scanned_in':
       case 'completed':
       case 'done':
         return 'bg-green-100 text-green-800'
+      case 'scanned_out':
+        return 'bg-blue-100 text-blue-800'
       case 'ongoing':
         return 'bg-blue-100 text-blue-800'
       case 'pending':

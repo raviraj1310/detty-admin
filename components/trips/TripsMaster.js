@@ -104,6 +104,8 @@ const getPaymentStatusClass = status => {
 
 const getBookingStatusClass = status => {
   const value = String(status || '').toLowerCase()
+  if (/scanned_out/.test(value)) return 'bg-blue-100 text-blue-800'
+  if (/scanned_in/.test(value)) return 'bg-green-100 text-green-800'
   if (/issued|confirmed|completed|success/.test(value)) {
     return 'bg-green-100 text-green-800'
   }
@@ -158,7 +160,7 @@ const buildTripQuery = booking => {
   )
   params.set('buyerPhone', raw?.buyer?.phone || billing?.ContactMobileNo || '-')
   params.set('paymentStatus', raw?.paymentStatus || '')
-  params.set('bookingStatus', provider?.bookingStatus || raw?.status || '')
+  params.set('bookingStatus', provider?.scanStatus || provider?.bookingStatus || raw?.status || '')
   params.set('transactionRef', raw?.transactionRef || '')
   params.set('transactionId', raw?.transactionId || '')
   params.set(
@@ -249,7 +251,8 @@ export default function TripsMaster () {
               1,
             amount,
             paymentStatus: booking?.paymentStatus || 'pending',
-            bookingStatus: provider?.bookingStatus || booking?.status || 'pending'
+            bookingStatus:
+              provider?.scanStatus || provider?.bookingStatus || booking?.status || 'pending'
           }
         })
 
