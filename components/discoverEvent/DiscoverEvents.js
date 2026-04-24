@@ -702,7 +702,7 @@ export default function DiscoverEvents () {
           </div>
         </div>
 
-        <div className='rounded-xl border border-[#E5E8F5] overflow-hidden'>
+        <div className='rounded-xl border border-[#E5E8F5] overflow-visible'>
           <div className='w-full'>
             <div className='grid grid-cols-[13%_21%_11%_8%_17%_13%_9%_8%] bg-[#F7F9FD] px-2 py-3'>
               <div>
