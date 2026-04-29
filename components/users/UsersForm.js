@@ -65,6 +65,7 @@ const mapUser = d => {
     name: d?.name || d?.fullName || '-',
     email: d?.email || '-',
     phone: d?.phone || d?.phoneNumber || '-',
+    loginSessions: Number(d?.loginCount ?? d?.loginSessions ?? d?.sessionCount ?? 0),
     walletPoints: wpStr,
     walletPointsNum,
     createdOn,
@@ -1439,7 +1440,7 @@ export default function UsersForm ({
                       Email
                     </TableHeaderCell>
                   </th>
-                  <th className='w-[10%] px-3 py-2 text-left text-xs font-medium tracking-[0.04em]'>
+                  <th className='w-[9%] px-3 py-2 text-left text-xs font-medium tracking-[0.04em]'>
                     <TableHeaderCell
                       onClick={() => toggleSort('phone')}
                       active={sort.key === 'phone'}
@@ -1448,7 +1449,8 @@ export default function UsersForm ({
                       Phone number
                     </TableHeaderCell>
                   </th>
-                  <th className='w-[10%] px-3 py-2 text-left text-xs font-medium tracking-[0.04em]'>
+                  
+                  <th className='w-[9%] px-3 py-2 text-left text-xs font-medium tracking-[0.04em]'>
                     <TableHeaderCell
                       onClick={() => toggleSort('walletPointsNum')}
                       active={sort.key === 'walletPointsNum'}
@@ -1457,7 +1459,7 @@ export default function UsersForm ({
                       Wallet points
                     </TableHeaderCell>
                   </th>
-                  <th className='w-[12%] px-3 py-2 text-left text-xs font-medium text-gray-500 tracking-[0.04em]'>
+                  <th className='w-[11%] px-3 py-2 text-left text-xs font-medium text-gray-500 tracking-[0.04em]'>
                     <TableHeaderCell
                       onClick={() => toggleSort('bookingCounts')}
                       active={sort.key === 'bookingCounts'}
@@ -1471,6 +1473,11 @@ export default function UsersForm ({
                       <span className='truncate max-w-full'>Status</span>
                     </div>
                   </th>
+                  <th className='w-[8%] px-3 py-2 text-left text-xs font-medium tracking-[0.04em]'>
+                      <div className='flex items-center gap-2 text-xs font-medium  tracking-[0.12em] text-[#8A92AC]'>
+                        <span className=''>Login</span>
+                      </div>
+                  </th>
                   <th className='w-[10%] px-3 py-2 text-right text-xs font-medium text-gray-500 tracking-[0.04em]'></th>
                 </tr>
               </thead>
@@ -1479,7 +1486,7 @@ export default function UsersForm ({
                   <tr>
                     <td
                       className='px-3 py-4 text-sm text-[#5E6582]'
-                      colSpan={8}
+                      colSpan={9}
                     >
                       Loading...
                     </td>
@@ -1487,7 +1494,7 @@ export default function UsersForm ({
                 )}
                 {error && !loading && (
                   <tr>
-                    <td className='px-3 py-4 text-sm text-red-600' colSpan={8}>
+                    <td className='px-3 py-4 text-sm text-red-600' colSpan={9}>
                       {error}
                     </td>
                   </tr>
@@ -1532,6 +1539,7 @@ export default function UsersForm ({
                       <td className='px-3 py-4 text-xs text-gray-500'>
                         {user.phone}
                       </td>
+                      
                       <td className='px-3 py-4'>
                         <span className='text-xs font-medium text-blue-600'>
                           {user.walletPoints}
@@ -1570,6 +1578,8 @@ export default function UsersForm ({
                         >
                           {user.status}
                         </span>
+                      </td><td className='px-3 py-4 text-xs text-gray-500 font-medium'>
+                        {user.loginSessions}
                       </td>
                       <td className='px-3 py-4 text-right relative'>
                         <ActionDropdown
