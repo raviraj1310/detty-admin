@@ -14,9 +14,14 @@ export const getAllActivities = async (params = {}) => {
 
 export const createActivity = async (activityData) => {
   try {
+    const isFormData =
+      typeof FormData !== "undefined" && activityData instanceof FormData;
     const response = await api.post(
       "/activity-type/create-activity",
-      activityData
+      activityData,
+      isFormData
+        ? { headers: { "Content-Type": "multipart/form-data" } }
+        : undefined
     );
     return response.data;
   } catch (error) {

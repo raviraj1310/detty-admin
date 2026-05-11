@@ -2,7 +2,26 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Loader2, AlertCircle, Calendar } from 'lucide-react'
+import {
+  Loader2,
+  AlertCircle,
+  Calendar,
+  Wand2,
+  Bold,
+  Underline,
+  Italic,
+  Strikethrough,
+  Palette,
+  List,
+  ListOrdered,
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
+  Link2,
+  Image as ImageIcon,
+  Code,
+  Maximize2
+} from 'lucide-react'
 import Toast from '@/components/ui/Toast'
 import ImageCropper from '@/components/ui/ImageCropper'
 import {
@@ -12,6 +31,227 @@ import {
 } from '@/services/places-to-visit/placesToVisit.service'
 import { getAllActivityTypes } from '@/services/places-to-visit/activityType.service'
 import { getVendors } from '@/services/discover-events/event.service'
+
+function RichTextEditor ({ value, onChange, minHeight = 140 }) {
+  const editorRef = useRef(null)
+  const [fullscreen, setFullscreen] = useState(false)
+
+  useEffect(() => {
+    if (editorRef.current && document.activeElement !== editorRef.current) {
+      editorRef.current.innerHTML = value || ''
+    }
+  }, [value])
+
+  const runCommand = (command, commandValue = null) => {
+    editorRef.current?.focus()
+    document.execCommand(command, false, commandValue)
+    onChange(editorRef.current?.innerHTML || '')
+  }
+
+  const addLink = () => {
+    const url = window.prompt('Enter URL')
+    if (url) runCommand('createLink', url)
+  }
+
+  const addImage = () => {
+    const url = window.prompt('Enter image URL')
+    if (url) runCommand('insertImage', url)
+  }
+
+  const pickColor = () => {
+    const color = window.prompt('Enter color hex code', '#FF5733')
+    if (color) runCommand('foreColor', color)
+  }
+
+  const buttonClass =
+    'p-1.5 bg-white border border-gray-300 rounded hover:bg-gray-50 cursor-pointer flex-shrink-0'
+
+  return (
+    <div
+      className={
+        fullscreen
+          ? 'fixed inset-4 z-[9999] bg-white border border-gray-300 rounded-lg shadow-2xl overflow-hidden'
+          : 'border border-gray-300 rounded-lg overflow-hidden'
+      }
+    >
+      <div className='flex items-center gap-1 p-1.5 border-b border-gray-300 bg-gray-50 overflow-x-auto'>
+        <button type='button' className={buttonClass} title='Clear Format' onClick={() => runCommand('removeFormat')}>
+          <Wand2 className='w-3.5 h-3.5' />
+        </button>
+        <button type='button' className={buttonClass} title='Bold' onClick={() => runCommand('bold')}>
+          <Bold className='w-3.5 h-3.5 font-bold' />
+        </button>
+        <button type='button' className={buttonClass} title='Underline' onClick={() => runCommand('underline')}>
+          <Underline className='w-3.5 h-3.5' />
+        </button>
+        <button type='button' className={buttonClass} title='Italic' onClick={() => runCommand('italic')}>
+          <Italic className='w-3.5 h-3.5' />
+        </button>
+        <button type='button' className={buttonClass} title='Strikethrough' onClick={() => runCommand('strikeThrough')}>
+          <Strikethrough className='w-3.5 h-3.5' />
+        </button>
+        <button type='button' className={buttonClass} title='Text Color' onClick={pickColor}>
+          <Palette className='w-3.5 h-3.5' />
+        </button>
+        <button type='button' className={buttonClass} title='Bullet List' onClick={() => runCommand('insertUnorderedList')}>
+          <List className='w-3.5 h-3.5' />
+        </button>
+        <button type='button' className={buttonClass} title='Numbered List' onClick={() => runCommand('insertOrderedList')}>
+          <ListOrdered className='w-3.5 h-3.5' />
+        </button>
+        <button type='button' className={buttonClass} title='Align Left' onClick={() => runCommand('justifyLeft')}>
+          <AlignLeft className='w-3.5 h-3.5' />
+        </button>
+        <button type='button' className={buttonClass} title='Align Center' onClick={() => runCommand('justifyCenter')}>
+          <AlignCenter className='w-3.5 h-3.5' />
+        </button>
+        <button type='button' className={buttonClass} title='Align Right' onClick={() => runCommand('justifyRight')}>
+          <AlignRight className='w-3.5 h-3.5' />
+        </button>
+        <button type='button' className={buttonClass} title='Link' onClick={addLink}>
+          <Link2 className='w-3.5 h-3.5' />
+        </button>
+        <button type='button' className={buttonClass} title='Image' onClick={addImage}>
+          <ImageIcon className='w-3.5 h-3.5' />
+        </button>
+        <button type='button' className={buttonClass} title='Code Block' onClick={() => runCommand('formatBlock', 'pre')}>
+          <Code className='w-3.5 h-3.5' />
+        </button>
+        <button type='button' className={buttonClass} title='Fullscreen' onClick={() => setFullscreen(prev => !prev)}>
+          <Maximize2 className='w-3.5 h-3.5' />
+        </button>
+      </div>
+      <div
+        ref={editorRef}
+        contentEditable
+        suppressContentEditableWarning
+        onInput={e => onChange(e.currentTarget.innerHTML)}
+        className='w-full px-4 py-2.5 focus:outline-none text-gray-900 overflow-auto'
+        style={{ minHeight: fullscreen ? 'calc(100vh - 120px)' : minHeight }}
+      />
+    </div>
+  )
+}
+
+const DEFAULT_MAP_CENTER = { lat: 6.5244, lng: 3.3792 }
+
+const parseMapLocation = value => {
+  const [lat, lng] = String(value || '')
+    .split(',')
+    .map(v => Number(v.trim()))
+
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null
+  return { lat, lng }
+}
+
+const lngToTileX = (lng, zoom) => ((lng + 180) / 360) * 2 ** zoom
+const latToTileY = (lat, zoom) => {
+  const rad = (lat * Math.PI) / 180
+  return (
+    ((1 - Math.log(Math.tan(rad) + 1 / Math.cos(rad)) / Math.PI) / 2) *
+    2 ** zoom
+  )
+}
+const tileXToLng = (x, zoom) => (x / 2 ** zoom) * 360 - 180
+const tileYToLat = (y, zoom) => {
+  const n = Math.PI - (2 * Math.PI * y) / 2 ** zoom
+  return (180 / Math.PI) * Math.atan(0.5 * (Math.exp(n) - Math.exp(-n)))
+}
+
+function MapLocationPicker ({ value, onChange, error }) {
+  const [zoom, setZoom] = useState(13)
+  const selected = parseMapLocation(value)
+  const center = selected || DEFAULT_MAP_CENTER
+  const centerX = lngToTileX(center.lng, zoom)
+  const centerY = latToTileY(center.lat, zoom)
+  const tileSize = 256
+  const tiles = []
+  const maxTile = 2 ** zoom
+
+  for (let dx = -2; dx <= 2; dx += 1) {
+    for (let dy = -2; dy <= 2; dy += 1) {
+      const rawX = Math.floor(centerX) + dx
+      const rawY = Math.floor(centerY) + dy
+      if (rawY < 0 || rawY >= maxTile) continue
+      const x = ((rawX % maxTile) + maxTile) % maxTile
+      tiles.push({ x, y: rawY, rawX })
+    }
+  }
+
+  const handleMapClick = event => {
+    const rect = event.currentTarget.getBoundingClientRect()
+    const worldX = centerX * tileSize + event.clientX - rect.left - rect.width / 2
+    const worldY =
+      centerY * tileSize + event.clientY - rect.top - rect.height / 2
+    const lat = tileYToLat(worldY / tileSize, zoom)
+    const lng = tileXToLng(worldX / tileSize, zoom)
+    onChange(`${lat.toFixed(6)},${lng.toFixed(6)}`)
+  }
+
+  return (
+    <div>
+      <div className='flex items-center justify-between mb-2'>
+        <label className='block text-sm font-medium text-gray-700'>
+          Map Location<span className='text-red-500'>*</span>
+        </label>
+        <div className='flex gap-1'>
+          <button
+            type='button'
+            onClick={() => setZoom(z => Math.max(3, z - 1))}
+            className='px-2 py-1 text-xs border border-gray-300 rounded bg-white'
+          >
+            -
+          </button>
+          <button
+            type='button'
+            onClick={() => setZoom(z => Math.min(18, z + 1))}
+            className='px-2 py-1 text-xs border border-gray-300 rounded bg-white'
+          >
+            +
+          </button>
+        </div>
+      </div>
+      <div
+        onClick={handleMapClick}
+        className='relative h-64 overflow-hidden rounded-lg border border-gray-300 bg-gray-100 cursor-crosshair'
+      >
+        {tiles.map(tile => (
+          <img
+            key={`${zoom}-${tile.rawX}-${tile.y}`}
+            src={`https://tile.openstreetmap.org/${zoom}/${tile.x}/${tile.y}.png`}
+            alt=''
+            className='absolute select-none pointer-events-none'
+            style={{
+              width: tileSize,
+              height: tileSize,
+              left: `calc(50% + ${(tile.rawX - centerX) * tileSize}px)`,
+              top: `calc(50% + ${(tile.y - centerY) * tileSize}px)`
+            }}
+            draggable={false}
+          />
+        ))}
+        {selected && (
+          <div className='absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-full'>
+            <div className='h-7 w-7 rounded-full bg-[#FF5733] border-2 border-white shadow-lg flex items-center justify-center'>
+              <div className='h-2 w-2 rounded-full bg-white' />
+            </div>
+          </div>
+        )}
+        <div className='absolute bottom-2 left-2 rounded bg-white/90 px-2 py-1 text-[10px] text-gray-600 shadow'>
+          Click map to select location
+        </div>
+      </div>
+      <input
+        type='text'
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        placeholder='lat,lng e.g. 6.524400,3.379200'
+        className='mt-2 w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900'
+      />
+      {error && <p className='text-xs text-red-600'>{error}</p>}
+    </div>
+  )
+}
 
 export default function EditActivity ({ activityId }) {
   const router = useRouter()
@@ -26,9 +266,17 @@ export default function EditActivity ({ activityId }) {
     openingEnd: '',
     duration: '',
     durationUnit: 'Hours',
+    durationData: '',
     uploadImage: '',
     aboutActivity: '',
+    description: '',
     importantInfo: '',
+    direction: '',
+    contactUs: '',
+    getPassUrl: '',
+    getPassLabel: '',
+    inquiryUrl: '',
+    inquiryLabel: '',
     twitter: '',
     website: '',
     activityTypeId: '',
@@ -401,9 +649,18 @@ export default function EditActivity ({ activityId }) {
     )
     fd.append('twitterLink', formData.twitter.trim())
     fd.append('about', formData.aboutActivity.trim())
+    fd.append('description', String(formData.description || '').trim())
     fd.append('importantInfo', String(formData.importantInfo || '').trim())
+    fd.append('direction', String(formData.direction || '').trim())
+    fd.append('contactUs', String(formData.contactUs || '').trim())
+    fd.append('getPassUrl', String(formData.getPassUrl || '').trim())
+    fd.append('getPassLabel', String(formData.getPassLabel || '').trim())
+    fd.append('inquiryUrl', String(formData.inquiryUrl || '').trim())
+    fd.append('inquiryLabel', String(formData.inquiryLabel || '').trim())
     fd.append('mapLocation', formData.mapLocation.trim())
-    fd.append('duration', `${String(calculatedDuration)} Days`)
+    const durationText = `${String(calculatedDuration || 1)} Days`
+    fd.append('duration', durationText)
+    fd.append('durationData', (formData.durationData || durationText).trim())
     fd.append('websiteLink', formData.website.trim())
     fd.append('location', formData.location.trim())
     fd.append('openingHours', formData.openingHours.trim())
@@ -494,9 +751,21 @@ export default function EditActivity ({ activityId }) {
           openingEnd: parseOpeningHours(d.openingHours).end,
           duration: String(durVal),
           durationUnit: String(durUnit || 'Hours'),
+          durationData: String(d.durationData || d.duration || ''),
           uploadImage: '',
           aboutActivity: String(d.about || ''),
+          description: String(d.description || ''),
           importantInfo: String(d.importantInfo || ''),
+          direction: String(d.direction || ''),
+          contactUs: String(d.contactUs || ''),
+          getPassUrl: String(
+            d.getPassUrl || 'https://annualpass.giwagardens.com/OpenDay'
+          ),
+          getPassLabel: String(d.getPassLabel || 'Get Pass'),
+          inquiryUrl: String(
+            d.inquiryUrl || 'https://annualpass.giwagardens.com/PaymentLink'
+          ),
+          inquiryLabel: String(d.inquiryLabel || 'Inquiries'),
           twitter: String(d.twitterLink || ''),
           website: String(d.websiteLink || ''),
           activityTypeId: String(typeId || ''),
@@ -612,19 +881,12 @@ export default function EditActivity ({ activityId }) {
                 <p className='text-xs text-red-600'>{errors.location}</p>
               )}
             </div>
-            <div>
-              <label className='block text-sm font-medium text-gray-700 mb-2'>
-                Map Location<span className='text-red-500'>*</span>
-              </label>
-              <input
-                type='text'
+            <div className='md:col-span-3'>
+              <MapLocationPicker
                 value={formData.mapLocation}
-                onChange={e => handleChange('mapLocation', e.target.value)}
-                className='w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900'
+                onChange={value => handleChange('mapLocation', value)}
+                error={errors.mapLocation}
               />
-              {errors.mapLocation && (
-                <p className='text-xs text-red-600'>{errors.mapLocation}</p>
-              )}
             </div>
           </div>
 
@@ -702,8 +964,6 @@ export default function EditActivity ({ activityId }) {
                   onChange={e =>
                     handleChange('activityStartDate', e.target.value)
                   }
-                  min='2025-12-13'
-                  max='2026-01-04'
                   className='w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900'
                 />
                 <Calendar className='pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400' />
@@ -725,8 +985,7 @@ export default function EditActivity ({ activityId }) {
                   onChange={e =>
                     handleChange('activityEndDate', e.target.value)
                   }
-                  min={formData.activityStartDate || '2025-12-13'}
-                  max='2026-01-04'
+                  min={formData.activityStartDate || undefined}
                   className='w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900'
                 />
                 <Calendar className='pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400' />
@@ -809,6 +1068,7 @@ export default function EditActivity ({ activityId }) {
                   <option>Days</option>
                 </select>
               </div>
+              
             </div>
           </div>
 
@@ -896,11 +1156,10 @@ export default function EditActivity ({ activityId }) {
             <label className='block text-sm font-medium text-gray-700 mb-2'>
               About Activity<span className='text-red-500'>*</span>
             </label>
-            <textarea
+            <RichTextEditor
               value={formData.aboutActivity}
-              onChange={e => handleChange('aboutActivity', e.target.value)}
-              className='w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900 min-h-[120px]'
-            ></textarea>
+              onChange={value => handleChange('aboutActivity', value)}
+            />
             {errors.aboutActivity && (
               <p className='text-xs text-red-600'>{errors.aboutActivity}</p>
             )}
@@ -908,14 +1167,88 @@ export default function EditActivity ({ activityId }) {
 
           <div>
             <label className='block text-sm font-medium text-gray-700 mb-2'>
+              Description
+            </label>
+            <RichTextEditor
+              value={formData.description}
+              onChange={value => handleChange('description', value)}
+              minHeight={120}
+            />
+          </div>
+
+          <div>
+            <label className='block text-sm font-medium text-gray-700 mb-2'>
               Important Info
             </label>
-            <textarea
+            <RichTextEditor
               value={formData.importantInfo}
-              onChange={e => handleChange('importantInfo', e.target.value)}
-              className='w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900 min-h-[100px]'
-              placeholder='Special notes, requirements, or tips for visitors'
-            ></textarea>
+              onChange={value => handleChange('importantInfo', value)}
+              minHeight={120}
+            />
+          </div>
+
+          <div>
+            <label className='block text-sm font-medium text-gray-700 mb-2'>
+              Contact Us
+            </label>
+            <RichTextEditor
+              value={formData.contactUs}
+              onChange={value => handleChange('contactUs', value)}
+              minHeight={120}
+            />
+          </div>
+
+          <div className='pt-4'>
+            <div className='bg-gray-900 text-white px-3 py-1.5 rounded-t-lg inline-block mb-3'>
+              <h3 className='font-medium text-sm'>CTA Buttons</h3>
+            </div>
+
+            <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+              <div>
+                <label className='block text-sm font-medium text-gray-700 mb-2'>
+                  Get Pass Label
+                </label>
+                <input
+                  type='text'
+                  value={formData.getPassLabel}
+                  onChange={e => handleChange('getPassLabel', e.target.value)}
+                  className='w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900'
+                />
+              </div>
+              <div>
+                <label className='block text-sm font-medium text-gray-700 mb-2'>
+                  Get Pass URL
+                </label>
+                <input
+                  type='text'
+                  value={formData.getPassUrl}
+                  onChange={e => handleChange('getPassUrl', e.target.value)}
+                  className='w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900'
+                />
+              </div>
+              <div>
+                <label className='block text-sm font-medium text-gray-700 mb-2'>
+                  Inquiry Label
+                </label>
+                <input
+                  type='text'
+                  value={formData.inquiryLabel}
+                  onChange={e => handleChange('inquiryLabel', e.target.value)}
+                  className='w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900'
+                />
+              </div>
+              <div>
+                <label className='block text-sm font-medium text-gray-700 mb-2'>
+                  Inquiry URL
+                </label>
+                <input
+                  type='text'
+                  value={formData.inquiryUrl}
+                  onChange={e => handleChange('inquiryUrl', e.target.value)}
+                  className='w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-gray-900'
+                />
+              </div>
+            </div>
           </div>
 
           <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
